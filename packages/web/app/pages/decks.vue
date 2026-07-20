@@ -6,12 +6,10 @@ import type {
   CardSearchResponse,
   CardType,
   Deck,
-  DeckImportResult,
-  DeckListResponse,
   DeckPayload,
   DeckValidation
 } from '@onepiecetcg/shared'
-import { exportDeckToText, normalizeDeckCards } from '@onepiecetcg/shared'
+import { normalizeDeckCards } from '@onepiecetcg/shared'
 
 const api = useApi()
 const { profile, refresh: refreshSession } = useSession()
@@ -27,9 +25,9 @@ const selectedType = ref<CardType | typeof allFilter>(allFilter)
 const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
 const selectedCost = ref<number | typeof allFilter>(allFilter)
 const selectedCard = ref<Card | null>(null)
-const importText = ref('')
 const serverMessage = ref<string | null>(null)
 const serverError = ref<string | null>(null)
+const builderNotice = ref<string | null>(null)
 const saving = ref(false)
 
 onMounted(() => {
@@ -41,12 +39,6 @@ const { data: catalogData, pending: catalogPending } = await useAsyncData(
   () => api<CardSearchResponse>('/catalog/cards')
 )
 
-const { data: deckListData, refresh: refreshDecks } = await useAsyncData(
-  'saved-decks',
-  () => api<DeckListResponse>('/decks'),
-  { default: () => ({ decks: [] }) }
-)
-
 const cards = computed(() => catalogData.value?.cards ?? [])
 const filters = computed<CardFilterOptions>(() => catalogData.value?.filters ?? {
   sets: [],
@@ -55,17 +47,27 @@ const filters = computed<CardFilterOptions>(() => catalogData.value?.filters ?? 
   costs: []
 })
 const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])))
-const leaders = computed(() => cards.value.filter(card => card.type === 'Leader'))
-const savedDecks = computed(() => deckListData.value?.decks ?? [])
 const selectedLeader = computed(() => cardById.value.get(leaderCardId.value) ?? null)
 const deckLines = computed(() => normalizeDeckCards(deckCards.value))
 const mainDeckCount = computed(() => deckLines.value.reduce((sum, card) => sum + card.quantity, 0))
+const cardQuantityByNumber = computed(() => {
+  const quantities = new Map<string, number>()
+
+  for (const deckCard of deckLines.value) {
+    const card = cardById.value.get(deckCard.cardId)
+    const key = card?.number ?? deckCard.cardId
+
+    quantities.set(key, (quantities.get(key) ?? 0) + deckCard.quantity)
+  }
+
+  return quantities
+})
 
 const filteredCards = computed(() => {
   const needle = search.value.trim().toLowerCase()
 
   return cards.value
-    .filter(card => card.type !== 'Leader' && card.type !== 'DON!!')
+    .filter(card => card.type !== 'DON!!')
     .filter(card => !needle
       || card.name.toLowerCase().includes(needle)
       || card.number.toLowerCase().includes(needle)
@@ -96,15 +98,6 @@ watch(payload, () => {
   void refreshValidation()
 }, { deep: true, immediate: true })
 
-const exportText = computed(() => exportDeckToText(payload.value))
-
-const leaderItems = computed(() => [
-  ...leaders.value.map(leader => ({
-    label: `${leader.number} - ${leader.name}`,
-    value: leader.id
-  }))
-])
-
 const setItems = computed(() => [
   { label: 'Tous les sets', value: allFilter },
   ...filters.value.sets.map(set => ({ label: `${set.id} - ${set.name}`, value: set.id }))
@@ -113,7 +106,7 @@ const setItems = computed(() => [
 const typeItems = computed(() => [
   { label: 'Tous les types', value: allFilter },
   ...filters.value.types
-    .filter(type => type !== 'Leader' && type !== 'DON!!')
+    .filter(type => type !== 'DON!!')
     .map(type => ({ label: type, value: type }))
 ])
 
@@ -145,23 +138,14 @@ const selectedCardRows = computed(() => {
   ]
 })
 
-function setFromSavedDeck(deck: Deck) {
-  selectedDeckId.value = deck.id
-  deckName.value = deck.name
-  leaderCardId.value = deck.leaderCardId
-  deckCards.value = [...deck.cards]
-  serverMessage.value = null
-  serverError.value = null
-}
-
 function resetBuilder() {
   selectedDeckId.value = null
   deckName.value = 'Nouveau deck'
   leaderCardId.value = ''
   deckCards.value = []
-  importText.value = ''
   serverMessage.value = null
   serverError.value = null
+  builderNotice.value = null
 }
 
 function resetCatalogFilters() {
@@ -172,8 +156,49 @@ function resetCatalogFilters() {
   selectedCost.value = allFilter
 }
 
+function getCardQuantity(card: Card): number {
+  return cardQuantityByNumber.value.get(card.number) ?? 0
+}
+
+function canAddCard(card: Card): boolean {
+  return card.type !== 'Leader' && getCardQuantity(card) < 4 && mainDeckCount.value < 50
+}
+
+function getCardColorStyle(color: CardColor) {
+  const styles: Record<CardColor, { backgroundColor: string, borderColor: string, color: string }> = {
+    Red: { backgroundColor: '#fee2e2', borderColor: '#f87171', color: '#991b1b' },
+    Green: { backgroundColor: '#dcfce7', borderColor: '#4ade80', color: '#166534' },
+    Blue: { backgroundColor: '#dbeafe', borderColor: '#60a5fa', color: '#1e40af' },
+    Purple: { backgroundColor: '#f3e8ff', borderColor: '#c084fc', color: '#6b21a8' },
+    Black: { backgroundColor: '#e5e7eb', borderColor: '#6b7280', color: '#111827' },
+    Yellow: { backgroundColor: '#fef9c3', borderColor: '#facc15', color: '#854d0e' }
+  }
+
+  return styles[color]
+}
+
 function addCard(card: Card) {
   selectedCard.value = card
+  serverMessage.value = null
+  builderNotice.value = null
+
+  if (card.type === 'Leader') {
+    chooseLeader(card)
+    return
+  }
+
+  const currentQuantity = cardQuantityByNumber.value.get(card.number) ?? 0
+
+  if (currentQuantity >= 4) {
+    builderNotice.value = `${card.number} est deja a 4 exemplaires.`
+    return
+  }
+
+  if (mainDeckCount.value >= 50) {
+    builderNotice.value = 'Le deck principal contient deja 50 cartes.'
+    return
+  }
+
   const existing = deckCards.value.find(deckCard => deckCard.cardId === card.id)
 
   if (existing) {
@@ -181,9 +206,25 @@ function addCard(card: Card) {
   } else {
     deckCards.value.push({ cardId: card.id, quantity: 1 })
   }
+
+  builderNotice.value = null
+}
+
+function chooseLeader(card: Card) {
+  selectedCard.value = card
+  serverMessage.value = null
+  builderNotice.value = null
+
+  if (card.type !== 'Leader') {
+    builderNotice.value = `${card.number} n'est pas une carte Leader.`
+    return
+  }
+
+  leaderCardId.value = card.id
 }
 
 function removeCard(cardId: string) {
+  builderNotice.value = null
   const existing = deckCards.value.find(deckCard => deckCard.cardId === cardId)
 
   if (!existing) {
@@ -195,6 +236,22 @@ function removeCard(cardId: string) {
   if (existing.quantity <= 0) {
     deckCards.value = deckCards.value.filter(deckCard => deckCard.cardId !== cardId)
   }
+}
+
+function canIncrementCard(cardId: string): boolean {
+  const card = cardById.value.get(cardId)
+
+  return card ? canAddCard(card) : false
+}
+
+function incrementCard(cardId: string) {
+  const card = cardById.value.get(cardId)
+
+  if (!card) {
+    return
+  }
+
+  addCard(card)
 }
 
 async function saveDeck() {
@@ -209,61 +266,11 @@ async function saveDeck() {
 
     selectedDeckId.value = saved.id
     serverMessage.value = 'Deck sauvegarde.'
-    await refreshDecks()
   } catch (error: unknown) {
     serverError.value = extractErrorMessage(error)
   } finally {
     saving.value = false
   }
-}
-
-async function deleteDeck() {
-  if (!selectedDeckId.value) {
-    return
-  }
-
-  saving.value = true
-  serverMessage.value = null
-  serverError.value = null
-
-  try {
-    await api(`/decks/${selectedDeckId.value}`, { method: 'DELETE' })
-    resetBuilder()
-    await refreshDecks()
-    serverMessage.value = 'Deck supprime.'
-  } catch (error: unknown) {
-    serverError.value = extractErrorMessage(error)
-  } finally {
-    saving.value = false
-  }
-}
-
-async function importDeck() {
-  serverMessage.value = null
-  serverError.value = null
-
-  try {
-    const result = await api<DeckImportResult>('/decks/import', {
-      method: 'POST',
-      body: {
-        text: importText.value,
-        name: deckName.value
-      }
-    })
-
-    deckName.value = result.payload.name
-    leaderCardId.value = result.payload.leaderCardId
-    deckCards.value = [...result.payload.cards]
-    validationData.value = result.validation
-    serverMessage.value = 'Import applique au builder.'
-  } catch (error: unknown) {
-    serverError.value = extractErrorMessage(error)
-  }
-}
-
-function copyExport() {
-  importText.value = exportText.value
-  serverMessage.value = 'Export copie dans la zone texte.'
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -284,256 +291,53 @@ function extractErrorMessage(error: unknown): string {
 </script>
 
 <template>
-  <UContainer class="py-8">
-    <div class="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_340px]">
-      <aside class="space-y-4">
-        <div class="space-y-2">
-          <UBadge
-            icon="i-lucide-boxes"
-            variant="subtle"
-          >
-            Deck builder
-          </UBadge>
-          <h1 class="text-3xl font-semibold tracking-normal text-highlighted">
-            Mes decks
-          </h1>
-        </div>
+  <UContainer class="max-w-[1600px] py-4">
+    <UAlert
+      v-if="!profile"
+      class="mb-3"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-lock"
+      title="Connexion requise"
+      description="Les decks sauvegardes sont lies au compte joueur."
+    />
 
-        <UAlert
-          v-if="!profile"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-lock"
-          title="Connexion requise"
-          description="Les decks sauvegardes sont lies au compte joueur."
-        />
-
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-3">
+    <div class="grid min-h-0 w-full gap-4 overflow-hidden xl:h-[calc(100vh-6rem)] xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.34fr)]">
+      <UCard
+        class="min-h-0 min-w-0"
+        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between gap-3">
+            <div>
               <h2 class="text-base font-semibold text-highlighted">
-                Sauvegardes
+                Catalogue
               </h2>
-              <UButton
-                icon="i-lucide-plus"
-                color="neutral"
-                variant="ghost"
-                aria-label="Nouveau deck"
-                @click="resetBuilder"
-              />
-            </div>
-          </template>
-
-          <div class="space-y-2">
-            <button
-              v-for="deck in savedDecks"
-              :key="deck.id"
-              type="button"
-              class="w-full rounded-lg border border-muted p-3 text-left transition hover:border-primary hover:bg-accented"
-              :class="{ 'border-primary bg-accented': deck.id === selectedDeckId }"
-              @click="setFromSavedDeck(deck)"
-            >
-              <p class="truncate font-medium text-highlighted">
-                {{ deck.name }}
-              </p>
               <p class="text-sm text-muted">
-                {{ deck.leaderCardId }} · {{ deck.cards.reduce((sum, card) => sum + card.quantity, 0) }} cartes
+                {{ filteredCards.length }} resultat(s)
               </p>
-            </button>
-
-            <UEmpty
-              v-if="savedDecks.length === 0"
-              icon="i-lucide-folder-open"
-              title="Aucun deck"
-              description="Cree un deck valide puis sauvegarde-le."
+            </div>
+            <UButton
+              icon="i-lucide-rotate-ccw"
+              color="neutral"
+              variant="ghost"
+              aria-label="Reinitialiser les filtres"
+              @click="resetCatalogFilters"
             />
           </div>
-        </UCard>
-      </aside>
+        </template>
 
-      <main class="min-w-0 space-y-4">
-        <UCard>
-          <template #header>
-            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
-              <UFormField label="Nom">
-                <UInput
-                  v-model="deckName"
-                  icon="i-lucide-pencil"
-                />
-              </UFormField>
-              <UFormField label="Leader">
-                <USelect
-                  v-model="leaderCardId"
-                  :items="leaderItems"
-                  value-key="value"
-                  placeholder="Choisir un Leader"
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
-          </template>
-
-          <div class="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-            <section class="space-y-3">
-              <img
-                v-if="selectedLeader?.imageUrl"
-                :src="selectedLeader.imageUrl"
-                :alt="selectedLeader.name"
-                class="mx-auto w-full max-w-56 rounded-lg border border-muted"
-              >
-              <UEmpty
-                v-else
-                icon="i-lucide-crown"
-                title="Leader"
-                description="Choisis le Leader avant de sauvegarder."
-              />
-            </section>
-
-            <section class="space-y-3">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 class="text-lg font-semibold text-highlighted">
-                    Liste principale
-                  </h2>
-                  <p class="text-sm text-muted">
-                    {{ mainDeckCount }} / 50 cartes
-                  </p>
-                </div>
-                <UBadge
-                  :color="validationData?.valid ? 'success' : 'error'"
-                  variant="subtle"
-                >
-                  {{ validationData?.valid ? 'Valide' : 'Invalide' }}
-                </UBadge>
-              </div>
-
-              <UAlert
-                v-if="validationData && !validationData.valid"
-                color="error"
-                variant="subtle"
-                icon="i-lucide-circle-alert"
-                :description="validationData.errors.map((error) => error.message).join(' ')"
-              />
-
-              <div class="grid gap-2">
-                <div
-                  v-for="line in deckLines"
-                  :key="line.cardId"
-                  class="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-muted p-3"
-                >
-                  <div class="min-w-0">
-                    <p class="truncate font-medium text-highlighted">
-                      {{ cardById.get(line.cardId)?.name ?? line.cardId }}
-                    </p>
-                    <p class="text-sm text-muted">
-                      {{ line.cardId }}
-                    </p>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <UButton
-                      icon="i-lucide-minus"
-                      color="neutral"
-                      variant="outline"
-                      size="sm"
-                      aria-label="Retirer"
-                      @click="removeCard(line.cardId)"
-                    />
-                    <span class="w-8 text-center text-sm font-medium">{{ line.quantity }}</span>
-                    <UButton
-                      icon="i-lucide-plus"
-                      color="neutral"
-                      variant="outline"
-                      size="sm"
-                      aria-label="Ajouter"
-                      @click="addCard(cardById.get(line.cardId)!)"
-                    />
-                  </div>
-                </div>
-
-                <UEmpty
-                  v-if="deckLines.length === 0"
-                  icon="i-lucide-list-plus"
-                  title="Deck vide"
-                  description="Ajoute des cartes depuis le catalogue."
-                />
-              </div>
-            </section>
-          </div>
-
-          <template #footer>
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                icon="i-lucide-save"
-                :loading="saving"
-                :disabled="!validationData?.valid"
-                @click="saveDeck"
-              >
-                Sauvegarder
-              </UButton>
-              <UButton
-                icon="i-lucide-trash-2"
-                color="error"
-                variant="outline"
-                :disabled="!selectedDeckId"
-                :loading="saving"
-                @click="deleteDeck"
-              >
-                Supprimer
-              </UButton>
-              <UButton
-                icon="i-lucide-rotate-ccw"
-                color="neutral"
-                variant="ghost"
-                @click="resetBuilder"
-              >
-                Reinitialiser
-              </UButton>
-            </div>
-          </template>
-        </UCard>
-
-        <UAlert
-          v-if="serverMessage"
-          color="success"
-          variant="subtle"
-          icon="i-lucide-circle-check"
-          :description="serverMessage"
-        />
-        <UAlert
-          v-if="serverError"
-          color="error"
-          variant="subtle"
-          icon="i-lucide-circle-alert"
-          :description="serverError"
-        />
-
-        <UCard>
-          <template #header>
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="text-base font-semibold text-highlighted">
-                  Catalogue
-                </h2>
-                <p class="text-sm text-muted">
-                  {{ filteredCards.length }} resultat(s) affiches
-                </p>
-              </div>
-              <UButton
-                icon="i-lucide-rotate-ccw"
-                color="neutral"
-                variant="ghost"
-                aria-label="Reinitialiser les filtres"
-                @click="resetCatalogFilters"
-              />
-            </div>
-          </template>
-
-          <div class="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <UFormField label="Recherche">
+        <div class="flex h-full min-h-0 flex-col gap-4">
+          <div class="grid shrink-0 gap-3 lg:grid-cols-[minmax(220px,1.2fr)_repeat(4,minmax(0,1fr))]">
+            <UFormField
+              label="Recherche"
+              class="w-full"
+            >
               <UInput
                 v-model="search"
                 icon="i-lucide-search"
                 placeholder="Nom, numero, texte"
+                class="w-full"
               />
             </UFormField>
 
@@ -574,193 +378,314 @@ function extractErrorMessage(error: unknown): string {
             </UFormField>
           </div>
 
-          <div
-            v-if="catalogPending"
-            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-          >
-            <USkeleton
-              v-for="index in 9"
-              :key="index"
-              class="h-32 rounded-lg"
-            />
-          </div>
+          <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div class="min-h-0 overflow-y-auto pr-1">
+              <div
+                v-if="catalogPending"
+                class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+              >
+                <USkeleton
+                  v-for="index in 12"
+                  :key="index"
+                  class="aspect-[5/7] rounded-lg"
+                />
+              </div>
 
-          <UEmpty
-            v-else-if="filteredCards.length === 0"
-            icon="i-lucide-search-x"
-            title="Aucune carte trouvee"
-            description="Modifie les filtres pour elargir la recherche."
-          />
+              <UEmpty
+                v-else-if="filteredCards.length === 0"
+                icon="i-lucide-search-x"
+                title="Aucune carte trouvee"
+                description="Modifie les filtres pour elargir la recherche."
+              />
 
-          <div
-            v-else
-            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-          >
-            <button
-              v-for="card in filteredCards"
-              :key="card.id"
-              type="button"
-              class="rounded-lg border border-muted bg-elevated p-3 text-left transition hover:border-primary hover:bg-accented"
-              :class="{ 'border-primary bg-accented': selectedCard?.id === card.id }"
-              @click="selectedCard = card"
-            >
-              <div class="flex gap-3">
-                <img
-                  v-if="card.imageUrl"
-                  :src="card.imageUrl"
-                  :alt="card.name"
-                  class="h-24 w-16 shrink-0 rounded object-cover"
-                  loading="lazy"
+              <div
+                v-else
+                class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+              >
+                <button
+                  v-for="card in filteredCards"
+                  :key="card.id"
+                  type="button"
+                  class="group aspect-[5/7] overflow-hidden rounded-lg border border-muted bg-elevated transition hover:border-primary hover:bg-accented"
+                  :class="{ 'border-primary ring-2 ring-primary/30': selectedCard?.id === card.id }"
+                  :aria-label="`Selectionner ${card.name}`"
+                  @click="selectedCard = card"
                 >
-                <div class="min-w-0 space-y-2">
-                  <div>
-                    <p class="truncate text-sm text-muted">
-                      {{ card.number }}
-                    </p>
-                    <h3 class="line-clamp-2 font-medium text-highlighted">
-                      {{ card.name }}
-                    </h3>
+                  <img
+                    v-if="card.imageUrl"
+                    :src="card.imageUrl"
+                    :alt="card.name"
+                    class="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                    loading="lazy"
+                  >
+                  <div
+                    v-else
+                    class="flex h-full w-full items-center justify-center text-muted"
+                  >
+                    <UIcon
+                      name="i-lucide-image-off"
+                      class="size-8"
+                    />
                   </div>
-                  <div class="flex flex-wrap gap-1">
+                </button>
+              </div>
+            </div>
+
+            <aside class="min-h-0 overflow-y-auto rounded-lg border border-muted p-3">
+              <div
+                v-if="selectedCard"
+                class="space-y-4"
+              >
+                <img
+                  v-if="selectedCard.imageUrl"
+                  :src="selectedCard.imageUrl"
+                  :alt="selectedCard.name"
+                  class="mx-auto w-full max-w-44 rounded-lg border border-muted"
+                >
+
+                <div>
+                  <p class="text-sm text-muted">
+                    {{ selectedCard.number }}
+                  </p>
+                  <h3 class="text-base font-semibold text-highlighted">
+                    {{ selectedCard.name }}
+                  </h3>
+                  <div class="mt-2 flex flex-wrap gap-1">
                     <UBadge
-                      color="neutral"
-                      variant="subtle"
-                    >
-                      {{ card.type }}
-                    </UBadge>
-                    <UBadge
-                      v-for="color in card.colors"
+                      v-for="color in selectedCard.colors"
                       :key="color"
-                      variant="soft"
+                      variant="outline"
+                      :style="getCardColorStyle(color)"
                     >
                       {{ color }}
                     </UBadge>
                   </div>
-                  <p class="line-clamp-3 text-sm text-muted">
-                    {{ card.text || 'Pas de texte.' }}
-                  </p>
-                  <UButton
-                    icon="i-lucide-list-plus"
-                    size="sm"
-                    @click.stop="addCard(card)"
-                  >
-                    Ajouter
-                  </UButton>
                 </div>
+
+                <dl class="grid gap-2 text-sm">
+                  <div
+                    v-for="[label, value] in selectedCardRows"
+                    :key="label"
+                    class="grid grid-cols-[84px_minmax(0,1fr)] gap-3"
+                  >
+                    <dt class="text-muted">
+                      {{ label }}
+                    </dt>
+                    <dd class="min-w-0 text-highlighted">
+                      {{ value }}
+                    </dd>
+                  </div>
+                </dl>
+
+                <p class="whitespace-pre-line text-sm text-muted">
+                  {{ selectedCard.text || 'Pas de texte.' }}
+                </p>
+
+                <UButton
+                  v-if="selectedCard.type === 'Leader'"
+                  icon="i-lucide-crown"
+                  :color="selectedCard.id === leaderCardId ? 'success' : 'primary'"
+                  block
+                  @click="chooseLeader(selectedCard)"
+                >
+                  {{ selectedCard.id === leaderCardId ? 'Leader selectionne' : 'Choisir comme Leader' }}
+                </UButton>
+                <UButton
+                  v-else
+                  icon="i-lucide-list-plus"
+                  :disabled="!canAddCard(selectedCard)"
+                  block
+                  @click="addCard(selectedCard)"
+                >
+                  {{ canAddCard(selectedCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
+                </UButton>
               </div>
-            </button>
+
+              <UEmpty
+                v-else
+                icon="i-lucide-square-mouse-pointer"
+                title="Aucune carte"
+                description="Selectionne une carte du catalogue."
+              />
+            </aside>
           </div>
-        </UCard>
-      </main>
+        </div>
+      </UCard>
 
-      <aside class="space-y-4">
-        <UCard>
-          <template #header>
-            <h2 class="text-base font-semibold text-highlighted">
-              Import / export
-            </h2>
-          </template>
-
+      <UCard
+        class="min-h-0 min-w-0"
+        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+      >
+        <template #header>
           <div class="space-y-3">
-            <UTextarea
-              v-model="importText"
-              :rows="12"
-              placeholder="1xST01-001&#10;4xST01-002"
-            />
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                icon="i-lucide-upload"
-                color="neutral"
-                variant="outline"
-                @click="importDeck"
+            <UFormField
+              label="Nom"
+              class="w-full"
+            >
+              <UInput
+                v-model="deckName"
+                icon="i-lucide-pencil"
+                class="w-full"
+              />
+            </UFormField>
+
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-semibold text-highlighted">
+                  Deck builder
+                </h2>
+                <p class="text-sm text-muted">
+                  {{ mainDeckCount }} / 50 cartes
+                </p>
+              </div>
+              <UBadge
+                :color="validationData?.valid ? 'success' : 'error'"
+                variant="subtle"
               >
-                Importer
-              </UButton>
-              <UButton
-                icon="i-lucide-download"
-                color="neutral"
-                variant="outline"
-                @click="copyExport"
-              >
-                Exporter
-              </UButton>
+                {{ validationData?.valid ? 'Valide' : 'Invalide' }}
+              </UBadge>
             </div>
           </div>
-        </UCard>
+        </template>
 
-        <UCard>
-          <template #header>
-            <h2 class="text-base font-semibold text-highlighted">
-              Carte selectionnee
-            </h2>
-          </template>
-
-          <div
-            v-if="selectedCard"
-            class="space-y-4"
-          >
+        <div class="flex h-full min-h-0 flex-col gap-4">
+          <section class="grid shrink-0 grid-cols-[96px_minmax(0,1fr)] gap-3">
             <img
-              v-if="selectedCard.imageUrl"
-              :src="selectedCard.imageUrl"
-              :alt="selectedCard.name"
-              class="mx-auto w-full max-w-56 rounded-lg border border-muted"
+              v-if="selectedLeader?.imageUrl"
+              :src="selectedLeader.imageUrl"
+              :alt="selectedLeader.name"
+              class="w-full rounded-lg border border-muted"
             >
-
-            <div>
-              <p class="text-sm text-muted">
-                {{ selectedCard.number }}
-              </p>
-              <h3 class="text-lg font-semibold text-highlighted">
-                {{ selectedCard.name }}
-              </h3>
+            <div
+              v-else
+              class="flex aspect-[5/7] items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
+            >
+              <UIcon
+                name="i-lucide-crown"
+                class="size-7"
+              />
             </div>
 
-            <dl class="grid gap-2 text-sm">
-              <div
-                v-for="[label, value] in selectedCardRows"
-                :key="label"
-                class="grid grid-cols-[84px_minmax(0,1fr)] gap-3"
-              >
-                <dt class="text-muted">
-                  {{ label }}
-                </dt>
-                <dd class="min-w-0 text-highlighted">
-                  {{ value }}
-                </dd>
-              </div>
-            </dl>
+            <div class="min-w-0 space-y-2">
+              <p class="truncate text-sm font-medium text-highlighted">
+                {{ selectedLeader?.name ?? 'Aucun Leader' }}
+              </p>
+              <p class="text-sm text-muted">
+                Choisis le Leader depuis le catalogue.
+              </p>
+            </div>
+          </section>
 
-            <p class="whitespace-pre-line text-sm text-muted">
-              {{ selectedCard.text || 'Pas de texte.' }}
-            </p>
+          <div class="shrink-0 space-y-2">
+            <UAlert
+              v-if="builderNotice"
+              color="warning"
+              variant="subtle"
+              icon="i-lucide-circle-alert"
+              :description="builderNotice"
+            />
 
-            <UButton
-              icon="i-lucide-list-plus"
-              block
-              @click="addCard(selectedCard)"
+            <UAlert
+              v-if="serverMessage"
+              color="success"
+              variant="subtle"
+              icon="i-lucide-circle-check"
+              :description="serverMessage"
+            />
+            <UAlert
+              v-if="serverError"
+              color="error"
+              variant="subtle"
+              icon="i-lucide-circle-alert"
+              :description="serverError"
+            />
+          </div>
+
+          <div class="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+            <div
+              v-for="line in deckLines"
+              :key="line.cardId"
+              class="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-muted p-2"
             >
-              Ajouter au deck
+              <img
+                v-if="cardById.get(line.cardId)?.imageUrl"
+                :src="cardById.get(line.cardId)?.imageUrl"
+                :alt="cardById.get(line.cardId)?.name ?? line.cardId"
+                class="h-16 w-11 rounded border border-muted object-cover"
+                loading="lazy"
+              >
+              <div
+                v-else
+                class="flex h-16 w-11 items-center justify-center rounded border border-muted bg-elevated text-muted"
+              >
+                <UIcon
+                  name="i-lucide-image-off"
+                  class="size-5"
+                />
+              </div>
+
+              <div class="min-w-0">
+                <p class="truncate font-medium text-highlighted">
+                  {{ cardById.get(line.cardId)?.name ?? line.cardId }}
+                </p>
+                <p class="text-sm text-muted">
+                  {{ line.cardId }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <UButton
+                  icon="i-lucide-minus"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Retirer"
+                  @click="removeCard(line.cardId)"
+                />
+                <span class="w-8 text-center text-sm font-medium">{{ line.quantity }}</span>
+                <UButton
+                  icon="i-lucide-plus"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Ajouter"
+                  :disabled="!canIncrementCard(line.cardId)"
+                  @click="incrementCard(line.cardId)"
+                />
+              </div>
+            </div>
+
+            <UEmpty
+              v-if="deckLines.length === 0"
+              icon="i-lucide-list-plus"
+              title="Deck vide"
+              description="Selectionne une carte dans le catalogue, puis ajoute-la depuis son detail."
+            />
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="grid grid-cols-2 gap-2">
+            <UButton
+              icon="i-lucide-save"
+              :loading="saving"
+              :disabled="!validationData?.valid"
+              block
+              @click="saveDeck"
+            >
+              Sauvegarder
+            </UButton>
+            <UButton
+              icon="i-lucide-rotate-ccw"
+              color="neutral"
+              variant="ghost"
+              block
+              @click="resetBuilder"
+            >
+              Reinitialiser
             </UButton>
           </div>
-
-          <UEmpty
-            v-else
-            icon="i-lucide-square-mouse-pointer"
-            title="Aucune carte"
-            description="Selectionne une carte du catalogue integre."
-          />
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <h2 class="text-base font-semibold text-highlighted">
-              Apercu export
-            </h2>
-          </template>
-
-          <pre class="max-h-96 overflow-auto rounded-lg bg-muted p-3 text-xs text-toned">{{ exportText || 'Aucun contenu.' }}</pre>
-        </UCard>
-      </aside>
+        </template>
+      </UCard>
     </div>
   </UContainer>
 </template>
