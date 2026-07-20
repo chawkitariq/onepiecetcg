@@ -6,7 +6,12 @@ import { CatalogService } from '../catalog/catalog.service';
 import { DecksService } from './decks.service';
 import { SavedDeck } from './saved-deck.entity';
 
-jest.mock('@onepiecetcg/shared', () => jest.requireActual('./shared-test.mock'));
+jest.mock('@onepiecetcg/shared', () => {
+  const sharedMock: typeof import('./shared-test.mock') =
+    jest.requireActual('./shared-test.mock');
+
+  return sharedMock;
+});
 
 const cards: Card[] = [
   card('L-001', 'Leader', ['Red']),

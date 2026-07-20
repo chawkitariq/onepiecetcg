@@ -10,9 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import type { DeckPayload } from '@onepiecetcg/shared';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../accounts/accounts.service';
+import { DeckIdParamDto, DeckPayloadDto, ImportDeckTextDto } from './deck.dto';
 import { DecksService } from './decks.service';
 
 type AuthenticatedRequest = Request & {
@@ -30,36 +30,42 @@ export class DecksController {
   }
 
   @Get(':id')
-  get(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
-    return this.decksService.get(request.user, id);
+  get(@Req() request: AuthenticatedRequest, @Param() params: DeckIdParamDto) {
+    return this.decksService.get(request.user, params.id);
   }
 
   @Post()
-  create(@Req() request: AuthenticatedRequest, @Body() payload: DeckPayload) {
+  create(
+    @Req() request: AuthenticatedRequest,
+    @Body() payload: DeckPayloadDto,
+  ) {
     return this.decksService.create(request.user, payload);
   }
 
   @Put(':id')
   update(
     @Req() request: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Body() payload: DeckPayload,
+    @Param() params: DeckIdParamDto,
+    @Body() payload: DeckPayloadDto,
   ) {
-    return this.decksService.update(request.user, id, payload);
+    return this.decksService.update(request.user, params.id, payload);
   }
 
   @Delete(':id')
-  remove(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
-    return this.decksService.remove(request.user, id);
+  remove(
+    @Req() request: AuthenticatedRequest,
+    @Param() params: DeckIdParamDto,
+  ) {
+    return this.decksService.remove(request.user, params.id);
   }
 
   @Post('validate')
-  validate(@Body() payload: DeckPayload) {
+  validate(@Body() payload: DeckPayloadDto) {
     return this.decksService.validate(payload);
   }
 
   @Post('import')
-  importText(@Body() body: { text: string; name?: string }) {
-    return this.decksService.importText(body.text ?? '', body.name);
+  importText(@Body() body: ImportDeckTextDto) {
+    return this.decksService.importText(body.text, body.name);
   }
 }

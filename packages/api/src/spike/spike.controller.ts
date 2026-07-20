@@ -1,5 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { AllowAnonymous, OptionalAuth, Session, type UserSession } from '@thallesp/nestjs-better-auth';
+import {
+  AllowAnonymous,
+  OptionalAuth,
+  Session,
+  type UserSession,
+} from '@thallesp/nestjs-better-auth';
+import { SpikeTypeormQueryDto } from './spike.dto';
 import { SpikeService } from './spike.service';
 
 @Controller('spike')
@@ -17,7 +23,7 @@ export class SpikeController {
 
   @AllowAnonymous()
   @Get('typeorm')
-  persistAndRead(@Query('label') label?: string) {
-    return this.spikeService.persistAndRead(label);
+  persistAndRead(@Query() query: SpikeTypeormQueryDto) {
+    return this.spikeService.persistAndRead(query.label);
   }
 }
