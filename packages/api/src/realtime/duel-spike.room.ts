@@ -36,4 +36,3 @@ export class DuelSpikeRoom extends Room<DuelSpikeState> {
     }
   }
 }
-

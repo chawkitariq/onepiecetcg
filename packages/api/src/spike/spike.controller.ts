@@ -21,4 +21,3 @@ export class SpikeController {
     return this.spikeService.persistAndRead(label);
   }
 }
-

@@ -51,3 +51,117 @@ export type CardFilterOptions = {
   colors: CardColor[];
   costs: number[];
 };
+
+export type DeckCard = {
+  cardId: string;
+  quantity: number;
+};
+
+export type Deck = {
+  id: string;
+  name: string;
+  leaderCardId: string;
+  cards: DeckCard[];
+  exportText: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DeckValidationErrorCode =
+  | 'MISSING_LEADER'
+  | 'LEADER_QUANTITY'
+  | 'LEADER_NOT_FOUND'
+  | 'LEADER_TYPE'
+  | 'MAIN_DECK_SIZE'
+  | 'CARD_NOT_FOUND'
+  | 'CARD_TYPE'
+  | 'CARD_QUANTITY'
+  | 'CARD_COLOR';
+
+export type DeckValidationError = {
+  code: DeckValidationErrorCode;
+  message: string;
+  cardId?: string;
+};
+
+export type DeckValidation = {
+  valid: boolean;
+  errors: DeckValidationError[];
+  leaderCardId: string | null;
+  mainDeckCount: number;
+};
+
+export type DeckPayload = {
+  name: string;
+  leaderCardId: string;
+  cards: DeckCard[];
+};
+
+export type DeckImportResult = {
+  payload: DeckPayload;
+  validation: DeckValidation;
+};
+
+export type DeckListResponse = {
+  decks: Deck[];
+};
+
+export function normalizeCardId(cardId: string): string {
+  return cardId.trim().toUpperCase();
+}
+
+export function normalizeDeckCards(cards: DeckCard[]): DeckCard[] {
+  const quantities = new Map<string, number>();
+
+  for (const card of cards) {
+    const cardId = normalizeCardId(card.cardId);
+    const quantity = Math.trunc(Number(card.quantity));
+
+    if (!cardId || !Number.isFinite(quantity) || quantity <= 0) {
+      continue;
+    }
+
+    quantities.set(cardId, (quantities.get(cardId) ?? 0) + quantity);
+  }
+
+  return Array.from(quantities.entries())
+    .map(([cardId, quantity]) => ({ cardId, quantity }))
+    .sort((left, right) => left.cardId.localeCompare(right.cardId));
+}
+
+export function exportDeckToText(deck: Pick<DeckPayload, 'leaderCardId' | 'cards'>): string {
+  const leaderCardId = normalizeCardId(deck.leaderCardId);
+  const lines = leaderCardId ? [`1x${leaderCardId}`] : [];
+
+  for (const card of normalizeDeckCards(deck.cards)) {
+    lines.push(`${card.quantity}x${card.cardId}`);
+  }
+
+  return lines.join('\n');
+}
+
+export function parseDeckText(text: string, name = 'Deck importe'): DeckPayload {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const parsed = lines.map((line) => {
+    const match = line.match(/^(\d+)\s*x\s*([A-Za-z0-9-]+)$/);
+
+    if (!match) {
+      return null;
+    }
+
+    return {
+      quantity: Number(match[1]),
+      cardId: normalizeCardId(match[2] ?? ''),
+    };
+  });
+  const [leader] = parsed;
+
+  return {
+    name,
+    leaderCardId: leader?.quantity === 1 ? leader.cardId : '',
+    cards: normalizeDeckCards(parsed.slice(1).filter((card): card is DeckCard => card !== null)),
+  };
+}

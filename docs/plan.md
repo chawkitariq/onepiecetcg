@@ -116,6 +116,8 @@ Objectif : rendre les cartes disponibles au deck builder et aux parties.
 
 Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder et partager ses decks.
 
+État : réalisé et audité. Les contrats partagés couvrent les decks, la validation et l'import/export texte ; le backend expose un module NestJS `/decks` protégé par session avec entité TypeORM, CRUD propriétaire et validation serveur ; le frontend fournit une page Nuxt `/decks` pour construire, importer/exporter, valider, sauvegarder, modifier et supprimer les decks.
+
 ### Backend
 
 - Créer les entités TypeORM pour les decks sauvegardés.

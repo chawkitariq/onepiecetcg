@@ -10,18 +10,19 @@ import type {
 const api = useApi()
 
 const search = ref('')
-const selectedSet = ref<string | undefined>()
-const selectedType = ref<CardType | undefined>()
-const selectedColor = ref<CardColor | undefined>()
-const selectedCost = ref<number | undefined>()
+const allFilter = '__all'
+const selectedSet = ref(allFilter)
+const selectedType = ref<CardType | typeof allFilter>(allFilter)
+const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
+const selectedCost = ref<number | typeof allFilter>(allFilter)
 const selectedCard = ref<Card | null>(null)
 
 const query = computed(() => ({
   q: search.value || undefined,
-  set: selectedSet.value,
-  type: selectedType.value,
-  color: selectedColor.value,
-  cost: selectedCost.value
+  set: selectedSet.value === allFilter ? undefined : selectedSet.value,
+  type: selectedType.value === allFilter ? undefined : selectedType.value,
+  color: selectedColor.value === allFilter ? undefined : selectedColor.value,
+  cost: selectedCost.value === allFilter ? undefined : selectedCost.value
 }))
 
 const { data, error, pending, refresh } = await useAsyncData(
@@ -40,22 +41,22 @@ const filters = computed<CardFilterOptions>(() => data.value?.filters ?? {
 const cards = computed(() => data.value?.cards ?? [])
 
 const setItems = computed(() => [
-  { label: 'Tous les sets', value: undefined },
+  { label: 'Tous les sets', value: allFilter },
   ...filters.value.sets.map((set) => ({ label: `${set.id} - ${set.name}`, value: set.id }))
 ])
 
 const typeItems = computed(() => [
-  { label: 'Tous les types', value: undefined },
+  { label: 'Tous les types', value: allFilter },
   ...filters.value.types.map((type) => ({ label: type, value: type }))
 ])
 
 const colorItems = computed(() => [
-  { label: 'Toutes les couleurs', value: undefined },
+  { label: 'Toutes les couleurs', value: allFilter },
   ...filters.value.colors.map((color) => ({ label: color, value: color }))
 ])
 
 const costItems = computed(() => [
-  { label: 'Tous les couts', value: undefined },
+  { label: 'Tous les couts', value: allFilter },
   ...filters.value.costs.map((cost) => ({ label: String(cost), value: cost }))
 ])
 
@@ -79,10 +80,10 @@ const detailRows = computed(() => {
 
 function resetFilters() {
   search.value = ''
-  selectedSet.value = undefined
-  selectedType.value = undefined
-  selectedColor.value = undefined
-  selectedCost.value = undefined
+  selectedSet.value = allFilter
+  selectedType.value = allFilter
+  selectedColor.value = allFilter
+  selectedCost.value = allFilter
 }
 </script>
 

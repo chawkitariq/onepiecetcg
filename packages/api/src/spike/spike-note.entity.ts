@@ -11,4 +11,3 @@ export class SpikeNote {
   @CreateDateColumn()
   createdAt!: Date;
 }
-
