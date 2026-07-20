@@ -14,6 +14,8 @@ Ce plan découpe `docs/spec.md` en étapes livrables. L'ordre privilégie les fo
 
 Objectif : valider les briques risquées avant de construire le produit dessus.
 
+État : réalisé. Les preuves sont documentées dans `docs/spikes/step-0-technical-spike.md`.
+
 ### Backend
 
 - Créer une preuve d'intégration Better Auth dans NestJS.

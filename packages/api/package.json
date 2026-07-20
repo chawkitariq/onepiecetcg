@@ -20,13 +20,22 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@colyseus/schema": "^2.0.37",
+    "@colyseus/ws-transport": "0.15.3",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/typeorm": "^11.0.3",
+    "@thallesp/nestjs-better-auth": "^2.7.0",
+    "better-auth": "^1.6.23",
+    "colyseus": "0.15.57",
+    "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "typeorm": "^1.1.0"
   },
   "devDependencies": {
+    "@colyseus/testing": "0.15.4",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
