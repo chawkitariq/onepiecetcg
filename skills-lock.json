@@ -61,11 +61,11 @@
       "skillPath": "skills/motion/SKILL.md",
       "computedHash": "45d0803ea76f82fa40af91858472fb4528a8ce4c2a9a710b785e796cd5b3fe98"
     },
-    "nestjs-expert": {
-      "source": "sickn33/antigravity-awesome-skills",
+    "nestjs-dev-guidelines": {
+      "source": "myatminlu/vector-skills",
       "sourceType": "github",
-      "skillPath": "skills/nestjs-expert/SKILL.md",
-      "computedHash": "d370926a87d009fb6df3838fc6e3cc56c327c753d954016fe282eac97678990e"
+      "skillPath": "skills/nestjs-dev-guidelines/SKILL.md",
+      "computedHash": "ee299d8e05b6f555e6a36cf4ba9fa0955fff118abc90ad79d792d6d9b216dc88"
     },
     "nuxt": {
       "source": "onmax/nuxt-skills",
