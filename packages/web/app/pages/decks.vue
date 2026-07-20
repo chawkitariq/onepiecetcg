@@ -20,6 +20,8 @@ const leaderCardId = ref('')
 const deckCards = ref<Array<{ cardId: string, quantity: number }>>([])
 const search = ref('')
 const allFilter = '__all'
+const catalogFilterStorageKey = 'onepiecetcg:deck-builder:catalog-filters'
+const persistedCatalogFilters = useLocalStorage<PersistedCatalogFilters>(catalogFilterStorageKey, {})
 const selectedSet = ref(allFilter)
 const selectedType = ref<CardType | typeof allFilter>(allFilter)
 const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
@@ -30,8 +32,17 @@ const serverError = ref<string | null>(null)
 const builderNotice = ref<string | null>(null)
 const saving = ref(false)
 
+type PersistedCatalogFilters = {
+  search?: string
+  set?: string
+  type?: CardType | typeof allFilter
+  color?: CardColor | typeof allFilter
+  cost?: number | typeof allFilter
+}
+
 onMounted(() => {
   void refreshSession()
+  restoreCatalogFilters()
 })
 
 const { data: catalogData, pending: catalogPending } = await useAsyncData(
@@ -98,6 +109,8 @@ watch(payload, () => {
   void refreshValidation()
 }, { deep: true, immediate: true })
 
+watch([search, selectedSet, selectedType, selectedColor, selectedCost], persistCatalogFilters)
+
 const setItems = computed(() => [
   { label: 'Tous les sets', value: allFilter },
   ...filters.value.sets.map(set => ({ label: `${set.id} - ${set.name}`, value: set.id }))
@@ -154,6 +167,32 @@ function resetCatalogFilters() {
   selectedType.value = allFilter
   selectedColor.value = allFilter
   selectedCost.value = allFilter
+}
+
+function restoreCatalogFilters() {
+  const persistedFilters = persistedCatalogFilters.value
+  const persistedSet = persistedFilters.set
+  const persistedType = persistedFilters.type
+  const persistedColor = persistedFilters.color
+  const persistedCost = persistedFilters.cost
+
+  search.value = typeof persistedFilters.search === 'string' ? persistedFilters.search : ''
+  selectedSet.value = persistedSet && filters.value.sets.some(set => set.id === persistedSet) ? persistedSet : allFilter
+  selectedType.value = persistedType && filters.value.types.includes(persistedType as CardType) ? persistedType as CardType : allFilter
+  selectedColor.value = persistedColor && filters.value.colors.includes(persistedColor as CardColor) ? persistedColor as CardColor : allFilter
+  selectedCost.value = typeof persistedCost === 'number' && filters.value.costs.includes(persistedCost)
+    ? persistedCost
+    : allFilter
+}
+
+function persistCatalogFilters() {
+  persistedCatalogFilters.value = {
+    search: search.value,
+    set: selectedSet.value,
+    type: selectedType.value,
+    color: selectedColor.value,
+    cost: selectedCost.value
+  }
 }
 
 function getCardQuantity(card: Card): number {

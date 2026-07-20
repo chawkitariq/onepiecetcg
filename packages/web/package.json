@@ -14,9 +14,10 @@
     "@iconify-json/lucide": "^1.2.117",
     "@iconify-json/simple-icons": "^1.2.90",
     "@nuxt/ui": "^4.10.0",
+    "@onepiecetcg/shared": "workspace:*",
+    "@vueuse/nuxt": "^14.3.0",
     "colyseus.js": "0.15.28",
     "nuxt": "^4.4.8",
-    "@onepiecetcg/shared": "workspace:*",
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
