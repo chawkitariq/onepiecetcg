@@ -179,6 +179,39 @@ function resetBuilder() {
   builderNotice.value = null
 }
 
+function createRandomDeck() {
+  serverMessage.value = null
+  serverError.value = null
+  builderNotice.value = null
+
+  const leaders = shuffle(cards.value.filter(card => card.type === 'Leader'))
+  const selectedRandomLeader = leaders.find((leader) => {
+    const candidateCapacity = getRandomDeckCandidates(leader)
+      .reduce(sum => sum + 4, 0)
+
+    return candidateCapacity >= 50
+  })
+
+  if (!selectedRandomLeader) {
+    builderNotice.value = 'Impossible de generer un deck aleatoire avec le catalogue charge.'
+    return
+  }
+
+  const randomLines = buildRandomDeckLines(selectedRandomLeader)
+
+  if (randomLines.length === 0) {
+    builderNotice.value = 'Impossible de trouver 50 cartes compatibles avec ce Leader.'
+    return
+  }
+
+  selectedDeckId.value = null
+  deckName.value = `Deck aleatoire - ${selectedRandomLeader.name}`
+  leaderCardId.value = selectedRandomLeader.id
+  selectedCard.value = selectedRandomLeader
+  deckCards.value = randomLines
+  builderNotice.value = 'Deck aleatoire genere.'
+}
+
 function resetCatalogFilters() {
   search.value = ''
   selectedSet.value = allFilter
@@ -219,6 +252,75 @@ function getCardQuantity(card: Card): number {
 
 function canAddCard(card: Card): boolean {
   return card.type !== 'Leader' && getCardQuantity(card) < 4 && mainDeckCount.value < 50
+}
+
+function getRandomDeckCandidates(leader: Card): Card[][] {
+  const leaderColors = new Set(leader.colors)
+  const candidatesByNumber = new Map<string, Card[]>()
+
+  for (const card of cards.value) {
+    const isMainDeckCard = card.type !== 'Leader' && card.type !== 'DON!!'
+    const matchesLeaderColors = card.colors.every(color => leaderColors.has(color))
+
+    if (!isMainDeckCard || !matchesLeaderColors) {
+      continue
+    }
+
+    const group = candidatesByNumber.get(card.number) ?? []
+    group.push(card)
+    candidatesByNumber.set(card.number, group)
+  }
+
+  return [...candidatesByNumber.values()]
+}
+
+function buildRandomDeckLines(leader: Card): Array<{ cardId: string, quantity: number }> {
+  const candidateGroups = shuffle(getRandomDeckCandidates(leader))
+  const generatedCards = new Map<string, number>()
+  let remainingCards = 50
+
+  while (remainingCards > 0 && candidateGroups.length > 0) {
+    const group = candidateGroups.shift()
+
+    if (!group) {
+      break
+    }
+
+    const card = randomItem(group)
+    const quantity = Math.min(remainingCards, randomInteger(1, 4))
+
+    generatedCards.set(card.id, (generatedCards.get(card.id) ?? 0) + quantity)
+    remainingCards -= quantity
+  }
+
+  if (remainingCards > 0) {
+    return []
+  }
+
+  return [...generatedCards.entries()].map(([cardId, quantity]) => ({ cardId, quantity }))
+}
+
+function randomInteger(minimum: number, maximum: number): number {
+  return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum
+}
+
+function randomItem<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)] as T
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const shuffledItems = [...items]
+
+  for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const currentItem = shuffledItems[index] as T
+    const swapItem = shuffledItems[swapIndex] as T
+
+    shuffledItems[index] = swapItem
+    shuffledItems[swapIndex] = currentItem
+  }
+
+  return shuffledItems
 }
 
 function getCardColorStyle(color: CardColor) {
@@ -609,12 +711,23 @@ function extractErrorMessage(error: unknown): string {
                   {{ mainDeckCount }} / 50 cartes
                 </p>
               </div>
-              <UBadge
-                :color="validationData?.valid ? 'success' : 'error'"
-                variant="subtle"
-              >
-                {{ validationData?.valid ? 'Valide' : 'Invalide' }}
-              </UBadge>
+              <div class="flex items-center gap-2">
+                <UButton
+                  icon="i-lucide-shuffle"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  label="Aleatoire"
+                  :disabled="catalogPending || cards.length === 0"
+                  @click="createRandomDeck"
+                />
+                <UBadge
+                  :color="validationData?.valid ? 'success' : 'error'"
+                  variant="subtle"
+                >
+                  {{ validationData?.valid ? 'Valide' : 'Invalide' }}
+                </UBadge>
+              </div>
             </div>
           </div>
         </template>

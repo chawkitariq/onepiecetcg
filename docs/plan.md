@@ -116,7 +116,7 @@ Objectif : rendre les cartes disponibles au deck builder et aux parties.
 
 Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder et partager ses decks depuis une page unique combinant builder et catalogue.
 
-État : réalisé et audité. Les contrats partagés couvrent les decks, la validation et l'import/export texte ; le backend expose un module NestJS `/decks` protégé par session avec entité TypeORM, CRUD propriétaire et validation serveur ; le frontend fournit une page Nuxt `/decks` pour consulter le catalogue intégré, construire, importer/exporter, valider, sauvegarder, modifier et supprimer les decks.
+État : réalisé et audité. Les contrats partagés couvrent les decks, la validation et l'import/export texte ; le backend expose un module NestJS `/decks` protégé par session avec entité TypeORM, CRUD propriétaire et validation serveur ; le frontend fournit une page Nuxt `/decks` pour consulter le catalogue intégré, construire, générer un deck complet aléatoire valide, importer/exporter, valider, sauvegarder, modifier et supprimer les decks.
 
 ### Backend
 
@@ -130,12 +130,14 @@ Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder
 
 - Créer le deck builder avec sélection du Leader.
 - Ajouter et retirer des cartes depuis le catalogue intégré.
+- Ajouter une action de génération de deck complet aléatoire qui choisit un Leader disponible, produit 50 cartes hors Leader/DON!! compatibles avec ses couleurs, respecte le plafond de 4 par numéro de carte et laisse le deck modifiable avant sauvegarde.
 - Afficher le compteur de cartes, les exemplaires et les erreurs de validation.
 - Ajouter les actions importer, exporter, sauvegarder, modifier et supprimer.
 
 ### Validation
 
 - Un utilisateur crée un deck valide et le retrouve après reconnexion.
+- Un utilisateur peut générer un deck aléatoire complet et valide depuis le catalogue chargé.
 - Un deck invalide est bloqué côté client et côté serveur.
 - L'import/export texte conserve le contenu du deck.
 

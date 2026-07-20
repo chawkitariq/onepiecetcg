@@ -96,6 +96,7 @@ Repris et adapté des versions précédentes :
 - La normalisation doit tenir compte des champs réellement exposés par OPTCG API, notamment `card_set_id`, `card_name`, `set_id`, `set_name`, `card_text`, `card_color`, `card_type`, `life`, `card_cost`, `card_power`, `counter_amount`, `attribute`, `sub_types`, `rarity` et `card_image`. Le schéma partagé garde des noms stables et indépendants de la source (`number`, `name`, `set`, `text`, `colors`, `type`, `life`, `cost`, `power`, `counter`, `attributes`, `families`, `rarity`, `imageUrl`).
 - Fiche carte complète depuis le deck builder (image, texte, coût, puissance, contre, type, édition).
 - Deck builder central : sélection Leader, ajout/retrait de cartes depuis le catalogue intégré, 50 cartes, plafond de 4 exemplaires, validation de couleur vs Leader.
+- Génération de deck complet aléatoire depuis le deck builder : l'utilisateur peut créer un nouveau deck non sauvegardé automatiquement, avec un Leader choisi aléatoirement parmi les Leaders disponibles et 50 cartes hors Leader/DON!! compatibles avec ses couleurs. Le générateur doit respecter les règles de construction standard (50 cartes, maximum 4 exemplaires par numéro de carte, aucune couleur absente du Leader) et ne doit proposer aucun deck qui échouerait à la validation serveur. Si le catalogue chargé ne contient pas assez de cartes compatibles pour construire un deck complet, l'interface affiche une erreur explicite plutôt qu'un deck partiel.
 - 🆕 **Decks liés au compte utilisateur** (persistés en base), avec **import/export au format texte ligne par ligne** (`QUANTITÉxCARD_ID`, ex: `4xST01-003`) conservé en complément — format standard du milieu, facilement partageable entre joueurs (Discord, forums) sans dépendre d'un fichier JSON. La première ligne représente toujours le Leader (`1xCARD_ID`). Voir le schéma de données pour la spécification complète du parsing et de la validation.
 
 ## 5. Matchmaking et lobby
@@ -133,6 +134,7 @@ Repris et adapté des versions précédentes :
 
 - Un utilisateur peut se connecter via OAuth et retrouver ses decks sauvegardés d'une session à l'autre.
 - Un utilisateur peut construire un deck valide (50 cartes, plafond de 4, couleur cohérente avec le Leader) et le sauvegarder sur son compte.
+- Un utilisateur peut générer un deck complet aléatoire depuis le deck builder ; le résultat respecte les contraintes de construction et reste modifiable avant sauvegarde.
 - Deux utilisateurs peuvent se retrouver en partie via matchmaking aléatoire ou via un code de room partagé.
 - Une partie se déroule en temps réel avec information cachée réellement respectée côté serveur (main et Vie adverses non exposées côté client).
 - Le combat est résolu avec ciblage réel validé côté serveur ; Blocage et Contre restent déclaratifs (le joueur les applique lui-même, sans vérification du texte de la carte par le serveur).
