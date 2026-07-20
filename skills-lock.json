@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "ai-interface-reviewer": {
+      "source": "uxuiprinciples/agent-skills",
+      "sourceType": "github",
+      "skillPath": "ai-interface-reviewer/SKILL.md",
+      "computedHash": "56c403a4d1ab767f419bd237e4f92a08b351d348ea514c1cd9e14ab6183c836d"
+    },
     "better-auth-best-practices": {
       "source": "better-auth/skills",
       "sourceType": "github",
@@ -30,6 +36,18 @@
       "sourceType": "github",
       "skillPath": "better-auth/emailAndPassword/SKILL.md",
       "computedHash": "747d7f73bd9e2ec5317b8ef88dc70f97df716d00e3d02de4051feebaa48b062d"
+    },
+    "flow-checker": {
+      "source": "uxuiprinciples/agent-skills",
+      "sourceType": "github",
+      "skillPath": "flow-checker/SKILL.md",
+      "computedHash": "a8b9922ade60bf9dde5575e6f4313879c81091ad79d575ea71c493e017af219c"
+    },
+    "interface-auditor": {
+      "source": "uxuiprinciples/agent-skills",
+      "sourceType": "github",
+      "skillPath": "interface-auditor/SKILL.md",
+      "computedHash": "c96ccb672ba1d08022064c4286320fa71ce464e7e5a000db2081777b6b6ac383"
     },
     "jsdoc-typescript-docs": {
       "source": "patricio0312rev/skills",
@@ -114,6 +132,18 @@
       "sourceType": "github",
       "skillPath": "better-auth/twoFactor/SKILL.md",
       "computedHash": "a6f720042e5a090909e0d519a6a50a7eb8179553cd5315f0bbad852a6d20dac8"
+    },
+    "uxui-evaluator": {
+      "source": "uxuiprinciples/agent-skills",
+      "sourceType": "github",
+      "skillPath": "uxui-evaluator/SKILL.md",
+      "computedHash": "1232a93a9619445720f2083d615d7138425de8b09905676f5b8fadf4afb1ba9a"
+    },
+    "vibe-coding-advisor": {
+      "source": "uxuiprinciples/agent-skills",
+      "sourceType": "github",
+      "skillPath": "vibe-coding-advisor/SKILL.md",
+      "computedHash": "4bd9d92157435783a0da9e3eacd95fc55424030e21256144aaed457c71846724"
     },
     "vite": {
       "source": "onmax/nuxt-skills",
