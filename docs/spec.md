@@ -90,7 +90,9 @@ Fonctions attendues :
 ## 4. Catalogue de cartes et deck builder
 
 Repris et adapté des versions précédentes :
-- Catalogue filtrable (recherche, set, type, couleur, coût) via l'API OPTCG, avec cache local pour limiter les appels.
+- Catalogue filtrable (recherche, set, type, couleur, coût) via l'API OPTCG officielle (`https://optcgapi.com/api`), avec cache local pour limiter les appels.
+- Le backend consomme les familles documentées séparément (`/allSetCards/`, `/allSTCards/`, `/allPromoCards/`, `/allDonCards/`) et normalise toutes les réponses vers le schéma partagé. Si une famille optionnelle de l'API source est temporairement indisponible ou diverge de la documentation, le catalogue ne doit pas tomber entièrement tant qu'au moins une source exploitable répond ; il doit servir le cache existant si possible, sinon retourner une erreur explicite d'indisponibilité.
+- La normalisation doit tenir compte des champs réellement exposés par OPTCG API, notamment `card_set_id`, `card_name`, `set_id`, `set_name`, `card_text`, `card_color`, `card_type`, `life`, `card_cost`, `card_power`, `counter_amount`, `attribute`, `sub_types`, `rarity` et `card_image`. Le schéma partagé garde des noms stables et indépendants de la source (`number`, `name`, `set`, `text`, `colors`, `type`, `life`, `cost`, `power`, `counter`, `attributes`, `families`, `rarity`, `imageUrl`).
 - Fiche carte complète (image, texte, coût, puissance, contre, type, édition).
 - Deck builder : sélection Leader, 50 cartes, plafond de 4 exemplaires, validation de couleur vs Leader.
 - 🆕 **Decks liés au compte utilisateur** (persistés en base), avec **import/export au format texte ligne par ligne** (`QUANTITÉxCARD_ID`, ex: `4xST01-003`) conservé en complément — format standard du milieu, facilement partageable entre joueurs (Discord, forums) sans dépendre d'un fichier JSON. La première ligne représente toujours le Leader (`1xCARD_ID`). Voir le schéma de données pour la spécification complète du parsing et de la validation.

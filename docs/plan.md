@@ -90,6 +90,8 @@ Objectif : permettre aux joueurs de posséder une session et des données persis
 
 Objectif : rendre les cartes disponibles au deck builder et aux parties.
 
+État : réalisé et audité. Le catalogue expose des types partagés dans `packages/shared`, un module NestJS `/catalog` qui consomme l'API OPTCG officielle (`https://optcgapi.com/api`) avec normalisation et cache local, des endpoints de recherche/filtres/fiche carte, une tolérance aux familles source partiellement indisponibles, et une page Nuxt `/catalogue` avec filtres MVP et fiche complète.
+
 ### Backend
 
 - Créer le module catalogue.

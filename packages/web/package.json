@@ -16,6 +16,7 @@
     "@nuxt/ui": "^4.10.0",
     "colyseus.js": "0.15.28",
     "nuxt": "^4.4.8",
+    "@onepiecetcg/shared": "workspace:*",
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {

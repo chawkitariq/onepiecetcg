@@ -56,7 +56,7 @@ Backend unit tests use Jest and follow the `*.spec.ts` naming pattern in `packag
 
 ## Commit & Pull Request Guidelines
 
-This repository has no commit history yet, so use clear, imperative commit subjects such as `Add API health check` or `Fix deck list layout`. Keep changes scoped by package where possible.
+This repository has no commit history yet, so use angular commit convention. Keep changes scoped by package where possible.
 
 Pull requests should include a short summary, the commands run, linked issues or specs when relevant, and screenshots for visible UI changes. Note any untested areas explicitly.
 
