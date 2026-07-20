@@ -57,7 +57,11 @@ async function joinRoom() {
         </p>
 
         <template #footer>
-          <UButton icon="i-lucide-cookie" label="Tester" @click="checkSession" />
+          <UButton
+            icon="i-lucide-cookie"
+            label="Tester"
+            @click="checkSession"
+          />
         </template>
       </UCard>
 
@@ -73,7 +77,11 @@ async function joinRoom() {
         </p>
 
         <template #footer>
-          <UButton icon="i-lucide-plug-zap" label="Rejoindre" @click="joinRoom" />
+          <UButton
+            icon="i-lucide-plug-zap"
+            label="Rejoindre"
+            @click="joinRoom"
+          />
         </template>
       </UCard>
     </section>

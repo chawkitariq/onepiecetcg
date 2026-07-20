@@ -6,6 +6,7 @@ import type {
   CardSearchResponse,
   CardType,
   Deck,
+  DeckListResponse,
   DeckPayload,
   DeckValidation
 } from '@onepiecetcg/shared'
@@ -50,7 +51,14 @@ const { data: catalogData, pending: catalogPending } = await useAsyncData(
   () => api<CardSearchResponse>('/catalog/cards')
 )
 
+const { data: deckListData, refresh: refreshDecks } = await useAsyncData(
+  'saved-decks',
+  () => api<DeckListResponse>('/decks'),
+  { default: () => ({ decks: [] }) }
+)
+
 const cards = computed(() => catalogData.value?.cards ?? [])
+const savedDecks = computed(() => deckListData.value?.decks ?? [])
 const filters = computed<CardFilterOptions>(() => catalogData.value?.filters ?? {
   sets: [],
   types: [],
@@ -150,6 +158,16 @@ const selectedCardRows = computed(() => {
     ['Rarete', selectedCard.value.rarity ?? '-']
   ]
 })
+
+function setFromSavedDeck(deck: Deck) {
+  selectedDeckId.value = deck.id
+  deckName.value = deck.name
+  leaderCardId.value = deck.leaderCardId
+  deckCards.value = [...deck.cards]
+  serverMessage.value = null
+  serverError.value = null
+  builderNotice.value = null
+}
 
 function resetBuilder() {
   selectedDeckId.value = null
@@ -305,6 +323,7 @@ async function saveDeck() {
 
     selectedDeckId.value = saved.id
     serverMessage.value = 'Deck sauvegarde.'
+    await refreshDecks()
   } catch (error: unknown) {
     serverError.value = extractErrorMessage(error)
   } finally {
@@ -330,24 +349,14 @@ function extractErrorMessage(error: unknown): string {
 </script>
 
 <template>
-  <UContainer class="max-w-[1600px] py-4">
-    <UAlert
-      v-if="!profile"
-      class="mb-3"
-      color="warning"
-      variant="subtle"
-      icon="i-lucide-lock"
-      title="Connexion requise"
-      description="Les decks sauvegardes sont lies au compte joueur."
-    />
-
-    <div class="grid min-h-0 w-full gap-4 overflow-hidden xl:h-[calc(100vh-6rem)] xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.34fr)]">
+  <main class="h-screen overflow-hidden px-4 py-3">
+    <div class="mx-auto grid h-full max-w-[2400px] min-w-0 gap-4 xl:grid-cols-[minmax(520px,1.35fr)_minmax(300px,0.55fr)_minmax(360px,0.75fr)_minmax(260px,0.45fr)]">
       <UCard
         class="min-h-0 min-w-0"
         :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
       >
         <template #header>
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex items-start justify-between gap-3">
             <div>
               <h2 class="text-base font-semibold text-highlighted">
                 Catalogue
@@ -364,189 +373,98 @@ function extractErrorMessage(error: unknown): string {
               @click="resetCatalogFilters"
             />
           </div>
+
+          <div class="grid w-full gap-2 2xl:grid-cols-4">
+            <UInput
+              v-model="search"
+              icon="i-lucide-search"
+              placeholder="Nom, numero, texte"
+              class="w-full 2xl:col-span-4"
+            />
+
+            <USelect
+              v-model="selectedSet"
+              :items="setItems"
+              value-key="value"
+              aria-label="Set"
+              class="w-full"
+            />
+
+            <USelect
+              v-model="selectedType"
+              :items="typeItems"
+              value-key="value"
+              aria-label="Type"
+              class="w-full"
+            />
+
+            <USelect
+              v-model="selectedColor"
+              :items="colorItems"
+              value-key="value"
+              aria-label="Couleur"
+              class="w-full"
+            />
+
+            <USelect
+              v-model="selectedCost"
+              :items="costItems"
+              value-key="value"
+              aria-label="Cout"
+              class="w-full"
+            />
+          </div>
         </template>
 
-        <div class="flex h-full min-h-0 flex-col gap-4">
-          <div class="grid shrink-0 gap-3 lg:grid-cols-[minmax(220px,1.2fr)_repeat(4,minmax(0,1fr))]">
-            <UFormField
-              label="Recherche"
-              class="w-full"
-            >
-              <UInput
-                v-model="search"
-                icon="i-lucide-search"
-                placeholder="Nom, numero, texte"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField label="Set">
-              <USelect
-                v-model="selectedSet"
-                :items="setItems"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField label="Type">
-              <USelect
-                v-model="selectedType"
-                :items="typeItems"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField label="Couleur">
-              <USelect
-                v-model="selectedColor"
-                :items="colorItems"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField label="Cout">
-              <USelect
-                v-model="selectedCost"
-                :items="costItems"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
+        <div class="h-full min-h-0 overflow-y-auto pr-1">
+          <div
+            v-if="catalogPending"
+            class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4"
+          >
+            <USkeleton
+              v-for="index in 12"
+              :key="index"
+              class="aspect-[5/7] rounded-lg"
+            />
           </div>
 
-          <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div class="min-h-0 overflow-y-auto pr-1">
-              <div
-                v-if="catalogPending"
-                class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+          <UEmpty
+            v-else-if="filteredCards.length === 0"
+            icon="i-lucide-search-x"
+            title="Aucune carte trouvee"
+            description="Modifie les filtres pour elargir la recherche."
+          />
+
+          <div
+            v-else
+            class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4"
+          >
+            <button
+              v-for="card in filteredCards"
+              :key="card.id"
+              type="button"
+              class="group aspect-[5/7] overflow-hidden rounded-lg border border-muted bg-elevated transition hover:border-primary hover:bg-accented"
+              :class="{ 'border-primary ring-2 ring-primary/30': selectedCard?.id === card.id }"
+              :aria-label="`Selectionner ${card.name}`"
+              @click="selectedCard = card"
+            >
+              <img
+                v-if="card.imageUrl"
+                :src="card.imageUrl"
+                :alt="card.name"
+                class="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                loading="lazy"
               >
-                <USkeleton
-                  v-for="index in 12"
-                  :key="index"
-                  class="aspect-[5/7] rounded-lg"
+              <div
+                v-else
+                class="flex h-full w-full items-center justify-center text-muted"
+              >
+                <UIcon
+                  name="i-lucide-image-off"
+                  class="size-8"
                 />
               </div>
-
-              <UEmpty
-                v-else-if="filteredCards.length === 0"
-                icon="i-lucide-search-x"
-                title="Aucune carte trouvee"
-                description="Modifie les filtres pour elargir la recherche."
-              />
-
-              <div
-                v-else
-                class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
-              >
-                <button
-                  v-for="card in filteredCards"
-                  :key="card.id"
-                  type="button"
-                  class="group aspect-[5/7] overflow-hidden rounded-lg border border-muted bg-elevated transition hover:border-primary hover:bg-accented"
-                  :class="{ 'border-primary ring-2 ring-primary/30': selectedCard?.id === card.id }"
-                  :aria-label="`Selectionner ${card.name}`"
-                  @click="selectedCard = card"
-                >
-                  <img
-                    v-if="card.imageUrl"
-                    :src="card.imageUrl"
-                    :alt="card.name"
-                    class="h-full w-full object-cover transition group-hover:scale-[1.02]"
-                    loading="lazy"
-                  >
-                  <div
-                    v-else
-                    class="flex h-full w-full items-center justify-center text-muted"
-                  >
-                    <UIcon
-                      name="i-lucide-image-off"
-                      class="size-8"
-                    />
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <aside class="min-h-0 overflow-y-auto rounded-lg border border-muted p-3">
-              <div
-                v-if="selectedCard"
-                class="space-y-4"
-              >
-                <img
-                  v-if="selectedCard.imageUrl"
-                  :src="selectedCard.imageUrl"
-                  :alt="selectedCard.name"
-                  class="mx-auto w-full max-w-44 rounded-lg border border-muted"
-                >
-
-                <div>
-                  <p class="text-sm text-muted">
-                    {{ selectedCard.number }}
-                  </p>
-                  <h3 class="text-base font-semibold text-highlighted">
-                    {{ selectedCard.name }}
-                  </h3>
-                  <div class="mt-2 flex flex-wrap gap-1">
-                    <UBadge
-                      v-for="color in selectedCard.colors"
-                      :key="color"
-                      variant="outline"
-                      :style="getCardColorStyle(color)"
-                    >
-                      {{ color }}
-                    </UBadge>
-                  </div>
-                </div>
-
-                <dl class="grid gap-2 text-sm">
-                  <div
-                    v-for="[label, value] in selectedCardRows"
-                    :key="label"
-                    class="grid grid-cols-[84px_minmax(0,1fr)] gap-3"
-                  >
-                    <dt class="text-muted">
-                      {{ label }}
-                    </dt>
-                    <dd class="min-w-0 text-highlighted">
-                      {{ value }}
-                    </dd>
-                  </div>
-                </dl>
-
-                <p class="whitespace-pre-line text-sm text-muted">
-                  {{ selectedCard.text || 'Pas de texte.' }}
-                </p>
-
-                <UButton
-                  v-if="selectedCard.type === 'Leader'"
-                  icon="i-lucide-crown"
-                  :color="selectedCard.id === leaderCardId ? 'success' : 'primary'"
-                  block
-                  @click="chooseLeader(selectedCard)"
-                >
-                  {{ selectedCard.id === leaderCardId ? 'Leader selectionne' : 'Choisir comme Leader' }}
-                </UButton>
-                <UButton
-                  v-else
-                  icon="i-lucide-list-plus"
-                  :disabled="!canAddCard(selectedCard)"
-                  block
-                  @click="addCard(selectedCard)"
-                >
-                  {{ canAddCard(selectedCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
-                </UButton>
-              </div>
-
-              <UEmpty
-                v-else
-                icon="i-lucide-square-mouse-pointer"
-                title="Aucune carte"
-                description="Selectionne une carte du catalogue."
-              />
-            </aside>
+            </button>
           </div>
         </div>
       </UCard>
@@ -554,6 +472,121 @@ function extractErrorMessage(error: unknown): string {
       <UCard
         class="min-h-0 min-w-0"
         :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+      >
+        <template #header>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-semibold text-highlighted">
+                  Carte selectionnee
+                </h2>
+                <p class="text-sm text-muted">
+                  {{ selectedCard?.number ?? 'Aucune carte' }}
+                </p>
+              </div>
+              <UBadge
+                v-if="selectedCard"
+                color="neutral"
+                variant="subtle"
+              >
+                {{ selectedCard.type }}
+              </UBadge>
+            </div>
+          </div>
+        </template>
+
+        <div
+          v-if="selectedCard"
+          class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
+        >
+          <div class="w-full">
+            <img
+              v-if="selectedCard.imageUrl"
+              :src="selectedCard.imageUrl"
+              :alt="selectedCard.name"
+              class="aspect-[5/7] w-full rounded-lg border border-muted object-cover"
+            >
+            <div
+              v-else
+              class="flex aspect-[5/7] w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
+            >
+              <UIcon
+                name="i-lucide-image-off"
+                class="size-8"
+              />
+            </div>
+          </div>
+
+          <div class="flex min-h-0 min-w-0 flex-col gap-4">
+            <div class="min-w-0 space-y-3">
+              <div>
+                <h3 class="text-base font-semibold text-highlighted">
+                  {{ selectedCard.name }}
+                </h3>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <UBadge
+                    v-for="color in selectedCard.colors"
+                    :key="color"
+                    variant="outline"
+                    :style="getCardColorStyle(color)"
+                  >
+                    {{ color }}
+                  </UBadge>
+                </div>
+              </div>
+
+              <p class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted">
+                {{ selectedCard.text || 'Pas de texte.' }}
+              </p>
+            </div>
+
+            <dl class="grid gap-2 text-sm">
+              <div
+                v-for="[label, value] in selectedCardRows"
+                :key="label"
+                class="grid grid-cols-[76px_minmax(0,1fr)] gap-3"
+              >
+                <dt class="text-muted">
+                  {{ label }}
+                </dt>
+                <dd class="min-w-0 text-highlighted">
+                  {{ value }}
+                </dd>
+              </div>
+            </dl>
+
+            <UButton
+              v-if="selectedCard.type === 'Leader'"
+              icon="i-lucide-crown"
+              :color="selectedCard.id === leaderCardId ? 'success' : 'primary'"
+              block
+              @click="chooseLeader(selectedCard)"
+            >
+              {{ selectedCard.id === leaderCardId ? 'Leader selectionne' : 'Choisir comme Leader' }}
+            </UButton>
+            <UButton
+              v-else
+              icon="i-lucide-list-plus"
+              :disabled="!canAddCard(selectedCard)"
+              block
+              @click="addCard(selectedCard)"
+            >
+              {{ canAddCard(selectedCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
+            </UButton>
+          </div>
+        </div>
+
+        <UEmpty
+          v-else
+          icon="i-lucide-square-mouse-pointer"
+          title="Aucune carte"
+          description="Selectionne une carte du catalogue."
+        />
+      </UCard>
+
+      <UCard
+        class="min-h-0 min-w-0"
+        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden', footer: 'shrink-0' }"
       >
         <template #header>
           <div class="space-y-3">
@@ -567,7 +600,6 @@ function extractErrorMessage(error: unknown): string {
                 class="w-full"
               />
             </UFormField>
-
             <div class="flex items-center justify-between gap-3">
               <div>
                 <h2 class="text-base font-semibold text-highlighted">
@@ -588,7 +620,7 @@ function extractErrorMessage(error: unknown): string {
         </template>
 
         <div class="flex h-full min-h-0 flex-col gap-4">
-          <section class="grid shrink-0 grid-cols-[96px_minmax(0,1fr)] gap-3">
+          <section class="grid shrink-0 grid-cols-[72px_minmax(0,1fr)] gap-3">
             <img
               v-if="selectedLeader?.imageUrl"
               :src="selectedLeader.imageUrl"
@@ -623,7 +655,6 @@ function extractErrorMessage(error: unknown): string {
               icon="i-lucide-circle-alert"
               :description="builderNotice"
             />
-
             <UAlert
               v-if="serverMessage"
               color="success"
@@ -664,7 +695,7 @@ function extractErrorMessage(error: unknown): string {
               </div>
 
               <div class="min-w-0">
-                <p class="truncate font-medium text-highlighted">
+                <p class="truncate text-sm font-medium text-highlighted">
                   {{ cardById.get(line.cardId)?.name ?? line.cardId }}
                 </p>
                 <p class="text-sm text-muted">
@@ -725,6 +756,70 @@ function extractErrorMessage(error: unknown): string {
           </div>
         </template>
       </UCard>
+
+      <UCard
+        class="min-h-0 min-w-0"
+        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+      >
+        <template #header>
+          <div class="flex shrink-0 items-center justify-between gap-3">
+            <div>
+              <h2 class="text-base font-semibold text-highlighted">
+                Decks sauvegardes
+              </h2>
+              <p class="text-sm text-muted">
+                {{ savedDecks.length }} deck(s)
+              </p>
+            </div>
+            <UButton
+              icon="i-lucide-plus"
+              color="neutral"
+              variant="ghost"
+              label="Nouveau"
+              @click="resetBuilder"
+            />
+          </div>
+        </template>
+
+        <div class="flex h-full min-h-0 flex-col gap-3">
+          <UAlert
+            v-if="!profile"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-lock"
+            title="Connexion requise"
+            description="Les decks sauvegardes sont lies au compte joueur."
+          />
+
+          <div class="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+            <button
+              v-for="deck in savedDecks"
+              :key="deck.id"
+              type="button"
+              class="w-full rounded-lg border border-muted p-3 text-left transition hover:border-primary hover:bg-accented"
+              :class="{ 'border-primary bg-accented ring-2 ring-primary/20': deck.id === selectedDeckId }"
+              @click="setFromSavedDeck(deck)"
+            >
+              <p class="truncate text-sm font-medium text-highlighted">
+                {{ deck.name }}
+              </p>
+              <p class="mt-1 text-xs text-muted">
+                {{ deck.cards.reduce((sum, card) => sum + card.quantity, 0) }} / 50 cartes
+              </p>
+              <p class="truncate text-xs text-muted">
+                Leader {{ deck.leaderCardId || '-' }}
+              </p>
+            </button>
+
+            <UEmpty
+              v-if="savedDecks.length === 0"
+              icon="i-lucide-folder-open"
+              title="Aucun deck"
+              description="Sauvegarde un deck valide pour le retrouver ici."
+            />
+          </div>
+        </div>
+      </UCard>
     </div>
-  </UContainer>
+  </main>
 </template>
