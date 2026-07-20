@@ -1,76 +1,144 @@
+<script setup lang="ts">
+const { errorMessage, loading, profile, refresh, signIn, signOut } = useSession()
+
+onMounted(() => {
+  void refresh()
+})
+</script>
+
 <template>
-  <div>
-    <UPageHero
-      title="Nuxt Starter Template"
-      description="A production-ready starter template powered by Nuxt UI. Build beautiful, accessible, and performant applications in minutes, not hours."
-      :links="[{
-        label: 'Get started',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank',
-        trailingIcon: 'i-lucide-arrow-right',
-        size: 'xl'
-      }, {
-        label: 'Use this template',
-        to: 'https://github.com/nuxt-ui-templates/starter',
-        target: '_blank',
-        icon: 'i-simple-icons-github',
-        size: 'xl',
-        color: 'neutral',
-        variant: 'subtle'
-      }]"
-    />
+  <UContainer class="py-10">
+    <div class="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+      <section class="space-y-6">
+        <div class="space-y-3">
+          <UBadge
+            color="primary"
+            variant="subtle"
+            icon="i-lucide-shield-check"
+          >
+            Simulateur One Piece TCG
+          </UBadge>
 
-    <UPageSection
-      id="features"
-      title="Everything you need to build modern Nuxt apps"
-      description="Start with a solid foundation. This template includes all the essentials for building production-ready applications with Nuxt UI's powerful component system."
-      :features="[{
-        icon: 'i-lucide-rocket',
-        title: 'Production-ready from day one',
-        description: 'Pre-configured with TypeScript, ESLint, Tailwind CSS, and all the best practices. Focus on building features, not setting up tooling.'
-      }, {
-        icon: 'i-lucide-palette',
-        title: 'Beautiful by default',
-        description: 'Leveraging Nuxt UI\'s design system with automatic dark mode, consistent spacing, and polished components that look great out of the box.'
-      }, {
-        icon: 'i-lucide-zap',
-        title: 'Lightning fast',
-        description: 'Optimized for performance with SSR/SSG support, automatic code splitting, and edge-ready deployment. Your users will love the speed.'
-      }, {
-        icon: 'i-lucide-blocks',
-        title: '100+ components included',
-        description: 'Access Nuxt UI\'s comprehensive component library. From forms to navigation, everything is accessible, responsive, and customizable.'
-      }, {
-        icon: 'i-lucide-code-2',
-        title: 'Developer experience first',
-        description: 'Auto-imports, hot module replacement, and TypeScript support. Write less boilerplate and ship more features.'
-      }, {
-        icon: 'i-lucide-shield-check',
-        title: 'Built for scale',
-        description: 'Enterprise-ready architecture with proper error handling, SEO optimization, and security best practices built-in.'
-      }]"
-    />
+          <h1 class="text-4xl font-semibold tracking-normal text-highlighted sm:text-5xl">
+            Connexion joueur
+          </h1>
 
-    <UPageSection>
-      <UPageCTA
-        title="Ready to build your next Nuxt app?"
-        description="Join thousands of developers building with Nuxt and Nuxt UI. Get this template and start shipping today."
-        variant="subtle"
-        :links="[{
-          label: 'Start building',
-          to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-          target: '_blank',
-          trailingIcon: 'i-lucide-arrow-right',
-          color: 'neutral'
-        }, {
-          label: 'View on GitHub',
-          to: 'https://github.com/nuxt-ui-templates/starter',
-          target: '_blank',
-          icon: 'i-simple-icons-github',
-          color: 'neutral',
-          variant: 'outline'
-        }]"
-      />
-    </UPageSection>
-  </div>
+          <p class="max-w-2xl text-lg text-muted">
+            Connecte-toi avec Google ou Discord pour retrouver ton profil et tes futurs decks sauvegardes.
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UButton
+            icon="i-simple-icons-google"
+            size="xl"
+            block
+            :loading="loading"
+            @click="signIn('google')"
+          >
+            Google
+          </UButton>
+
+          <UButton
+            icon="i-simple-icons-discord"
+            size="xl"
+            color="neutral"
+            variant="subtle"
+            block
+            :loading="loading"
+            @click="signIn('discord')"
+          >
+            Discord
+          </UButton>
+        </div>
+      </section>
+
+      <section class="rounded-lg border border-muted bg-elevated p-5">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-highlighted">
+            Etat de session
+          </h2>
+
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            :loading="loading"
+            aria-label="Actualiser"
+            @click="refresh"
+          />
+        </div>
+
+        <UAlert
+          v-if="errorMessage"
+          class="mb-4"
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          :description="errorMessage"
+        />
+
+        <div
+          v-if="profile"
+          class="space-y-4"
+        >
+          <div class="flex items-center gap-3">
+            <UAvatar
+              :src="profile.profile.image ?? undefined"
+              :alt="profile.profile.displayName"
+              size="lg"
+            />
+
+            <div class="min-w-0">
+              <p class="truncate font-medium text-highlighted">
+                {{ profile.profile.displayName }}
+              </p>
+              <p class="truncate text-sm text-muted">
+                {{ profile.profile.email ?? 'Email non expose' }}
+              </p>
+            </div>
+          </div>
+
+          <USeparator />
+
+          <dl class="grid gap-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">
+                Profil
+              </dt>
+              <dd class="truncate text-highlighted">
+                {{ profile.profile.id }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">
+                Utilisateur auth
+              </dt>
+              <dd class="truncate text-highlighted">
+                {{ profile.user.id }}
+              </dd>
+            </div>
+          </dl>
+
+          <UButton
+            icon="i-lucide-log-out"
+            color="neutral"
+            variant="outline"
+            block
+            :loading="loading"
+            @click="signOut"
+          >
+            Se deconnecter
+          </UButton>
+        </div>
+
+        <UEmpty
+          v-else
+          icon="i-lucide-user-round-x"
+          title="Aucune session active"
+          description="Les routes privees de l'API refusent les requetes non authentifiees."
+        />
+      </section>
+    </div>
+  </UContainer>
 </template>

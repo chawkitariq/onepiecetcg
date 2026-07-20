@@ -1,0 +1,89 @@
+type ProfileResponse = {
+  authenticated: true
+  user: {
+    id: string
+    name: string | null
+    email: string | null
+    image: string | null
+  }
+  profile: {
+    id: string
+    displayName: string
+    email: string | null
+    image: string | null
+    createdAt: string
+    updatedAt: string
+  }
+}
+
+type SocialSignInResponse = {
+  redirect: boolean
+  url?: string
+}
+
+export function useSession() {
+  const api = useApi()
+  const profile = useState<ProfileResponse | null>('session-profile', () => null)
+  const errorMessage = useState<string | null>('session-error', () => null)
+  const loading = useState('session-loading', () => false)
+
+  async function refresh() {
+    loading.value = true
+    errorMessage.value = null
+
+    try {
+      profile.value = await api<ProfileResponse>('/me')
+    } catch (error: unknown) {
+      profile.value = null
+
+      const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error
+        ? Number(error.statusCode)
+        : undefined
+
+      if (statusCode && statusCode !== 401) {
+        errorMessage.value = 'Impossible de vérifier la session.'
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function signIn(provider: 'google' | 'discord') {
+    const callbackURL = window.location.origin
+
+    const response = await api<SocialSignInResponse>('/api/auth/sign-in/social', {
+      method: 'POST',
+      body: {
+        callbackURL,
+        provider
+      }
+    })
+
+    if (response.redirect && response.url) {
+      window.location.href = response.url
+    }
+  }
+
+  async function signOut() {
+    loading.value = true
+    errorMessage.value = null
+
+    try {
+      await api('/api/auth/sign-out', { method: 'POST' })
+      profile.value = null
+    } catch {
+      errorMessage.value = 'La deconnexion a echoue.'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
+    errorMessage,
+    loading,
+    profile,
+    refresh,
+    signIn,
+    signOut
+  }
+}

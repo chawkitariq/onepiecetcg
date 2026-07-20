@@ -27,16 +27,21 @@ function readSameSite(): SameSite {
 }
 
 export function getApiConfig() {
+  const database = {
+    host: process.env.DATABASE_HOST ?? 'localhost',
+    port: readNumber('DATABASE_PORT', 5432),
+    user: process.env.DATABASE_USER ?? 'onepiecetcg',
+    password: process.env.DATABASE_PASSWORD ?? 'onepiecetcg',
+    name: process.env.DATABASE_NAME ?? 'onepiecetcg',
+  };
+
   return {
     port: readNumber('API_PORT', 3000),
     webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:3001',
-    database: {
-      host: process.env.DATABASE_HOST ?? 'localhost',
-      port: readNumber('DATABASE_PORT', 5432),
-      user: process.env.DATABASE_USER ?? 'onepiecetcg',
-      password: process.env.DATABASE_PASSWORD ?? 'onepiecetcg',
-      name: process.env.DATABASE_NAME ?? 'onepiecetcg',
-    },
+    database,
+    databaseUrl:
+      process.env.DATABASE_URL ??
+      `postgres://${database.user}:${database.password}@${database.host}:${database.port}/${database.name}`,
     auth: {
       secret: process.env.BETTER_AUTH_SECRET ?? 'development-spike-secret',
       baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
@@ -54,4 +59,3 @@ export function getApiConfig() {
     },
   };
 }
-
