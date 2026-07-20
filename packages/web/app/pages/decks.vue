@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type {
   Card,
+  CardColor,
+  CardFilterOptions,
   CardSearchResponse,
+  CardType,
   Deck,
   DeckImportResult,
   DeckListResponse,
@@ -18,6 +21,11 @@ const deckName = ref('Nouveau deck')
 const leaderCardId = ref('')
 const deckCards = ref<Array<{ cardId: string, quantity: number }>>([])
 const search = ref('')
+const allFilter = '__all'
+const selectedSet = ref(allFilter)
+const selectedType = ref<CardType | typeof allFilter>(allFilter)
+const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
+const selectedCost = ref<number | typeof allFilter>(allFilter)
 const selectedCard = ref<Card | null>(null)
 const importText = ref('')
 const serverMessage = ref<string | null>(null)
@@ -40,8 +48,14 @@ const { data: deckListData, refresh: refreshDecks } = await useAsyncData(
 )
 
 const cards = computed(() => catalogData.value?.cards ?? [])
-const cardById = computed(() => new Map(cards.value.map((card) => [card.id, card])))
-const leaders = computed(() => cards.value.filter((card) => card.type === 'Leader'))
+const filters = computed<CardFilterOptions>(() => catalogData.value?.filters ?? {
+  sets: [],
+  types: [],
+  colors: [],
+  costs: []
+})
+const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])))
+const leaders = computed(() => cards.value.filter(card => card.type === 'Leader'))
 const savedDecks = computed(() => deckListData.value?.decks ?? [])
 const selectedLeader = computed(() => cardById.value.get(leaderCardId.value) ?? null)
 const deckLines = computed(() => normalizeDeckCards(deckCards.value))
@@ -51,8 +65,15 @@ const filteredCards = computed(() => {
   const needle = search.value.trim().toLowerCase()
 
   return cards.value
-    .filter((card) => card.type !== 'Leader' && card.type !== 'DON!!')
-    .filter((card) => !needle || card.name.toLowerCase().includes(needle) || card.number.toLowerCase().includes(needle))
+    .filter(card => card.type !== 'Leader' && card.type !== 'DON!!')
+    .filter(card => !needle
+      || card.name.toLowerCase().includes(needle)
+      || card.number.toLowerCase().includes(needle)
+      || card.text.toLowerCase().includes(needle))
+    .filter(card => selectedSet.value === allFilter || card.set.id === selectedSet.value)
+    .filter(card => selectedType.value === allFilter || card.type === selectedType.value)
+    .filter(card => selectedColor.value === allFilter || card.colors.includes(selectedColor.value))
+    .filter(card => selectedCost.value === allFilter || card.cost === selectedCost.value)
     .slice(0, 80)
 })
 
@@ -78,11 +99,51 @@ watch(payload, () => {
 const exportText = computed(() => exportDeckToText(payload.value))
 
 const leaderItems = computed(() => [
-  ...leaders.value.map((leader) => ({
+  ...leaders.value.map(leader => ({
     label: `${leader.number} - ${leader.name}`,
     value: leader.id
   }))
 ])
+
+const setItems = computed(() => [
+  { label: 'Tous les sets', value: allFilter },
+  ...filters.value.sets.map(set => ({ label: `${set.id} - ${set.name}`, value: set.id }))
+])
+
+const typeItems = computed(() => [
+  { label: 'Tous les types', value: allFilter },
+  ...filters.value.types
+    .filter(type => type !== 'Leader' && type !== 'DON!!')
+    .map(type => ({ label: type, value: type }))
+])
+
+const colorItems = computed(() => [
+  { label: 'Toutes les couleurs', value: allFilter },
+  ...filters.value.colors.map(color => ({ label: color, value: color }))
+])
+
+const costItems = computed(() => [
+  { label: 'Tous les couts', value: allFilter },
+  ...filters.value.costs.map(cost => ({ label: String(cost), value: cost }))
+])
+
+const selectedCardRows = computed(() => {
+  if (!selectedCard.value) {
+    return []
+  }
+
+  return [
+    ['Numero', selectedCard.value.number],
+    ['Set', `${selectedCard.value.set.id} - ${selectedCard.value.set.name}`],
+    ['Type', selectedCard.value.type],
+    ['Couleur', selectedCard.value.colors.join(', ') || 'Aucune'],
+    ['Cout', selectedCard.value.cost ?? '-'],
+    ['Puissance', selectedCard.value.power ?? '-'],
+    ['Contre', selectedCard.value.counter ?? '-'],
+    ['Vie', selectedCard.value.life ?? '-'],
+    ['Rarete', selectedCard.value.rarity ?? '-']
+  ]
+})
 
 function setFromSavedDeck(deck: Deck) {
   selectedDeckId.value = deck.id
@@ -103,9 +164,17 @@ function resetBuilder() {
   serverError.value = null
 }
 
+function resetCatalogFilters() {
+  search.value = ''
+  selectedSet.value = allFilter
+  selectedType.value = allFilter
+  selectedColor.value = allFilter
+  selectedCost.value = allFilter
+}
+
 function addCard(card: Card) {
   selectedCard.value = card
-  const existing = deckCards.value.find((deckCard) => deckCard.cardId === card.id)
+  const existing = deckCards.value.find(deckCard => deckCard.cardId === card.id)
 
   if (existing) {
     existing.quantity += 1
@@ -115,7 +184,7 @@ function addCard(card: Card) {
 }
 
 function removeCard(cardId: string) {
-  const existing = deckCards.value.find((deckCard) => deckCard.cardId === cardId)
+  const existing = deckCards.value.find(deckCard => deckCard.cardId === cardId)
 
   if (!existing) {
     return
@@ -124,7 +193,7 @@ function removeCard(cardId: string) {
   existing.quantity -= 1
 
   if (existing.quantity <= 0) {
-    deckCards.value = deckCards.value.filter((deckCard) => deckCard.cardId !== cardId)
+    deckCards.value = deckCards.value.filter(deckCard => deckCard.cardId !== cardId)
   }
 }
 
@@ -202,7 +271,7 @@ function extractErrorMessage(error: unknown): string {
     const data = (error as { data?: { validation?: DeckValidation, message?: string } }).data
 
     if (data?.validation?.errors.length) {
-      return data.validation.errors.map((validationError) => validationError.message).join(' ')
+      return data.validation.errors.map(validationError => validationError.message).join(' ')
     }
 
     if (data?.message) {
@@ -219,7 +288,10 @@ function extractErrorMessage(error: unknown): string {
     <div class="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_340px]">
       <aside class="space-y-4">
         <div class="space-y-2">
-          <UBadge icon="i-lucide-boxes" variant="subtle">
+          <UBadge
+            icon="i-lucide-boxes"
+            variant="subtle"
+          >
             Deck builder
           </UBadge>
           <h1 class="text-3xl font-semibold tracking-normal text-highlighted">
@@ -438,17 +510,69 @@ function extractErrorMessage(error: unknown): string {
         <UCard>
           <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="text-base font-semibold text-highlighted">
-                Catalogue
-              </h2>
-              <UInput
-                v-model="search"
-                icon="i-lucide-search"
-                placeholder="Nom ou numero"
-                class="w-full sm:w-72"
+              <div>
+                <h2 class="text-base font-semibold text-highlighted">
+                  Catalogue
+                </h2>
+                <p class="text-sm text-muted">
+                  {{ filteredCards.length }} resultat(s) affiches
+                </p>
+              </div>
+              <UButton
+                icon="i-lucide-rotate-ccw"
+                color="neutral"
+                variant="ghost"
+                aria-label="Reinitialiser les filtres"
+                @click="resetCatalogFilters"
               />
             </div>
           </template>
+
+          <div class="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <UFormField label="Recherche">
+              <UInput
+                v-model="search"
+                icon="i-lucide-search"
+                placeholder="Nom, numero, texte"
+              />
+            </UFormField>
+
+            <UFormField label="Set">
+              <USelect
+                v-model="selectedSet"
+                :items="setItems"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Type">
+              <USelect
+                v-model="selectedType"
+                :items="typeItems"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Couleur">
+              <USelect
+                v-model="selectedColor"
+                :items="colorItems"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Cout">
+              <USelect
+                v-model="selectedCost"
+                :items="costItems"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
 
           <div
             v-if="catalogPending"
@@ -461,6 +585,13 @@ function extractErrorMessage(error: unknown): string {
             />
           </div>
 
+          <UEmpty
+            v-else-if="filteredCards.length === 0"
+            icon="i-lucide-search-x"
+            title="Aucune carte trouvee"
+            description="Modifie les filtres pour elargir la recherche."
+          />
+
           <div
             v-else
             class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
@@ -470,7 +601,8 @@ function extractErrorMessage(error: unknown): string {
               :key="card.id"
               type="button"
               class="rounded-lg border border-muted bg-elevated p-3 text-left transition hover:border-primary hover:bg-accented"
-              @click="addCard(card)"
+              :class="{ 'border-primary bg-accented': selectedCard?.id === card.id }"
+              @click="selectedCard = card"
             >
               <div class="flex gap-3">
                 <img
@@ -504,6 +636,16 @@ function extractErrorMessage(error: unknown): string {
                       {{ color }}
                     </UBadge>
                   </div>
+                  <p class="line-clamp-3 text-sm text-muted">
+                    {{ card.text || 'Pas de texte.' }}
+                  </p>
+                  <UButton
+                    icon="i-lucide-list-plus"
+                    size="sm"
+                    @click.stop="addCard(card)"
+                  >
+                    Ajouter
+                  </UButton>
                 </div>
               </div>
             </button>
@@ -544,6 +686,69 @@ function extractErrorMessage(error: unknown): string {
               </UButton>
             </div>
           </div>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <h2 class="text-base font-semibold text-highlighted">
+              Carte selectionnee
+            </h2>
+          </template>
+
+          <div
+            v-if="selectedCard"
+            class="space-y-4"
+          >
+            <img
+              v-if="selectedCard.imageUrl"
+              :src="selectedCard.imageUrl"
+              :alt="selectedCard.name"
+              class="mx-auto w-full max-w-56 rounded-lg border border-muted"
+            >
+
+            <div>
+              <p class="text-sm text-muted">
+                {{ selectedCard.number }}
+              </p>
+              <h3 class="text-lg font-semibold text-highlighted">
+                {{ selectedCard.name }}
+              </h3>
+            </div>
+
+            <dl class="grid gap-2 text-sm">
+              <div
+                v-for="[label, value] in selectedCardRows"
+                :key="label"
+                class="grid grid-cols-[84px_minmax(0,1fr)] gap-3"
+              >
+                <dt class="text-muted">
+                  {{ label }}
+                </dt>
+                <dd class="min-w-0 text-highlighted">
+                  {{ value }}
+                </dd>
+              </div>
+            </dl>
+
+            <p class="whitespace-pre-line text-sm text-muted">
+              {{ selectedCard.text || 'Pas de texte.' }}
+            </p>
+
+            <UButton
+              icon="i-lucide-list-plus"
+              block
+              @click="addCard(selectedCard)"
+            >
+              Ajouter au deck
+            </UButton>
+          </div>
+
+          <UEmpty
+            v-else
+            icon="i-lucide-square-mouse-pointer"
+            title="Aucune carte"
+            description="Selectionne une carte du catalogue integre."
+          />
         </UCard>
 
         <UCard>

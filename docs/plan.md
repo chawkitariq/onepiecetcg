@@ -86,11 +86,11 @@ Objectif : permettre aux joueurs de posséder une session et des données persis
 - Un utilisateur reconnecté retrouve son compte existant.
 - Les routes privées refusent les requêtes non authentifiées.
 
-## Étape 3 — Catalogue de cartes
+## Étape 3 — Source catalogue de cartes
 
 Objectif : rendre les cartes disponibles au deck builder et aux parties.
 
-État : réalisé et audité. Le catalogue expose des types partagés dans `packages/shared`, un module NestJS `/catalog` qui consomme l'API OPTCG officielle (`https://optcgapi.com/api`) avec normalisation et cache local, des endpoints de recherche/filtres/fiche carte, une tolérance aux familles source partiellement indisponibles, et une page Nuxt `/catalogue` avec filtres MVP et fiche complète.
+État : réalisé et audité. Le catalogue expose des types partagés dans `packages/shared`, un module NestJS `/catalog` qui consomme l'API OPTCG officielle (`https://optcgapi.com/api`) avec normalisation et cache local, des endpoints de recherche/filtres/fiche carte, et une tolérance aux familles source partiellement indisponibles. Côté produit, il n'existe pas de page `/catalogue` séparée : la consultation des cartes se fait dans le deck builder `/decks`.
 
 ### Backend
 
@@ -102,21 +102,21 @@ Objectif : rendre les cartes disponibles au deck builder et aux parties.
 
 ### Frontend
 
-- Créer l'écran catalogue.
+- Intégrer le catalogue dans l'écran de deck builder.
 - Ajouter les filtres MVP : recherche, set, type, couleur, coût.
-- Afficher une fiche carte complète : image, texte, coût, puissance, contre, type et édition.
+- Afficher une fiche carte complète dans le deck builder : image, texte, coût, puissance, contre, type et édition.
 
 ### Validation
 
-- Le catalogue est consultable depuis l'interface.
+- Le catalogue est consultable depuis le deck builder, sans route `/catalogue` dédiée.
 - Les filtres retournent des cartes cohérentes.
 - La normalisation fournit tous les champs nécessaires au deck builder et au moteur structurel.
 
 ## Étape 4 — Deck builder et persistance des decks
 
-Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder et partager ses decks.
+Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder et partager ses decks depuis une page unique combinant builder et catalogue.
 
-État : réalisé et audité. Les contrats partagés couvrent les decks, la validation et l'import/export texte ; le backend expose un module NestJS `/decks` protégé par session avec entité TypeORM, CRUD propriétaire et validation serveur ; le frontend fournit une page Nuxt `/decks` pour construire, importer/exporter, valider, sauvegarder, modifier et supprimer les decks.
+État : réalisé et audité. Les contrats partagés couvrent les decks, la validation et l'import/export texte ; le backend expose un module NestJS `/decks` protégé par session avec entité TypeORM, CRUD propriétaire et validation serveur ; le frontend fournit une page Nuxt `/decks` pour consulter le catalogue intégré, construire, importer/exporter, valider, sauvegarder, modifier et supprimer les decks.
 
 ### Backend
 
@@ -129,7 +129,7 @@ Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder
 ### Frontend
 
 - Créer le deck builder avec sélection du Leader.
-- Ajouter et retirer des cartes depuis le catalogue.
+- Ajouter et retirer des cartes depuis le catalogue intégré.
 - Afficher le compteur de cartes, les exemplaires et les erreurs de validation.
 - Ajouter les actions importer, exporter, sauvegarder, modifier et supprimer.
 
@@ -290,7 +290,7 @@ Objectif : rendre l'expérience complète, robuste et testable.
 
 ### Frontend
 
-- Vérifier les parcours : connexion, catalogue, deck builder, lobby, partie.
+- Vérifier les parcours : connexion, deck builder avec catalogue intégré, lobby, partie.
 - Ajouter les états de chargement, vide et erreur.
 - Vérifier le responsive du plateau et des écrans de gestion.
 - S'assurer que l'interface n'affiche aucune option hors périmètre v1.

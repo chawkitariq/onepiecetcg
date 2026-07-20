@@ -87,14 +87,15 @@ Fonctions attendues :
 
 **Principe directeur inchangé du solo, maintenant appliqué à deux joueurs** : *si une donnée peut être calculée à partir des champs structurés du schéma, elle est automatisée côté serveur ; si elle nécessite de lire `card_text`, elle reste déclarative — chaque joueur applique lui-même les effets de ses cartes et de celles de son adversaire, sur la base de la confiance mutuelle, comme autour d'une vraie table.* Le serveur garantit uniquement que les deux joueurs voient le même état structurel synchronisé et que l'information cachée reste réellement cachée — pas que le texte des cartes est correctement appliqué.
 
-## 4. Catalogue de cartes et deck builder
+## 4. Deck builder avec catalogue intégré
 
 Repris et adapté des versions précédentes :
-- Catalogue filtrable (recherche, set, type, couleur, coût) via l'API OPTCG officielle (`https://optcgapi.com/api`), avec cache local pour limiter les appels.
-- Le backend consomme les familles documentées séparément (`/allSetCards/`, `/allSTCards/`, `/allPromoCards/`, `/allDonCards/`) et normalise toutes les réponses vers le schéma partagé. Si une famille optionnelle de l'API source est temporairement indisponible ou diverge de la documentation, le catalogue ne doit pas tomber entièrement tant qu'au moins une source exploitable répond ; il doit servir le cache existant si possible, sinon retourner une erreur explicite d'indisponibilité.
+- Une seule page utilisateur de construction de deck (`/decks`) intègre le catalogue filtrable (recherche, set, type, couleur, coût). Il n'y a pas de page `/catalogue` séparée dans le produit.
+- Le catalogue intégré utilise l'API OPTCG officielle (`https://optcgapi.com/api`), avec cache local pour limiter les appels.
+- Le backend consomme les familles documentées séparément (`/allSetCards/`, `/allSTCards/`, `/allPromoCards/`, `/allDonCards/`) et normalise toutes les réponses vers le schéma partagé. Si une famille optionnelle de l'API source est temporairement indisponible ou diverge de la documentation, le catalogue intégré ne doit pas tomber entièrement tant qu'au moins une source exploitable répond ; il doit servir le cache existant si possible, sinon retourner une erreur explicite d'indisponibilité.
 - La normalisation doit tenir compte des champs réellement exposés par OPTCG API, notamment `card_set_id`, `card_name`, `set_id`, `set_name`, `card_text`, `card_color`, `card_type`, `life`, `card_cost`, `card_power`, `counter_amount`, `attribute`, `sub_types`, `rarity` et `card_image`. Le schéma partagé garde des noms stables et indépendants de la source (`number`, `name`, `set`, `text`, `colors`, `type`, `life`, `cost`, `power`, `counter`, `attributes`, `families`, `rarity`, `imageUrl`).
-- Fiche carte complète (image, texte, coût, puissance, contre, type, édition).
-- Deck builder : sélection Leader, 50 cartes, plafond de 4 exemplaires, validation de couleur vs Leader.
+- Fiche carte complète depuis le deck builder (image, texte, coût, puissance, contre, type, édition).
+- Deck builder central : sélection Leader, ajout/retrait de cartes depuis le catalogue intégré, 50 cartes, plafond de 4 exemplaires, validation de couleur vs Leader.
 - 🆕 **Decks liés au compte utilisateur** (persistés en base), avec **import/export au format texte ligne par ligne** (`QUANTITÉxCARD_ID`, ex: `4xST01-003`) conservé en complément — format standard du milieu, facilement partageable entre joueurs (Discord, forums) sans dépendre d'un fichier JSON. La première ligne représente toujours le Leader (`1xCARD_ID`). Voir le schéma de données pour la spécification complète du parsing et de la validation.
 
 ## 5. Matchmaking et lobby
@@ -123,7 +124,7 @@ Repris et adapté des versions précédentes :
 
 0. 🎯 **Spike technique (1-2 jours)** : valider l'intégration Better Auth dans NestJS (module communautaire) et l'attachement de Colyseus au serveur HTTP Nest, avant de construire dessus — ce sont les deux seules briques de la stack sans intégration officielle Nest, donc les points de risque technique à défricher en premier.
 1. Authentification OAuth + modèle de compte/deck en base.
-2. Catalogue de cartes + deck builder lié au compte (repris et adapté du travail existant).
+2. Deck builder lié au compte avec catalogue de cartes intégré (repris et adapté du travail existant).
 3. Infrastructure Colyseus : room de partie, état synchronisé, autorité serveur.
 4. Couche structurelle complète (§3) : phases, DON!!, zones, ciblage réel, combat structurel avec Blocage/Contre déclaratifs, fin de partie.
 5. Matchmaking (file d'attente + code de room) et lobby.
