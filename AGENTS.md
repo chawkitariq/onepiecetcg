@@ -48,7 +48,11 @@ Before adding any dependency, always ask the user for both permission and their 
 
 ## Nuxt UI
 
-For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/docs/getting-started/ai/llms-txt`. Start with `https://ui.nuxt.com/llms.txt` for component and pattern guidance; use `https://ui.nuxt.com/llms-full.txt` only when deeper implementation or migration detail is needed.
+For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/docs/getting-started/ai/llms-txt`. Start with `https://ui.nuxt.com/llms.txt` for component and pattern guidance; use `https://ui.nuxt.com/llms-full.txt` only when deeper implementation or migration detail is needed.## Nuxt UI
+
+## Better Auth
+
+For Better Auth work, consult the AI-oriented documentation at `https://better-auth.com/llms.txt`.
 
 ## Testing Guidelines
 
@@ -56,7 +60,7 @@ Backend unit tests use Jest and follow the `*.spec.ts` naming pattern in `packag
 
 ## Commit & Pull Request Guidelines
 
-This repository has no commit history yet, so use angular commit convention. Keep changes scoped by package where possible.
+Use angular commit convention. Keep changes scoped by package where possible.
 
 Pull requests should include a short summary, the commands run, linked issues or specs when relevant, and screenshots for visible UI changes. Note any untested areas explicitly.
 
