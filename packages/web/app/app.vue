@@ -78,11 +78,10 @@ useSeoMeta({
 
         <template v-else>
           <UButton
-            to="/"
+            to="/login"
             color="primary"
             variant="solid"
             size="md"
-            icon="i-lucide-log-in"
             class="ml-2"
           >
             Connexion
