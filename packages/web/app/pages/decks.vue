@@ -41,8 +41,9 @@ type PersistedCatalogFilters = {
   cost?: number | typeof allFilter
 }
 
-onMounted(() => {
-  void refreshSession()
+onMounted(async () => {
+  await refreshSession()
+  await refreshDecks()
   restoreCatalogFilters()
 })
 
@@ -54,7 +55,10 @@ const { data: catalogData, pending: catalogPending } = await useAsyncData(
 const { data: deckListData, pending: deckListPending, refresh: refreshDecks } = await useAsyncData(
   'saved-decks',
   () => api<DeckListResponse>('/decks'),
-  { default: () => ({ decks: [] }) }
+  {
+    watch: [profile],
+    default: () => ({ decks: [] })
+  }
 )
 
 const cards = computed(() => catalogData.value?.cards ?? [])
@@ -693,16 +697,6 @@ function extractErrorMessage(error: unknown): string {
       >
         <template #header>
           <div class="space-y-3">
-            <UFormField
-              label="Nom"
-              class="w-full"
-            >
-              <UInput
-                v-model="deckName"
-                icon="i-lucide-pencil"
-                class="w-full"
-              />
-            </UFormField>
             <div class="flex items-center justify-between gap-3">
               <div>
                 <h2 class="text-base font-semibold text-highlighted">
@@ -739,6 +733,16 @@ function extractErrorMessage(error: unknown): string {
                 </UBadge>
               </div>
             </div>
+            <UFormField
+              label="Nom"
+              class="w-full"
+            >
+              <UInput
+                v-model="deckName"
+                icon="i-lucide-pencil"
+                class="w-full"
+              />
+            </UFormField>
           </div>
         </template>
 
