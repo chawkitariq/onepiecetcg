@@ -32,7 +32,7 @@ export class DuelSpikeRoom extends Room<DuelSpikeState> {
     this.state.players.delete(client.sessionId);
 
     if (this.clients.length === 0) {
-      this.disconnect();
+      void this.disconnect();
     }
   }
 }

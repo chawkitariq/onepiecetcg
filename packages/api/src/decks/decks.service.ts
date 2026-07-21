@@ -27,6 +27,18 @@ import {
 import { CatalogService } from '../catalog/catalog.service';
 import { SavedDeck } from './saved-deck.entity';
 
+export type GameDeckCard = Card & {
+  copyIndex: number;
+};
+
+export type ValidatedGameDeck = {
+  id: string;
+  name: string;
+  ownerAuthUserId: string;
+  leader: Card;
+  cards: GameDeckCard[];
+};
+
 @Injectable()
 export class DecksService {
   constructor(
@@ -192,6 +204,60 @@ export class DecksService {
       errors,
       leaderCardId: normalized.leaderCardId || null,
       mainDeckCount,
+    };
+  }
+
+  async getValidatedGameDeck(
+    authUserId: string,
+    deckId: string,
+  ): Promise<ValidatedGameDeck> {
+    const deck = await this.decks.findOne({
+      where: { id: deckId, owner: { authUserId } },
+      relations: { owner: true },
+    });
+
+    if (!deck) {
+      throw new NotFoundException('Deck introuvable');
+    }
+
+    const payload = this.normalizePayload({
+      name: deck.name,
+      leaderCardId: deck.leaderCardId,
+      cards: deck.cards,
+    });
+    const validation = await this.validate(payload);
+
+    if (!validation.valid) {
+      throw new BadRequestException({ message: 'Deck invalide', validation });
+    }
+
+    const catalog = await this.catalogService.searchCards({});
+    const cardById = new Map(catalog.cards.map((card) => [card.id, card]));
+    const leader = cardById.get(payload.leaderCardId);
+
+    if (!leader) {
+      throw new BadRequestException('Leader introuvable dans le catalogue');
+    }
+
+    const cards = payload.cards.flatMap((deckCard) => {
+      const card = cardById.get(deckCard.cardId);
+
+      if (!card) {
+        return [];
+      }
+
+      return Array.from({ length: deckCard.quantity }, (_, index) => ({
+        ...card,
+        copyIndex: index + 1,
+      }));
+    });
+
+    return {
+      id: deck.id,
+      name: deck.name,
+      ownerAuthUserId: authUserId,
+      leader,
+      cards,
     };
   }
 

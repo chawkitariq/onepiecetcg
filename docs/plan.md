@@ -145,6 +145,8 @@ Objectif : permettre à un utilisateur connecté de créer, valider, sauvegarder
 
 Objectif : créer une room de partie faisant autorité, sans encore couvrir tout le gameplay.
 
+État : réalisé et audité. Les contrats partagés décrivent phases, zones, cartes publiques/privées et logs ; le backend expose une room Colyseus `duel` pour exactement deux joueurs, revalide le deck sauvegardé de chaque joueur, initialise Leader, deck, deck DON!!, main, Vie, terrain et défausse, et filtre les champs privés des zones cachées par client. Le frontend fournit un client Colyseus partagé et une page `/room` minimale pour sélectionner un deck sauvegardé, rejoindre la room, voir les joueurs, les zones publiques, les compteurs de zones cachées et les logs. La reconnexion Colyseus est autorisée pendant 120 secondes avant retrait/forfait structurel.
+
 ### Backend
 
 - Définir les schémas Colyseus partagés : joueurs, zones, cartes publiques, cartes privées, phase, tour, logs d'action.

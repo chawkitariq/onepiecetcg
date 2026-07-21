@@ -106,6 +106,75 @@ export type DeckListResponse = {
   decks: Deck[];
 };
 
+export type GamePhase =
+  | 'setup'
+  | 'refresh'
+  | 'draw'
+  | 'don'
+  | 'main'
+  | 'end'
+  | 'finished';
+
+export type GameZone =
+  | 'leader'
+  | 'deck'
+  | 'donDeck'
+  | 'hand'
+  | 'life'
+  | 'characters'
+  | 'stage'
+  | 'cost'
+  | 'trash';
+
+export type PublicCard = {
+  instanceId: string;
+  cardId: string;
+  number: string;
+  name: string;
+  type: CardType;
+  colors: CardColor[];
+  cost: number | null;
+  power: number | null;
+  life: number | null;
+  counter: number | null;
+  imageUrl: string | null;
+  rested: boolean;
+  attachedDon: number;
+  playedThisTurn: boolean;
+};
+
+export type PrivateCard = PublicCard & {
+  text: string;
+  trigger: string | null;
+};
+
+export type PlayerZoneCounts = Record<GameZone, number>;
+
+export type DuelPlayerView = {
+  sessionId: string;
+  authUserId: string;
+  displayName: string;
+  deckId: string;
+  ready: boolean;
+  connected: boolean;
+  leader: PublicCard | null;
+  hand: PrivateCard[];
+  opponentHandCount: number;
+  lifeCount: number;
+  deckCount: number;
+  donDeckCount: number;
+  characters: PublicCard[];
+  stage: PublicCard | null;
+  cost: PublicCard[];
+  trash: PublicCard[];
+};
+
+export type DuelLogEntry = {
+  id: string;
+  message: string;
+  createdAt: string;
+};
+
 export function normalizeCardId(cardId: string): string {
   return cardId.trim().toUpperCase();
 }

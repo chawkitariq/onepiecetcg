@@ -2,6 +2,13 @@ import { createServer } from 'node:http';
 import { boot, type ColyseusTestServer } from '@colyseus/testing';
 import { ColyseusService } from './colyseus.service';
 
+jest.mock('@onepiecetcg/shared', () => {
+  const sharedMock: typeof import('../decks/shared-test.mock') =
+    jest.requireActual('../decks/shared-test.mock');
+
+  return sharedMock;
+});
+
 describe('ColyseusService spike', () => {
   let colyseus: ColyseusTestServer | undefined;
 
@@ -11,7 +18,7 @@ describe('ColyseusService spike', () => {
   });
 
   it('attaches Colyseus to an HTTP server and lets two clients join a room', async () => {
-    const service = new ColyseusService();
+    const service = new ColyseusService({} as never);
     const httpServer = createServer();
     const gameServer = service.attach(httpServer);
 

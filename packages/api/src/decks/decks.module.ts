@@ -14,5 +14,6 @@ import { SavedDeck } from './saved-deck.entity';
   ],
   controllers: [DecksController],
   providers: [DecksService],
+  exports: [DecksService],
 })
 export class DecksModule {}
