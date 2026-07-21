@@ -474,8 +474,9 @@ function extractErrorMessage(error: unknown): string {
             <UButton
               icon="i-lucide-rotate-ccw"
               color="neutral"
-              variant="ghost"
-              aria-label="Reinitialiser les filtres"
+              variant="outline"
+              size="sm"
+              label="Reinitialiser"
               @click="resetCatalogFilters"
             />
           </div>
