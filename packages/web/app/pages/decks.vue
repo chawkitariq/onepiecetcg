@@ -26,7 +26,7 @@ const persistedCatalogFilters = useLocalStorage<PersistedCatalogFilters>(catalog
 const selectedSet = ref(allFilter)
 const selectedType = ref<CardType | typeof allFilter>(allFilter)
 const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
-const selectedCost = ref<number | typeof allFilter>(allFilter)
+const selectedCost = ref<string>(allFilter)
 const selectedCard = ref<Card | null>(null)
 const serverMessage = ref<string | null>(null)
 const serverError = ref<string | null>(null)
@@ -38,7 +38,7 @@ type PersistedCatalogFilters = {
   set?: string
   type?: CardType | typeof allFilter
   color?: CardColor | typeof allFilter
-  cost?: number | typeof allFilter
+  cost?: string
 }
 
 onMounted(async () => {
@@ -97,8 +97,8 @@ const filteredCards = computed(() => {
       || card.text.toLowerCase().includes(needle))
     .filter(card => selectedSet.value === allFilter || card.set.id === selectedSet.value)
     .filter(card => selectedType.value === allFilter || card.type === selectedType.value)
-    .filter(card => selectedColor.value === allFilter || card.colors.includes(selectedColor.value))
-    .filter(card => selectedCost.value === allFilter || card.cost === selectedCost.value)
+    .filter(card => selectedColor.value === allFilter || card.colors.includes(selectedColor.value as CardColor))
+    .filter(card => selectedCost.value === allFilter || (card.cost !== null && String(card.cost) === String(selectedCost.value)))
     .slice(0, 80)
 })
 
@@ -142,7 +142,7 @@ const colorItems = computed(() => [
 
 const costItems = computed(() => [
   { label: 'Tous les couts', value: allFilter },
-  ...filters.value.costs.map(cost => ({ label: String(cost), value: cost }))
+  ...filters.value.costs.map(cost => ({ label: String(cost), value: String(cost) }))
 ])
 
 const selectedCardRows = computed(() => {
@@ -232,11 +232,11 @@ function restoreCatalogFilters() {
   const persistedCost = persistedFilters.cost
 
   search.value = typeof persistedFilters.search === 'string' ? persistedFilters.search : ''
-  selectedSet.value = persistedSet && filters.value.sets.some(set => set.id === persistedSet) ? persistedSet : allFilter
-  selectedType.value = persistedType && filters.value.types.includes(persistedType as CardType) ? persistedType as CardType : allFilter
-  selectedColor.value = persistedColor && filters.value.colors.includes(persistedColor as CardColor) ? persistedColor as CardColor : allFilter
-  selectedCost.value = typeof persistedCost === 'number' && filters.value.costs.includes(persistedCost)
-    ? persistedCost
+  selectedSet.value = typeof persistedSet === 'string' ? persistedSet : allFilter
+  selectedType.value = typeof persistedType === 'string' ? (persistedType as CardType) : allFilter
+  selectedColor.value = typeof persistedColor === 'string' ? (persistedColor as CardColor) : allFilter
+  selectedCost.value = typeof persistedCost === 'string' || typeof persistedCost === 'number'
+    ? String(persistedCost)
     : allFilter
 }
 
