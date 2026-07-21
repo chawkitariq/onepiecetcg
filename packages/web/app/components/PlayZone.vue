@@ -19,6 +19,8 @@ const { isAdversary } = defineProps<{
                         class="absolute top-[20%] left-0 z-30">
                     <img src="https://optcgapi.com/media/static/Card_Images/OP03-075.jpg" alt=""
                         class="absolute top-[30%] left-0 z-20">
+                    <img src="https://optcgapi.com/media/static/Card_Images/OP03-075.jpg" alt=""
+                        class="absolute top-[40%] left-0 z-10">
                 </div>
             </UCard>
             <UCard variant="subtle" class="h-full relative">
