@@ -51,7 +51,7 @@ const { data: catalogData, pending: catalogPending } = await useAsyncData(
   () => api<CardSearchResponse>('/catalog/cards')
 )
 
-const { data: deckListData, refresh: refreshDecks } = await useAsyncData(
+const { data: deckListData, pending: deckListPending, refresh: refreshDecks } = await useAsyncData(
   'saved-decks',
   () => api<DeckListResponse>('/decks'),
   { default: () => ({ decks: [] }) }
@@ -104,7 +104,7 @@ const payload = computed<DeckPayload>(() => ({
   cards: deckLines.value
 }))
 
-const { data: validationData, refresh: refreshValidation } = await useAsyncData(
+const { data: validationData, pending: validationPending, refresh: refreshValidation } = await useAsyncData(
   'deck-validation',
   () => api<DeckValidation>('/decks/validate', {
     method: 'POST',
@@ -518,29 +518,11 @@ function extractErrorMessage(error: unknown): string {
           </div>
         </template>
 
-        <div class="h-full min-h-0 overflow-y-auto pr-1">
-          <div
-            v-if="catalogPending"
-            class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4"
-          >
-            <USkeleton
-              v-for="index in 12"
-              :key="index"
-              class="aspect-[5/7] rounded-lg"
-            />
-          </div>
-
-          <UEmpty
-            v-else-if="filteredCards.length === 0"
-            icon="i-lucide-search-x"
-            title="Aucune carte trouvee"
-            description="Modifie les filtres pour elargir la recherche."
-          />
-
-          <div
-            v-else
-            class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4"
-          >
+        <div
+          v-if="!catalogPending && filteredCards.length > 0"
+          class="h-full min-h-0 overflow-y-auto pr-1"
+        >
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
             <button
               v-for="card in filteredCards"
               :key="card.id"
@@ -569,6 +551,25 @@ function extractErrorMessage(error: unknown): string {
             </button>
           </div>
         </div>
+
+        <div
+          v-else-if="catalogPending"
+          class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4 p-1"
+        >
+          <USkeleton
+            v-for="index in 12"
+            :key="index"
+            class="aspect-[5/7] rounded-lg"
+          />
+        </div>
+
+        <UEmpty
+          v-else-if="filteredCards.length === 0"
+          icon="i-lucide-search-x"
+          title="Aucune carte trouvee"
+          description="Modifie les filtres pour elargir la recherche."
+          class="p-1"
+        />
       </UCard>
 
       <UCard
@@ -722,6 +723,15 @@ function extractErrorMessage(error: unknown): string {
                   @click="createRandomDeck"
                 />
                 <UBadge
+                  v-if="validationPending"
+                  color="neutral"
+                  variant="subtle"
+                  icon="i-lucide-loader-2"
+                >
+                  Validation
+                </UBadge>
+                <UBadge
+                  v-else
                   :color="validationData?.valid ? 'success' : 'error'"
                   variant="subtle"
                 >
@@ -905,31 +915,44 @@ function extractErrorMessage(error: unknown): string {
           />
 
           <div class="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-            <button
-              v-for="deck in savedDecks"
-              :key="deck.id"
-              type="button"
-              class="w-full rounded-lg border border-muted p-3 text-left transition hover:border-primary hover:bg-accented"
-              :class="{ 'border-primary bg-accented ring-2 ring-primary/20': deck.id === selectedDeckId }"
-              @click="setFromSavedDeck(deck)"
+            <div
+              v-if="deckListPending"
+              class="space-y-2"
             >
-              <p class="truncate text-sm font-medium text-highlighted">
-                {{ deck.name }}
-              </p>
-              <p class="mt-1 text-xs text-muted">
-                {{ deck.cards.reduce((sum, card) => sum + card.quantity, 0) }} / 50 cartes
-              </p>
-              <p class="truncate text-xs text-muted">
-                Leader {{ deck.leaderCardId || '-' }}
-              </p>
-            </button>
+              <USkeleton
+                v-for="index in 5"
+                :key="index"
+                class="h-16 w-full rounded-lg"
+              />
+            </div>
 
-            <UEmpty
-              v-if="savedDecks.length === 0"
-              icon="i-lucide-folder-open"
-              title="Aucun deck"
-              description="Sauvegarde un deck valide pour le retrouver ici."
-            />
+            <template v-else>
+              <button
+                v-for="deck in savedDecks"
+                :key="deck.id"
+                type="button"
+                class="w-full rounded-lg border border-muted p-3 text-left transition hover:border-primary hover:bg-accented"
+                :class="{ 'border-primary bg-accented ring-2 ring-primary/20': deck.id === selectedDeckId }"
+                @click="setFromSavedDeck(deck)"
+              >
+                <p class="truncate text-sm font-medium text-highlighted">
+                  {{ deck.name }}
+                </p>
+                <p class="mt-1 text-xs text-muted">
+                  {{ deck.cards.reduce((sum, card) => sum + card.quantity, 0) }} / 50 cartes
+                </p>
+                <p class="truncate text-xs text-muted">
+                  Leader {{ deck.leaderCardId || '-' }}
+                </p>
+              </button>
+
+              <UEmpty
+                v-if="savedDecks.length === 0"
+                icon="i-lucide-folder-open"
+                title="Aucun deck"
+                description="Sauvegarde un deck valide pour le retrouver ici."
+              />
+            </template>
           </div>
         </div>
       </UCard>
