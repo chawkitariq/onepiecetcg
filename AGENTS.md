@@ -52,7 +52,7 @@ For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/
 
 ## Testing Guidelines
 
-Backend unit tests use Jest and follow the `*.spec.ts` naming pattern in `packages/api/src/`. E2E tests use `packages/api/test/jest-e2e.json`. Add focused tests for new controllers, services, and behavior changes, and always include non-regression tests for important features. The frontend currently has linting and type checking but no dedicated test runner.
+Backend unit tests use Jest and follow the `*.spec.ts` naming pattern in `packages/api/src/`. E2E tests use `packages/api/test/jest-e2e.json`. Frontend unit and component tests use Vitest with `@nuxt/test-utils` (`packages/web/vitest.config.ts`) and follow the `*.spec.ts` naming pattern in `packages/web/app/`. Add focused tests for new controllers, services, components, and behavior changes, and always include non-regression tests for important features.
 
 ## Commit & Pull Request Guidelines
 
