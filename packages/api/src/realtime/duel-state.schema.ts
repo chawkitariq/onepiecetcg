@@ -12,11 +12,14 @@ type FilterClient = {
   sessionId: string;
 };
 
-function canViewPrivateCard(client: FilterClient, root: DuelCard): boolean {
+export function canViewPrivateCard(
+  client: FilterClient,
+  root: DuelCard,
+): boolean {
   return !root.privateToOwner || root.ownerSessionId === client.sessionId;
 }
 
-function ownsCard(
+export function ownsCard(
   client: FilterClient,
   _key: number,
   value: DuelCard,

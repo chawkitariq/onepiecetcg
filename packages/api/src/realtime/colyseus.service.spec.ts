@@ -9,6 +9,15 @@ jest.mock('@onepiecetcg/shared', () => {
   return sharedMock;
 });
 
+// `ColyseusService.attach` builds a real Better Auth instance (and a
+// Postgres pool) to resolve duel-room sessions; stub it out so this unit
+// test can attach a game server without a database connection.
+jest.mock('../auth', () => ({
+  createAuth: () => ({
+    api: { getSession: jest.fn().mockResolvedValue(null) },
+  }),
+}));
+
 describe('ColyseusService spike', () => {
   let colyseus: ColyseusTestServer | undefined;
 
