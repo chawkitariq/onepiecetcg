@@ -18,11 +18,16 @@ const emit = defineEmits<{
   characterClick: [side: 0 | 1, instanceId: string]
   stageClick: [side: 0 | 1]
   handCardClick: [side: 0 | 1, instanceId: string]
+  cardHover: [card: { imageUrl: string, alt?: string } | null]
 }>()
 
 const life = computed(() => Array.from({ length: player.lifeCount }))
 const topTrash = computed(() => player.trash[0] ?? null)
 const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
+
+function onCardHover(imageUrl: string | null | undefined, alt?: string) {
+  emit('cardHover', imageUrl ? { imageUrl, alt } : null)
+}
 </script>
 
 <template>
@@ -60,6 +65,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
               isTargetable && character.rested ? 'ring-4 ring-error rounded' : ''
             ]"
             @click="emit('characterClick', side, character.instanceId)"
+            @mouseenter="onCardHover(character.imageUrl)"
+            @mouseleave="onCardHover(null)"
           >
             <DuelCard
               :src="character.imageUrl"
@@ -84,6 +91,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
             isTargetable ? 'ring-4 ring-error rounded' : ''
           ]"
           @click="emit('leaderClick', side)"
+          @mouseenter="onCardHover(player.leader?.imageUrl)"
+          @mouseleave="onCardHover(null)"
         >
           <DuelCard
             v-if="player.leader"
@@ -101,6 +110,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
           type="button"
           class="h-full w-full"
           @click="emit('stageClick', side)"
+          @mouseenter="onCardHover(player.stage?.imageUrl)"
+          @mouseleave="onCardHover(null)"
         >
           <DuelCard
             v-if="player.stage"
@@ -155,10 +166,14 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
         :flipped="isAdversary"
         hug-card
       >
-        <DuelCard
+        <div
           v-if="topTrash"
-          :src="topTrash.imageUrl"
-        />
+          class="h-full"
+          @mouseenter="onCardHover(topTrash.imageUrl)"
+          @mouseleave="onCardHover(null)"
+        >
+          <DuelCard :src="topTrash.imageUrl" />
+        </div>
       </DuelZoneSlot>
     </div>
 
@@ -176,6 +191,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
             type="button"
             class="h-full"
             @click="emit('handCardClick', side, card.instanceId)"
+            @mouseenter="onCardHover(card.imageUrl)"
+            @mouseleave="onCardHover(null)"
           >
             <DuelCard :src="card.imageUrl" />
           </button>

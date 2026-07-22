@@ -17,6 +17,7 @@ const {
 
 const viewingPlayerIndex = ref<0 | 1>(0)
 const donMode = ref(false)
+const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
 
 const phaseLabels: Record<string, string> = {
   refresh: 'Recharge',
@@ -166,6 +167,7 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
         @leader-click="onLeaderClick"
         @character-click="onCharacterClick"
         @hand-card-click="onHandCardClick"
+        @card-hover="hoveredCard = $event"
       />
       <USeparator class="shrink-0" />
       <PlayZone
@@ -178,23 +180,48 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
         @leader-click="onLeaderClick"
         @character-click="onCharacterClick"
         @hand-card-click="onHandCardClick"
+        @card-hover="hoveredCard = $event"
       />
     </UContainer>
 
     <template #right>
       <UCard class="flex flex-col gap-2 h-full overflow-hidden">
-        <p class="text-sm font-medium text-primary">
-          Journal
-        </p>
-        <ul class="flex flex-col gap-1 text-xs flex-1 min-h-0 overflow-y-auto">
-          <li
-            v-for="entry in logs"
-            :key="entry.id"
-            class="border-b border-default pb-1"
-          >
-            {{ entry.message }}
-          </li>
-        </ul>
+        <div class="flex flex-col gap-2 h-[700px] shrink-0">
+          <p class="text-sm font-medium text-primary">
+            Aperçu
+          </p>
+          <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+            <img
+              v-if="hoveredCard"
+              :src="hoveredCard.imageUrl"
+              :alt="hoveredCard.alt ?? ''"
+              class="h-full max-w-full object-contain rounded"
+            >
+            <p
+              v-else
+              class="text-xs text-muted text-center px-2"
+            >
+              Survolez une carte pour l'agrandir ici
+            </p>
+          </div>
+        </div>
+
+        <USeparator class="shrink-0 my-4" />
+
+        <div class="flex flex-col gap-2 flex-1 min-h-0">
+          <p class="text-sm font-medium text-primary">
+            Journal
+          </p>
+          <ul class="flex flex-col gap-1 text-xs flex-1 min-h-0 overflow-y-auto">
+            <li
+              v-for="entry in logs"
+              :key="entry.id"
+              class="border-b border-default pb-1"
+            >
+              {{ entry.message }}
+            </li>
+          </ul>
+        </div>
       </UCard>
     </template>
   </UPage>
