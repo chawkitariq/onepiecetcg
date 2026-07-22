@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuelPlayerView, PublicCard } from '@onepiecetcg/shared'
+import type { DuelPlayerView } from '@onepiecetcg/shared'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
@@ -20,53 +20,34 @@ const emit = defineEmits<{
   handCardClick: [side: 0 | 1, instanceId: string]
 }>()
 
-function power(card: PublicCard): number {
-  return (card.power ?? 0) + card.attachedDon * 1000
-}
-
 const life = computed(() => Array.from({ length: player.lifeCount }))
 const topTrash = computed(() => player.trash[0] ?? null)
 const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
-const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' : '')
 </script>
 
 <template>
   <div :class="`flex flex-col gap-2 h-full min-h-0 ${isAdversary ? '-scale-x-100 -scale-y-100' : ''}`">
-    <div class="grid grid-cols-[12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+    <div class="grid grid-cols-[min-content_1fr] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
+      <DuelZoneSlot
+        :label="`Life (${player.lifeCount})`"
+        :flipped="isAdversary"
+        hug-card
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Life ({{ player.lifeCount }})
-        </p>
         <div class="relative h-full">
-          <img
+          <DuelCard
             v-for="(_, index) in life"
             :key="index"
             :src="cardBackRegular"
             alt="Vie"
-            class="object-contain h-full w-auto mx-auto"
-            :class="index === 0 ? 'relative z-50' : 'absolute left-0'"
+            :class="index === 0 ? 'relative z-50' : 'absolute left-0 top-0'"
             :style="index > 0 ? { top: `${index * 4}%`, zIndex: 50 - index } : undefined"
-          >
+          />
         </div>
-      </UCard>
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+      </DuelZoneSlot>
+      <DuelZoneSlot
+        label="Character"
+        :flipped="isAdversary"
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Character
-        </p>
         <div class="flex justify-center items-center gap-2 h-full">
           <button
             v-for="character in player.characters"
@@ -74,215 +55,136 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
             type="button"
             class="relative h-full shrink-0"
             :class="[
-              character.rested ? '-rotate-90' : '',
               attackerId === character.instanceId ? 'ring-4 ring-primary rounded' : '',
               isTargetable && character.rested ? 'ring-4 ring-error rounded' : ''
             ]"
             @click="emit('characterClick', side, character.instanceId)"
           >
-            <img
-              :src="character.imageUrl ?? undefined"
-              alt=""
-              class="object-contain h-full w-auto"
-            >
-            <span
-              class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-1"
-              :class="textFlipClass"
-            >
-              {{ character.name }} · {{ power(character) }}
-            </span>
+            <DuelCard
+              :src="character.imageUrl"
+              :rotated="character.rested"
+            />
           </button>
         </div>
-      </UCard>
+      </DuelZoneSlot>
     </div>
 
-    <div class="grid grid-cols-[12.25%_12.25%_12.25%] grid-rows-[minmax(0,1fr)] place-content-end gap-2 flex-1 min-h-0">
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+    <div class="grid grid-cols-[repeat(3,min-content)] grid-rows-[minmax(0,1fr)] place-content-end gap-2 flex-1 min-h-0">
+      <DuelZoneSlot
+        label="Leader"
+        :flipped="isAdversary"
+        hug-card
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Leader
-        </p>
         <button
           type="button"
           class="relative h-full w-full"
           :class="[
-            player.leader?.rested ? '-rotate-90' : '',
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary rounded' : '',
             isTargetable ? 'ring-4 ring-error rounded' : ''
           ]"
           @click="emit('leaderClick', side)"
         >
-          <img
+          <DuelCard
             v-if="player.leader"
-            :src="player.leader.imageUrl ?? undefined"
-            alt=""
-            class="object-contain h-full w-full"
-          >
-          <span
-            v-if="player.leader"
-            class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-1"
-            :class="textFlipClass"
-          >
-            {{ player.leader.name }} · {{ power(player.leader) }}
-          </span>
+            :src="player.leader.imageUrl"
+            :rotated="player.leader.rested"
+          />
         </button>
-      </UCard>
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+      </DuelZoneSlot>
+      <DuelZoneSlot
+        label="Stage"
+        :flipped="isAdversary"
+        hug-card
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Stage
-        </p>
         <button
           type="button"
-          class="w-full h-full"
+          class="h-full w-full"
           @click="emit('stageClick', side)"
         >
-          <img
+          <DuelCard
             v-if="player.stage"
-            :src="player.stage.imageUrl ?? undefined"
-            alt=""
-            class="object-contain h-full w-full"
-          >
+            :src="player.stage.imageUrl"
+          />
         </button>
-      </UCard>
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+      </DuelZoneSlot>
+      <DuelZoneSlot
+        :label="`Deck (${player.deckCount})`"
+        :flipped="isAdversary"
+        hug-card
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Deck ({{ player.deckCount }})
-        </p>
-        <img
+        <DuelCard
           v-if="player.deckCount > 0"
           :src="cardBackRegular"
           alt="Deck"
-          class="object-contain h-full w-full"
-        >
-      </UCard>
+        />
+      </DuelZoneSlot>
     </div>
 
-    <div class="grid grid-cols-[12.25%_1fr_12.25%] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+    <div class="grid grid-cols-[min-content_1fr_min-content] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
+      <DuelZoneSlot
+        :label="`Don (${player.donDeckCount})`"
+        :flipped="isAdversary"
+        hug-card
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Don ({{ player.donDeckCount }})
-        </p>
-        <img
+        <DuelCard
           v-if="player.donDeckCount > 0"
           :src="cardBackDon"
           alt="Deck DON!!"
-          class="object-contain h-full w-full"
-        >
-      </UCard>
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+        />
+      </DuelZoneSlot>
+      <DuelZoneSlot
+        label="Cost"
+        :flipped="isAdversary"
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Cost
-        </p>
         <div class="flex justify-center items-center gap-2 h-full">
-          <img
+          <DuelCard
             v-for="don in player.cost"
             :key="don.instanceId"
             :src="donFront"
             alt="DON!!"
-            class="object-contain h-full w-auto"
-            :class="don.rested ? '-rotate-90' : ''"
-          >
+            :rotated="don.rested"
+          />
         </div>
-      </UCard>
-      <UCard
-        variant="subtle"
-        class="h-full relative overflow-hidden"
-        :ui="{ body: 'h-full' }"
+      </DuelZoneSlot>
+      <DuelZoneSlot
+        :label="`Trash (${player.trash.length})`"
+        :flipped="isAdversary"
+        hug-card
       >
-        <p
-          class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-          :class="textFlipClass"
-        >
-          Trash ({{ player.trash.length }})
-        </p>
-        <img
+        <DuelCard
           v-if="topTrash"
-          :src="topTrash.imageUrl ?? undefined"
-          alt=""
-          class="object-contain h-full w-full"
-        >
-      </UCard>
+          :src="topTrash.imageUrl"
+        />
+      </DuelZoneSlot>
     </div>
 
-    <UCard
-      variant="subtle"
-      class="h-full relative overflow-hidden flex-[1.4] min-h-0 flex flex-col"
-      :ui="{ body: 'h-full flex flex-col min-h-0' }"
+    <DuelZoneSlot
+      :label="`Main (${player.hand.length})`"
+      :flipped="isAdversary"
+      label-style="inline"
+      class="flex-1 min-h-0"
     >
-      <p
-        class="uppercase text-xs shrink-0"
-        :class="textFlipClass"
-      >
-        Main ({{ player.hand.length }})
-      </p>
-      <div class="flex justify-center items-center gap-2 flex-wrap flex-1 min-h-0">
+      <div class="flex justify-center items-center gap-2 flex-wrap h-full">
         <template v-if="revealHand">
           <button
             v-for="card in player.hand"
             :key="card.instanceId"
             type="button"
-            class="relative h-full"
+            class="h-full"
             @click="emit('handCardClick', side, card.instanceId)"
           >
-            <img
-              :src="card.imageUrl ?? undefined"
-              alt=""
-              class="object-cover h-full w-auto"
-            >
-            <span
-              class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-1"
-              :class="textFlipClass"
-            >
-              {{ card.name }} <template v-if="card.cost !== null">
-                · {{ card.cost }}
-              </template>
-            </span>
+            <DuelCard :src="card.imageUrl" />
           </button>
         </template>
         <template v-else>
-          <img
+          <DuelCard
             v-for="(_, index) in hiddenHand"
             :key="index"
             :src="cardBackRegular"
             alt="Main adverse"
-            class="object-contain h-full w-auto"
-          >
+          />
         </template>
       </div>
-    </UCard>
+    </DuelZoneSlot>
   </div>
 </template>
