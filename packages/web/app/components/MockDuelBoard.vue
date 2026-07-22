@@ -186,7 +186,7 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 h-full min-h-0 overflow-hidden">
+  <div class="flex flex-col h-full min-h-0 overflow-hidden">
     <UHeader
       class="static shrink-0"
       :ui="{
@@ -345,7 +345,7 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
         </UCard>
       </template>
 
-      <UContainer class="flex flex-col gap-2 h-full min-h-0 overflow-hidden">
+      <UContainer class="flex flex-col w-5xl gap-2 h-full min-h-0 overflow-hidden">
         <PlayZone
           class="flex-1 min-h-0"
           :player="players[opponentOf(viewingPlayerIndex)]"
