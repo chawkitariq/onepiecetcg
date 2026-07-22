@@ -266,7 +266,7 @@ async function leaveRoom() {
                   </p>
                 </div>
                 <UButton
-                  to="/decks"
+                  :to="{ path: '/decks', query: { deckId: selectedDeckSummary.deck.id } }"
                   color="primary"
                   variant="link"
                   size="sm"

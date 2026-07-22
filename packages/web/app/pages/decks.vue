@@ -11,9 +11,11 @@ import type {
   DeckValidation
 } from '@onepiecetcg/shared'
 import { normalizeDeckCards } from '@onepiecetcg/shared'
+import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 
 const api = useApi()
 const { profile, refresh: refreshSession } = useSession()
+const route = useRoute()
 
 const selectedDeckId = ref<string | null>(null)
 const deckName = ref('Nouveau deck')
@@ -122,6 +124,18 @@ watch(payload, () => {
 }, { deep: true, immediate: true })
 
 watch([search, selectedSet, selectedType, selectedColor, selectedCost], persistCatalogFilters)
+
+watch(
+  [() => route.query.deckId, savedDecks],
+  ([deckIdFromRoute, decks]) => {
+    const deckToSelect = findDeckByRouteQuery(decks, deckIdFromRoute)
+
+    if (deckToSelect && selectedDeckId.value !== deckToSelect.id) {
+      setFromSavedDeck(deckToSelect)
+    }
+  },
+  { immediate: true }
+)
 
 const setItems = computed(() => [
   { label: 'Tous les sets', value: allFilter },
