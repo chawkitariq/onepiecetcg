@@ -34,6 +34,7 @@ const serverMessage = ref<string | null>(null)
 const serverError = ref<string | null>(null)
 const builderNotice = ref<string | null>(null)
 const saving = ref(false)
+const deleting = ref(false)
 
 type PersistedCatalogFilters = {
   search?: string
@@ -451,6 +452,30 @@ async function saveDeck() {
   }
 }
 
+async function deleteDeck() {
+  if (!selectedDeckId.value) {
+    return
+  }
+
+  deleting.value = true
+  serverMessage.value = null
+  serverError.value = null
+
+  try {
+    await api<{ deleted: true }>(`/decks/${selectedDeckId.value}`, {
+      method: 'DELETE'
+    })
+
+    resetBuilder()
+    serverMessage.value = 'Deck supprime.'
+    await refreshDecks()
+  } catch (error: unknown) {
+    serverError.value = extractErrorMessage(error)
+  } finally {
+    deleting.value = false
+  }
+}
+
 function extractErrorMessage(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'data' in error) {
     const data = (error as { data?: { validation?: DeckValidation, message?: string } }).data
@@ -708,7 +733,7 @@ function extractErrorMessage(error: unknown): string {
 
       <UCard
         class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden', footer: 'shrink-0' }"
+        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
       >
         <template #header>
           <div class="space-y-3">
@@ -721,7 +746,7 @@ function extractErrorMessage(error: unknown): string {
                   {{ mainDeckCount }} / 50 cartes
                 </p>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-end gap-2">
                 <UButton
                   icon="i-lucide-shuffle"
                   color="neutral"
@@ -739,13 +764,26 @@ function extractErrorMessage(error: unknown): string {
                 >
                   Validation
                 </UBadge>
-                <UBadge
-                  v-else
-                  :color="validationData?.valid ? 'success' : 'error'"
-                  variant="subtle"
+                <UButton
+                  icon="i-lucide-save"
+                  size="sm"
+                  :loading="saving"
+                  :disabled="!validationData?.valid"
+                  @click="saveDeck"
                 >
-                  {{ validationData?.valid ? 'Valide' : 'Invalide' }}
-                </UBadge>
+                  Sauvegarder
+                </UButton>
+                <UButton
+                  icon="i-lucide-trash-2"
+                  color="error"
+                  variant="soft"
+                  size="sm"
+                  :loading="deleting"
+                  :disabled="!selectedDeckId"
+                  @click="deleteDeck"
+                >
+                  Supprimer
+                </UButton>
               </div>
             </div>
             <UFormField
@@ -874,29 +912,6 @@ function extractErrorMessage(error: unknown): string {
             />
           </div>
         </div>
-
-        <template #footer>
-          <div class="grid grid-cols-2 gap-2">
-            <UButton
-              icon="i-lucide-save"
-              :loading="saving"
-              :disabled="!validationData?.valid"
-              block
-              @click="saveDeck"
-            >
-              Sauvegarder
-            </UButton>
-            <UButton
-              icon="i-lucide-rotate-ccw"
-              color="neutral"
-              variant="ghost"
-              block
-              @click="resetBuilder"
-            >
-              Reinitialiser
-            </UButton>
-          </div>
-        </template>
       </UCard>
 
       <UCard
