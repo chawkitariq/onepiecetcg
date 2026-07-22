@@ -3,6 +3,7 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import type { IncomingMessage } from 'http';
 import { Room, type Client } from 'colyseus';
 import type { DecksService, ValidatedGameDeck } from '../decks/decks.service';
 import {
@@ -20,27 +21,64 @@ type DuelRoomServices = {
 };
 
 type DuelJoinOptions = {
-  authUserId?: string;
   displayName?: string;
   deckId?: string;
 };
 
+type DuelAuthData = {
+  userId: string;
+};
+
+type DuelSessionResolver = (
+  req: IncomingMessage,
+) => Promise<{ user: { id: string } } | null>;
+
 let services: DuelRoomServices | null = null;
+let resolveSession: DuelSessionResolver | null = null;
 
 export function configureDuelRoomServices(nextServices: DuelRoomServices) {
   services = nextServices;
 }
 
+/**
+ * Wired to Better Auth's `auth.api.getSession` by `main.ts`. Kept as an
+ * injectable function (rather than importing `../auth` directly here) so
+ * Colyseus can instantiate `DuelRoom` outside Nest's DI, and so unit tests
+ * can stub session resolution without loading the real Better Auth ESM build.
+ */
+export function configureDuelRoomAuth(nextResolver: DuelSessionResolver) {
+  resolveSession = nextResolver;
+}
+
 export class DuelRoom extends Room<DuelState> {
   private readonly logger = new Logger(DuelRoom.name);
 
+  private readonly authUserIdBySession = new Map<string, string>();
+
   maxClients = 2;
+
+  static async onAuth(
+    _token: string,
+    req: IncomingMessage,
+  ): Promise<DuelAuthData> {
+    if (!resolveSession) {
+      throw new ServiceUnavailableException('Duel room auth is unavailable');
+    }
+
+    const session = await resolveSession(req);
+
+    if (!session?.user?.id) {
+      throw new BadRequestException('Session invalide');
+    }
+
+    return { userId: session.user.id };
+  }
 
   onCreate() {
     this.setState(new DuelState());
   }
 
-  async onJoin(client: Client, options: DuelJoinOptions) {
+  async onJoin(client: Client, options: DuelJoinOptions, auth?: DuelAuthData) {
     if (!services) {
       throw new ServiceUnavailableException(
         'Duel room services are unavailable',
@@ -51,7 +89,7 @@ export class DuelRoom extends Room<DuelState> {
       throw new BadRequestException('La room est deja complete');
     }
 
-    const authUserId = options.authUserId?.trim();
+    const authUserId = auth?.userId;
     const deckId = options.deckId?.trim();
 
     if (!authUserId || !deckId) {
@@ -67,6 +105,7 @@ export class DuelRoom extends Room<DuelState> {
       deckId,
     );
     const player = this.createPlayer(client, options, gameDeck);
+    this.authUserIdBySession.set(client.sessionId, gameDeck.ownerAuthUserId);
     this.state.players.set(client.sessionId, player);
     this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
 
@@ -107,7 +146,6 @@ export class DuelRoom extends Room<DuelState> {
   ): DuelPlayer {
     const player = new DuelPlayer();
     player.sessionId = client.sessionId;
-    player.authUserId = gameDeck.ownerAuthUserId;
     player.displayName =
       options.displayName?.trim().slice(0, 40) ||
       `Player ${gameDeck.ownerAuthUserId.slice(0, 8)}`;
@@ -133,8 +171,15 @@ export class DuelRoom extends Room<DuelState> {
         this.createDonCard(client, index),
       ),
     );
+    this.syncZoneCounts(player);
 
     return player;
+  }
+
+  private syncZoneCounts(player: DuelPlayer) {
+    player.handCount = player.zones.hand.length;
+    player.deckCount = player.zones.deck.length;
+    player.lifeCount = player.zones.life.length;
   }
 
   private initializeGame() {
@@ -164,6 +209,8 @@ export class DuelRoom extends Room<DuelState> {
           player.zones.life.push(card);
         }
       }
+
+      this.syncZoneCounts(player);
     }
 
     this.state.phase = 'setup';
@@ -186,9 +233,7 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private hasJoined(authUserId: string): boolean {
-    return Array.from(this.state.players.values()).some(
-      (player) => player.authUserId === authUserId,
-    );
+    return Array.from(this.authUserIdBySession.values()).includes(authUserId);
   }
 
   private addLog(message: string) {
@@ -202,6 +247,7 @@ export class DuelRoom extends Room<DuelState> {
 
   private removePlayer(sessionId: string) {
     this.state.players.delete(sessionId);
+    this.authUserIdBySession.delete(sessionId);
 
     if (this.state.players.size === 0) {
       void this.disconnect();

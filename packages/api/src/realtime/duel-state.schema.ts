@@ -1,4 +1,11 @@
-import { ArraySchema, MapSchema, Schema, filter, type } from '@colyseus/schema';
+import {
+  ArraySchema,
+  MapSchema,
+  Schema,
+  filter,
+  filterChildren,
+  type,
+} from '@colyseus/schema';
 import type { Card, CardColor, CardType, GamePhase } from '@onepiecetcg/shared';
 
 type FilterClient = {
@@ -7,6 +14,14 @@ type FilterClient = {
 
 function canViewPrivateCard(client: FilterClient, root: DuelCard): boolean {
   return !root.privateToOwner || root.ownerSessionId === client.sessionId;
+}
+
+function ownsCard(
+  client: FilterClient,
+  _key: number,
+  value: DuelCard,
+): boolean {
+  return value.ownerSessionId === client.sessionId;
 }
 
 export class DuelCard extends Schema {
@@ -105,15 +120,18 @@ export class DuelCard extends Schema {
 }
 
 export class DuelZones extends Schema {
+  @filterChildren(ownsCard)
   @type([DuelCard])
   deck = new ArraySchema<DuelCard>();
 
   @type([DuelCard])
   donDeck = new ArraySchema<DuelCard>();
 
+  @filterChildren(ownsCard)
   @type([DuelCard])
   hand = new ArraySchema<DuelCard>();
 
+  @filterChildren(ownsCard)
   @type([DuelCard])
   life = new ArraySchema<DuelCard>();
 
@@ -138,9 +156,6 @@ export class DuelPlayer extends Schema {
   sessionId = '';
 
   @type('string')
-  authUserId = '';
-
-  @type('string')
   displayName = '';
 
   @type('string')
@@ -151,6 +166,15 @@ export class DuelPlayer extends Schema {
 
   @type('boolean')
   connected = true;
+
+  @type('number')
+  handCount = 0;
+
+  @type('number')
+  deckCount = 0;
+
+  @type('number')
+  lifeCount = 0;
 
   @type(DuelZones)
   zones = new DuelZones();

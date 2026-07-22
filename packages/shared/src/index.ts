@@ -150,29 +150,68 @@ export type PrivateCard = PublicCard & {
 
 export type PlayerZoneCounts = Record<GameZone, number>;
 
+export type TargetType = 'leader' | 'character';
+
+export type CombatTarget = {
+  type: TargetType;
+  playerSessionId: string;
+  instanceId: string;
+};
+
+export type CombatStep =
+  | 'declared'
+  | 'blocked'
+  | 'countering'
+  | 'resolving'
+  | 'resolved';
+
+export type CombatStatus = {
+  attackerSessionId: string;
+  attackerInstanceId: string;
+  target: CombatTarget;
+  blockerInstanceId: string | null;
+  step: CombatStep;
+  attackerPower: number;
+  defenderPower: number;
+};
+
+export type ActivePlayer = {
+  sessionId: string;
+  turn: number;
+};
+
 export type DuelPlayerView = {
   sessionId: string;
-  authUserId: string;
   displayName: string;
   deckId: string;
   ready: boolean;
   connected: boolean;
   leader: PublicCard | null;
-  hand: PrivateCard[];
-  opponentHandCount: number;
-  lifeCount: number;
-  deckCount: number;
-  donDeckCount: number;
-  characters: PublicCard[];
   stage: PublicCard | null;
+  characters: PublicCard[];
   cost: PublicCard[];
   trash: PublicCard[];
+  donDeckCount: number;
+  hand: PrivateCard[];
+  handCount: number;
+  deck: PrivateCard[];
+  deckCount: number;
+  life: PrivateCard[];
+  lifeCount: number;
 };
 
 export type DuelLogEntry = {
   id: string;
   message: string;
   createdAt: string;
+};
+
+export type DuelRoomView = {
+  phase: GamePhase;
+  activePlayer: ActivePlayer;
+  players: Record<string, DuelPlayerView>;
+  logs: DuelLogEntry[];
+  combat: CombatStatus | null;
 };
 
 export function normalizeCardId(cardId: string): string {
