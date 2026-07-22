@@ -16,6 +16,7 @@ import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 const api = useApi()
 const { profile, refresh: refreshSession } = useSession()
 const route = useRoute()
+const toast = useToast()
 
 const selectedDeckId = ref<string | null>(null)
 const deckName = ref('Nouveau deck')
@@ -30,8 +31,6 @@ const selectedType = ref<CardType | typeof allFilter>(allFilter)
 const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
 const selectedCost = ref<string>(allFilter)
 const selectedCard = ref<Card | null>(null)
-const serverMessage = ref<string | null>(null)
-const serverError = ref<string | null>(null)
 const builderNotice = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
@@ -42,6 +41,39 @@ type PersistedCatalogFilters = {
   type?: CardType | typeof allFilter
   color?: CardColor | typeof allFilter
   cost?: string
+}
+
+function createDeckSavedToast() {
+  return {
+    title: 'Deck sauvegarde',
+    color: 'success' as const,
+    icon: 'i-lucide-circle-check'
+  }
+}
+
+function createRandomDeckGeneratedToast() {
+  return {
+    title: 'Deck aleatoire genere',
+    color: 'success' as const,
+    icon: 'i-lucide-shuffle'
+  }
+}
+
+function createDeckDeletedToast() {
+  return {
+    title: 'Deck supprime',
+    color: 'success' as const,
+    icon: 'i-lucide-trash-2'
+  }
+}
+
+function createDeckActionErrorToast(message: string) {
+  return {
+    title: 'Action impossible',
+    description: message,
+    color: 'error' as const,
+    icon: 'i-lucide-circle-alert'
+  }
 }
 
 onMounted(async () => {
@@ -183,8 +215,6 @@ function setFromSavedDeck(deck: Deck) {
   deckName.value = deck.name
   leaderCardId.value = deck.leaderCardId
   deckCards.value = [...deck.cards]
-  serverMessage.value = null
-  serverError.value = null
   builderNotice.value = null
 }
 
@@ -193,14 +223,10 @@ function resetBuilder() {
   deckName.value = 'Nouveau deck'
   leaderCardId.value = ''
   deckCards.value = []
-  serverMessage.value = null
-  serverError.value = null
   builderNotice.value = null
 }
 
 function createRandomDeck() {
-  serverMessage.value = null
-  serverError.value = null
   builderNotice.value = null
 
   const leaders = shuffle(cards.value.filter(card => card.type === 'Leader'))
@@ -212,14 +238,14 @@ function createRandomDeck() {
   })
 
   if (!selectedRandomLeader) {
-    builderNotice.value = 'Impossible de generer un deck aleatoire avec le catalogue charge.'
+    toast.add(createDeckActionErrorToast('Impossible de generer un deck aleatoire avec le catalogue charge.'))
     return
   }
 
   const randomLines = buildRandomDeckLines(selectedRandomLeader)
 
   if (randomLines.length === 0) {
-    builderNotice.value = 'Impossible de trouver 50 cartes compatibles avec ce Leader.'
+    toast.add(createDeckActionErrorToast('Impossible de trouver 50 cartes compatibles avec ce Leader.'))
     return
   }
 
@@ -228,7 +254,7 @@ function createRandomDeck() {
   leaderCardId.value = selectedRandomLeader.id
   selectedCard.value = selectedRandomLeader
   deckCards.value = randomLines
-  builderNotice.value = 'Deck aleatoire genere.'
+  toast.add(createRandomDeckGeneratedToast())
 }
 
 function resetCatalogFilters() {
@@ -357,7 +383,6 @@ function getCardColorStyle(color: CardColor) {
 
 function addCard(card: Card) {
   selectedCard.value = card
-  serverMessage.value = null
   builderNotice.value = null
 
   if (card.type === 'Leader') {
@@ -390,7 +415,6 @@ function addCard(card: Card) {
 
 function chooseLeader(card: Card) {
   selectedCard.value = card
-  serverMessage.value = null
   builderNotice.value = null
 
   if (card.type !== 'Leader') {
@@ -434,8 +458,6 @@ function incrementCard(cardId: string) {
 
 async function saveDeck() {
   saving.value = true
-  serverMessage.value = null
-  serverError.value = null
 
   try {
     const route = selectedDeckId.value ? `/decks/${selectedDeckId.value}` : '/decks'
@@ -443,10 +465,10 @@ async function saveDeck() {
     const saved = await api<Deck>(route, { method, body: payload.value })
 
     selectedDeckId.value = saved.id
-    serverMessage.value = 'Deck sauvegarde.'
+    toast.add(createDeckSavedToast())
     await refreshDecks()
   } catch (error: unknown) {
-    serverError.value = extractErrorMessage(error)
+    toast.add(createDeckActionErrorToast(extractErrorMessage(error)))
   } finally {
     saving.value = false
   }
@@ -458,8 +480,6 @@ async function deleteDeck() {
   }
 
   deleting.value = true
-  serverMessage.value = null
-  serverError.value = null
 
   try {
     await api<{ deleted: true }>(`/decks/${selectedDeckId.value}`, {
@@ -467,10 +487,10 @@ async function deleteDeck() {
     })
 
     resetBuilder()
-    serverMessage.value = 'Deck supprime.'
+    toast.add(createDeckDeletedToast())
     await refreshDecks()
   } catch (error: unknown) {
-    serverError.value = extractErrorMessage(error)
+    toast.add(createDeckActionErrorToast(extractErrorMessage(error)))
   } finally {
     deleting.value = false
   }
@@ -834,20 +854,6 @@ function extractErrorMessage(error: unknown): string {
               variant="subtle"
               icon="i-lucide-circle-alert"
               :description="builderNotice"
-            />
-            <UAlert
-              v-if="serverMessage"
-              color="success"
-              variant="subtle"
-              icon="i-lucide-circle-check"
-              :description="serverMessage"
-            />
-            <UAlert
-              v-if="serverError"
-              color="error"
-              variant="subtle"
-              icon="i-lucide-circle-alert"
-              :description="serverError"
             />
           </div>
 
