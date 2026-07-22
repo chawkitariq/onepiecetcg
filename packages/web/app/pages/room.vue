@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import type { Deck, DeckListResponse } from '@onepiecetcg/shared'
+import type { Card, CardSearchResponse, Deck, DeckListResponse } from '@onepiecetcg/shared'
+
+const colorDotClasses: Record<string, string> = {
+  Red: 'bg-red-500',
+  Green: 'bg-green-500',
+  Blue: 'bg-blue-500',
+  Purple: 'bg-purple-500',
+  Black: 'bg-neutral-900 dark:bg-neutral-100',
+  Yellow: 'bg-yellow-400'
+}
 
 const api = useApi()
 const { profile, refresh } = useSession()
-const { room, status, error, joinDuel, leave } = useColyseus()
+const { room, status, error, joinDuel, createPrivateRoom, joinPrivateRoom, leave } = useColyseus()
 
 const decks = ref<Deck[]>([])
+const cards = ref<Card[]>([])
 const selectedDeckId = ref('')
+const deckSearch = ref('')
+const roomCodeInput = ref('')
+const createdRoomCode = ref('')
 const roomVersion = ref(0)
 const loadingDecks = ref(false)
 const deckError = ref('')
@@ -14,12 +27,34 @@ const deckError = ref('')
 await refresh()
 await loadDecks()
 
-const deckItems = computed(() =>
-  decks.value.map(deck => ({
-    label: deck.name,
-    value: deck.id
-  }))
+const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])))
+
+const deckSummaries = computed(() => decks.value.map((deck) => {
+  const leader = cardById.value.get(deck.leaderCardId) ?? null
+  const cardCount = deck.cards.reduce((sum, card) => sum + card.quantity, 0)
+
+  return {
+    deck,
+    leader,
+    cardCount
+  }
+}))
+
+const selectedDeckSummary = computed(() =>
+  deckSummaries.value.find(summary => summary.deck.id === selectedDeckId.value) ?? null
 )
+
+const filteredDeckSummaries = computed(() => {
+  const needle = deckSearch.value.trim().toLowerCase()
+
+  if (!needle) {
+    return deckSummaries.value
+  }
+
+  return deckSummaries.value.filter(summary =>
+    summary.deck.name.toLowerCase().includes(needle)
+    || (summary.leader?.name.toLowerCase().includes(needle) ?? false))
+})
 
 const players = computed(() => {
   void roomVersion.value
@@ -28,20 +63,8 @@ const players = computed(() => {
   return Array.from(state?.players?.values() ?? []) as Array<{
     sessionId: string
     displayName: string
-    deckId: string
-    ready: boolean
     connected: boolean
-    zones: {
-      leader?: { name?: string, number?: string, imageUrl?: string }
-      deck?: unknown[]
-      donDeck?: unknown[]
-      hand?: Array<{ name?: string, number?: string, imageUrl?: string }>
-      life?: unknown[]
-      characters?: unknown[]
-      stage?: { name?: string }
-      cost?: unknown[]
-      trash?: unknown[]
-    }
+    ready: boolean
   }>
 })
 
@@ -52,14 +75,22 @@ const logs = computed(() => {
   return Array.from(state?.logs ?? []) as Array<{ id: string, message: string, createdAt: string }>
 })
 
+function dotClass(leader: Card | null) {
+  return colorDotClasses[leader?.colors[0] ?? ''] ?? 'bg-neutral-400'
+}
+
 async function loadDecks() {
   loadingDecks.value = true
   deckError.value = ''
 
   try {
-    const response = await api<DeckListResponse>('/decks')
-    decks.value = response.decks
-    selectedDeckId.value = selectedDeckId.value || response.decks[0]?.id || ''
+    const [deckResponse, catalogResponse] = await Promise.all([
+      api<DeckListResponse>('/decks'),
+      api<CardSearchResponse>('/catalog/cards')
+    ])
+    decks.value = deckResponse.decks
+    cards.value = catalogResponse.cards
+    selectedDeckId.value = selectedDeckId.value || deckResponse.decks[0]?.id || ''
   } catch {
     deckError.value = 'Impossible de charger les decks sauvegardés.'
   } finally {
@@ -67,50 +98,69 @@ async function loadDecks() {
   }
 }
 
-async function joinRoom() {
+function watchRoom() {
+  room.value?.onStateChange(() => {
+    roomVersion.value += 1
+  })
+}
+
+async function quickMatch() {
   if (!profile.value?.user.id || !selectedDeckId.value) {
     return
   }
 
-  const joinedRoom = await joinDuel({
+  await joinDuel({
+    authUserId: profile.value.user.id,
+    displayName: profile.value.profile.displayName,
+    deckId: selectedDeckId.value
+  })
+  watchRoom()
+}
+
+async function createRoom() {
+  if (!profile.value?.user.id || !selectedDeckId.value) {
+    return
+  }
+
+  const joinedRoom = await createPrivateRoom({
     authUserId: profile.value.user.id,
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })
 
-  joinedRoom?.onStateChange(() => {
-    roomVersion.value += 1
+  createdRoomCode.value = joinedRoom?.roomId ?? ''
+  watchRoom()
+}
+
+async function joinRoomByCode() {
+  if (!profile.value?.user.id || !selectedDeckId.value || !roomCodeInput.value) {
+    return
+  }
+
+  await joinPrivateRoom(roomCodeInput.value.trim(), {
+    authUserId: profile.value.user.id,
+    displayName: profile.value.profile.displayName,
+    deckId: selectedDeckId.value
   })
+  watchRoom()
+}
+
+async function leaveRoom() {
+  await leave()
+  createdRoomCode.value = ''
+  roomCodeInput.value = ''
 }
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6">
-    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="text-sm font-medium text-primary">
-          Étape 5
-        </p>
-        <h1 class="mt-1 text-2xl font-semibold text-highlighted">
-          Room de duel
-        </h1>
-      </div>
-
-      <div class="flex flex-wrap gap-2">
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="soft"
-          :loading="loadingDecks"
-          @click="loadDecks"
-        />
-        <UButton
-          v-if="room"
-          icon="i-lucide-log-out"
-          color="neutral"
-          variant="soft"
-          @click="leave"
-        />
-      </div>
+  <div class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <header>
+      <h1 class="text-2xl font-bold text-highlighted">
+        Choisissez votre deck
+      </h1>
+      <p class="mt-1 text-sm text-muted">
+        Sélectionnez un deck sauvegardé pour rejoindre une partie.
+      </p>
     </header>
 
     <UAlert
@@ -118,7 +168,7 @@ async function joinRoom() {
       icon="i-lucide-lock"
       color="warning"
       title="Connexion requise"
-      description="Connecte-toi pour charger tes decks sauvegardés et rejoindre une room."
+      description="Connecte-toi pour charger tes decks sauvegardés et rejoindre une partie."
     />
 
     <UAlert
@@ -128,168 +178,215 @@ async function joinRoom() {
       :title="deckError || error"
     />
 
-    <section class="grid gap-4 lg:grid-cols-[20rem_1fr]">
-      <aside class="flex flex-col gap-4 rounded-lg border border-muted bg-elevated p-4">
-        <div>
-          <label
-            for="deck"
-            class="mb-2 block text-sm font-medium text-default"
-          >
-            Deck sauvegardé
-          </label>
-          <USelect
-            id="deck"
-            v-model="selectedDeckId"
-            :items="deckItems"
-            :disabled="!profile || status === 'connecting'"
+    <div class="grid gap-6 lg:grid-cols-[22rem_1fr]">
+      <UCard :ui="{ body: 'p-0' }">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-default">
+          <p class="text-xs font-medium tracking-wide text-muted uppercase">
+            {{ decks.length }} decks sauvegardés
+          </p>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :loading="loadingDecks"
+            @click="loadDecks"
+          />
+        </div>
+
+        <div class="px-4 py-3 border-b border-default">
+          <UInput
+            v-model="deckSearch"
+            icon="i-lucide-search"
+            placeholder="Rechercher un deck..."
             class="w-full"
           />
         </div>
 
-        <UButton
-          icon="i-lucide-plug"
-          :loading="status === 'connecting'"
-          :disabled="!profile || !selectedDeckId || Boolean(room)"
-          block
-          @click="joinRoom"
-        >
-          Rejoindre
-        </UButton>
-
-        <div class="grid grid-cols-2 gap-2 text-sm">
-          <div class="rounded-md border border-muted p-3">
-            <p class="text-muted">
-              Statut
-            </p>
-            <p class="font-medium text-default">
-              {{ status }}
-            </p>
-          </div>
-          <div class="rounded-md border border-muted p-3">
-            <p class="text-muted">
-              Joueurs
-            </p>
-            <p class="font-medium text-default">
-              {{ players.length }}/2
-            </p>
-          </div>
-        </div>
-      </aside>
-
-      <section class="flex flex-col gap-4">
-        <div class="grid gap-4 md:grid-cols-2">
-          <UCard
-            v-for="player in players"
-            :key="player.sessionId"
+        <ul class="max-h-112 overflow-y-auto">
+          <li
+            v-if="filteredDeckSummaries.length === 0"
+            class="px-4 py-6 text-center text-sm text-muted"
           >
-            <template #header>
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <h2 class="text-base font-semibold text-highlighted">
-                    {{ player.displayName }}
-                  </h2>
-                  <p class="text-sm text-muted">
-                    {{ player.ready ? 'Prêt' : 'En attente' }}
+            Aucun deck ne correspond à cette recherche.
+          </li>
+          <li
+            v-for="summary in filteredDeckSummaries"
+            :key="summary.deck.id"
+          >
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 px-4 py-3 text-left border-b border-default last:border-b-0 hover:bg-elevated transition-colors"
+              :class="selectedDeckId === summary.deck.id ? 'bg-primary/10' : ''"
+              @click="selectedDeckId = summary.deck.id"
+            >
+              <span
+                class="h-2.5 w-2.5 shrink-0 rounded-full"
+                :class="dotClass(summary.leader)"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-highlighted">
+                  {{ summary.deck.name }}
+                </span>
+                <span class="block truncate text-xs text-muted">
+                  {{ summary.leader?.name ?? 'Leader inconnu' }}
+                </span>
+              </span>
+              <span
+                class="shrink-0 text-xs font-medium"
+                :class="summary.cardCount === 50 ? 'text-muted' : 'text-error'"
+              >
+                {{ summary.cardCount }}/50
+              </span>
+              <URadio
+                :model-value="selectedDeckId === summary.deck.id"
+                :value="true"
+                tabindex="-1"
+              />
+            </button>
+          </li>
+        </ul>
+      </UCard>
+
+      <div class="flex flex-col gap-6">
+        <UCard v-if="selectedDeckSummary">
+          <div class="flex items-stretch gap-4">
+            <span
+              class="w-1 shrink-0 rounded-full"
+              :class="dotClass(selectedDeckSummary.leader)"
+            />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-lg font-semibold text-highlighted">
+                    {{ selectedDeckSummary.deck.name }}
+                  </p>
+                  <p class="truncate text-sm text-muted">
+                    {{ selectedDeckSummary.leader?.name ?? 'Leader inconnu' }}
                   </p>
                 </div>
-                <UBadge
-                  :color="player.connected ? 'success' : 'warning'"
-                  variant="soft"
+                <UButton
+                  to="/decks"
+                  color="primary"
+                  variant="link"
+                  size="sm"
                 >
-                  {{ player.connected ? 'Connecté' : 'Déconnecté' }}
-                </UBadge>
+                  Modifier le deck
+                </UButton>
               </div>
-            </template>
+              <UBadge
+                class="mt-3"
+                color="neutral"
+                variant="subtle"
+              >
+                {{ selectedDeckSummary.cardCount }}/50 cartes
+              </UBadge>
+            </div>
+          </div>
+        </UCard>
 
-            <div class="grid gap-3 text-sm">
-              <div class="flex items-center gap-3 rounded-md border border-muted p-3">
-                <img
-                  v-if="player.zones.leader?.imageUrl"
-                  :src="player.zones.leader.imageUrl"
-                  :alt="player.zones.leader.name"
-                  class="h-20 w-14 rounded object-cover"
-                >
-                <div>
-                  <p class="text-muted">
-                    Leader
-                  </p>
-                  <p class="font-medium text-default">
-                    {{ player.zones.leader?.name || 'Leader masqué' }}
-                  </p>
-                  <p class="text-muted">
-                    {{ player.zones.leader?.number }}
-                  </p>
-                </div>
-              </div>
+        <div class="grid gap-6 sm:grid-cols-2">
+          <UCard>
+            <p class="text-sm font-semibold text-highlighted">
+              Partie rapide
+            </p>
+            <p class="mt-1 text-sm text-muted">
+              Rejoignez la file d'attente et affrontez un adversaire choisi au hasard.
+            </p>
+            <UButton
+              class="mt-4"
+              color="neutral"
+              block
+              :loading="status === 'connecting'"
+              :disabled="!profile || !selectedDeckId || Boolean(room)"
+              @click="quickMatch"
+            >
+              Rechercher une partie
+            </UButton>
+          </UCard>
 
-              <div class="grid grid-cols-3 gap-2">
-                <div class="rounded-md border border-muted p-3">
-                  <p class="text-muted">
-                    Main
-                  </p>
-                  <p class="font-medium text-default">
-                    {{ player.zones.hand?.length ?? 0 }}
-                  </p>
-                </div>
-                <div class="rounded-md border border-muted p-3">
-                  <p class="text-muted">
-                    Vie
-                  </p>
-                  <p class="font-medium text-default">
-                    {{ player.zones.life?.length ?? 0 }}
-                  </p>
-                </div>
-                <div class="rounded-md border border-muted p-3">
-                  <p class="text-muted">
-                    Deck
-                  </p>
-                  <p class="font-medium text-default">
-                    {{ player.zones.deck?.length ?? 0 }}
-                  </p>
-                </div>
-              </div>
+          <UCard>
+            <p class="text-sm font-semibold text-highlighted">
+              Room privée
+            </p>
+            <p class="mt-1 text-sm text-muted">
+              Créez un code à partager ou entrez celui d'un ami.
+            </p>
 
-              <div class="grid grid-cols-2 gap-2">
-                <div class="rounded-md border border-muted p-3">
-                  <p class="text-muted">
-                    Personnages
-                  </p>
-                  <p class="font-medium text-default">
-                    {{ player.zones.characters?.length ?? 0 }}/5
-                  </p>
-                </div>
-                <div class="rounded-md border border-muted p-3">
-                  <p class="text-muted">
-                    Lieu
-                  </p>
-                  <p class="font-medium text-default">
-                    {{ player.zones.stage?.name || 'Aucun' }}
-                  </p>
-                </div>
-              </div>
+            <UButton
+              class="mt-4"
+              color="neutral"
+              block
+              :loading="status === 'connecting'"
+              :disabled="!profile || !selectedDeckId || Boolean(room)"
+              @click="createRoom"
+            >
+              Créer un code de room
+            </UButton>
 
-              <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-for="card in player.zones.hand"
-                  :key="card.number || card.name"
-                  color="neutral"
-                  variant="soft"
-                >
-                  {{ card.name || 'Carte cachée' }}
-                </UBadge>
-              </div>
+            <div
+              v-if="createdRoomCode"
+              class="mt-3 rounded-md bg-primary/10 px-3 py-2 text-center text-sm font-semibold tracking-widest text-primary"
+            >
+              {{ createdRoomCode }}
+            </div>
+
+            <div class="mt-3 flex gap-2">
+              <UInput
+                v-model="roomCodeInput"
+                placeholder="Code de room"
+                class="flex-1"
+                :disabled="!profile || !selectedDeckId || Boolean(room)"
+              />
+              <UButton
+                color="neutral"
+                :loading="status === 'connecting'"
+                :disabled="!profile || !selectedDeckId || !roomCodeInput || Boolean(room)"
+                @click="joinRoomByCode"
+              >
+                Rejoindre
+              </UButton>
             </div>
           </UCard>
         </div>
-
-        <UCard>
+        <UCard v-if="room">
           <template #header>
-            <h2 class="text-base font-semibold text-highlighted">
-              Logs
-            </h2>
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-sm font-semibold text-highlighted">
+                Room {{ createdRoomCode || room.roomId }}
+              </p>
+              <UButton
+                icon="i-lucide-log-out"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                @click="leaveRoom"
+              >
+                Quitter
+              </UButton>
+            </div>
           </template>
 
-          <ul class="space-y-2 text-sm text-default">
+          <div class="flex flex-wrap gap-2">
+            <UBadge
+              v-for="player in players"
+              :key="player.sessionId"
+              :color="player.connected ? 'success' : 'warning'"
+              variant="soft"
+            >
+              {{ player.displayName }} — {{ player.ready ? 'Prêt' : 'En attente' }}
+            </UBadge>
+            <p
+              v-if="players.length === 0"
+              class="text-sm text-muted"
+            >
+              En attente d'un adversaire...
+            </p>
+          </div>
+
+          <USeparator class="my-4" />
+
+          <ul class="space-y-1 text-sm text-default">
             <li
               v-for="log in logs"
               :key="log.id"
@@ -304,7 +401,7 @@ async function joinRoom() {
             </li>
           </ul>
         </UCard>
-      </section>
-    </section>
-  </main>
+      </div>
+    </div>
+  </div>
 </template>

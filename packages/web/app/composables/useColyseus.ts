@@ -35,6 +35,50 @@ export function useColyseus() {
     }
   }
 
+  async function createPrivateRoom(options: DuelJoinOptions) {
+    if (!import.meta.client) {
+      return null
+    }
+
+    status.value = 'connecting'
+    error.value = ''
+
+    try {
+      client.value = client.value ?? new Client(config.public.colyseusEndpoint)
+      room.value = await client.value.create('duel', options)
+      status.value = 'connected'
+
+      return room.value
+    } catch (caught) {
+      status.value = 'error'
+      error.value = caught instanceof Error ? caught.message : 'Création de la room impossible'
+
+      return null
+    }
+  }
+
+  async function joinPrivateRoom(code: string, options: DuelJoinOptions) {
+    if (!import.meta.client) {
+      return null
+    }
+
+    status.value = 'connecting'
+    error.value = ''
+
+    try {
+      client.value = client.value ?? new Client(config.public.colyseusEndpoint)
+      room.value = await client.value.joinById(code, options)
+      status.value = 'connected'
+
+      return room.value
+    } catch (caught) {
+      status.value = 'error'
+      error.value = caught instanceof Error ? caught.message : 'Impossible de rejoindre cette room'
+
+      return null
+    }
+  }
+
   async function leave() {
     await room.value?.leave()
     room.value = null
@@ -47,6 +91,8 @@ export function useColyseus() {
     status,
     error,
     joinDuel,
+    createPrivateRoom,
+    joinPrivateRoom,
     leave
   }
 }
