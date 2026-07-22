@@ -29,7 +29,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
   <div :class="`flex flex-col gap-2 h-full min-h-0 ${isAdversary ? '-scale-x-100 -scale-y-100' : ''}`">
     <div class="grid grid-cols-[min-content_1fr] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
       <DuelZoneSlot
-        :label="`Life (${player.lifeCount})`"
+        label="Life"
+        :count="player.lifeCount"
         :flipped="isAdversary"
         hug-card
       >
@@ -108,7 +109,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
         </button>
       </DuelZoneSlot>
       <DuelZoneSlot
-        :label="`Deck (${player.deckCount})`"
+        label="Deck"
+        :count="player.deckCount"
         :flipped="isAdversary"
         hug-card
       >
@@ -122,7 +124,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
 
     <div class="grid grid-cols-[min-content_1fr_min-content] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
       <DuelZoneSlot
-        :label="`Don (${player.donDeckCount})`"
+        label="Don"
+        :count="player.donDeckCount"
         :flipped="isAdversary"
         hug-card
       >
@@ -147,7 +150,8 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
         </div>
       </DuelZoneSlot>
       <DuelZoneSlot
-        :label="`Trash (${player.trash.length})`"
+        label="Trash"
+        :count="player.trash.length"
         :flipped="isAdversary"
         hug-card
       >
@@ -159,9 +163,9 @@ const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
     </div>
 
     <DuelZoneSlot
-      :label="`Main (${player.hand.length})`"
+      label="Main"
+      :count="player.hand.length"
       :flipped="isAdversary"
-      label-style="inline"
       class="flex-1 min-h-0"
     >
       <div class="flex justify-center items-center gap-2 flex-wrap h-full">
