@@ -3,6 +3,17 @@ import type { DuelPlayerView } from '@onepiecetcg/shared'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
+import { getStackedCardLayout } from '~/utils/cardStack'
+
+type StackContainerSize = {
+  width: number
+  height: number
+}
+
+type StackedCardStyleOptions = {
+  cardWidthRatio?: number
+  centered?: boolean
+}
 
 const { player, side, isAdversary, revealHand, attackerId, isTargetable } = defineProps<{
   player: DuelPlayerView
@@ -24,6 +35,62 @@ const emit = defineEmits<{
 const life = computed(() => Array.from({ length: player.lifeCount }))
 const topTrash = computed(() => player.trash[0] ?? null)
 const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
+const costCardWidthRatio = computed(() => player.cost.some(card => card.rested) ? 1 : undefined)
+const costStackSize = useMeasuredStackSize('costStack')
+const handStackSize = useMeasuredStackSize('handStack')
+
+function useMeasuredStackSize(templateRefName: string) {
+  const element = useTemplateRef<HTMLElement>(templateRefName)
+  const size = reactive<StackContainerSize>({
+    width: 0,
+    height: 0
+  })
+  let observer: ResizeObserver | null = null
+
+  onMounted(() => {
+    if (!element.value) {
+      return
+    }
+
+    size.width = element.value.clientWidth
+    size.height = element.value.clientHeight
+
+    observer = new ResizeObserver(([entry]) => {
+      if (!entry) {
+        return
+      }
+
+      size.width = entry.contentRect.width
+      size.height = entry.contentRect.height
+    })
+    observer.observe(element.value)
+  })
+
+  onBeforeUnmount(() => {
+    observer?.disconnect()
+  })
+
+  return size
+}
+
+function stackedCardStyle(
+  index: number,
+  cardCount: number,
+  size: StackContainerSize,
+  options: StackedCardStyleOptions = {}
+) {
+  const { startPercent, offsetPercent } = getStackedCardLayout(
+    cardCount,
+    size.width,
+    size.height,
+    options
+  )
+
+  return {
+    left: `${startPercent + index * offsetPercent}%`,
+    zIndex: index + 1
+  }
+}
 
 function onCardHover(imageUrl: string | null | undefined, alt?: string) {
   emit('cardHover', imageUrl ? { imageUrl, alt } : null)
@@ -150,13 +217,18 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
         label="Cost"
         :flipped="isAdversary"
       >
-        <div class="flex justify-center items-center gap-2 h-full">
+        <div
+          ref="costStack"
+          class="relative h-full w-full overflow-hidden"
+        >
           <DuelCard
-            v-for="don in player.cost"
+            v-for="(don, index) in player.cost"
             :key="don.instanceId"
             :src="donFront"
             alt="DON!!"
             :rotated="don.rested"
+            class="absolute top-0"
+            :style="stackedCardStyle(index, player.cost.length, costStackSize, { cardWidthRatio: costCardWidthRatio })"
           />
         </div>
       </DuelZoneSlot>
@@ -183,13 +255,17 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
       :flipped="isAdversary"
       class="flex-1 min-h-0"
     >
-      <div class="flex justify-center items-center gap-2 flex-wrap h-full">
+      <div
+        ref="handStack"
+        class="relative h-full w-full overflow-hidden"
+      >
         <template v-if="revealHand">
           <button
-            v-for="card in player.hand"
+            v-for="(card, index) in player.hand"
             :key="card.instanceId"
             type="button"
-            class="h-full"
+            class="absolute top-0 h-full"
+            :style="stackedCardStyle(index, player.hand.length, handStackSize, { centered: true })"
             @click="emit('handCardClick', side, card.instanceId)"
             @mouseenter="onCardHover(card.imageUrl)"
             @mouseleave="onCardHover(null)"
@@ -203,6 +279,8 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
             :key="index"
             :src="cardBackRegular"
             alt="Main adverse"
+            class="absolute top-0"
+            :style="stackedCardStyle(index, hiddenHand.length, handStackSize, { centered: true })"
           />
         </template>
       </div>
