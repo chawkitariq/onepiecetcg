@@ -150,9 +150,7 @@ function buildMainDeck(): PrivateCard[] {
 }
 
 interface MockPlayerState extends DuelPlayerView {
-  deckCards: PrivateCard[]
   donDeckCards: PrivateCard[]
-  lifeCards: PrivateCard[]
 }
 
 function createPlayer(displayName: string, deckId: string, sessionId: string): MockPlayerState {
@@ -164,32 +162,31 @@ function createPlayer(displayName: string, deckId: string, sessionId: string): M
 
   return {
     sessionId,
-    authUserId: sessionId,
     displayName,
     deckId,
     ready: true,
     connected: true,
     leader,
-    hand,
-    opponentHandCount: 0,
-    lifeCount: lifeCards.length,
-    deckCount: deckCards.length,
-    donDeckCount: donDeckCards.length,
-    characters: [],
     stage: null,
+    characters: [],
     cost: [],
     trash: [],
-    deckCards,
-    donDeckCards,
-    lifeCards
+    donDeckCount: donDeckCards.length,
+    hand,
+    handCount: hand.length,
+    deck: deckCards,
+    deckCount: deckCards.length,
+    life: lifeCards,
+    lifeCount: lifeCards.length,
+    donDeckCards
   }
 }
 
-function syncCounts(player: MockPlayerState, opponent: MockPlayerState) {
-  player.deckCount = player.deckCards.length
+function syncCounts(player: MockPlayerState) {
+  player.deckCount = player.deck.length
+  player.lifeCount = player.life.length
+  player.handCount = player.hand.length
   player.donDeckCount = player.donDeckCards.length
-  player.lifeCount = player.lifeCards.length
-  player.opponentHandCount = opponent.hand.length
 }
 
 export function useMockDuel() {
@@ -210,8 +207,8 @@ export function useMockDuel() {
   }
 
   function resync() {
-    syncCounts(players.value[0], players.value[1])
-    syncCounts(players.value[1], players.value[0])
+    syncCounts(players.value[0])
+    syncCounts(players.value[1])
   }
 
   function isFirstTurnFor(idx: 0 | 1): boolean {
@@ -253,7 +250,7 @@ export function useMockDuel() {
       return
     }
 
-    const drawn = p.deckCards.shift()
+    const drawn = p.deck.shift()
 
     if (!drawn) {
       winner.value = idx === 0 ? 1 : 0
@@ -516,14 +513,14 @@ export function useMockDuel() {
     }
 
     if (targetType === 'leader') {
-      if (defenderPlayer.lifeCards.length === 0) {
+      if (defenderPlayer.life.length === 0) {
         winner.value = attackerIdx
         phase.value = 'finished'
         log(`${defenderPlayer.displayName} n'a plus de Vie : ${attackerPlayer.displayName} remporte la partie.`)
         return
       }
 
-      const lifeCard = defenderPlayer.lifeCards.shift()
+      const lifeCard = defenderPlayer.life.shift()
 
       if (lifeCard) {
         defenderPlayer.hand.push(lifeCard)

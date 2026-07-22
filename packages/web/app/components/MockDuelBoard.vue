@@ -222,7 +222,7 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
             variant="subtle"
             size="sm"
           >
-            Main {{ players[opponentOf(viewingPlayerIndex)].hand.length }}
+            Main {{ players[opponentOf(viewingPlayerIndex)].handCount }}
           </UBadge>
           <UBadge
             color="neutral"

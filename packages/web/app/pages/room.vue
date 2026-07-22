@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Card, CardSearchResponse, Deck, DeckListResponse } from '@onepiecetcg/shared'
+import type { Card, CardSearchResponse, Deck, DeckListResponse, DuelLogEntry, DuelPlayerView } from '@onepiecetcg/shared'
 
 definePageMeta({
   layout: 'lobby',
@@ -63,21 +63,14 @@ const filteredDeckSummaries = computed(() => {
 
 const players = computed(() => {
   void roomVersion.value
-  const state = room.value?.state as { players?: Map<string, unknown> } | undefined
 
-  return Array.from(state?.players?.values() ?? []) as Array<{
-    sessionId: string
-    displayName: string
-    connected: boolean
-    ready: boolean
-  }>
+  return colyseusMapValues<DuelPlayerView>(room.value?.state.players)
 })
 
 const logs = computed(() => {
   void roomVersion.value
-  const state = room.value?.state as { logs?: unknown[] } | undefined
 
-  return Array.from(state?.logs ?? []) as Array<{ id: string, message: string, createdAt: string }>
+  return colyseusArrayValues<DuelLogEntry>(room.value?.state.logs)
 })
 
 function dotClass(leader: Card | null) {
@@ -106,6 +99,10 @@ async function loadDecks() {
 function watchRoom() {
   room.value?.onStateChange(() => {
     roomVersion.value += 1
+
+    if (players.value.length === 2 && players.value.every(player => player.ready)) {
+      void navigateTo('/zone')
+    }
   })
 }
 
@@ -115,7 +112,6 @@ async function quickMatch() {
   }
 
   await joinDuel({
-    authUserId: profile.value.user.id,
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })
@@ -128,7 +124,6 @@ async function createRoom() {
   }
 
   const joinedRoom = await createPrivateRoom({
-    authUserId: profile.value.user.id,
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })
@@ -143,7 +138,6 @@ async function joinRoomByCode() {
   }
 
   await joinPrivateRoom(roomCodeInput.value.trim(), {
-    authUserId: profile.value.user.id,
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })

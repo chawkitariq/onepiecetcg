@@ -34,7 +34,7 @@ const emit = defineEmits<{
 
 const life = computed(() => Array.from({ length: player.lifeCount }))
 const topTrash = computed(() => player.trash[0] ?? null)
-const hiddenHand = computed(() => Array.from({ length: player.hand.length }))
+const hiddenHand = computed(() => Array.from({ length: player.handCount }))
 const costCardWidthRatio = computed(() => player.cost.some(card => card.rested) ? 1 : undefined)
 const costStackSize = useMeasuredStackSize('costStack')
 const handStackSize = useMeasuredStackSize('handStack')
@@ -251,7 +251,7 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
 
     <DuelZoneSlot
       label="Main"
-      :count="player.hand.length"
+      :count="player.handCount"
       :flipped="isAdversary"
       class="flex-1 min-h-0"
     >
