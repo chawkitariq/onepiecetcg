@@ -1,3 +1,9 @@
+<script setup lang="ts">
+definePageMeta({
+  layout: 'simulator'
+})
+</script>
+
 <template>
   <ClientOnly>
     <MockDuelBoard />
