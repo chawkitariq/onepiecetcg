@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import type { GamePhase } from '@onepiecetcg/shared'
+
 const {
   players,
   phase,
   activePlayerIndex,
+  turnsTaken,
   logs,
   winner,
   attackerSelection,
@@ -12,6 +15,7 @@ const {
   selectAttacker,
   declareAttack,
   cancelAttack,
+  surrender,
   resetGame
 } = useMockDuel()
 
@@ -28,8 +32,21 @@ const phaseLabels: Record<string, string> = {
   finished: 'Terminée'
 }
 
+const phaseSteps: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end']
+
+const turnNumber = computed(() => turnsTaken.value[0] + turnsTaken.value[1])
+const isViewerTurn = computed(() => activePlayerIndex.value === viewingPlayerIndex.value)
+
 function opponentOf(side: 0 | 1): 0 | 1 {
   return side === 0 ? 1 : 0
+}
+
+function endTurn() {
+  const currentActive = activePlayerIndex.value
+
+  while (activePlayerIndex.value === currentActive && phase.value !== 'finished') {
+    nextPhase()
+  }
 }
 
 function toggleDonMode() {
@@ -81,148 +98,223 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
 </script>
 
 <template>
-  <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 h-full min-h-0 overflow-hidden">
-    <template #left>
-      <UCard class="flex flex-col gap-3 h-full overflow-y-auto">
-        <p class="text-sm font-medium text-primary">
-          Mock — sans room ni auth
+  <div class="flex flex-col gap-4 h-full min-h-0 overflow-hidden">
+    <div class="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border border-default shrink-0">
+      <div class="flex items-center gap-2 min-w-0">
+        <span
+          class="h-2 w-2 rounded-full shrink-0"
+          :class="players[opponentOf(viewingPlayerIndex)].connected ? 'bg-success' : 'bg-muted'"
+        />
+        <span class="text-sm font-medium truncate">
+          {{ players[opponentOf(viewingPlayerIndex)].displayName }}
+        </span>
+        <UBadge
+          color="neutral"
+          variant="subtle"
+          size="sm"
+        >
+          Deck {{ players[opponentOf(viewingPlayerIndex)].deckCount }}
+        </UBadge>
+        <UBadge
+          color="neutral"
+          variant="subtle"
+          size="sm"
+        >
+          DON!! {{ players[opponentOf(viewingPlayerIndex)].donDeckCount }}
+        </UBadge>
+        <UBadge
+          color="neutral"
+          variant="subtle"
+          size="sm"
+        >
+          Main {{ players[opponentOf(viewingPlayerIndex)].hand.length }}
+        </UBadge>
+        <UBadge
+          color="neutral"
+          variant="subtle"
+          size="sm"
+        >
+          Vie {{ players[opponentOf(viewingPlayerIndex)].lifeCount }}
+        </UBadge>
+      </div>
+
+      <div class="flex items-center gap-1 shrink-0">
+        <UBadge
+          v-for="step in phaseSteps"
+          :key="step"
+          color="neutral"
+          :variant="phase === step ? 'solid' : 'subtle'"
+          size="sm"
+        >
+          {{ phaseLabels[step] }}
+        </UBadge>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <p class="text-sm text-muted whitespace-nowrap">
+          Tour {{ turnNumber }} — {{ isViewerTurn ? 'Votre tour' : "Tour de l'adversaire" }}
         </p>
-        <p class="text-xs text-muted">
-          Simule un duel local à deux joueurs pour tester le plateau, avant le branchement à la room Colyseus réelle.
-        </p>
+        <UButton
+          color="neutral"
+          :disabled="phase === 'finished'"
+          @click="endTurn"
+        >
+          Terminer le tour
+        </UButton>
+        <UButton
+          color="error"
+          variant="ghost"
+          :disabled="phase === 'finished'"
+          @click="surrender(activePlayerIndex)"
+        >
+          Abandonner
+        </UButton>
+      </div>
+    </div>
 
-        <USeparator />
-
-        <div class="flex flex-col gap-1 text-sm">
-          <p>Tour de <strong>{{ players[activePlayerIndex].displayName }}</strong></p>
-          <p>Phase : <strong>{{ phaseLabels[phase] }}</strong></p>
-          <p
-            v-if="winner !== null"
-            class="text-primary font-semibold"
-          >
-            {{ players[winner].displayName }} remporte la partie !
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            :disabled="phase === 'finished'"
-            @click="nextPhase"
-          >
-            Phase suivante
-          </UButton>
-          <UButton
-            color="neutral"
-            variant="subtle"
-            :disabled="phase !== 'main'"
-            @click="toggleDonMode"
-          >
-            {{ donMode ? 'Annuler don DON!!' : 'Donner un DON!!' }}
-          </UButton>
-          <UButton
-            v-if="attackerSelection"
-            color="error"
-            variant="subtle"
-            @click="cancelAttack"
-          >
-            Annuler l'attaque
-          </UButton>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="resetGame"
-          >
-            Réinitialiser
-          </UButton>
-        </div>
-
-        <USeparator />
-
-        <div class="flex flex-col gap-1 text-sm">
-          <p class="font-medium">
-            Point de vue
-          </p>
-          <div class="flex gap-1">
-            <UButton
-              v-for="index in [0, 1] as const"
-              :key="index"
-              :variant="viewingPlayerIndex === index ? 'solid' : 'outline'"
-              @click="viewingPlayerIndex = index"
-            >
-              {{ players[index].displayName }}
-            </UButton>
-          </div>
-        </div>
-      </UCard>
-    </template>
-
-    <UContainer class="flex flex-col gap-2 h-full min-h-0 w-4xl overflow-hidden">
-      <PlayZone
-        class="flex-1 min-h-0"
-        :player="players[opponentOf(viewingPlayerIndex)]"
-        :side="opponentOf(viewingPlayerIndex)"
-        :attacker-id="attackerSelection"
-        :is-targetable="!!attackerSelection && activePlayerIndex === viewingPlayerIndex"
-        is-adversary
-        @leader-click="onLeaderClick"
-        @character-click="onCharacterClick"
-        @hand-card-click="onHandCardClick"
-        @card-hover="hoveredCard = $event"
-      />
-      <USeparator class="shrink-0" />
-      <PlayZone
-        class="flex-1 min-h-0"
-        :player="players[viewingPlayerIndex]"
-        :side="viewingPlayerIndex"
-        :attacker-id="attackerSelection"
-        :is-targetable="!!attackerSelection && activePlayerIndex !== viewingPlayerIndex"
-        reveal-hand
-        @leader-click="onLeaderClick"
-        @character-click="onCharacterClick"
-        @hand-card-click="onHandCardClick"
-        @card-hover="hoveredCard = $event"
-      />
-    </UContainer>
-
-    <template #right>
-      <UCard class="flex flex-col gap-2 h-full overflow-hidden">
-        <div class="flex flex-col gap-2 h-[700px] shrink-0">
+    <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
+      <template #left>
+        <UCard class="flex flex-col gap-3 h-full overflow-y-auto">
           <p class="text-sm font-medium text-primary">
-            Aperçu
+            Mock — sans room ni auth
           </p>
-          <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-            <img
-              v-if="hoveredCard"
-              :src="hoveredCard.imageUrl"
-              :alt="hoveredCard.alt ?? ''"
-              class="h-full max-w-full object-contain rounded"
-            >
+          <p class="text-xs text-muted">
+            Simule un duel local à deux joueurs pour tester le plateau, avant le branchement à la room Colyseus réelle.
+          </p>
+
+          <USeparator />
+
+          <div class="flex flex-col gap-1 text-sm">
+            <p>Tour de <strong>{{ players[activePlayerIndex].displayName }}</strong></p>
+            <p>Phase : <strong>{{ phaseLabels[phase] }}</strong></p>
             <p
-              v-else
-              class="text-xs text-muted text-center px-2"
+              v-if="winner !== null"
+              class="text-primary font-semibold"
             >
-              Survolez une carte pour l'agrandir ici
+              {{ players[winner].displayName }} remporte la partie !
             </p>
           </div>
-        </div>
 
-        <USeparator class="shrink-0 my-4" />
-
-        <div class="flex flex-col gap-2 flex-1 min-h-0">
-          <p class="text-sm font-medium text-primary">
-            Journal
-          </p>
-          <ul class="flex flex-col gap-1 text-xs flex-1 min-h-0 overflow-y-auto">
-            <li
-              v-for="entry in logs"
-              :key="entry.id"
-              class="border-b border-default pb-1"
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              :disabled="phase === 'finished'"
+              @click="nextPhase"
             >
-              {{ entry.message }}
-            </li>
-          </ul>
-        </div>
-      </UCard>
-    </template>
-  </UPage>
+              Phase suivante
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="subtle"
+              :disabled="phase !== 'main'"
+              @click="toggleDonMode"
+            >
+              {{ donMode ? 'Annuler don DON!!' : 'Donner un DON!!' }}
+            </UButton>
+            <UButton
+              v-if="attackerSelection"
+              color="error"
+              variant="subtle"
+              @click="cancelAttack"
+            >
+              Annuler l'attaque
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              @click="resetGame"
+            >
+              Réinitialiser
+            </UButton>
+          </div>
+
+          <USeparator />
+
+          <div class="flex flex-col gap-1 text-sm">
+            <p class="font-medium">
+              Point de vue
+            </p>
+            <div class="flex gap-1">
+              <UButton
+                v-for="index in [0, 1] as const"
+                :key="index"
+                :variant="viewingPlayerIndex === index ? 'solid' : 'outline'"
+                @click="viewingPlayerIndex = index"
+              >
+                {{ players[index].displayName }}
+              </UButton>
+            </div>
+          </div>
+        </UCard>
+      </template>
+
+      <UContainer class="flex flex-col gap-2 h-full min-h-0 overflow-hidden">
+        <PlayZone
+          class="flex-1 min-h-0"
+          :player="players[opponentOf(viewingPlayerIndex)]"
+          :side="opponentOf(viewingPlayerIndex)"
+          :attacker-id="attackerSelection"
+          :is-targetable="!!attackerSelection && activePlayerIndex === viewingPlayerIndex"
+          is-adversary
+          @leader-click="onLeaderClick"
+          @character-click="onCharacterClick"
+          @hand-card-click="onHandCardClick"
+          @card-hover="hoveredCard = $event"
+        />
+        <USeparator class="shrink-0" />
+        <PlayZone
+          class="flex-1 min-h-0"
+          :player="players[viewingPlayerIndex]"
+          :side="viewingPlayerIndex"
+          :attacker-id="attackerSelection"
+          :is-targetable="!!attackerSelection && activePlayerIndex !== viewingPlayerIndex"
+          reveal-hand
+          @leader-click="onLeaderClick"
+          @character-click="onCharacterClick"
+          @hand-card-click="onHandCardClick"
+          @card-hover="hoveredCard = $event"
+        />
+      </UContainer>
+
+      <template #right>
+        <UCard class="flex flex-col gap-2 h-full overflow-hidden">
+          <div class="flex flex-col gap-2 h-[700px] shrink-0">
+            <p class="text-sm font-medium text-primary">
+              Aperçu
+            </p>
+            <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+              <img
+                v-if="hoveredCard"
+                :src="hoveredCard.imageUrl"
+                :alt="hoveredCard.alt ?? ''"
+                class="h-full max-w-full object-contain rounded"
+              >
+              <p
+                v-else
+                class="text-xs text-muted text-center px-2"
+              >
+                Survolez une carte pour l'agrandir ici
+              </p>
+            </div>
+          </div>
+
+          <USeparator class="shrink-0 my-4" />
+
+          <div class="flex flex-col gap-2 flex-1 min-h-0">
+            <p class="text-sm font-medium text-primary">
+              Journal
+            </p>
+            <ul class="flex flex-col gap-1 text-xs flex-1 min-h-0 overflow-y-auto">
+              <li
+                v-for="entry in logs"
+                :key="entry.id"
+                class="border-b border-default pb-1"
+              >
+                {{ entry.message }}
+              </li>
+            </ul>
+          </div>
+        </UCard>
+      </template>
+    </UPage>
+  </div>
 </template>

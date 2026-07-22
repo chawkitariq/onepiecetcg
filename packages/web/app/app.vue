@@ -52,48 +52,50 @@ useSeoMeta({
 
 <template>
   <UApp>
-    <UHeader>
-      <template #left>
-        <NuxtLink to="/">
-          <AppLogo class="w-auto h-6 shrink-0" />
-        </NuxtLink>
-      </template>
-
-      <template #right>
-        <UColorModeButton />
-
-        <template v-if="loading">
-          <USkeleton
-            class="ml-2 size-10 shrink-0 rounded-full"
-          />
+    <template v-if="!isFullHeightPage">
+      <UHeader>
+        <template #left>
+          <NuxtLink to="/">
+            <AppLogo class="w-auto h-6 shrink-0" />
+          </NuxtLink>
         </template>
 
-        <template v-else-if="profile">
-          <UDropdownMenu :items="userMenuItems">
-            <UAvatar
-              :src="profile.profile.image ?? undefined"
-              :alt="profile.profile.displayName"
-              size="md"
-              class="ml-2 cursor-pointer"
+        <template #right>
+          <UColorModeButton />
+
+          <template v-if="loading">
+            <USkeleton
+              class="ml-2 size-10 shrink-0 rounded-full"
             />
-          </UDropdownMenu>
-        </template>
+          </template>
 
-        <template v-else>
-          <UButton
-            to="/login"
-            color="primary"
-            variant="solid"
-            size="md"
-            class="ml-2"
-          >
-            Connexion
-          </UButton>
-        </template>
-      </template>
-    </UHeader>
+          <template v-else-if="profile">
+            <UDropdownMenu :items="userMenuItems">
+              <UAvatar
+                :src="profile.profile.image ?? undefined"
+                :alt="profile.profile.displayName"
+                size="md"
+                class="ml-2 cursor-pointer"
+              />
+            </UDropdownMenu>
+          </template>
 
-    <UMain :class="isFullHeightPage ? 'h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-hidden' : undefined">
+          <template v-else>
+            <UButton
+              to="/login"
+              color="primary"
+              variant="solid"
+              size="md"
+              class="ml-2"
+            >
+              Connexion
+            </UButton>
+          </template>
+        </template>
+      </UHeader>
+    </template>
+
+    <UMain :class="isFullHeightPage ? 'h-dvh min-h-0 overflow-hidden' : undefined">
       <NuxtPage />
     </UMain>
 

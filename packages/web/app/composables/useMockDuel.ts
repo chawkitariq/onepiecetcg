@@ -549,6 +549,17 @@ export function useMockDuel() {
     attackerSelection.value = null
   }
 
+  function surrender(idx: 0 | 1) {
+    if (phase.value === 'finished') {
+      return
+    }
+
+    const opponentIdx = idx === 0 ? 1 : 0
+    winner.value = opponentIdx
+    phase.value = 'finished'
+    log(`${players.value[idx].displayName} abandonne la partie.`)
+  }
+
   function resetGame() {
     instanceCounter = 0
     players.value = [
@@ -582,6 +593,7 @@ export function useMockDuel() {
     selectAttacker,
     declareAttack,
     cancelAttack,
+    surrender,
     resetGame
   }
 }
