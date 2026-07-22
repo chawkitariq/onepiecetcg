@@ -1,17 +1,14 @@
 <template>
-  <UPage class="grid grid-cols-[1fr_12.25%_1fr] gap-4">
-    <template #left>
-      <UCard></UCard>
+  <ClientOnly>
+    <MockDuelBoard />
+    <template #fallback>
+      <UPage class="grid grid-cols-[1fr_12.25%_1fr] gap-4">
+        <UContainer class="grid gap-4">
+          <p class="text-sm text-muted">
+            Préparation du duel...
+          </p>
+        </UContainer>
+      </UPage>
     </template>
-
-    <UContainer class="grid gap-4">
-      <PlayZone isAdversary />
-      <USeparator />
-      <PlayZone />
-    </UContainer>
-
-    <template #right>
-      <UCard></UCard>
-    </template>
-  </UPage>
+  </ClientOnly>
 </template>
