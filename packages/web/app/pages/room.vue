@@ -2,7 +2,8 @@
 import type { Card, CardSearchResponse, Deck, DeckListResponse } from '@onepiecetcg/shared'
 
 definePageMeta({
-  layout: 'lobby'
+  layout: 'lobby',
+  middleware: 'auth'
 })
 
 const colorDotClasses: Record<string, string> = {

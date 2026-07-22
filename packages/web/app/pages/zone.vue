@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'simulator'
+  layout: 'simulator',
+  middleware: 'auth'
 })
 </script>
 

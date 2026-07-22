@@ -14,7 +14,8 @@ import { normalizeDeckCards } from '@onepiecetcg/shared'
 import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 
 definePageMeta({
-  layout: 'lobby'
+  layout: 'lobby',
+  middleware: 'auth'
 })
 
 const api = useApi()

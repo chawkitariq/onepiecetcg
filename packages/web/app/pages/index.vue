@@ -4,7 +4,7 @@
     <UPageHero
       title="Le simulateur One Piece TCG le plus rapide"
       description="Construis tes decks, affronte d'autres joueurs en temps réel, et découvre l'expérience complète du One Piece Trading Card Game."
-      :links="[{ label: 'Commencer', to: '/login', size: 'xl', class: 'text-lg' }]"
+      :links="[{ label: 'Commencer', to: '/room', size: 'xl', class: 'text-lg' }]"
     >
       <template #headline>
         <UBadge
@@ -97,7 +97,7 @@
     <UPageCTA
       title="Prêt à jouer ?"
       description="Rejoins des milliers de joueurs et construis ton légendaire deck One Piece TCG."
-      :links="[{ label: 'Commencer maintenant', to: '/login', size: 'xl', color: 'neutral', variant: 'solid', class: 'text-lg' }]"
+      :links="[{ label: 'Commencer maintenant', to: '/room', size: 'xl', color: 'neutral', variant: 'solid', class: 'text-lg' }]"
     />
   </div>
 </template>

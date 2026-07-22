@@ -17,7 +17,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [
       label: 'Se deconnecter',
       icon: 'i-lucide-log-out',
       color: 'error',
-      click: signOut
+      onSelect: signOut
     }
   ]
 ])

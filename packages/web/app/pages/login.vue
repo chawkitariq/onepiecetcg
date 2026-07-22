@@ -1,7 +1,26 @@
 <script setup lang="ts">
 import type { ButtonProps } from '@nuxt/ui'
 
-const { loading, signIn } = useSession()
+const { loading, profile, refresh, signIn } = useSession()
+const route = useRoute()
+
+const redirectTarget = computed(() => {
+  const redirect = route.query.redirect
+  const isSafeInternalPath = typeof redirect === 'string'
+    && redirect.startsWith('/')
+    && !redirect.startsWith('//')
+    && !redirect.startsWith('/\\')
+
+  return isSafeInternalPath ? redirect : '/room'
+})
+
+await refresh()
+
+watch(profile, (value) => {
+  if (value) {
+    void navigateTo(redirectTarget.value)
+  }
+}, { immediate: true })
 
 const providers = computed<ButtonProps[]>(() => [
   {

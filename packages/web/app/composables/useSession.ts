@@ -49,7 +49,7 @@ export function useSession() {
   }
 
   async function signIn(provider: 'google' | 'discord') {
-    const callbackURL = window.location.origin
+    const callbackURL = new URL(window.location.pathname + window.location.search, window.location.origin).toString()
 
     const response = await api<SocialSignInResponse>('/api/auth/sign-in/social', {
       method: 'POST',
@@ -71,6 +71,7 @@ export function useSession() {
     try {
       await api('/api/auth/sign-out', { method: 'POST' })
       profile.value = null
+      await navigateTo('/')
     } catch {
       errorMessage.value = 'La deconnexion a echoue.'
     } finally {
