@@ -264,7 +264,7 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
             v-for="(card, index) in player.hand"
             :key="card.instanceId"
             type="button"
-            class="absolute top-0 h-full"
+            class="absolute top-0 h-full transition-transform duration-150 ease-out hover:-translate-y-4 hover:z-50 focus-visible:-translate-y-4 focus-visible:z-50"
             :style="stackedCardStyle(index, player.hand.length, handStackSize, { centered: true })"
             @click="emit('handCardClick', side, card.instanceId)"
             @mouseenter="onCardHover(card.imageUrl)"
