@@ -99,46 +99,54 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
 
 <template>
   <div class="flex flex-col gap-4 h-full min-h-0 overflow-hidden">
-    <div class="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border border-default shrink-0">
-      <div class="flex items-center gap-2 min-w-0">
-        <span
-          class="h-2 w-2 rounded-full shrink-0"
-          :class="players[opponentOf(viewingPlayerIndex)].connected ? 'bg-success' : 'bg-muted'"
-        />
-        <span class="text-sm font-medium truncate">
-          {{ players[opponentOf(viewingPlayerIndex)].displayName }}
-        </span>
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-        >
-          Deck {{ players[opponentOf(viewingPlayerIndex)].deckCount }}
-        </UBadge>
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-        >
-          DON!! {{ players[opponentOf(viewingPlayerIndex)].donDeckCount }}
-        </UBadge>
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-        >
-          Main {{ players[opponentOf(viewingPlayerIndex)].hand.length }}
-        </UBadge>
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-        >
-          Vie {{ players[opponentOf(viewingPlayerIndex)].lifeCount }}
-        </UBadge>
-      </div>
+    <UHeader
+      class="static shrink-0"
+      :ui="{
+        center: 'flex min-w-0 justify-center',
+        container: 'max-w-none px-4'
+      }"
+    >
+      <template #left>
+        <div class="flex items-center gap-2 min-w-0">
+          <span
+            class="h-2 w-2 rounded-full shrink-0"
+            :class="players[opponentOf(viewingPlayerIndex)].connected ? 'bg-success' : 'bg-muted'"
+          />
+          <span class="text-sm font-medium truncate">
+            {{ players[opponentOf(viewingPlayerIndex)].displayName }}
+          </span>
+          <UBadge
+            color="neutral"
+            variant="subtle"
+            size="sm"
+          >
+            Deck {{ players[opponentOf(viewingPlayerIndex)].deckCount }}
+          </UBadge>
+          <UBadge
+            color="neutral"
+            variant="subtle"
+            size="sm"
+          >
+            DON!! {{ players[opponentOf(viewingPlayerIndex)].donDeckCount }}
+          </UBadge>
+          <UBadge
+            color="neutral"
+            variant="subtle"
+            size="sm"
+          >
+            Main {{ players[opponentOf(viewingPlayerIndex)].hand.length }}
+          </UBadge>
+          <UBadge
+            color="neutral"
+            variant="subtle"
+            size="sm"
+          >
+            Vie {{ players[opponentOf(viewingPlayerIndex)].lifeCount }}
+          </UBadge>
+        </div>
+      </template>
 
-      <div class="flex items-center gap-1 shrink-0">
+      <div class="flex items-center gap-1 min-w-0">
         <UBadge
           v-for="step in phaseSteps"
           :key="step"
@@ -150,27 +158,29 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
         </UBadge>
       </div>
 
-      <div class="flex items-center gap-3 shrink-0">
-        <p class="text-sm text-muted whitespace-nowrap">
-          Tour {{ turnNumber }} — {{ isViewerTurn ? 'Votre tour' : "Tour de l'adversaire" }}
-        </p>
-        <UButton
-          color="neutral"
-          :disabled="phase === 'finished'"
-          @click="endTurn"
-        >
-          Terminer le tour
-        </UButton>
-        <UButton
-          color="error"
-          variant="ghost"
-          :disabled="phase === 'finished'"
-          @click="surrender(activePlayerIndex)"
-        >
-          Abandonner
-        </UButton>
-      </div>
-    </div>
+      <template #right>
+        <div class="flex items-center gap-3 shrink-0">
+          <p class="text-sm text-muted whitespace-nowrap">
+            Tour {{ turnNumber }} - {{ isViewerTurn ? 'Votre tour' : "Tour de l'adversaire" }}
+          </p>
+          <UButton
+            color="neutral"
+            :disabled="phase === 'finished'"
+            @click="endTurn"
+          >
+            Terminer le tour
+          </UButton>
+          <UButton
+            color="error"
+            variant="ghost"
+            :disabled="phase === 'finished'"
+            @click="surrender(activePlayerIndex)"
+          >
+            Abandonner
+          </UButton>
+        </div>
+      </template>
+    </UHeader>
 
     <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
       <template #left>
