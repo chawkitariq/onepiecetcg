@@ -68,7 +68,9 @@ describe('CatalogService', () => {
       imageUrl: 'https://example.test/nami.png',
       set: { id: 'OP01', name: 'Romance Dawn' },
     });
-    expect(response.filters.sets).toEqual([{ id: 'OP01', name: 'Romance Dawn' }]);
+    expect(response.filters.sets).toEqual([
+      { id: 'OP01', name: 'Romance Dawn' },
+    ]);
   });
 
   it('serves card details from the local cache without calling the source API again', async () => {
@@ -96,6 +98,46 @@ describe('CatalogService', () => {
       type: 'Leader',
     });
     expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('dedupes cards sharing the same id across different OPTCG source endpoints', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          {
+            card_id: 'OP01-033',
+            card_name: 'Izo',
+            card_type: 'Character',
+            color: 'Purple',
+            power: '5000',
+            set_id: 'OP01',
+            set_name: 'Romance Dawn',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          {
+            card_id: 'OP01-033',
+            card_name: 'Izo',
+            card_type: 'Character',
+            color: 'Purple',
+            power: '5000',
+            set_id: 'OP01',
+            set_name: 'Romance Dawn',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+    const response = await service.searchCards({});
+
+    expect(response.total).toBe(1);
+    expect(response.cards).toHaveLength(1);
+    expect(response.cards[0]).toMatchObject({ id: 'OP01-033', name: 'Izo' });
   });
 
   it('keeps the catalog available when one optional OPTCG endpoint fails', async () => {

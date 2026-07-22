@@ -58,15 +58,19 @@ export class CatalogService {
   }
 
   private async getCards(): Promise<{ cards: Card[]; cachedAt: Date }> {
-    if (this.cardsCache && Date.now() - this.cardsCache.cachedAt.getTime() < CACHE_TTL_MS) {
+    if (
+      this.cardsCache &&
+      Date.now() - this.cardsCache.cachedAt.getTime() < CACHE_TTL_MS
+    ) {
       return this.cardsCache;
     }
 
     const sourceCards = await this.fetchAllSourceCards();
-    const normalizedCards = sourceCards
-      .map(({ card, bucket }) => this.normalizeCard(card, bucket))
-      .filter((card): card is Card => card !== null)
-      .sort((left, right) => left.id.localeCompare(right.id));
+    const normalizedCards = this.dedupeCards(
+      sourceCards
+        .map(({ card, bucket }) => this.normalizeCard(card, bucket))
+        .filter((card): card is Card => card !== null),
+    ).sort((left, right) => left.id.localeCompare(right.id));
 
     if (normalizedCards.length === 0) {
       throw new BadGatewayException('OPTCG API returned no usable cards');
@@ -77,14 +81,40 @@ export class CatalogService {
     return this.cardsCache;
   }
 
-  private async fetchAllSourceCards(): Promise<Array<{ card: OptcgApiCard; bucket: OptcgCardBucket }>> {
+  /**
+   * Removes duplicate cards sharing the same `id`. The OPTCG API sources cards from four
+   * independent endpoints (sets, starter decks, promos, DON!!), and the same printing can be
+   * returned by more than one of them, producing entries with an identical normalized `id`.
+   * The first occurrence (source order: sets, decks, promos, don) is kept.
+   */
+  private dedupeCards(cards: Card[]): Card[] {
+    const seenIds = new Set<string>();
+    const deduped: Card[] = [];
+
+    for (const card of cards) {
+      if (seenIds.has(card.id)) {
+        continue;
+      }
+
+      seenIds.add(card.id);
+      deduped.push(card);
+    }
+
+    return deduped;
+  }
+
+  private async fetchAllSourceCards(): Promise<
+    Array<{ card: OptcgApiCard; bucket: OptcgCardBucket }>
+  > {
     const responses = await Promise.allSettled(
       CARD_ENDPOINTS.map(async (endpoint) => {
         try {
           const response = await fetch(`${OPTCG_BASE_URL}${endpoint.path}`);
 
           if (!response.ok) {
-            throw new Error(`${endpoint.path} responded with ${response.status}`);
+            throw new Error(
+              `${endpoint.path} responded with ${response.status}`,
+            );
           }
 
           const payload = (await response.json()) as unknown;
@@ -112,17 +142,19 @@ export class CatalogService {
       return cards;
     }
 
-      if (this.cardsCache) {
-        return this.cardsCache.cards.map((card) => ({
-          card: this.toSourceFallback(card),
-          bucket: 'sets' as const,
-        }));
-      }
+    if (this.cardsCache) {
+      return this.cardsCache.cards.map((card) => ({
+        card: this.toSourceFallback(card),
+        bucket: 'sets' as const,
+      }));
+    }
 
     const failureReason = responses
       .map((response) => {
         if (response.status === 'rejected') {
-          return response.reason instanceof Error ? response.reason.message : 'unknown error';
+          return response.reason instanceof Error
+            ? response.reason.message
+            : 'unknown error';
         }
 
         return Array.isArray(response.value) ? null : response.value.reason;
@@ -130,9 +162,9 @@ export class CatalogService {
       .filter(Boolean)
       .join('; ');
 
-      throw new ServiceUnavailableException(
+    throw new ServiceUnavailableException(
       `OPTCG API is unavailable: ${failureReason || 'no source returned cards'}`,
-      );
+    );
   }
 
   private extractCards(payload: unknown): OptcgApiCard[] {
@@ -153,7 +185,10 @@ export class CatalogService {
     return [];
   }
 
-  private normalizeCard(source: OptcgApiCard, bucket: OptcgCardBucket): Card | null {
+  private normalizeCard(
+    source: OptcgApiCard,
+    bucket: OptcgCardBucket,
+  ): Card | null {
     const number = this.firstString(source, [
       'card_set_id',
       'card_id',
@@ -169,29 +204,64 @@ export class CatalogService {
     }
 
     const normalizedNumber = number.trim().toUpperCase();
-    const type = this.toCardType(this.firstString(source, ['card_type', 'cardType', 'type']), bucket);
-    const setId = this.firstString(source, ['set_id', 'setId', 'set', 'deck_id', 'st_id']) ?? this.inferSetId(normalizedNumber, bucket);
-    const setName = this.firstString(source, ['set_name', 'setName', 'set', 'deck_name', 'st_name']) ?? setId;
+    const type = this.toCardType(
+      this.firstString(source, ['card_type', 'cardType', 'type']),
+      bucket,
+    );
+    const setId =
+      this.firstString(source, [
+        'set_id',
+        'setId',
+        'set',
+        'deck_id',
+        'st_id',
+      ]) ?? this.inferSetId(normalizedNumber, bucket);
+    const setName =
+      this.firstString(source, [
+        'set_name',
+        'setName',
+        'set',
+        'deck_name',
+        'st_name',
+      ]) ?? setId;
 
     return {
       id: normalizedNumber,
       number: normalizedNumber,
       name: name.trim(),
       type,
-      colors: this.toColors(this.firstValue(source, ['color', 'colors', 'card_color', 'cardColor'])),
+      colors: this.toColors(
+        this.firstValue(source, ['color', 'colors', 'card_color', 'cardColor']),
+      ),
       cost: this.toNumberOrNull(this.firstValue(source, ['cost', 'card_cost'])),
-      power: this.toNumberOrNull(this.firstValue(source, ['power', 'card_power'])),
+      power: this.toNumberOrNull(
+        this.firstValue(source, ['power', 'card_power']),
+      ),
       life: this.toNumberOrNull(this.firstValue(source, ['life', 'card_life'])),
       counter: this.toNumberOrNull(
         this.firstValue(source, ['counter_amount', 'counter', 'card_counter']),
       ),
-      attributes: this.toStringList(this.firstValue(source, ['attribute', 'attributes'])),
+      attributes: this.toStringList(
+        this.firstValue(source, ['attribute', 'attributes']),
+      ),
       families: this.toStringList(
         this.firstValue(source, ['sub_types', 'family', 'families', 'types']),
       ),
-      text: this.firstString(source, ['effect', 'card_text', 'cardText', 'text']) ?? '',
-      trigger: this.firstString(source, ['trigger', 'card_trigger', 'cardTrigger']),
-      imageUrl: this.firstString(source, ['card_image', 'cardImage', 'image', 'image_url', 'imageUrl']),
+      text:
+        this.firstString(source, ['effect', 'card_text', 'cardText', 'text']) ??
+        '',
+      trigger: this.firstString(source, [
+        'trigger',
+        'card_trigger',
+        'cardTrigger',
+      ]),
+      imageUrl: this.firstString(source, [
+        'card_image',
+        'cardImage',
+        'image',
+        'image_url',
+        'imageUrl',
+      ]),
       set: {
         id: setId,
         name: setName,
@@ -208,7 +278,9 @@ export class CatalogService {
         card.name.toLowerCase().includes(search) ||
         card.number.toLowerCase().includes(search) ||
         card.text.toLowerCase().includes(search)) &&
-      (!query.set || card.set.id === query.set || card.set.name === query.set) &&
+      (!query.set ||
+        card.set.id === query.set ||
+        card.set.name === query.set) &&
       (!query.type || card.type === query.type) &&
       (!query.color || card.colors.includes(query.color)) &&
       (query.cost === undefined || card.cost === query.cost)
@@ -259,7 +331,8 @@ export class CatalogService {
     if (bucket === 'don' || normalized?.includes('don')) return 'DON!!';
     if (normalized?.includes('leader')) return 'Leader';
     if (normalized?.includes('event')) return 'Event';
-    if (normalized?.includes('stage') || normalized?.includes('place')) return 'Stage';
+    if (normalized?.includes('stage') || normalized?.includes('place'))
+      return 'Stage';
 
     return 'Character';
   }
