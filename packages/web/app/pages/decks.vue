@@ -518,8 +518,8 @@ function extractErrorMessage(error: unknown): string {
 </script>
 
 <template>
-  <main class="h-screen overflow-hidden px-4 py-3">
-    <div class="mx-auto grid h-full max-w-[2400px] min-w-0 gap-4 xl:grid-cols-[minmax(520px,1.35fr)_minmax(300px,0.55fr)_minmax(360px,0.75fr)_minmax(260px,0.45fr)]">
+  <main class="fixed inset-x-0 bottom-0 top-(--ui-header-height) overflow-hidden px-4 py-3">
+    <div class="mx-auto grid h-full min-h-0 max-w-[2400px] min-w-0 gap-4 xl:grid-cols-[minmax(520px,1.35fr)_minmax(300px,0.55fr)_minmax(360px,0.75fr)_minmax(260px,0.45fr)]">
       <UCard
         class="min-h-0 min-w-0"
         :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
