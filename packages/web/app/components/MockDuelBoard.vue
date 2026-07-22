@@ -80,9 +80,9 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
 </script>
 
 <template>
-  <UPage class="grid grid-cols-[1fr_12.25%_1fr] gap-4">
+  <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 h-full min-h-0 overflow-hidden">
     <template #left>
-      <UCard class="flex flex-col gap-3">
+      <UCard class="flex flex-col gap-3 h-full overflow-y-auto">
         <p class="text-sm font-medium text-primary">
           Mock — sans room ni auth
         </p>
@@ -155,8 +155,9 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
       </UCard>
     </template>
 
-    <UContainer class="grid gap-4">
+    <UContainer class="flex flex-col gap-2 h-full min-h-0 overflow-hidden">
       <PlayZone
+        class="flex-1 min-h-0"
         :player="players[opponentOf(viewingPlayerIndex)]"
         :side="opponentOf(viewingPlayerIndex)"
         :attacker-id="attackerSelection"
@@ -166,8 +167,9 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
         @character-click="onCharacterClick"
         @hand-card-click="onHandCardClick"
       />
-      <USeparator />
+      <USeparator class="shrink-0" />
       <PlayZone
+        class="flex-1 min-h-0"
         :player="players[viewingPlayerIndex]"
         :side="viewingPlayerIndex"
         :attacker-id="attackerSelection"
@@ -180,11 +182,11 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
     </UContainer>
 
     <template #right>
-      <UCard class="flex flex-col gap-2">
+      <UCard class="flex flex-col gap-2 h-full overflow-hidden">
         <p class="text-sm font-medium text-primary">
           Journal
         </p>
-        <ul class="flex flex-col gap-1 text-xs max-h-[70vh] overflow-y-auto">
+        <ul class="flex flex-col gap-1 text-xs flex-1 min-h-0 overflow-y-auto">
           <li
             v-for="entry in logs"
             :key="entry.id"

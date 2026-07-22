@@ -3,6 +3,9 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 const { loading, profile, signOut } = useSession()
 
+const route = useRoute()
+const isFullHeightPage = computed(() => route.path === '/zone')
+
 const userMenuItems = computed<DropdownMenuItem[][]>(() => [
   [
     {
@@ -90,18 +93,20 @@ useSeoMeta({
       </template>
     </UHeader>
 
-    <UMain>
+    <UMain :class="isFullHeightPage ? 'h-[calc(100dvh-var(--ui-header-height))] min-h-0 overflow-hidden' : undefined">
       <NuxtPage />
     </UMain>
 
-    <USeparator icon="i-lucide-anchor" />
+    <template v-if="!isFullHeightPage">
+      <USeparator icon="i-lucide-anchor" />
 
-    <UFooter>
-      <template #left>
-        <p class="text-sm text-muted">
-          One Piece TCG Simulator - {{ new Date().getFullYear() }}
-        </p>
-      </template>
-    </UFooter>
+      <UFooter>
+        <template #left>
+          <p class="text-sm text-muted">
+            One Piece TCG Simulator - {{ new Date().getFullYear() }}
+          </p>
+        </template>
+      </UFooter>
+    </template>
   </UApp>
 </template>

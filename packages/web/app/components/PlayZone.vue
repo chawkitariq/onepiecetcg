@@ -31,11 +31,12 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
 </script>
 
 <template>
-  <div :class="`grid grid-cols-1 gap-4 ${isAdversary ? '-scale-x-100 -scale-y-100' : ''}`">
-    <div class="grid grid-cols-[12.25%_1fr] gap-4">
+  <div :class="`flex flex-col gap-2 h-full min-h-0 ${isAdversary ? '-scale-x-100 -scale-y-100' : ''}`">
+    <div class="grid grid-cols-[12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
       <UCard
         variant="subtle"
-        class="h-full relative overflow-visible"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -43,21 +44,22 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
         >
           Life ({{ player.lifeCount }})
         </p>
-        <div class="relative">
+        <div class="relative h-full">
           <img
             v-for="(_, index) in life"
             :key="index"
             :src="cardBackRegular"
             alt="Vie"
-            class="object-cover w-full"
+            class="object-contain h-full w-auto mx-auto"
             :class="index === 0 ? 'relative z-50' : 'absolute left-0'"
-            :style="index > 0 ? { top: `${index * 10}%`, zIndex: 50 - index } : undefined"
+            :style="index > 0 ? { top: `${index * 4}%`, zIndex: 50 - index } : undefined"
           >
         </div>
       </UCard>
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -65,12 +67,12 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
         >
           Character
         </p>
-        <div class="flex justify-center gap-4">
+        <div class="flex justify-center items-center gap-2 h-full">
           <button
             v-for="character in player.characters"
             :key="character.instanceId"
             type="button"
-            class="relative w-25 shrink-0"
+            class="relative h-full shrink-0"
             :class="[
               character.rested ? '-rotate-90' : '',
               attackerId === character.instanceId ? 'ring-4 ring-primary rounded' : '',
@@ -81,7 +83,7 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
             <img
               :src="character.imageUrl ?? undefined"
               alt=""
-              class="object-cover w-full"
+              class="object-contain h-full w-auto"
             >
             <span
               class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-1"
@@ -94,10 +96,11 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
       </UCard>
     </div>
 
-    <div class="grid grid-cols-[12.25%_12.25%_12.25%] place-content-end gap-4">
+    <div class="grid grid-cols-[12.25%_12.25%_12.25%] grid-rows-[minmax(0,1fr)] place-content-end gap-2 flex-1 min-h-0">
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -107,7 +110,7 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
         </p>
         <button
           type="button"
-          class="relative w-full"
+          class="relative h-full w-full"
           :class="[
             player.leader?.rested ? '-rotate-90' : '',
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary rounded' : '',
@@ -119,7 +122,7 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
             v-if="player.leader"
             :src="player.leader.imageUrl ?? undefined"
             alt=""
-            class="object-cover h-full w-full"
+            class="object-contain h-full w-full"
           >
           <span
             v-if="player.leader"
@@ -132,7 +135,8 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
       </UCard>
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -149,13 +153,14 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
             v-if="player.stage"
             :src="player.stage.imageUrl ?? undefined"
             alt=""
-            class="object-cover h-full w-full"
+            class="object-contain h-full w-full"
           >
         </button>
       </UCard>
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -167,15 +172,16 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
           v-if="player.deckCount > 0"
           :src="cardBackRegular"
           alt="Deck"
-          class="object-cover h-full w-full"
+          class="object-contain h-full w-full"
         >
       </UCard>
     </div>
 
-    <div class="grid grid-cols-[12.25%_1fr_12.25%] gap-4">
+    <div class="grid grid-cols-[12.25%_1fr_12.25%] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -187,12 +193,13 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
           v-if="player.donDeckCount > 0"
           :src="cardBackDon"
           alt="Deck DON!!"
-          class="object-cover h-full w-full"
+          class="object-contain h-full w-full"
         >
       </UCard>
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -200,20 +207,21 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
         >
           Cost
         </p>
-        <div class="flex justify-center gap-4">
+        <div class="flex justify-center items-center gap-2 h-full">
           <img
             v-for="don in player.cost"
             :key="don.instanceId"
             :src="donFront"
             alt="DON!!"
-            class="object-cover w-20"
+            class="object-contain h-full w-auto"
             :class="don.rested ? '-rotate-90' : ''"
           >
         </div>
       </UCard>
       <UCard
         variant="subtle"
-        class="h-full relative"
+        class="h-full relative overflow-hidden"
+        :ui="{ body: 'h-full' }"
       >
         <p
           class="uppercase absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
@@ -225,34 +233,35 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
           v-if="topTrash"
           :src="topTrash.imageUrl ?? undefined"
           alt=""
-          class="object-cover h-full w-full"
+          class="object-contain h-full w-full"
         >
       </UCard>
     </div>
 
     <UCard
       variant="subtle"
-      class="h-full relative"
+      class="h-full relative overflow-hidden flex-[1.4] min-h-0 flex flex-col"
+      :ui="{ body: 'h-full flex flex-col min-h-0' }"
     >
       <p
-        class="uppercase text-xs mb-2"
+        class="uppercase text-xs shrink-0"
         :class="textFlipClass"
       >
         Main ({{ player.hand.length }})
       </p>
-      <div class="flex justify-center gap-2 flex-wrap">
+      <div class="flex justify-center items-center gap-2 flex-wrap flex-1 min-h-0">
         <template v-if="revealHand">
           <button
             v-for="card in player.hand"
             :key="card.instanceId"
             type="button"
-            class="relative w-22.5"
+            class="relative h-full"
             @click="emit('handCardClick', side, card.instanceId)"
           >
             <img
               :src="card.imageUrl ?? undefined"
               alt=""
-              class="object-cover w-full"
+              class="object-cover h-full w-auto"
             >
             <span
               class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-1"
@@ -270,7 +279,7 @@ const textFlipClass = computed(() => isAdversary ? '-scale-x-100 -scale-y-100' :
             :key="index"
             :src="cardBackRegular"
             alt="Main adverse"
-            class="w-15"
+            class="object-contain h-full w-auto"
           >
         </template>
       </div>
