@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { Card, CardSearchResponse, Deck, DeckListResponse } from '@onepiecetcg/shared'
 
+definePageMeta({
+  layout: 'lobby'
+})
+
 const colorDotClasses: Record<string, string> = {
   Red: 'bg-red-500',
   Green: 'bg-green-500',

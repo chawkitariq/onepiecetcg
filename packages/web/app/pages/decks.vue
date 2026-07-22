@@ -13,6 +13,10 @@ import type {
 import { normalizeDeckCards } from '@onepiecetcg/shared'
 import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 
+definePageMeta({
+  layout: 'lobby'
+})
+
 const api = useApi()
 const { profile, refresh: refreshSession } = useSession()
 const route = useRoute()
