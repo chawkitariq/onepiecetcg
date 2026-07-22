@@ -155,7 +155,7 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
       </UCard>
     </template>
 
-    <UContainer class="flex flex-col gap-2 h-full min-h-0 overflow-hidden">
+    <UContainer class="flex flex-col gap-2 h-full min-h-0 w-4xl overflow-hidden">
       <PlayZone
         class="flex-1 min-h-0"
         :player="players[opponentOf(viewingPlayerIndex)]"
