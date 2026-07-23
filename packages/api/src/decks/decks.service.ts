@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type {
   Card,
   Deck,
-  DeckImportResult,
   DeckPayload,
   DeckValidation,
   DeckValidationError,
@@ -17,7 +16,6 @@ import {
   exportDeckToText,
   normalizeCardId,
   normalizeDeckCards,
-  parseDeckText,
 } from '@onepiecetcg/shared';
 import { Repository } from 'typeorm';
 import {
@@ -111,19 +109,6 @@ export class DecksService {
     await this.decks.remove(deck);
 
     return { deleted: true };
-  }
-
-  async importText(text: string, name?: string): Promise<DeckImportResult> {
-    const { payload, invalidLines } = parseDeckText(
-      text,
-      name?.trim() || 'Deck importe',
-    );
-
-    return {
-      payload,
-      validation: await this.validate(payload),
-      invalidLines,
-    };
   }
 
   async validate(payload: DeckPayload): Promise<DeckValidation> {

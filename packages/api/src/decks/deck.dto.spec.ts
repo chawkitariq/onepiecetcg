@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { DeckIdParamDto, DeckPayloadDto, ImportDeckTextDto } from './deck.dto';
+import { DeckIdParamDto, DeckPayloadDto } from './deck.dto';
 
 describe('deck DTO validation', () => {
   it('accepts a structurally valid deck payload', async () => {
@@ -26,15 +26,6 @@ describe('deck DTO validation', () => {
     expect(errors.map((error) => error.property)).toEqual(
       expect.arrayContaining(['leaderCardId', 'cards']),
     );
-  });
-
-  it('validates deck text import payloads', async () => {
-    const dto = plainToInstance(ImportDeckTextDto, {
-      text: '1xST01-001\n4xST01-002',
-      name: 'Import',
-    });
-
-    await expect(validate(dto)).resolves.toHaveLength(0);
   });
 
   it('validates deck id route params as UUIDs', async () => {

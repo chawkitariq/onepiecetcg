@@ -12,7 +12,7 @@ import {
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../accounts/accounts.service';
-import { DeckIdParamDto, DeckPayloadDto, ImportDeckTextDto } from './deck.dto';
+import { DeckIdParamDto, DeckPayloadDto } from './deck.dto';
 import { DecksService } from './decks.service';
 
 type AuthenticatedRequest = Request & {
@@ -62,10 +62,5 @@ export class DecksController {
   @Post('validate')
   validate(@Body() payload: DeckPayloadDto) {
     return this.decksService.validate(payload);
-  }
-
-  @Post('import')
-  importText(@Body() body: ImportDeckTextDto) {
-    return this.decksService.importText(body.text, body.name);
   }
 }

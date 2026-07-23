@@ -116,45 +116,6 @@ describe('DecksService', () => {
       ]),
     );
   });
-
-  it('imports deck text and preserves normalized quantities', async () => {
-    const result = await service.importText(
-      ['1xL-001', '4xC-001', '2x c-001', '4xC-002'].join('\n'),
-      'Import',
-    );
-
-    expect(result.payload).toEqual({
-      name: 'Import',
-      leaderCardId: 'L-001',
-      cards: [
-        { cardId: 'C-001', quantity: 6 },
-        { cardId: 'C-002', quantity: 4 },
-      ],
-    });
-    expect(result.validation.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'MAIN_DECK_SIZE' }),
-        expect.objectContaining({ code: 'CARD_QUANTITY', cardId: 'C-001' }),
-      ]),
-    );
-    expect(result.invalidLines).toEqual([]);
-  });
-
-  it('surfaces invalid lines instead of silently dropping them', async () => {
-    const result = await service.importText(
-      ['1xL-001', '4xC-001', 'not a line', '', '4xC-002', '4x'].join('\n'),
-      'Import',
-    );
-
-    expect(result.invalidLines).toEqual([
-      { line: 3, raw: 'not a line' },
-      { line: 6, raw: '4x' },
-    ]);
-    expect(result.payload.cards).toEqual([
-      { cardId: 'C-001', quantity: 4 },
-      { cardId: 'C-002', quantity: 4 },
-    ]);
-  });
 });
 
 function card(id: string, type: Card['type'], colors: Card['colors']): Card {

@@ -10,7 +10,7 @@ import type {
   DeckPayload,
   DeckValidation
 } from '@onepiecetcg/shared'
-import { normalizeDeckCards } from '@onepiecetcg/shared'
+import { exportDeckToText, normalizeDeckCards, parseDeckText } from '@onepiecetcg/shared'
 import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 
 definePageMeta({
@@ -39,6 +39,8 @@ const selectedCard = ref<Card | null>(null)
 const builderNotice = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
+const importing = ref(false)
+const exporting = ref(false)
 
 type PersistedCatalogFilters = {
   search?: string
@@ -78,6 +80,22 @@ function createDeckActionErrorToast(message: string) {
     description: message,
     color: 'error' as const,
     icon: 'i-lucide-circle-alert'
+  }
+}
+
+function createDeckImportedToast() {
+  return {
+    title: 'Deck importe',
+    color: 'success' as const,
+    icon: 'i-lucide-download'
+  }
+}
+
+function createDeckExportedToast() {
+  return {
+    title: 'Deck copie dans le presse-papiers',
+    color: 'success' as const,
+    icon: 'i-lucide-clipboard-check'
   }
 }
 
@@ -234,6 +252,14 @@ function resetBuilder() {
   leaderCardId.value = ''
   deckCards.value = []
   builderNotice.value = null
+}
+
+function applyImportedDeck(payload: DeckPayload) {
+  selectedDeckId.value = null
+  deckName.value = payload.name
+  leaderCardId.value = payload.leaderCardId
+  deckCards.value = [...payload.cards]
+  selectedCard.value = cardById.value.get(payload.leaderCardId) ?? null
 }
 
 function createRandomDeck() {
@@ -503,6 +529,57 @@ async function deleteDeck() {
     toast.add(createDeckActionErrorToast(extractErrorMessage(error)))
   } finally {
     deleting.value = false
+  }
+}
+
+async function importDeckFromClipboard() {
+  if (!import.meta.client || !navigator.clipboard) {
+    toast.add(createDeckActionErrorToast('Le presse-papiers est indisponible dans ce navigateur.'))
+    return
+  }
+
+  importing.value = true
+
+  try {
+    const text = await navigator.clipboard.readText()
+
+    if (!text.trim()) {
+      toast.add(createDeckActionErrorToast('Le presse-papiers ne contient aucun deck a importer.'))
+      return
+    }
+
+    const imported = parseDeckText(
+      text,
+      deckName.value === 'Nouveau deck' ? undefined : deckName.value
+    )
+
+    applyImportedDeck(imported.payload)
+    builderNotice.value = imported.invalidLines.length > 0
+      ? `Lignes ignorees : ${imported.invalidLines.map(line => line.line).join(', ')}.`
+      : null
+    toast.add(createDeckImportedToast())
+  } catch (error: unknown) {
+    toast.add(createDeckActionErrorToast(extractErrorMessage(error)))
+  } finally {
+    importing.value = false
+  }
+}
+
+async function exportDeckToClipboard() {
+  if (!import.meta.client || !navigator.clipboard) {
+    toast.add(createDeckActionErrorToast('Le presse-papiers est indisponible dans ce navigateur.'))
+    return
+  }
+
+  exporting.value = true
+
+  try {
+    await navigator.clipboard.writeText(exportDeckToText(payload.value))
+    toast.add(createDeckExportedToast())
+  } catch {
+    toast.add(createDeckActionErrorToast('Impossible de copier le deck dans le presse-papiers.'))
+  } finally {
+    exporting.value = false
   }
 }
 
@@ -847,7 +924,7 @@ function extractErrorMessage(error: unknown): string {
               </p>
             </div>
 
-            <div class="flex items-start justify-end">
+            <div class="flex items-start justify-end gap-2">
               <UButton
                 icon="i-lucide-shuffle"
                 color="neutral"
@@ -857,6 +934,24 @@ function extractErrorMessage(error: unknown): string {
                 :disabled="catalogPending || cards.length === 0"
                 @click="createRandomDeck"
               />
+              <UButtonGroup size="sm">
+                <UButton
+                  icon="i-lucide-download"
+                  color="neutral"
+                  variant="outline"
+                  :loading="importing"
+                  label="Importer"
+                  @click="importDeckFromClipboard"
+                />
+                <UButton
+                  icon="i-lucide-upload"
+                  color="neutral"
+                  variant="outline"
+                  :loading="exporting"
+                  label="Exporter"
+                  @click="exportDeckToClipboard"
+                />
+              </UButtonGroup>
             </div>
           </section>
 

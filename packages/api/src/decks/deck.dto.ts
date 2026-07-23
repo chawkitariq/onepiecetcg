@@ -3,7 +3,6 @@ import {
   ArrayMaxSize,
   IsArray,
   IsInt,
-  IsOptional,
   IsString,
   IsUUID,
   Max,
@@ -38,17 +37,6 @@ export class DeckPayloadDto implements DeckPayload {
   @ValidateNested({ each: true })
   @Type(() => DeckCardDto)
   cards!: DeckCardDto[];
-}
-
-export class ImportDeckTextDto {
-  @IsString()
-  @MaxLength(10_000)
-  text!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(80)
-  name?: string;
 }
 
 export class DeckIdParamDto {

@@ -12,9 +12,6 @@ type CreateDeckErrorBody = { message: string; validation: { valid: boolean } };
 type DeckListBody = { decks: Array<{ id: string }> };
 type MeResponseBody = { profile: { id: string } };
 type DeckBody = { id: string };
-type DeckImportResponseBody = {
-  invalidLines: Array<{ line: number; raw: string }>;
-};
 
 describe('/decks (e2e)', () => {
   let app: INestApplication<App>;
@@ -133,21 +130,6 @@ describe('/decks (e2e)', () => {
       .expect(200);
 
     expect((ownerGet.body as DeckBody).id).toBe(seededDeck.id);
-  });
-
-  it('POST /decks/import surfaces invalid lines instead of dropping them silently', async () => {
-    const testUser = await createAuthenticatedTestUser(moduleFixture);
-
-    const response = await request(app.getHttpServer())
-      .post('/decks/import')
-      .set('Cookie', testUser.cookie)
-      .send({ text: '1xL-001\n4xC-001\nnot a line\n4x', name: 'Import' })
-      .expect(201);
-
-    expect((response.body as DeckImportResponseBody).invalidLines).toEqual([
-      { line: 3, raw: 'not a line' },
-      { line: 4, raw: '4x' },
-    ]);
   });
 
   it('POST /decks/validate does not require authentication', () => {
