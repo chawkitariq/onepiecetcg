@@ -109,17 +109,27 @@ function toDuelPlayerView(player: WireDuelPlayer): DuelPlayerView {
  * keyed off the local client's own sessionId rather than an externally
  * supplied index.
  */
+type ActionErrorMessage = {
+  message: string
+}
+
 export function useDuelRoom() {
   const { room, sendMessage } = useColyseus()
   const version = ref(0)
+  const errorMessage = ref<string | null>(null)
 
   function onRoomStateChange() {
     version.value += 1
   }
 
+  function onActionError(payload: ActionErrorMessage) {
+    errorMessage.value = payload.message
+  }
+
   watch(room, (nextRoom, previousRoom) => {
     previousRoom?.onStateChange.remove(onRoomStateChange)
     nextRoom?.onStateChange(onRoomStateChange)
+    nextRoom?.onMessage?.('actionError', onActionError)
   }, { immediate: true })
 
   onScopeDispose(() => {
@@ -211,6 +221,41 @@ export function useDuelRoom() {
     sendMessage('mulligan', { mulligan: shouldMulligan })
   }
 
+  const isMainPhase = computed(() => phase.value === 'main')
+
+  const canEndPhase = computed(() =>
+    isSelfTurn.value && phase.value !== 'setup' && phase.value !== 'mulligan' && phase.value !== 'finished'
+  )
+
+  const selfUntappedDonCount = computed(() =>
+    self.value?.cost.filter(card => !card.rested).length ?? 0
+  )
+
+  function cardPower(card: PublicCard): number {
+    return (card.power ?? 0) + card.attachedDon * 1000
+  }
+
+  function endPhase() {
+    errorMessage.value = null
+    sendMessage('endPhase', {})
+  }
+
+  function playCard(instanceId: string, discardCharacterInstanceId?: string) {
+    errorMessage.value = null
+    sendMessage('playCard', { instanceId, discardCharacterInstanceId })
+  }
+
+  const isSelfCharacterZoneFull = computed(() => (self.value?.characters.length ?? 0) >= 5)
+
+  function attachDon(target: 'leader' | 'character', targetInstanceId?: string) {
+    errorMessage.value = null
+    sendMessage('attachDon', { target, targetInstanceId })
+  }
+
+  function clearError() {
+    errorMessage.value = null
+  }
+
   return {
     phase,
     activePlayerSessionId,
@@ -222,8 +267,18 @@ export function useDuelRoom() {
     self,
     opponent,
     isSelfTurn,
+    isMainPhase,
+    canEndPhase,
+    selfUntappedDonCount,
+    isSelfCharacterZoneFull,
     logs,
+    errorMessage,
+    cardPower,
     chooseFirstOrSecond,
-    mulligan
+    mulligan,
+    endPhase,
+    playCard,
+    attachDon,
+    clearError
   }
 }

@@ -15,14 +15,23 @@ type StackedCardStyleOptions = {
   centered?: boolean
 }
 
-const { player, side, isAdversary, revealHand, attackerId, isTargetable } = defineProps<{
+const { player, side, isAdversary, revealHand, attackerId, isTargetable, isSelectable } = defineProps<{
   player: DuelPlayerView
   side: 0 | 1
   isAdversary?: boolean
   revealHand?: boolean
   attackerId?: string | null
   isTargetable?: boolean
+  isSelectable?: boolean
 }>()
+
+function cardPower(card: { power: number | null, attachedDon: number }): number | null {
+  if (card.power === null) {
+    return null
+  }
+
+  return card.power + card.attachedDon * 1000
+}
 
 const emit = defineEmits<{
   leaderClick: [side: 0 | 1]
@@ -129,7 +138,8 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
             class="relative h-full shrink-0"
             :class="[
               attackerId === character.instanceId ? 'ring-4 ring-primary rounded' : '',
-              isTargetable && character.rested ? 'ring-4 ring-error rounded' : ''
+              isTargetable && character.rested ? 'ring-4 ring-error rounded' : '',
+              isSelectable ? 'ring-4 ring-info rounded' : ''
             ]"
             @click="emit('characterClick', side, character.instanceId)"
             @mouseenter="onCardHover(character.imageUrl)"
@@ -139,6 +149,16 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
               :src="character.imageUrl"
               :rotated="character.rested"
             />
+            <UBadge
+              v-if="cardPower(character) !== null"
+              color="neutral"
+              variant="solid"
+              size="sm"
+              class="absolute bottom-0 left-1/2 -translate-x-1/2"
+              :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
+            >
+              {{ cardPower(character) }}
+            </UBadge>
           </button>
         </div>
       </DuelZoneSlot>
@@ -155,7 +175,8 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
           class="relative h-full w-full"
           :class="[
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary rounded' : '',
-            isTargetable ? 'ring-4 ring-error rounded' : ''
+            isTargetable ? 'ring-4 ring-error rounded' : '',
+            isSelectable ? 'ring-4 ring-info rounded' : ''
           ]"
           @click="emit('leaderClick', side)"
           @mouseenter="onCardHover(player.leader?.imageUrl)"
@@ -166,6 +187,16 @@ function onCardHover(imageUrl: string | null | undefined, alt?: string) {
             :src="player.leader.imageUrl"
             :rotated="player.leader.rested"
           />
+          <UBadge
+            v-if="player.leader && cardPower(player.leader) !== null"
+            color="neutral"
+            variant="solid"
+            size="sm"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2"
+            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
+          >
+            {{ cardPower(player.leader) }}
+          </UBadge>
         </button>
       </DuelZoneSlot>
       <DuelZoneSlot

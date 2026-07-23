@@ -1,7 +1,22 @@
 <script setup lang="ts">
 import type { GamePhase } from '@onepiecetcg/shared'
 
-const { self, opponent, phase, isSelfTurn, logs } = useDuelRoom()
+const {
+  self,
+  opponent,
+  phase,
+  isSelfTurn,
+  isMainPhase,
+  canEndPhase,
+  selfUntappedDonCount,
+  isSelfCharacterZoneFull,
+  logs,
+  errorMessage,
+  endPhase,
+  playCard,
+  attachDon,
+  clearError
+} = useDuelRoom()
 
 const phaseLabels: Record<string, string> = {
   setup: 'Préparation',
@@ -15,8 +30,13 @@ const phaseLabels: Record<string, string> = {
 }
 
 const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
+const isAttachingDon = ref(false)
+const pendingCharacterInstanceId = ref<string | null>(null)
 
 const phaseSteps: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end']
+
+const canAttachDon = computed(() => isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0)
+const isChoosingCharacterToDiscard = computed(() => pendingCharacterInstanceId.value !== null)
 
 function formatLogTime(createdAt: string): string {
   const date = new Date(createdAt)
@@ -29,6 +49,51 @@ function formatLogTime(createdAt: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function toggleAttachDon() {
+  isAttachingDon.value = !isAttachingDon.value
+}
+
+function onSelfHandCardClick(_side: 0 | 1, instanceId: string) {
+  if (!isMainPhase.value || !isSelfTurn.value) {
+    return
+  }
+
+  if (isSelfCharacterZoneFull.value) {
+    pendingCharacterInstanceId.value = instanceId
+    return
+  }
+
+  playCard(instanceId)
+}
+
+function onSelfLeaderClick(_side: 0 | 1) {
+  if (!isAttachingDon.value) {
+    return
+  }
+
+  attachDon('leader')
+  isAttachingDon.value = false
+}
+
+function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
+  if (isChoosingCharacterToDiscard.value && pendingCharacterInstanceId.value) {
+    playCard(pendingCharacterInstanceId.value, instanceId)
+    pendingCharacterInstanceId.value = null
+    return
+  }
+
+  if (!isAttachingDon.value) {
+    return
+  }
+
+  attachDon('character', instanceId)
+  isAttachingDon.value = false
+}
+
+function cancelDiscardSelection() {
+  pendingCharacterInstanceId.value = null
 }
 </script>
 
@@ -103,11 +168,60 @@ function formatLogTime(createdAt: string): string {
       </div>
 
       <template #right>
-        <p class="text-sm text-muted whitespace-nowrap">
-          {{ isSelfTurn ? 'Votre tour' : "Tour de l'adversaire" }}
-        </p>
+        <div class="flex items-center gap-2">
+          <UBadge
+            v-if="self"
+            color="neutral"
+            variant="subtle"
+            size="sm"
+          >
+            DON!! {{ selfUntappedDonCount }}
+          </UBadge>
+          <p class="text-sm text-muted whitespace-nowrap">
+            {{ isSelfTurn ? 'Votre tour' : "Tour de l'adversaire" }}
+          </p>
+          <UButton
+            v-if="isMainPhase && isSelfTurn"
+            size="sm"
+            :color="isAttachingDon ? 'primary' : 'neutral'"
+            :variant="isAttachingDon ? 'solid' : 'subtle'"
+            :disabled="!canAttachDon && !isAttachingDon"
+            @click="toggleAttachDon"
+          >
+            {{ isAttachingDon ? 'Annuler' : 'Attacher DON!!' }}
+          </UButton>
+          <UButton
+            size="sm"
+            color="primary"
+            :disabled="!canEndPhase"
+            @click="endPhase"
+          >
+            {{ phase === 'end' ? 'Terminer le tour' : 'Phase suivante' }}
+          </UButton>
+        </div>
       </template>
     </UHeader>
+
+    <UAlert
+      v-if="errorMessage"
+      color="error"
+      variant="subtle"
+      :title="errorMessage"
+      class="shrink-0"
+      :close="{ color: 'neutral', variant: 'link' }"
+      @update:open="clearError"
+    />
+
+    <UAlert
+      v-if="isChoosingCharacterToDiscard"
+      color="warning"
+      variant="subtle"
+      title="Zone Personnage pleine (5 max)"
+      description="Choisissez un Personnage a defausser pour jouer la carte selectionnee."
+      class="shrink-0"
+      :close="{ color: 'neutral', variant: 'link' }"
+      @update:open="cancelDiscardSelection"
+    />
 
     <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
       <template #left>
@@ -144,7 +258,11 @@ function formatLogTime(createdAt: string): string {
           :player="self"
           :side="0"
           reveal-hand
+          :is-selectable="isAttachingDon || isChoosingCharacterToDiscard"
           @card-hover="hoveredCard = $event"
+          @hand-card-click="onSelfHandCardClick"
+          @leader-click="onSelfLeaderClick"
+          @character-click="onSelfCharacterClick"
         />
       </UContainer>
 

@@ -14,9 +14,16 @@ import {
   DuelState,
   createDuelCard,
   type FirstOrSecondChoice,
+  type GamePhase,
 } from '@onepiecetcg/shared';
 
 const RECONNECTION_SECONDS = 120;
+
+const MAX_CHARACTERS = 5;
+const DON_PER_TURN = 2;
+const FIRST_TURN_DON_COUNT = 1;
+
+const PHASE_ORDER: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end'];
 
 type DuelRoomServices = {
   decksService: DecksService;
@@ -39,6 +46,16 @@ type MulliganMessage = {
   mulligan: boolean;
 };
 
+type PlayCardMessage = {
+  instanceId: string;
+  discardCharacterInstanceId?: string;
+};
+
+type AttachDonMessage = {
+  target: 'leader' | 'character';
+  targetInstanceId?: string;
+};
+
 type DuelSessionResolver = (
   headers: IncomingHttpHeaders,
 ) => Promise<{ user: { id: string } } | null>;
@@ -46,6 +63,7 @@ type DuelSessionResolver = (
 let services: DuelRoomServices | null = null;
 let resolveSession: DuelSessionResolver | null = null;
 
+/** Injects `DecksService` into `DuelRoom`, which Colyseus instantiates outside Nest's DI container. */
 export function configureDuelRoomServices(nextServices: DuelRoomServices) {
   services = nextServices;
 }
@@ -97,6 +115,18 @@ export class DuelRoom extends Room<DuelState> {
 
     this.onMessage('mulligan', (client: Client, message: MulliganMessage) => {
       this.handleMulligan(client, message);
+    });
+
+    this.onMessage('endPhase', (client: Client) => {
+      this.handleEndPhase(client);
+    });
+
+    this.onMessage('playCard', (client: Client, message: PlayCardMessage) => {
+      this.handlePlayCard(client, message);
+    });
+
+    this.onMessage('attachDon', (client: Client, message: AttachDonMessage) => {
+      this.handleAttachDon(client, message);
     });
   }
 
@@ -361,6 +391,417 @@ export class DuelRoom extends Room<DuelState> {
     const firstPlayer = this.state.players.get(this.state.firstPlayerSessionId);
     this.addLog(
       `Mise en place terminee. ${firstPlayer?.displayName ?? 'Le premier joueur'} commence le premier tour.`,
+    );
+
+    this.runRefreshPhase(this.state.firstPlayerSessionId);
+  }
+
+  private sendError(client: Client, message: string) {
+    client.send('actionError', { message });
+  }
+
+  private getActivePlayer(): DuelPlayer | undefined {
+    return this.state.players.get(this.state.activePlayerSessionId);
+  }
+
+  private handleEndPhase(client: Client) {
+    if (this.state.phase === 'finished') {
+      this.sendError(client, 'La partie est terminee.');
+      return;
+    }
+
+    if (client.sessionId !== this.state.activePlayerSessionId) {
+      this.sendError(client, "Ce n'est pas votre tour.");
+      return;
+    }
+
+    if (this.state.phase === 'end') {
+      this.endTurn();
+      return;
+    }
+
+    const currentIndex = PHASE_ORDER.indexOf(this.state.phase);
+    const nextPhase = PHASE_ORDER[currentIndex + 1] ?? 'end';
+    this.state.phase = nextPhase;
+
+    if (nextPhase === 'draw') {
+      this.runDrawPhase(client.sessionId);
+    } else if (nextPhase === 'don') {
+      this.runDonPhase(client.sessionId);
+    }
+  }
+
+  private runRefreshPhase(sessionId: string) {
+    const player = this.state.players.get(sessionId);
+
+    if (!player) {
+      return;
+    }
+
+    let returnedDonCount = 0;
+
+    if (player.zones.leader.attachedDon > 0) {
+      returnedDonCount += player.zones.leader.attachedDon;
+      player.zones.leader.attachedDon = 0;
+    }
+    player.zones.leader.rested = false;
+
+    for (const character of player.zones.characters) {
+      returnedDonCount += character.attachedDon;
+      character.attachedDon = 0;
+      character.rested = false;
+      character.playedThisTurn = false;
+    }
+
+    if (player.zones.stage.instanceId) {
+      player.zones.stage.rested = false;
+    }
+
+    for (const donCard of player.zones.cost) {
+      donCard.rested = false;
+    }
+
+    this.returnDonToCost(player, sessionId, returnedDonCount);
+
+    this.addLog(
+      `${player.displayName} redresse ses cartes en phase de Recharge.`,
+    );
+  }
+
+  /**
+   * A DON!! card loses all attachments and becomes a brand-new tapped card
+   * in the Cost zone whenever the card it was attached to changes zone
+   * (docs/optcg-rules.md §3, "Règle importante sur le changement de zone").
+   */
+  private returnDonToCost(
+    player: DuelPlayer,
+    sessionId: string,
+    count: number,
+  ) {
+    for (let index = 0; index < count; index += 1) {
+      const returnedCard = new DuelCard();
+      returnedCard.instanceId = `${sessionId}:don-returned:${Date.now()}:${index}:${Math.random()}`;
+      returnedCard.ownerSessionId = sessionId;
+      returnedCard.cardId = 'DON!!';
+      returnedCard.number = 'DON!!';
+      returnedCard.name = 'DON!!';
+      returnedCard.type = 'DON!!';
+      returnedCard.rested = true;
+      player.zones.cost.push(returnedCard);
+    }
+  }
+
+  private runDrawPhase(sessionId: string) {
+    const player = this.state.players.get(sessionId);
+
+    if (!player) {
+      return;
+    }
+
+    if (!player.hasTakenFirstTurn) {
+      this.addLog(
+        `${player.displayName} ne pioche pas lors de son premier tour.`,
+      );
+      return;
+    }
+
+    const card = player.zones.deck.shift();
+
+    if (!card) {
+      this.declareDefeatByDeckOut(player);
+      return;
+    }
+
+    card.faceDown = false;
+    player.zones.hand.push(card);
+    this.syncZoneCounts(player);
+    this.addLog(`${player.displayName} pioche 1 carte.`);
+  }
+
+  private declareDefeatByDeckOut(player: DuelPlayer) {
+    this.state.phase = 'finished';
+    this.addLog(
+      `${player.displayName} ne peut plus piocher : deck-out, defaite.`,
+    );
+  }
+
+  private runDonPhase(sessionId: string) {
+    const player = this.state.players.get(sessionId);
+
+    if (!player) {
+      return;
+    }
+
+    const desired = player.hasTakenFirstTurn
+      ? DON_PER_TURN
+      : FIRST_TURN_DON_COUNT;
+    const count = Math.min(desired, player.zones.donDeck.length);
+
+    for (let index = 0; index < count; index += 1) {
+      const card = player.zones.donDeck.shift();
+
+      if (card) {
+        card.rested = false;
+        player.zones.cost.push(card);
+      }
+    }
+
+    this.addLog(
+      `${player.displayName} place ${count} carte(s) DON!! en zone de Cout.`,
+    );
+  }
+
+  private endTurn() {
+    const endingPlayer = this.getActivePlayer();
+
+    if (endingPlayer) {
+      endingPlayer.hasTakenFirstTurn = true;
+      this.addLog(`${endingPlayer.displayName} termine son tour.`);
+    }
+
+    const sessionIds = Array.from(this.state.players.keys());
+    const nextSessionId = sessionIds.find(
+      (sessionId) => sessionId !== this.state.activePlayerSessionId,
+    );
+
+    if (!nextSessionId) {
+      return;
+    }
+
+    this.state.activePlayerSessionId = nextSessionId;
+    this.state.turn += 1;
+    this.state.phase = 'refresh';
+    this.runRefreshPhase(nextSessionId);
+  }
+
+  private findCardInZone(
+    player: DuelPlayer,
+    zone: 'characters' | 'cost' | 'hand',
+    instanceId: string,
+  ): { card: DuelCard; index: number } | null {
+    const cards = player.zones[zone];
+
+    for (let index = 0; index < cards.length; index += 1) {
+      const card = cards[index];
+
+      if (card?.instanceId === instanceId) {
+        return { card, index };
+      }
+    }
+
+    return null;
+  }
+
+  private takeUntappedDonCards(
+    player: DuelPlayer,
+    amount: number,
+  ): DuelCard[] | null {
+    const untapped: Array<{ card: DuelCard; index: number }> = [];
+
+    for (let index = 0; index < player.zones.cost.length; index += 1) {
+      const card = player.zones.cost[index];
+
+      if (card && !card.rested) {
+        untapped.push({ card, index });
+      }
+
+      if (untapped.length === amount) {
+        break;
+      }
+    }
+
+    if (untapped.length < amount) {
+      return null;
+    }
+
+    for (const entry of untapped) {
+      entry.card.rested = true;
+    }
+
+    return untapped.map((entry) => entry.card);
+  }
+
+  private assertMainPhaseAction(client: Client): DuelPlayer | null {
+    if (this.state.phase !== 'main') {
+      this.sendError(client, 'Action impossible hors de la phase Principale.');
+      return null;
+    }
+
+    if (client.sessionId !== this.state.activePlayerSessionId) {
+      this.sendError(client, "Ce n'est pas votre tour.");
+      return null;
+    }
+
+    const player = this.state.players.get(client.sessionId);
+
+    if (!player) {
+      return null;
+    }
+
+    return player;
+  }
+
+  private handlePlayCard(client: Client, message: PlayCardMessage) {
+    const player = this.assertMainPhaseAction(client);
+
+    if (!player) {
+      return;
+    }
+
+    const found = this.findCardInZone(player, 'hand', message.instanceId);
+
+    if (!found) {
+      this.sendError(client, 'Carte introuvable en main.');
+      return;
+    }
+
+    const { card, index } = found;
+
+    if (
+      card.type !== 'Character' &&
+      card.type !== 'Event' &&
+      card.type !== 'Stage'
+    ) {
+      this.sendError(
+        client,
+        'Cette carte ne peut pas etre jouee depuis la main.',
+      );
+      return;
+    }
+
+    let characterToDiscard: { card: DuelCard; index: number } | null = null;
+
+    if (
+      card.type === 'Character' &&
+      player.zones.characters.length >= MAX_CHARACTERS
+    ) {
+      const discardTarget = message.discardCharacterInstanceId
+        ? this.findCardInZone(
+            player,
+            'characters',
+            message.discardCharacterInstanceId,
+          )
+        : null;
+
+      if (!discardTarget) {
+        this.sendError(
+          client,
+          `Zone Personnage pleine (${MAX_CHARACTERS} max) : choisissez un Personnage a defausser pour jouer ${card.name}.`,
+        );
+        return;
+      }
+
+      characterToDiscard = discardTarget;
+    }
+
+    const cost = Math.max(card.cost, 0);
+    const paidDonCards = this.takeUntappedDonCards(player, cost);
+
+    if (!paidDonCards) {
+      this.sendError(
+        client,
+        `DON!! insuffisant pour jouer ${card.name} (cout ${cost}).`,
+      );
+      return;
+    }
+
+    player.zones.hand.splice(index, 1);
+
+    if (card.type === 'Character') {
+      if (characterToDiscard) {
+        const [discarded] = player.zones.characters.splice(
+          characterToDiscard.index,
+          1,
+        );
+
+        if (discarded) {
+          const attachedDon = discarded.attachedDon;
+          discarded.attachedDon = 0;
+          player.zones.trash.unshift(discarded);
+          this.returnDonToCost(player, client.sessionId, attachedDon);
+          this.addLog(
+            `${player.displayName} defausse ${discarded.name} pour liberer la zone Personnage.`,
+          );
+        }
+      }
+
+      card.playedThisTurn = true;
+      card.rested = false;
+      player.zones.characters.push(card);
+      this.addLog(
+        `${player.displayName} joue ${card.name} en zone Personnage.`,
+      );
+    } else if (card.type === 'Stage') {
+      if (player.zones.stage.instanceId) {
+        player.zones.trash.unshift(player.zones.stage);
+      }
+
+      card.rested = false;
+      player.zones.stage = card;
+      this.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
+    } else {
+      player.zones.trash.unshift(card);
+      this.addLog(
+        `${player.displayName} active ${card.name} (effet a appliquer manuellement) puis la defausse.`,
+      );
+    }
+
+    this.syncZoneCounts(player);
+  }
+
+  private handleAttachDon(client: Client, message: AttachDonMessage) {
+    const player = this.assertMainPhaseAction(client);
+
+    if (!player) {
+      return;
+    }
+
+    const donCards = this.takeUntappedDonCards(player, 1);
+
+    if (!donCards) {
+      this.sendError(
+        client,
+        'Aucun DON!! redresse disponible en zone de Cout.',
+      );
+      return;
+    }
+
+    const [donCard] = donCards;
+
+    if (!donCard) {
+      return;
+    }
+
+    if (message.target === 'leader') {
+      const removed = player.zones.cost.splice(
+        player.zones.cost.indexOf(donCard),
+        1,
+      )[0];
+
+      if (removed) {
+        player.zones.leader.attachedDon += 1;
+      }
+
+      this.addLog(
+        `${player.displayName} donne 1 DON!! a son Leader (+1000 de puissance).`,
+      );
+      return;
+    }
+
+    const found = message.targetInstanceId
+      ? this.findCardInZone(player, 'characters', message.targetInstanceId)
+      : null;
+
+    if (!found) {
+      donCard.rested = false;
+      this.sendError(client, 'Cible invalide pour attacher un DON!!.');
+      return;
+    }
+
+    player.zones.cost.splice(player.zones.cost.indexOf(donCard), 1);
+    found.card.attachedDon += 1;
+    this.addLog(
+      `${player.displayName} donne 1 DON!! a ${found.card.name} (+1000 de puissance).`,
     );
   }
 

@@ -132,6 +132,9 @@ export class DuelPlayer extends Schema {
   @type('boolean')
   mulliganDecided = false;
 
+  @type('boolean')
+  hasTakenFirstTurn = false;
+
   @type('number')
   handCount = 0;
 
