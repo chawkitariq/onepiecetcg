@@ -696,8 +696,8 @@ function extractErrorMessage(error: unknown): string {
 </script>
 
 <template>
-  <main class="fixed inset-x-0 bottom-0 top-(--ui-header-height) overflow-hidden px-4 py-3">
-    <div class="mx-auto grid h-full min-h-0 max-w-[2200px] min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,20%)_minmax(0,1fr)]">
+  <main class="fixed inset-x-0 bottom-0 top-(--ui-header-height) overflow-hidden px-2.5 py-2">
+    <div class="mx-auto grid h-full min-h-0 max-w-[2000px] min-w-0 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(244px,19%)_minmax(0,1fr)]">
       <UCard
         class="min-h-0 min-w-0"
         :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"

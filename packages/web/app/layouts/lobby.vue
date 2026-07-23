@@ -25,7 +25,6 @@ const navigationItems = [
       <UNavigationMenu :items="navigationItems" />
 
       <template #right>
-        <UColorModeButton />
         <UserAccountMenu />
       </template>
 

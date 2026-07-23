@@ -8,7 +8,6 @@
       </template>
 
       <template #right>
-        <UColorModeButton />
         <UserAccountMenu />
       </template>
     </UHeader>
