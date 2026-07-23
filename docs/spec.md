@@ -105,6 +105,12 @@ Repris et adapté des versions précédentes :
 - File d'attente aléatoire : appariement simple par ordre d'arrivée pour le MVP (pas de MMR/elo au départ).
 - Génération de code de room partageable, pour jouer contre un ami spécifique.
 - Écran de lobby : sélection du deck à utiliser pour la partie parmi ceux sauvegardés sur le compte, avant d'entrer en file d'attente ou de créer/rejoindre une room par code.
+- 🆕 **Lobby décrite (hébergement public avec description)** : en plus de la file aléatoire et du code privé, un joueur peut héberger une room **publique et listée**, accompagnée d'une courte description libre (ex: "Débutant bienvenu", "Format événement uniquement", "Cherche partie tranquille"). Cette description sert de filtre humain, pas structurel : le serveur ne l'interprète jamais, il la stocke et la diffuse telle quelle — c'est au joueur intéressé de lire la description et de décider de rejoindre en conséquence, exactement comme le texte des cartes reste déclaratif (§3).
+  - Le serveur expose la liste des rooms hébergées de cette façon (room Colyseus `duel` marquée publique avec métadonnée `description`), interrogeable par les autres clients — via une requête au matchmaking Colyseus (ex: `matchMaker.query`/`getAvailableRooms` côté API) exposée par un endpoint dédié, ou tout mécanisme équivalent exposant les rooms publiques avec leur métadonnée.
+  - Chaque entrée listée affiche a minima : la description fournie par l'hôte, un identifiant de room permettant de la rejoindre, et le nombre de joueurs déjà présents (1/2 en attente).
+  - La liste n'est pas poussée en temps réel obligatoirement : un rafraîchissement manuel côté client (bouton "Actualiser") est suffisant pour le MVP — pas de garantie de synchronisation live requise.
+  - Rejoindre une lobby décrite depuis la liste suit les mêmes règles qu'un rejoint par code (deck valide requis, capacité de 2 joueurs max, mêmes règles de setup de partie) ; seule la découverte diffère (liste parcourable au lieu d'un code transmis hors bande).
+  - Une room décrite disparaît de la liste dès qu'elle est complète (2 joueurs) ou abandonnée, pour ne jamais lister une room qui ne peut plus être rejointe.
 
 ## 6. Écran de partie synchronisé
 
@@ -137,6 +143,7 @@ Repris et adapté des versions précédentes :
 - Un utilisateur peut construire un deck valide (50 cartes, plafond de 4, couleur cohérente avec le Leader) et le sauvegarder sur son compte.
 - Un utilisateur peut générer un deck complet aléatoire depuis le deck builder ; le résultat respecte les contraintes de construction et reste modifiable avant sauvegarde.
 - Deux utilisateurs peuvent se retrouver en partie via matchmaking aléatoire ou via un code de room partagé.
+- Un utilisateur peut héberger une lobby publique avec une description libre ; cette lobby est visible avec sa description par les autres utilisateurs dans un bloc dédié de l'écran `/room`, rafraîchissable manuellement, et un autre utilisateur peut la rejoindre depuis cette liste.
 - Une partie se déroule en temps réel avec information cachée réellement respectée côté serveur (main et Vie adverses non exposées côté client).
 - Le combat est résolu avec ciblage réel validé côté serveur ; Blocage et Contre restent déclaratifs (le joueur les applique lui-même, sans vérification du texte de la carte par le serveur).
 - Toutes les cartes du catalogue restent jouables avec leurs stats de base (coût, puissance, contre) ; leur texte d'effet est affiché mais jamais appliqué automatiquement, quel que soit le set.

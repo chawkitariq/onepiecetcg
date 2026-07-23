@@ -270,18 +270,24 @@ Objectif : permettre aux joueurs de démarrer des parties via file publique ou c
 - Créer et rejoindre une room par code partageable.
 - Associer chaque entrée de lobby à un deck sauvegardé valide.
 - Nettoyer les entrées de queue et rooms abandonnées.
+- 🆕 Lobby décrite : permettre l'hébergement d'une room `duel` publique avec une description libre attachée en métadonnée (ex: `room.setMetadata({ description })` à la création), sans jamais interpréter cette description côté serveur.
+- 🆕 Exposer un moyen de lister les rooms publiques décrites avec leur métadonnée (ex: endpoint basé sur `matchMaker.query`/`getAvailableRooms` filtré sur `name: 'duel'` et présence d'une description), en excluant les rooms déjà complètes (2 joueurs) ou verrouillées/abandonnées.
 
 ### Frontend
 
 - Créer le lobby de sélection de deck.
 - Ajouter les actions rejoindre la file, quitter la file, créer une room privée, rejoindre par code.
 - Afficher les états d'attente et d'erreur.
+- 🆕 Ajouter un champ de description libre à la création d'une room, pour l'hébergement en lobby décrite.
+- 🆕 Ajouter dans `packages/web/app/pages/room.vue` un bloc dédié listant les lobbies décrites disponibles (description, occupation 1/2, action rejoindre), avec un bouton de rafraîchissement manuel (pas de synchronisation live obligatoire).
 
 ### Validation
 
 - Deux joueurs sont appariés via la file aléatoire.
 - Deux joueurs rejoignent une partie via un code.
 - Un joueur sans deck valide ne peut pas entrer en partie.
+- 🆕 Un utilisateur peut héberger une lobby avec une description ; celle-ci apparaît, avec sa description, dans le bloc dédié de `/room` chez un autre utilisateur qui rafraîchit la liste, et ce dernier peut la rejoindre depuis cette entrée.
+- 🆕 Une lobby décrite disparaît de la liste une fois complète (2 joueurs) ou abandonnée.
 
 ## Étape 10 — Finition MVP
 
