@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type {
   Card,
   CardColor,
@@ -252,6 +253,42 @@ const savedDeckItems = computed(() => savedDecks.value.map(deck => ({
   value: deck.id
 })))
 
+const deckBuilderActionItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Aleatoire',
+      icon: 'i-lucide-shuffle',
+      disabled: catalogPending.value || cards.value.length === 0,
+      onSelect: () => {
+        void maybeCreateRandomDeck()
+      }
+    },
+    {
+      label: 'Reinitialiser',
+      icon: 'i-lucide-rotate-ccw',
+      onSelect: () => {
+        void maybeResetBuilder()
+      }
+    },
+    {
+      label: 'Importer',
+      icon: 'i-lucide-download',
+      disabled: importing.value,
+      onSelect: () => {
+        void maybeImportDeckFromClipboard()
+      }
+    },
+    {
+      label: 'Exporter',
+      icon: 'i-lucide-upload',
+      disabled: exporting.value,
+      onSelect: () => {
+        void exportDeckToClipboard()
+      }
+    }
+  ]
+])
+
 const selectedCardRows = computed(() => {
   if (!previewCard.value) {
     return []
@@ -285,6 +322,24 @@ function resetBuilder() {
   leaderCardId.value = ''
   deckCards.value = []
   builderNotice.value = null
+}
+
+async function maybeResetBuilder() {
+  if (!hasBuilderContent.value) {
+    resetBuilder()
+    return
+  }
+
+  const confirmed = await confirm({
+    title: 'Reinitialiser le builder ?',
+    description: 'Le contenu actuel du builder sera efface.',
+    confirmLabel: 'Reinitialiser',
+    confirmColor: 'warning'
+  })
+
+  if (confirmed) {
+    resetBuilder()
+  }
 }
 
 function applyImportedDeck(payload: DeckPayload) {
@@ -913,7 +968,7 @@ function extractErrorMessage(error: unknown): string {
         >
           <div class="flex-1 min-h-0 overflow-y-auto pr-1">
             <div class="flex min-h-full flex-col gap-4">
-              <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg border border-muted p-6 text-center text-muted">
+              <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-elevated/50 p-6 text-center text-muted">
                 <div class="flex flex-col items-center gap-3">
                   <UIcon
                     name="i-lucide-square-mouse-pointer"
@@ -957,6 +1012,15 @@ function extractErrorMessage(error: unknown): string {
               {{ canAddCard(previewCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
             </UButton>
           </div>
+          <UButton
+            v-else
+            icon="i-lucide-list-plus"
+            color="primary"
+            block
+            disabled
+          >
+            Ajouter au deck
+          </UButton>
         </template>
       </UCard>
 
@@ -995,7 +1059,7 @@ function extractErrorMessage(error: unknown): string {
                     color="neutral"
                     variant="outline"
                     label="Nouveau"
-                    @click="resetBuilder"
+                    @click="maybeResetBuilder"
                   />
                 </UFieldGroup>
               </UFormField>
@@ -1029,7 +1093,7 @@ function extractErrorMessage(error: unknown): string {
               v-else
               class="aspect-[5/7]"
             >
-              <div class="flex h-full w-full items-center justify-center rounded-lg border border-muted text-muted">
+              <div class="flex h-full w-full items-center justify-center rounded-lg bg-elevated/50 text-muted">
                 <UIcon
                   name="i-lucide-crown"
                   class="size-7"
@@ -1046,34 +1110,20 @@ function extractErrorMessage(error: unknown): string {
               </p>
             </div>
 
-            <div class="flex items-start justify-end gap-2">
-              <UButton
-                icon="i-lucide-shuffle"
-                color="neutral"
-                variant="outline"
-                size="sm"
-                label="Aleatoire"
-                :disabled="catalogPending || cards.length === 0"
-                @click="maybeCreateRandomDeck"
-              />
-              <UButton
-                icon="i-lucide-download"
-                color="neutral"
-                variant="outline"
-                size="sm"
-                :loading="importing"
-                label="Importer"
-                @click="maybeImportDeckFromClipboard"
-              />
-              <UButton
-                icon="i-lucide-upload"
-                color="neutral"
-                variant="outline"
-                size="sm"
-                :loading="exporting"
-                label="Exporter"
-                @click="exportDeckToClipboard"
-              />
+            <div class="flex items-start justify-end">
+              <UDropdownMenu
+                :items="deckBuilderActionItems"
+                :content="{ align: 'end' }"
+                :ui="{ content: 'w-52' }"
+              >
+                <UButton
+                  icon="i-lucide-ellipsis-vertical"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Actions du builder"
+                />
+              </UDropdownMenu>
             </div>
           </section>
 
@@ -1144,7 +1194,7 @@ function extractErrorMessage(error: unknown): string {
 
             <div
               v-if="deckLines.length === 0"
-              class="flex min-h-20 items-center justify-center rounded-lg border border-muted px-3 py-2 text-center text-muted"
+              class="flex min-h-20 items-center justify-center rounded-lg bg-elevated/50 px-3 py-2 text-center text-muted"
             >
               <p class="text-sm">
                 Selectionne une carte dans le catalogue, puis ajoute-la depuis son detail.
