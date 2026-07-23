@@ -12,6 +12,7 @@ import { BetterAuthUser } from './auth/better-auth-user.entity';
 import { BetterAuthVerification } from './auth/better-auth-verification.entity';
 import { CatalogModule } from './catalog/catalog.module';
 import { DecksModule } from './decks/decks.module';
+import { DevFixturesModule } from './dev-fixtures/dev-fixtures.module';
 import { ColyseusService } from './realtime/colyseus.service';
 import { getApiConfig } from './runtime-config';
 import { SpikeModule } from './spike/spike.module';
@@ -49,6 +50,7 @@ import { SpikeModule } from './spike/spike.module';
     AccountsModule,
     CatalogModule,
     DecksModule,
+    DevFixturesModule,
     SpikeModule,
   ],
   controllers: [AppController],

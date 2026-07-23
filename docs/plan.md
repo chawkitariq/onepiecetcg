@@ -64,12 +64,13 @@ Objectif : installer les frontières de code avant les fonctionnalités.
 
 Objectif : permettre aux joueurs de posséder une session et des données persistantes.
 
-État : réalisé et audité. Better Auth est monté côté NestJS avec OAuth Google/Discord uniquement, une persistance PostgreSQL pour Better Auth, un profil joueur TypeORM synchronisé depuis la session, des endpoints `/me` et `/private/auth-check` protégés, et une interface Nuxt de connexion/déconnexion consommant les cookies de session.
+État : réalisé et audité. Better Auth est monté côté NestJS avec OAuth Google/Discord en production, une persistance PostgreSQL pour Better Auth, un profil joueur TypeORM synchronisé depuis la session, des endpoints `/me` et `/private/auth-check` protégés, et une interface Nuxt de connexion/déconnexion consommant les cookies de session. Un provider email/mot de passe est en plus activé en développement uniquement (`NODE_ENV==='development'`, fail-closed), pour tester l'app sans provider OAuth.
 
 ### Backend
 
 - Intégrer Better Auth dans NestJS.
-- Activer uniquement OAuth Google et Discord.
+- Activer OAuth Google et Discord en production.
+- Activer un provider email/mot de passe uniquement quand `NODE_ENV==='development'`, jamais en production.
 - Créer le modèle persistant utilisateur avec TypeORM.
 - Exposer les endpoints nécessaires au frontend : session courante, déconnexion, profil minimal.
 - Sécuriser les routes qui nécessitent un utilisateur connecté.
