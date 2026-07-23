@@ -37,6 +37,12 @@ const selectedType = ref<CardType | typeof allFilter>(allFilter)
 const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
 const selectedCost = ref<string>(allFilter)
 const selectedCard = ref<Card | null>(null)
+const {
+  previewCard,
+  selectCard,
+  previewHoveredCard,
+  clearHoveredCard
+} = useCardPreview(selectedCard)
 const builderNotice = ref<string | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
@@ -228,20 +234,20 @@ const savedDeckItems = computed(() => savedDecks.value.map(deck => ({
 })))
 
 const selectedCardRows = computed(() => {
-  if (!selectedCard.value) {
+  if (!previewCard.value) {
     return []
   }
 
   return [
-    ['Numero', selectedCard.value.number],
-    ['Set', `${selectedCard.value.set.id} - ${selectedCard.value.set.name}`],
-    ['Type', selectedCard.value.type],
-    ['Couleur', selectedCard.value.colors.join(', ') || 'Aucune'],
-    ['Cout', selectedCard.value.cost ?? '-'],
-    ['Puissance', selectedCard.value.power ?? '-'],
-    ['Contre', selectedCard.value.counter ?? '-'],
-    ['Vie', selectedCard.value.life ?? '-'],
-    ['Rarete', selectedCard.value.rarity ?? '-']
+    ['Numero', previewCard.value.number],
+    ['Set', `${previewCard.value.set.id} - ${previewCard.value.set.name}`],
+    ['Type', previewCard.value.type],
+    ['Couleur', previewCard.value.colors.join(', ') || 'Aucune'],
+    ['Cout', previewCard.value.cost ?? '-'],
+    ['Puissance', previewCard.value.power ?? '-'],
+    ['Contre', previewCard.value.counter ?? '-'],
+    ['Vie', previewCard.value.life ?? '-'],
+    ['Rarete', previewCard.value.rarity ?? '-']
   ]
 })
 
@@ -765,7 +771,7 @@ function extractErrorMessage(error: unknown): string {
               class="group aspect-[5/7] overflow-hidden rounded-lg border border-muted bg-elevated transition hover:border-primary hover:bg-accented"
               :class="{ 'border-primary ring-2 ring-primary/30': selectedCard?.id === card.id }"
               :aria-label="`Selectionner ${card.name}`"
-              @click="selectedCard = card"
+              @click="selectCard(card)"
             >
               <img
                 v-if="card.imageUrl"
@@ -819,29 +825,29 @@ function extractErrorMessage(error: unknown): string {
                   Carte selectionnee
                 </h2>
                 <p class="text-sm text-muted">
-                  {{ selectedCard?.number ?? 'Aucune carte' }}
+                  {{ previewCard?.number ?? 'Aucune carte' }}
                 </p>
               </div>
               <UBadge
-                v-if="selectedCard"
+                v-if="previewCard"
                 color="neutral"
                 variant="subtle"
               >
-                {{ selectedCard.type }}
+                {{ previewCard.type }}
               </UBadge>
             </div>
           </div>
         </template>
 
         <div
-          v-if="selectedCard"
+          v-if="previewCard"
           class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
         >
           <div class="w-full aspect-[4/5]">
             <img
-              v-if="selectedCard.imageUrl"
-              :src="selectedCard.imageUrl"
-              :alt="selectedCard.name"
+              v-if="previewCard.imageUrl"
+              :src="previewCard.imageUrl"
+              :alt="previewCard.name"
               class="w-full rounded-lg border border-muted object-cover"
             >
             <div
@@ -859,11 +865,11 @@ function extractErrorMessage(error: unknown): string {
             <div class="min-w-0 space-y-3">
               <div>
                 <h3 class="text-base font-semibold text-highlighted">
-                  {{ selectedCard.name }}
+                  {{ previewCard.name }}
                 </h3>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <UBadge
-                    v-for="color in selectedCard.colors"
+                    v-for="color in previewCard.colors"
                     :key="color"
                     variant="outline"
                     :style="getCardColorStyle(color)"
@@ -874,7 +880,7 @@ function extractErrorMessage(error: unknown): string {
               </div>
 
               <p class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted">
-                {{ selectedCard.text || 'Pas de texte.' }}
+                {{ previewCard.text || 'Pas de texte.' }}
               </p>
             </div>
 
@@ -894,22 +900,22 @@ function extractErrorMessage(error: unknown): string {
             </dl>
 
             <UButton
-              v-if="selectedCard.type === 'Leader'"
+              v-if="previewCard.type === 'Leader'"
               icon="i-lucide-crown"
-              :color="selectedCard.id === leaderCardId ? 'success' : 'primary'"
+              :color="previewCard.id === leaderCardId ? 'success' : 'primary'"
               block
-              @click="chooseLeader(selectedCard)"
+              @click="chooseLeader(previewCard)"
             >
-              {{ selectedCard.id === leaderCardId ? 'Leader selectionne' : 'Choisir comme Leader' }}
+              {{ previewCard.id === leaderCardId ? 'Leader selectionne' : 'Choisir comme Leader' }}
             </UButton>
             <UButton
               v-else
               icon="i-lucide-list-plus"
-              :disabled="!canAddCard(selectedCard)"
+              :disabled="!canAddCard(previewCard)"
               block
-              @click="addCard(selectedCard)"
+              @click="addCard(previewCard)"
             >
-              {{ canAddCard(selectedCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
+              {{ canAddCard(previewCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
             </UButton>
           </div>
         </div>
@@ -976,7 +982,11 @@ function extractErrorMessage(error: unknown): string {
         </template>
 
         <div class="flex h-full min-h-0 flex-col gap-4">
-          <section class="grid shrink-0 grid-cols-[72px_minmax(0,1fr)_auto] gap-3">
+          <section
+            class="grid shrink-0 grid-cols-[72px_minmax(0,1fr)_auto] gap-3"
+            @mouseenter="selectedLeader && previewHoveredCard(selectedLeader)"
+            @mouseleave="clearHoveredCard(selectedLeader?.id)"
+          >
             <img
               v-if="selectedLeader?.imageUrl"
               :src="selectedLeader.imageUrl"
@@ -1047,7 +1057,9 @@ function extractErrorMessage(error: unknown): string {
             <div
               v-for="line in deckLines"
               :key="line.cardId"
-              class="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-muted p-2"
+              class="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-muted p-2 transition hover:border-primary/60 hover:bg-accented/40"
+              @mouseenter="cardById.get(line.cardId) && previewHoveredCard(cardById.get(line.cardId)!)"
+              @mouseleave="clearHoveredCard(line.cardId)"
             >
               <img
                 v-if="cardById.get(line.cardId)?.imageUrl"
