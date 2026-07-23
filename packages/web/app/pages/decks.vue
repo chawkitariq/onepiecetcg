@@ -41,6 +41,12 @@ const saving = ref(false)
 const deleting = ref(false)
 const importing = ref(false)
 const exporting = ref(false)
+const confirmDialogOpen = ref(false)
+const confirmDialogTitle = ref('')
+const confirmDialogDescription = ref('')
+const confirmDialogConfirmLabel = ref('Confirmer')
+const confirmDialogConfirmColor = ref<'error' | 'primary'>('error')
+const confirmDialogAction = ref<null | (() => void | Promise<void>)>(null)
 
 type PersistedCatalogFilters = {
   search?: string
@@ -131,6 +137,12 @@ const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])
 const selectedLeader = computed(() => cardById.value.get(leaderCardId.value) ?? null)
 const deckLines = computed(() => normalizeDeckCards(deckCards.value))
 const mainDeckCount = computed(() => deckLines.value.reduce((sum, card) => sum + card.quantity, 0))
+const hasBuilderContent = computed(() =>
+  selectedDeckId.value !== null
+  || deckName.value !== 'Nouveau deck'
+  || leaderCardId.value !== ''
+  || deckCards.value.length > 0
+)
 const cardQuantityByNumber = computed(() => {
   const quantities = new Map<string, number>()
 
@@ -244,6 +256,7 @@ function setFromSavedDeck(deck: Deck) {
   leaderCardId.value = deck.leaderCardId
   deckCards.value = [...deck.cards]
   builderNotice.value = null
+  selectedCard.value = cardById.value.get(deck.leaderCardId) ?? null
 }
 
 function resetBuilder() {
@@ -260,6 +273,62 @@ function applyImportedDeck(payload: DeckPayload) {
   leaderCardId.value = payload.leaderCardId
   deckCards.value = [...payload.cards]
   selectedCard.value = cardById.value.get(payload.leaderCardId) ?? null
+}
+
+function closeConfirmDialog() {
+  confirmDialogOpen.value = false
+  confirmDialogTitle.value = ''
+  confirmDialogDescription.value = ''
+  confirmDialogConfirmLabel.value = 'Confirmer'
+  confirmDialogConfirmColor.value = 'error'
+  confirmDialogAction.value = null
+}
+
+function openConfirmDialog(options: {
+  title: string
+  description: string
+  confirmLabel: string
+  confirmColor?: 'error' | 'primary'
+  action: () => void | Promise<void>
+}) {
+  confirmDialogTitle.value = options.title
+  confirmDialogDescription.value = options.description
+  confirmDialogConfirmLabel.value = options.confirmLabel
+  confirmDialogConfirmColor.value = options.confirmColor ?? 'error'
+  confirmDialogAction.value = options.action
+  confirmDialogOpen.value = true
+}
+
+async function runConfirmedAction() {
+  const action = confirmDialogAction.value
+
+  if (!action) {
+    return
+  }
+
+  await action()
+  closeConfirmDialog()
+}
+
+function maybeSetFromSavedDeck(deckId: string | number | undefined) {
+  const deck = savedDecks.value.find(candidate => candidate.id === deckId)
+
+  if (!deck || deck.id === selectedDeckId.value) {
+    return
+  }
+
+  if (!hasBuilderContent.value) {
+    setFromSavedDeck(deck)
+    return
+  }
+
+  openConfirmDialog({
+    title: 'Charger un autre deck ?',
+    description: `Le deck en cours sera remplace par "${deck.name}".`,
+    confirmLabel: 'Charger',
+    confirmColor: 'primary',
+    action: () => setFromSavedDeck(deck)
+  })
 }
 
 function createRandomDeck() {
@@ -291,6 +360,21 @@ function createRandomDeck() {
   selectedCard.value = selectedRandomLeader
   deckCards.value = randomLines
   toast.add(createRandomDeckGeneratedToast())
+}
+
+function maybeCreateRandomDeck() {
+  if (!hasBuilderContent.value) {
+    createRandomDeck()
+    return
+  }
+
+  openConfirmDialog({
+    title: 'Generer un deck aleatoire ?',
+    description: 'Le contenu actuel du builder sera remplace par un nouveau deck aleatoire.',
+    confirmLabel: 'Generer',
+    confirmColor: 'primary',
+    action: () => createRandomDeck()
+  })
 }
 
 function resetCatalogFilters() {
@@ -532,6 +616,19 @@ async function deleteDeck() {
   }
 }
 
+function confirmDeleteDeck() {
+  if (!selectedDeckId.value) {
+    return
+  }
+
+  openConfirmDialog({
+    title: 'Supprimer ce deck ?',
+    description: `Le deck "${deckName.value}" sera supprime definitivement.`,
+    confirmLabel: 'Supprimer',
+    action: () => deleteDeck()
+  })
+}
+
 async function importDeckFromClipboard() {
   if (!import.meta.client || !navigator.clipboard) {
     toast.add(createDeckActionErrorToast('Le presse-papiers est indisponible dans ce navigateur.'))
@@ -563,6 +660,21 @@ async function importDeckFromClipboard() {
   } finally {
     importing.value = false
   }
+}
+
+function maybeImportDeckFromClipboard() {
+  if (!hasBuilderContent.value) {
+    void importDeckFromClipboard()
+    return
+  }
+
+  openConfirmDialog({
+    title: 'Importer depuis le presse-papiers ?',
+    description: 'Le contenu actuel du builder sera remplace par le deck importe.',
+    confirmLabel: 'Importer',
+    confirmColor: 'primary',
+    action: () => importDeckFromClipboard()
+  })
 }
 
 async function exportDeckToClipboard() {
@@ -866,13 +978,7 @@ function extractErrorMessage(error: unknown): string {
                     class="w-full"
                     :loading="deckListPending"
                     :disabled="savedDecks.length === 0"
-                    @update:model-value="(deckId) => {
-                      const deck = savedDecks.find(candidate => candidate.id === deckId)
-
-                      if (deck) {
-                        setFromSavedDeck(deck)
-                      }
-                    }"
+                    @update:model-value="maybeSetFromSavedDeck"
                   />
                   <UButton
                     icon="i-lucide-plus"
@@ -932,7 +1038,7 @@ function extractErrorMessage(error: unknown): string {
                 size="sm"
                 label="Aleatoire"
                 :disabled="catalogPending || cards.length === 0"
-                @click="createRandomDeck"
+                @click="maybeCreateRandomDeck"
               />
               <UButtonGroup size="sm">
                 <UButton
@@ -941,7 +1047,7 @@ function extractErrorMessage(error: unknown): string {
                   variant="outline"
                   :loading="importing"
                   label="Importer"
-                  @click="importDeckFromClipboard"
+                  @click="maybeImportDeckFromClipboard"
                 />
                 <UButton
                   icon="i-lucide-upload"
@@ -1060,7 +1166,7 @@ function extractErrorMessage(error: unknown): string {
                   class="flex-1 justify-center"
                   :loading="deleting"
                   :disabled="!selectedDeckId"
-                  @click="deleteDeck"
+                  @click="confirmDeleteDeck"
                 >
                   Supprimer
                 </UButton>
@@ -1070,5 +1176,37 @@ function extractErrorMessage(error: unknown): string {
         </div>
       </UCard>
     </div>
+
+    <UModal v-model:open="confirmDialogOpen">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="space-y-1">
+              <h3 class="text-base font-semibold text-highlighted">
+                {{ confirmDialogTitle }}
+              </h3>
+              <p class="text-sm text-muted">
+                {{ confirmDialogDescription }}
+              </p>
+            </div>
+          </template>
+
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              label="Annuler"
+              @click="closeConfirmDialog"
+            />
+            <UButton
+              :color="confirmDialogConfirmColor"
+              :loading="deleting || importing"
+              :label="confirmDialogConfirmLabel"
+              @click="runConfirmedAction"
+            />
+          </div>
+        </UCard>
+      </template>
+    </UModal>
   </main>
 </template>
