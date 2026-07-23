@@ -197,6 +197,11 @@ const costItems = computed(() => [
   ...filters.value.costs.map(cost => ({ label: String(cost), value: String(cost) }))
 ])
 
+const savedDeckItems = computed(() => savedDecks.value.map(deck => ({
+  label: deck.name,
+  value: deck.id
+})))
+
 const selectedCardRows = computed(() => {
   if (!selectedCard.value) {
     return []
@@ -520,7 +525,7 @@ function extractErrorMessage(error: unknown): string {
 
 <template>
   <main class="fixed inset-x-0 bottom-0 top-(--ui-header-height) overflow-hidden px-4 py-3">
-    <div class="mx-auto grid h-full min-h-0 max-w-[2400px] min-w-0 gap-4 xl:grid-cols-[minmax(520px,1.35fr)_minmax(300px,0.55fr)_minmax(360px,0.75fr)_minmax(260px,0.45fr)]">
+    <div class="mx-auto grid h-full min-h-0 max-w-[2200px] min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,20%)_minmax(0,1fr)]">
       <UCard
         class="min-h-0 min-w-0"
         :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
@@ -591,7 +596,7 @@ function extractErrorMessage(error: unknown): string {
           v-if="!catalogPending && filteredCards.length > 0"
           class="h-full min-h-0 overflow-y-auto pr-1"
         >
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <button
               v-for="card in filteredCards"
               :key="card.id"
@@ -671,16 +676,16 @@ function extractErrorMessage(error: unknown): string {
           v-if="selectedCard"
           class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
         >
-          <div class="w-full">
+          <div class="w-full aspect-[4/5]">
             <img
               v-if="selectedCard.imageUrl"
               :src="selectedCard.imageUrl"
               :alt="selectedCard.name"
-              class="aspect-[5/7] w-full rounded-lg border border-muted object-cover"
+              class="w-full rounded-lg border border-muted object-cover"
             >
             <div
               v-else
-              class="flex aspect-[5/7] w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
+              class="flex w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
             >
               <UIcon
                 name="i-lucide-image-off"
@@ -762,7 +767,7 @@ function extractErrorMessage(error: unknown): string {
       >
         <template #header>
           <div class="space-y-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 class="text-base font-semibold text-highlighted">
                   Deck builder
@@ -771,45 +776,36 @@ function extractErrorMessage(error: unknown): string {
                   {{ mainDeckCount }} / 50 cartes
                 </p>
               </div>
-              <div class="flex flex-wrap items-center justify-end gap-2">
-                <UButton
-                  icon="i-lucide-shuffle"
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  label="Aleatoire"
-                  :disabled="catalogPending || cards.length === 0"
-                  @click="createRandomDeck"
-                />
-                <UBadge
-                  v-if="validationPending"
-                  color="neutral"
-                  variant="subtle"
-                  icon="i-lucide-loader-2"
-                >
-                  Validation
-                </UBadge>
-                <UButton
-                  icon="i-lucide-save"
-                  size="sm"
-                  :loading="saving"
-                  :disabled="!validationData?.valid"
-                  @click="saveDeck"
-                >
-                  Sauvegarder
-                </UButton>
-                <UButton
-                  icon="i-lucide-trash-2"
-                  color="error"
-                  variant="soft"
-                  size="sm"
-                  :loading="deleting"
-                  :disabled="!selectedDeckId"
-                  @click="deleteDeck"
-                >
-                  Supprimer
-                </UButton>
-              </div>
+              <UFormField
+                label="Deck sauvegarde"
+                class="min-w-0 flex-1 xl:max-w-md"
+              >
+                <UFieldGroup class="w-full">
+                  <USelectMenu
+                    :model-value="selectedDeckId ?? undefined"
+                    :items="savedDeckItems"
+                    value-key="value"
+                    placeholder="Choisir un deck sauvegarde"
+                    class="w-full"
+                    :loading="deckListPending"
+                    :disabled="savedDecks.length === 0"
+                    @update:model-value="(deckId) => {
+                      const deck = savedDecks.find(candidate => candidate.id === deckId)
+
+                      if (deck) {
+                        setFromSavedDeck(deck)
+                      }
+                    }"
+                  />
+                  <UButton
+                    icon="i-lucide-plus"
+                    color="neutral"
+                    variant="outline"
+                    label="Nouveau"
+                    @click="resetBuilder"
+                  />
+                </UFieldGroup>
+              </UFormField>
             </div>
             <UFormField
               label="Nom"
@@ -825,7 +821,7 @@ function extractErrorMessage(error: unknown): string {
         </template>
 
         <div class="flex h-full min-h-0 flex-col gap-4">
-          <section class="grid shrink-0 grid-cols-[72px_minmax(0,1fr)] gap-3">
+          <section class="grid shrink-0 grid-cols-[72px_minmax(0,1fr)_auto] gap-3">
             <img
               v-if="selectedLeader?.imageUrl"
               :src="selectedLeader.imageUrl"
@@ -849,6 +845,18 @@ function extractErrorMessage(error: unknown): string {
               <p class="text-sm text-muted">
                 Choisis le Leader depuis le catalogue.
               </p>
+            </div>
+
+            <div class="flex items-start justify-end">
+              <UButton
+                icon="i-lucide-shuffle"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                label="Aleatoire"
+                :disabled="catalogPending || cards.length === 0"
+                @click="createRandomDeck"
+              />
             </div>
           </section>
 
@@ -922,83 +930,48 @@ function extractErrorMessage(error: unknown): string {
               description="Selectionne une carte dans le catalogue, puis ajoute-la depuis son detail."
             />
           </div>
-        </div>
-      </UCard>
 
-      <UCard
-        class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
-      >
-        <template #header>
-          <div class="flex shrink-0 items-center justify-between gap-3">
-            <div>
-              <h2 class="text-base font-semibold text-highlighted">
-                Decks sauvegardes
-              </h2>
-              <p class="text-sm text-muted">
-                {{ savedDecks.length }} deck(s)
-              </p>
-            </div>
-            <UButton
-              icon="i-lucide-plus"
-              color="neutral"
-              variant="ghost"
-              label="Nouveau"
-              @click="resetBuilder"
-            />
-          </div>
-        </template>
-
-        <div class="flex h-full min-h-0 flex-col gap-3">
-          <UAlert
-            v-if="!profile"
-            color="warning"
-            variant="subtle"
-            icon="i-lucide-lock"
-            title="Connexion requise"
-            description="Les decks sauvegardes sont lies au compte joueur."
-          />
-
-          <div class="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-            <div
-              v-if="deckListPending"
-              class="space-y-2"
-            >
-              <USkeleton
-                v-for="index in 5"
-                :key="index"
-                class="h-16 w-full rounded-lg"
-              />
-            </div>
-
-            <template v-else>
-              <button
-                v-for="deck in savedDecks"
-                :key="deck.id"
-                type="button"
-                class="w-full rounded-lg border border-muted p-3 text-left transition hover:border-primary hover:bg-accented"
-                :class="{ 'border-primary bg-accented ring-2 ring-primary/20': deck.id === selectedDeckId }"
-                @click="setFromSavedDeck(deck)"
+          <footer class="shrink-0 border-t border-muted/70 pt-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <UBadge
+                v-if="validationPending"
+                color="neutral"
+                variant="subtle"
+                icon="i-lucide-loader-2"
               >
-                <p class="truncate text-sm font-medium text-highlighted">
-                  {{ deck.name }}
-                </p>
-                <p class="mt-1 text-xs text-muted">
-                  {{ deck.cards.reduce((sum, card) => sum + card.quantity, 0) }} / 50 cartes
-                </p>
-                <p class="truncate text-xs text-muted">
-                  Leader {{ deck.leaderCardId || '-' }}
-                </p>
-              </button>
-
-              <UEmpty
-                v-if="savedDecks.length === 0"
-                icon="i-lucide-folder-open"
-                title="Aucun deck"
-                description="Sauvegarde un deck valide pour le retrouver ici."
+                Validation
+              </UBadge>
+              <div
+                v-else
+                class="h-7"
               />
-            </template>
-          </div>
+
+              <div class="flex flex-1 flex-wrap items-center gap-2">
+                <UButton
+                  icon="i-lucide-save"
+                  size="sm"
+                  class="flex-1 justify-center"
+                  :loading="saving"
+                  :disabled="!validationData?.valid"
+                  @click="saveDeck"
+                >
+                  Sauvegarder
+                </UButton>
+                <UButton
+                  icon="i-lucide-trash-2"
+                  color="error"
+                  variant="soft"
+                  size="sm"
+                  class="flex-1 justify-center"
+                  :loading="deleting"
+                  :disabled="!selectedDeckId"
+                  @click="deleteDeck"
+                >
+                  Supprimer
+                </UButton>
+              </div>
+            </div>
+          </footer>
         </div>
       </UCard>
     </div>
