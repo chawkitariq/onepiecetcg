@@ -1,5 +1,5 @@
 import { Client, type Room } from 'colyseus.js'
-import type { DuelRoomView } from '@onepiecetcg/shared'
+import { DuelState } from '@onepiecetcg/shared'
 
 const RECONNECTION_TOKEN_KEY = 'duel-reconnection-token'
 
@@ -9,10 +9,15 @@ type DuelJoinOptions = {
 }
 
 /**
- * `colyseus.js` decodes `MapSchema`/`ArraySchema` fields into live Colyseus
- * collection instances at runtime (via Reflection, since no `rootSchema`
- * class is passed here), not the plain `Record`/array shapes `DuelRoomView`
- * declares for TS convenience -- these helpers bridge that gap.
+ * `DuelState` (the real Colyseus schema class, shared with `packages/api`
+ * via `packages/shared`) is passed as `rootSchema` to every join call below.
+ * Relying on Colyseus's Reflection protocol instead (omitting `rootSchema`)
+ * proved fragile with `@colyseus/schema` 3.x: it silently produced an empty
+ * decoded state once a second client joined the room ("refId" not found
+ * errors), so a shared concrete class is required, not just convenient.
+ *
+ * `MapSchema`/`ArraySchema` fields still aren't plain JS collections --
+ * these helpers bridge that gap for template/computed consumption.
  */
 export function colyseusMapValues<T>(map: unknown): T[] {
   if (map && typeof (map as { values?: () => Iterable<T> }).values === 'function') {
@@ -35,7 +40,7 @@ export function colyseusArrayValues<T>(list: unknown): T[] {
 // calling useColyseus() -- a Room/Client instance is not serializable, so it
 // cannot live in Nuxt's useState, but it only ever exists client-side anyway.
 const client = shallowRef<Client | null>(null)
-const room = shallowRef<Room<DuelRoomView> | null>(null)
+const room = shallowRef<Room<DuelState> | null>(null)
 const status = ref<'idle' | 'connecting' | 'connected' | 'error'>('idle')
 const error = ref('')
 
@@ -64,7 +69,7 @@ export function useColyseus() {
 
     try {
       client.value = client.value ?? new Client(config.public.colyseusEndpoint)
-      room.value = await client.value.joinOrCreate<DuelRoomView>('duel', options)
+      room.value = await client.value.joinOrCreate<DuelState>('duel', options, DuelState)
       status.value = 'connected'
       persistReconnectionToken()
 
@@ -87,7 +92,7 @@ export function useColyseus() {
 
     try {
       client.value = client.value ?? new Client(config.public.colyseusEndpoint)
-      room.value = await client.value.create<DuelRoomView>('duel', options)
+      room.value = await client.value.create<DuelState>('duel', options, DuelState)
       status.value = 'connected'
       persistReconnectionToken()
 
@@ -110,7 +115,7 @@ export function useColyseus() {
 
     try {
       client.value = client.value ?? new Client(config.public.colyseusEndpoint)
-      room.value = await client.value.joinById<DuelRoomView>(code, options)
+      room.value = await client.value.joinById<DuelState>(code, options, DuelState)
       status.value = 'connected'
       persistReconnectionToken()
 
@@ -133,7 +138,7 @@ export function useColyseus() {
 
     try {
       client.value = client.value ?? new Client(config.public.colyseusEndpoint)
-      room.value = await client.value.reconnect<DuelRoomView>(token)
+      room.value = await client.value.reconnect<DuelState>(token, DuelState)
       status.value = 'connected'
       persistReconnectionToken()
 

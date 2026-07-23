@@ -1,32 +1,18 @@
-import {
-  ArraySchema,
-  MapSchema,
-  Schema,
-  filter,
-  filterChildren,
-  type,
-} from '@colyseus/schema';
-import type { Card, CardColor, CardType, GamePhase } from '@onepiecetcg/shared';
+import { ArraySchema, MapSchema, Schema, view, type } from '@colyseus/schema';
+import type { Card, CardColor, CardType, GamePhase } from './index.js';
 
-type FilterClient = {
-  sessionId: string;
-};
-
-export function canViewPrivateCard(
-  client: FilterClient,
-  root: DuelCard,
-): boolean {
-  return !root.privateToOwner || root.ownerSessionId === client.sessionId;
-}
-
-export function ownsCard(
-  client: FilterClient,
-  _key: number,
-  value: DuelCard,
-): boolean {
-  return value.ownerSessionId === client.sessionId;
-}
-
+/**
+ * Colyseus room state for the `duel` room, shared between `packages/api`
+ * (authoritative, registers the room with these classes) and `packages/web`
+ * (passes `DuelState` as `joinOrCreate`'s `rootSchema` argument instead of
+ * relying on Colyseus's Reflection protocol, which proved fragile with
+ * `@colyseus/schema` 3.x for this state shape).
+ *
+ * Hidden-zone cards (hand/deck/life) are only added to their owner's
+ * `StateView` (see `duel.room.ts`), so `@view()`-tagged fields below stay
+ * unpopulated for every other client -- this replaces the `@filter`/
+ * `@filterChildren` decorators removed in Colyseus 0.16.
+ */
 export class DuelCard extends Schema {
   @type('string')
   instanceId = '';
@@ -37,75 +23,51 @@ export class DuelCard extends Schema {
   @type('boolean')
   privateToOwner = false;
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   cardId = '';
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   number = '';
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   name = '';
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   type: CardType = 'Character';
 
-  @filter(function (client: FilterClient, _value: CardColor[], root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type(['string'])
   colors = new ArraySchema<CardColor>();
 
-  @filter(function (client: FilterClient, _value: number, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('number')
   cost = -1;
 
-  @filter(function (client: FilterClient, _value: number, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('number')
   power = -1;
 
-  @filter(function (client: FilterClient, _value: number, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('number')
   life = -1;
 
-  @filter(function (client: FilterClient, _value: number, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('number')
   counter = -1;
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   imageUrl = '';
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   text = '';
 
-  @filter(function (client: FilterClient, _value: string, root: DuelCard) {
-    return canViewPrivateCard(client, root);
-  })
+  @view()
   @type('string')
   trigger = '';
 
@@ -123,18 +85,15 @@ export class DuelCard extends Schema {
 }
 
 export class DuelZones extends Schema {
-  @filterChildren(ownsCard)
   @type([DuelCard])
   deck = new ArraySchema<DuelCard>();
 
   @type([DuelCard])
   donDeck = new ArraySchema<DuelCard>();
 
-  @filterChildren(ownsCard)
   @type([DuelCard])
   hand = new ArraySchema<DuelCard>();
 
-  @filterChildren(ownsCard)
   @type([DuelCard])
   life = new ArraySchema<DuelCard>();
 

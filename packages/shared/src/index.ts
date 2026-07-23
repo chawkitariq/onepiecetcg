@@ -293,3 +293,5 @@ export function parseDeckText(
     invalidLines,
   };
 }
+
+export * from './duel-state-schema.js';

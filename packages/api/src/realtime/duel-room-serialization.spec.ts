@@ -1,6 +1,14 @@
-import type { Card } from '@onepiecetcg/shared';
-import { DuelRoom, configureDuelRoomServices } from './duel.room';
-import { DuelCard, ownsCard } from './duel-state.schema';
+import { createServer } from 'node:http';
+import { Server } from 'colyseus';
+import { WebSocketTransport } from '@colyseus/ws-transport';
+import { Encoder } from '@colyseus/schema';
+import { boot, type ColyseusTestServer } from '@colyseus/testing';
+import { DuelState, type Card } from '@onepiecetcg/shared';
+import {
+  DuelRoom,
+  configureDuelRoomAuth,
+  configureDuelRoomServices,
+} from './duel.room';
 
 jest.mock('@onepiecetcg/shared', () => {
   const sharedMock: typeof import('../decks/shared-test.mock') =
@@ -8,6 +16,32 @@ jest.mock('@onepiecetcg/shared', () => {
 
   return sharedMock;
 });
+
+// 50-card decks comfortably exceed the 8KB default; grow it once here to
+// silence the harmless (auto-recovered) overflow warning during these tests.
+Encoder.BUFFER_SIZE = 32 * 1024;
+
+/**
+ * `waitForNextPatch()` only resolves on the *next* patch broadcast after it's
+ * attached -- if the mutation we care about already happened (e.g. the
+ * second player's join, observed from the first player's client), the
+ * listener can miss it. Polling the already-synced client state directly is
+ * more robust than racing against `waitForNextPatch()`'s timing.
+ */
+async function waitUntil(
+  predicate: () => boolean,
+  timeoutMs = 3000,
+): Promise<void> {
+  const start = Date.now();
+
+  while (!predicate()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('waitUntil() timed out');
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
 
 const leader: Card = {
   id: 'L-001',
@@ -40,7 +74,7 @@ const mainCard: Card = {
   counter: 1000,
 };
 
-async function joinTwoPlayers(): Promise<DuelRoom> {
+function buildGameServer() {
   configureDuelRoomServices({
     decksService: {
       getValidatedGameDeck: jest.fn((authUserId: string, deckId: string) =>
@@ -58,84 +92,135 @@ async function joinTwoPlayers(): Promise<DuelRoom> {
     } as never,
   });
 
-  const room = new DuelRoom();
-  (
-    room as DuelRoom & { listing: { remove: jest.Mock; metadata: object } }
-  ).listing = {
-    remove: jest.fn(),
-    metadata: {},
+  const sessions: Record<string, { user: { id: string } }> = {
+    'token-alice': { user: { id: 'user-a' } },
+    'token-bob': { user: { id: 'user-b' } },
   };
-  room.onCreate();
-  jest.spyOn(room, 'lock').mockImplementation(() => undefined);
 
-  await room.onJoin(
-    { sessionId: 'session-a' } as never,
-    { displayName: 'Alice', deckId: 'deck-a' },
-    { userId: 'user-a' },
-  );
-  await room.onJoin(
-    { sessionId: 'session-b' } as never,
-    { displayName: 'Bob', deckId: 'deck-b' },
-    { userId: 'user-b' },
-  );
+  configureDuelRoomAuth((headers) => {
+    const authorization = headers.authorization;
+    const token = authorization?.startsWith('Bearer ')
+      ? authorization.slice('Bearer '.length)
+      : undefined;
 
-  return room;
-}
+    return Promise.resolve(token ? (sessions[token] ?? null) : null);
+  });
 
-async function disposeRoom(room: DuelRoom): Promise<void> {
-  const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
-  await disposableRoom._dispose();
+  const gameServer = new Server({
+    transport: new WebSocketTransport({ server: createServer() }),
+  });
+  gameServer.define('duel', DuelRoom);
+
+  return gameServer;
 }
 
 /**
- * A real two-socket round trip (`@colyseus/testing`'s `boot()` +
- * `colyseus.js` clients) was attempted for these assertions. Fixing this
- * package's ts-jest config (`isolatedModules: false`, see package.json)
- * resolved a separate bug where `@filterChildren` silently failed to
- * register under jest -- confirmed by comparing `DuelZones._definition`
- * before/after via a throwaway `ts-node --transpile-only` run, which showed
- * the decorator registers correctly outside jest regardless. Even with that
- * fix, the test client's WebSocket connection still never receives a state
- * patch from the server in this environment (`waitForNextPatch()` times out
- * after several seconds even though the server-side room state is correct),
- * which appears to be an unrelated `@colyseus/testing`/`ws` transport gap
- * specific to this repo's Node test environment. These tests instead verify
- * the two things that jointly guarantee correct wire behavior without
- * depending on that transport: the counters exposed regardless of viewpoint,
- * and that `ownsCard` -- the predicate wired via `@filterChildren` onto
- * hand/deck/life in duel-state.schema.ts -- has the right accept/reject
- * semantics.
+ * A real two-socket round trip was previously abandoned in this file because
+ * `waitForNextPatch()` never resolved: the room never rebroadcast a patch to
+ * an already-connected client once a second player joined. That was a real
+ * production bug (Colyseus 0.15.x + `@colyseus/schema` 2.x lost track of
+ * nested `MapSchema` mutations once a per-client full-state send happened
+ * mid-join), not a test-environment limitation. Upgrading to Colyseus 0.16.x
+ * and replacing `@filter`/`@filterChildren` with `StateView`/`@view()` fixed
+ * it, so this now exercises the real wire behavior end to end.
+ *
+ * A single `boot()` is shared across the whole suite (per `@colyseus/testing`
+ * docs) with `cleanup()` between tests -- booting a fresh server per test
+ * left the shared `sdk` client's underlying HTTP/auth state torn down mid
+ * next-test, causing an intermittent "socket hang up".
  */
 describe('DuelRoom per-viewpoint serialization', () => {
-  it('publishes zone counters and never replicates authUserId regardless of viewpoint', async () => {
-    const room = await joinTwoPlayers();
+  let colyseus: ColyseusTestServer;
 
-    const alice = room.state.players.get('session-a');
-    const bob = room.state.players.get('session-b');
-
-    expect(alice?.handCount).toBe(5);
-    expect(alice?.deckCount).toBe(40);
-    expect(alice?.lifeCount).toBe(5);
-    expect(bob?.handCount).toBe(5);
-    expect(bob?.deckCount).toBe(40);
-    expect(bob?.lifeCount).toBe(5);
-
-    expect((alice as unknown as { authUserId?: string })?.authUserId).toBe(
-      undefined,
-    );
-    expect((bob as unknown as { authUserId?: string })?.authUserId).toBe(
-      undefined,
-    );
-
-    await disposeRoom(room);
+  beforeAll(async () => {
+    colyseus = await boot(buildGameServer());
   });
 
-  it('rejects a non-owning client and accepts the owning client for a hidden-zone card', () => {
-    const card = new DuelCard();
-    card.ownerSessionId = 'session-a';
+  afterAll(async () => {
+    await colyseus.shutdown();
+  });
 
-    expect(ownsCard({ sessionId: 'session-a' }, 0, card)).toBe(true);
-    expect(ownsCard({ sessionId: 'session-b' }, 0, card)).toBe(false);
-    expect(ownsCard({ sessionId: 'someone-else' }, 0, card)).toBe(false);
+  beforeEach(async () => {
+    await colyseus.cleanup();
+  });
+
+  it('publishes zone counters and never replicates authUserId regardless of viewpoint', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(
+      () => (alice.state.players.get(alice.sessionId)?.handCount ?? 0) > 0,
+    );
+    await waitUntil(
+      () => (bob.state.players.get(bob.sessionId)?.handCount ?? 0) > 0,
+    );
+
+    const aliceView = alice.state.players.get(alice.sessionId);
+    const bobView = bob.state.players.get(bob.sessionId);
+
+    expect(aliceView?.handCount).toBe(5);
+    expect(aliceView?.deckCount).toBe(40);
+    expect(aliceView?.lifeCount).toBe(5);
+    expect(bobView?.handCount).toBe(5);
+    expect(bobView?.deckCount).toBe(40);
+    expect(bobView?.lifeCount).toBe(5);
+
+    expect((aliceView as { authUserId?: string } | undefined)?.authUserId).toBe(
+      undefined,
+    );
+    expect((bobView as { authUserId?: string } | undefined)?.authUserId).toBe(
+      undefined,
+    );
+
+    await alice.leave();
+    await bob.leave();
+  });
+
+  it('reveals hand contents only to the owning client', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(
+      () => (alice.state.players.get(alice.sessionId)?.handCount ?? 0) > 0,
+    );
+    await waitUntil(
+      () => (bob.state.players.get(bob.sessionId)?.handCount ?? 0) > 0,
+    );
+
+    const aliceOwnHand = Array.from(
+      alice.state.players.get(alice.sessionId)?.zones.hand ?? [],
+    );
+    const aliceViewOfBobHand = Array.from(
+      alice.state.players.get(bob.sessionId)?.zones.hand ?? [],
+    );
+
+    expect(aliceOwnHand).toHaveLength(5);
+    expect(aliceOwnHand.every((card) => card.name === 'Character')).toBe(true);
+
+    expect(aliceViewOfBobHand).toHaveLength(5);
+    expect(aliceViewOfBobHand.every((card) => !card.name)).toBe(true);
+
+    await alice.leave();
+    await bob.leave();
   });
 });

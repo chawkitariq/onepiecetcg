@@ -5,6 +5,8 @@
     "moduleResolution": "NodeNext",
     "declaration": true,
     "strict": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "outDir": "dist",
     "rootDir": "src",
     "skipLibCheck": true

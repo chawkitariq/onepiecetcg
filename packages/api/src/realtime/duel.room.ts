@@ -3,8 +3,9 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import type { IncomingMessage } from 'http';
+import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
+import { StateView } from '@colyseus/schema';
 import type { DecksService, ValidatedGameDeck } from '../decks/decks.service';
 import {
   DuelCard,
@@ -12,7 +13,7 @@ import {
   DuelPlayer,
   DuelState,
   createDuelCard,
-} from './duel-state.schema';
+} from '@onepiecetcg/shared';
 
 const RECONNECTION_SECONDS = 120;
 
@@ -30,7 +31,7 @@ type DuelAuthData = {
 };
 
 type DuelSessionResolver = (
-  req: IncomingMessage,
+  headers: IncomingHttpHeaders,
 ) => Promise<{ user: { id: string } } | null>;
 
 let services: DuelRoomServices | null = null;
@@ -59,13 +60,14 @@ export class DuelRoom extends Room<DuelState> {
 
   static async onAuth(
     _token: string,
-    req: IncomingMessage,
+    _options: DuelJoinOptions,
+    context: { headers: IncomingHttpHeaders },
   ): Promise<DuelAuthData> {
     if (!resolveSession) {
       throw new ServiceUnavailableException('Duel room auth is unavailable');
     }
 
-    const session = await resolveSession(req);
+    const session = await resolveSession(context.headers);
 
     if (!session?.user?.id) {
       throw new BadRequestException('Session invalide');
@@ -104,9 +106,15 @@ export class DuelRoom extends Room<DuelState> {
       authUserId,
       deckId,
     );
+    client.view = new StateView();
     const player = this.createPlayer(client, options, gameDeck);
     this.authUserIdBySession.set(client.sessionId, gameDeck.ownerAuthUserId);
     this.state.players.set(client.sessionId, player);
+
+    for (const card of player.zones.deck) {
+      client.view.add(card);
+    }
+
     this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
 
     if (this.state.players.size === this.maxClients) {

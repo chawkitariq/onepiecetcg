@@ -1,3 +1,20 @@
+import type * as SharedModule from '@onepiecetcg/shared';
+
+declare const jest: { requireActual: (moduleName: string) => unknown };
+
+const actualShared = jest.requireActual(
+  '@onepiecetcg/shared',
+) as typeof SharedModule;
+
+export const {
+  DuelCard,
+  DuelZones,
+  DuelPlayer,
+  DuelLog,
+  DuelState,
+  createDuelCard,
+} = actualShared;
+
 export const normalizeCardId = (cardId: string) => cardId.trim().toUpperCase();
 
 export const normalizeDeckCards = (

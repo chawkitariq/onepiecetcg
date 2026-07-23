@@ -44,7 +44,7 @@ function fakeClient(sessionId: string) {
   return {
     sessionId,
     _enqueuedMessages: undefined,
-    _reconnectionToken: `token-${sessionId}`,
+    reconnectionToken: `token-${sessionId}`,
     auth: undefined,
     ref: {},
   };
@@ -145,8 +145,7 @@ describe('DuelRoom reconnection', () => {
         [string, { resolve: (value: unknown) => void }]
       >;
     };
-    const [, deferred] =
-      roomInternals._reconnections[client._reconnectionToken];
+    const [, deferred] = roomInternals._reconnections[client.reconnectionToken];
     deferred.resolve(client);
 
     await leavePromise;
@@ -174,8 +173,7 @@ describe('DuelRoom reconnection', () => {
         [string, { reject: (value: unknown) => void }]
       >;
     };
-    const [, deferred] =
-      roomInternals._reconnections[client._reconnectionToken];
+    const [, deferred] = roomInternals._reconnections[client.reconnectionToken];
     deferred.reject(false);
 
     await leavePromise;
