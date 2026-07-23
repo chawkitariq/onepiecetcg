@@ -14,6 +14,7 @@ import { CatalogModule } from './catalog/catalog.module';
 import { DecksModule } from './decks/decks.module';
 import { DevFixturesModule } from './dev-fixtures/dev-fixtures.module';
 import { ColyseusService } from './realtime/colyseus.service';
+import { LobbyController } from './realtime/lobby.controller';
 import { getApiConfig } from './runtime-config';
 import { SpikeModule } from './spike/spike.module';
 
@@ -53,7 +54,7 @@ import { SpikeModule } from './spike/spike.module';
     DevFixturesModule,
     SpikeModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, LobbyController],
   providers: [AppService, ColyseusService],
 })
 export class AppModule {}

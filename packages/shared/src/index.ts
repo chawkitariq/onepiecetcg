@@ -112,6 +112,17 @@ export type DeckListResponse = {
   decks: Deck[];
 };
 
+export type DescribedRoomSummary = {
+  roomId: string;
+  description: string;
+  clients: number;
+  maxClients: number;
+};
+
+export type DescribedRoomListResponse = {
+  rooms: DescribedRoomSummary[];
+};
+
 export type GamePhase =
   | 'setup'
   | 'mulligan'

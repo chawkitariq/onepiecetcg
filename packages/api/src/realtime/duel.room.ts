@@ -51,7 +51,10 @@ type DuelRoomServices = {
 type DuelJoinOptions = {
   displayName?: string;
   deckId?: string;
+  description?: string;
 };
+
+const MAX_DESCRIPTION_LENGTH = 140;
 
 type DuelAuthData = {
   userId: string;
@@ -132,8 +135,16 @@ export class DuelRoom extends Room<DuelState> {
     return { userId: session.user.id };
   }
 
-  onCreate() {
+  onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
+
+    const description = options.description
+      ?.trim()
+      .slice(0, MAX_DESCRIPTION_LENGTH);
+
+    if (description) {
+      void this.setMetadata({ description });
+    }
 
     this.onMessage(
       'chooseFirstOrSecond',

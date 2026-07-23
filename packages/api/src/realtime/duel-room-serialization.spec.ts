@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { Server } from 'colyseus';
+import { Server, matchMaker } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Encoder } from '@colyseus/schema';
 import { boot, type ColyseusTestServer } from '@colyseus/testing';
@@ -9,6 +9,7 @@ import {
   configureDuelRoomAuth,
   configureDuelRoomServices,
 } from './duel.room';
+import { listDescribedDuelRooms } from './lobby';
 
 jest.mock('@onepiecetcg/shared', () => {
   const sharedMock: typeof import('../decks/shared-test.mock') =
@@ -311,7 +312,8 @@ describe('DuelRoom per-viewpoint serialization', () => {
     attackerClient.send('endPhase', {}); // ends turn -> defender becomes active
 
     await waitUntil(
-      () => defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
+      () =>
+        defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
     );
     defenderClient.send('endPhase', {}); // draw
     defenderClient.send('endPhase', {}); // don
@@ -321,7 +323,8 @@ describe('DuelRoom per-viewpoint serialization', () => {
     defenderClient.send('endPhase', {}); // ends turn -> attacker active again, its second turn
 
     await waitUntil(
-      () => attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
+      () =>
+        attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
     );
     attackerClient.send('endPhase', {}); // draw
     attackerClient.send('endPhase', {}); // don
@@ -359,12 +362,12 @@ describe('DuelRoom per-viewpoint serialization', () => {
     expect(attackerClient.state.combat.attackerInstanceId).toBe('');
 
     const defenderOwnLife = Array.from(
-      defenderClient.state.players.get(defenderClient.sessionId)?.zones
-        .hand ?? [],
+      defenderClient.state.players.get(defenderClient.sessionId)?.zones.hand ??
+        [],
     );
     const attackerViewOfDefenderHand = Array.from(
-      attackerClient.state.players.get(defenderClient.sessionId)?.zones
-        .hand ?? [],
+      attackerClient.state.players.get(defenderClient.sessionId)?.zones.hand ??
+        [],
     );
 
     // the revealed life card was added to the defender's own hand, visible in full to them...
@@ -374,5 +377,96 @@ describe('DuelRoom per-viewpoint serialization', () => {
 
     await alice.leave();
     await bob.leave();
+  });
+
+  it('lists a hosted room only when it carries a description (stage 9)', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const undescribed = await colyseus.sdk.create(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+
+    const beforeDescribed = await listDescribedDuelRooms();
+    expect(
+      beforeDescribed.rooms.some((room) => room.roomId === undescribed.roomId),
+    ).toBe(false);
+
+    colyseus.sdk.auth.token = 'token-bob';
+    const described = await colyseus.sdk.create(
+      'duel',
+      {
+        displayName: 'Bob',
+        deckId: 'deck-b',
+        description: 'Debutant bienvenu',
+      },
+      DuelState,
+    );
+
+    const afterDescribed = await listDescribedDuelRooms();
+    const listing = afterDescribed.rooms.find(
+      (room) => room.roomId === described.roomId,
+    );
+
+    expect(listing).toBeDefined();
+    expect(listing?.description).toBe('Debutant bienvenu');
+    expect(listing?.clients).toBe(1);
+    expect(listing?.maxClients).toBe(2);
+
+    await undescribed.leave();
+    await described.leave();
+  });
+
+  it('drops a described room from the listing once it is full (stage 9)', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.create(
+      'duel',
+      {
+        displayName: 'Alice',
+        deckId: 'deck-a',
+        description: 'Cherche partie tranquille',
+      },
+      DuelState,
+    );
+
+    const withOnePlayer = await listDescribedDuelRooms();
+    expect(
+      withOnePlayer.rooms.some((room) => room.roomId === alice.roomId),
+    ).toBe(true);
+
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinById(
+      alice.roomId,
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    const room = matchMaker.getLocalRoomById(alice.roomId);
+    await waitUntil(() => room.locked);
+
+    const withTwoPlayers = await listDescribedDuelRooms();
+    expect(
+      withTwoPlayers.rooms.some((entry) => entry.roomId === alice.roomId),
+    ).toBe(false);
+
+    await alice.leave();
+    await bob.leave();
+  });
+
+  it('drops a described room from the listing once it is abandoned (stage 9)', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.create(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a', description: 'Format libre' },
+      DuelState,
+    );
+
+    const roomId = alice.roomId;
+    await alice.leave(true);
+
+    await waitUntil(() => !matchMaker.getLocalRoomById(roomId));
+
+    const afterLeave = await listDescribedDuelRooms();
+    expect(afterLeave.rooms.some((room) => room.roomId === roomId)).toBe(false);
   });
 });

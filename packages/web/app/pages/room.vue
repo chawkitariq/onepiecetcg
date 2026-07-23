@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Card, CardSearchResponse, Deck, DeckListResponse, DuelLogEntry, DuelPlayerView } from '@onepiecetcg/shared'
+import type { Card, CardSearchResponse, Deck, DeckListResponse, DescribedRoomListResponse, DescribedRoomSummary, DuelLogEntry, DuelPlayerView } from '@onepiecetcg/shared'
 
 definePageMeta({
   layout: 'lobby',
@@ -28,9 +28,14 @@ const createdRoomCode = ref('')
 const roomVersion = ref(0)
 const loadingDecks = ref(false)
 const deckError = ref('')
+const roomDescription = ref('')
+const describedRooms = ref<DescribedRoomSummary[]>([])
+const loadingDescribedRooms = ref(false)
+const describedRoomsError = ref('')
 
 await refresh()
 await loadDecks()
+await loadDescribedRooms()
 
 const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])))
 
@@ -96,6 +101,20 @@ async function loadDecks() {
   }
 }
 
+async function loadDescribedRooms() {
+  loadingDescribedRooms.value = true
+  describedRoomsError.value = ''
+
+  try {
+    const response = await api<DescribedRoomListResponse>('/lobby/rooms')
+    describedRooms.value = response.rooms
+  } catch {
+    describedRoomsError.value = 'Impossible de charger les lobbies décrites.'
+  } finally {
+    loadingDescribedRooms.value = false
+  }
+}
+
 function watchRoom() {
   room.value?.onStateChange(() => {
     roomVersion.value += 1
@@ -125,7 +144,8 @@ async function createRoom() {
 
   const joinedRoom = await createPrivateRoom({
     displayName: profile.value.profile.displayName,
-    deckId: selectedDeckId.value
+    deckId: selectedDeckId.value,
+    description: roomDescription.value.trim() || undefined
   })
 
   createdRoomCode.value = joinedRoom?.roomId ?? ''
@@ -144,10 +164,23 @@ async function joinRoomByCode() {
   watchRoom()
 }
 
+async function joinDescribedRoom(roomId: string) {
+  if (!profile.value?.user.id || !selectedDeckId.value) {
+    return
+  }
+
+  await joinPrivateRoom(roomId, {
+    displayName: profile.value.profile.displayName,
+    deckId: selectedDeckId.value
+  })
+  watchRoom()
+}
+
 async function leaveRoom() {
   await leave()
   createdRoomCode.value = ''
   roomCodeInput.value = ''
+  roomDescription.value = ''
 }
 </script>
 
@@ -312,8 +345,15 @@ async function leaveRoom() {
               Créez un code à partager ou entrez celui d'un ami.
             </p>
 
+            <UInput
+              v-model="roomDescription"
+              placeholder="Description (optionnel, rend la room publique)"
+              class="mt-4 w-full"
+              :disabled="!profile || !selectedDeckId || Boolean(room)"
+            />
+
             <UButton
-              class="mt-4"
+              class="mt-3"
               color="neutral"
               block
               :loading="status === 'connecting'"
@@ -348,6 +388,70 @@ async function leaveRoom() {
             </div>
           </UCard>
         </div>
+
+        <UCard :ui="{ body: 'p-0' }">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-default">
+            <div>
+              <p class="text-sm font-semibold text-highlighted">
+                Lobbies décrites
+              </p>
+              <p class="text-xs text-muted">
+                Rooms publiques hébergées avec une description libre.
+              </p>
+            </div>
+            <UButton
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              :loading="loadingDescribedRooms"
+              @click="loadDescribedRooms"
+            >
+              Actualiser
+            </UButton>
+          </div>
+
+          <UAlert
+            v-if="describedRoomsError"
+            class="m-4"
+            icon="i-lucide-circle-alert"
+            color="error"
+            :title="describedRoomsError"
+          />
+
+          <ul>
+            <li
+              v-if="describedRooms.length === 0 && !describedRoomsError"
+              class="px-4 py-6 text-center text-sm text-muted"
+            >
+              Aucune lobby décrite disponible pour le moment.
+            </li>
+            <li
+              v-for="describedRoom in describedRooms"
+              :key="describedRoom.roomId"
+              class="flex items-center gap-3 px-4 py-3 border-b border-default last:border-b-0"
+            >
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-highlighted">
+                  {{ describedRoom.description }}
+                </span>
+                <span class="block text-xs text-muted">
+                  {{ describedRoom.clients }}/{{ describedRoom.maxClients }} joueur(s)
+                </span>
+              </span>
+              <UButton
+                color="neutral"
+                size="sm"
+                :loading="status === 'connecting'"
+                :disabled="!profile || !selectedDeckId || Boolean(room)"
+                @click="joinDescribedRoom(describedRoom.roomId)"
+              >
+                Rejoindre
+              </UButton>
+            </li>
+          </ul>
+        </UCard>
+
         <UCard v-if="room">
           <template #header>
             <div class="flex items-center justify-between gap-3">

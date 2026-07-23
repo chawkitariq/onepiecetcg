@@ -6,6 +6,7 @@ const RECONNECTION_TOKEN_KEY = 'duel-reconnection-token'
 type DuelJoinOptions = {
   displayName?: string
   deckId: string
+  description?: string
 }
 
 /**
