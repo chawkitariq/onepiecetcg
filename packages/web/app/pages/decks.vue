@@ -38,6 +38,7 @@ const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
 const selectedCost = ref<string>(allFilter)
 const selectedCard = ref<Card | null>(null)
 const {
+  hoveredCard,
   previewCard,
   selectCard,
   previewHoveredCard,
@@ -220,7 +221,25 @@ const typeItems = computed(() => [
 
 const colorItems = computed(() => [
   { label: 'Toutes les couleurs', value: allFilter },
-  ...filters.value.colors.map(color => ({ label: color, value: color }))
+  ...filters.value.colors.map((color) => {
+    const chipColorByCardColor: Record<CardColor, 'error' | 'success' | 'info' | 'secondary' | 'neutral' | 'warning'> = {
+      Red: 'error',
+      Green: 'success',
+      Blue: 'info',
+      Purple: 'secondary',
+      Black: 'neutral',
+      Yellow: 'warning'
+    }
+
+    return {
+      label: color,
+      value: color,
+      chip: {
+        color: chipColorByCardColor[color],
+        size: 'sm' as const
+      }
+    }
+  })
 ])
 
 const costItems = computed(() => [
@@ -276,28 +295,14 @@ function applyImportedDeck(payload: DeckPayload) {
   selectedCard.value = cardById.value.get(payload.leaderCardId) ?? null
 }
 
-async function maybeSetFromSavedDeck(deckId: string | number | undefined) {
+function maybeSetFromSavedDeck(deckId: string | number | undefined) {
   const deck = savedDecks.value.find(candidate => candidate.id === deckId)
 
   if (!deck || deck.id === selectedDeckId.value) {
     return
   }
 
-  if (!hasBuilderContent.value) {
-    setFromSavedDeck(deck)
-    return
-  }
-
-  const confirmed = await confirm({
-    title: 'Charger un autre deck ?',
-    description: `Le deck en cours sera remplace par "${deck.name}".`,
-    confirmLabel: 'Charger',
-    confirmColor: 'primary'
-  })
-
-  if (confirmed) {
-    setFromSavedDeck(deck)
-  }
+  setFromSavedDeck(deck)
 }
 
 function createRandomDeck() {
@@ -725,7 +730,7 @@ function extractErrorMessage(error: unknown): string {
               class="w-full 2xl:col-span-4"
             />
 
-            <USelect
+            <USelectMenu
               v-model="selectedSet"
               :items="setItems"
               value-key="value"
@@ -822,7 +827,7 @@ function extractErrorMessage(error: unknown): string {
             <div class="flex items-center justify-between gap-3">
               <div>
                 <h2 class="text-base font-semibold text-highlighted">
-                  Carte selectionnee
+                  Details
                 </h2>
                 <p class="text-sm text-muted">
                   {{ previewCard?.number ?? 'Aucune carte' }}
@@ -899,6 +904,40 @@ function extractErrorMessage(error: unknown): string {
               </div>
             </dl>
 
+          </div>
+        </div>
+
+        <div
+          v-else
+          class="flex h-full min-h-0 flex-col gap-4"
+        >
+          <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+            <div class="flex min-h-full flex-col gap-4">
+              <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg border border-muted p-6 text-center text-muted">
+                <div class="flex flex-col items-center gap-3">
+                  <UIcon
+                    name="i-lucide-square-mouse-pointer"
+                    class="size-10"
+                  />
+                  <div class="space-y-1">
+                    <p class="text-sm font-medium text-highlighted">
+                      Aucune carte
+                    </p>
+                    <p class="text-sm">
+                      Selectionne une carte du catalogue.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <template #footer>
+          <div
+            v-if="previewCard"
+            class="shrink-0"
+          >
             <UButton
               v-if="previewCard.type === 'Leader'"
               icon="i-lucide-crown"
@@ -918,14 +957,7 @@ function extractErrorMessage(error: unknown): string {
               {{ canAddCard(previewCard) ? 'Ajouter au deck' : 'Limite atteinte' }}
             </UButton>
           </div>
-        </div>
-
-        <UEmpty
-          v-else
-          icon="i-lucide-square-mouse-pointer"
-          title="Aucune carte"
-          description="Selectionne une carte du catalogue."
-        />
+        </template>
       </UCard>
 
       <UCard
@@ -983,7 +1015,7 @@ function extractErrorMessage(error: unknown): string {
 
         <div class="flex h-full min-h-0 flex-col gap-4">
           <section
-            class="grid shrink-0 grid-cols-[72px_minmax(0,1fr)_auto] gap-3"
+            class="grid shrink-0 grid-cols-[5vmax_minmax(0,1fr)_auto] gap-3"
             @mouseenter="selectedLeader && previewHoveredCard(selectedLeader)"
             @mouseleave="clearHoveredCard(selectedLeader?.id)"
           >
@@ -995,12 +1027,14 @@ function extractErrorMessage(error: unknown): string {
             >
             <div
               v-else
-              class="flex aspect-[5/7] items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
+              class="aspect-[5/7]"
             >
-              <UIcon
-                name="i-lucide-crown"
-                class="size-7"
-              />
+              <div class="flex h-full w-full items-center justify-center rounded-lg border border-muted text-muted">
+                <UIcon
+                  name="i-lucide-crown"
+                  class="size-7"
+                />
+              </div>
             </div>
 
             <div class="min-w-0 space-y-2">
@@ -1022,24 +1056,24 @@ function extractErrorMessage(error: unknown): string {
                 :disabled="catalogPending || cards.length === 0"
                 @click="maybeCreateRandomDeck"
               />
-              <UButtonGroup size="sm">
-                <UButton
-                  icon="i-lucide-download"
-                  color="neutral"
-                  variant="outline"
-                  :loading="importing"
-                  label="Importer"
-                  @click="maybeImportDeckFromClipboard"
-                />
-                <UButton
-                  icon="i-lucide-upload"
-                  color="neutral"
-                  variant="outline"
-                  :loading="exporting"
-                  label="Exporter"
-                  @click="exportDeckToClipboard"
-                />
-              </UButtonGroup>
+              <UButton
+                icon="i-lucide-download"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                :loading="importing"
+                label="Importer"
+                @click="maybeImportDeckFromClipboard"
+              />
+              <UButton
+                icon="i-lucide-upload"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                :loading="exporting"
+                label="Exporter"
+                @click="exportDeckToClipboard"
+              />
             </div>
           </section>
 
@@ -1108,12 +1142,14 @@ function extractErrorMessage(error: unknown): string {
               </div>
             </div>
 
-            <UEmpty
+            <div
               v-if="deckLines.length === 0"
-              icon="i-lucide-list-plus"
-              title="Deck vide"
-              description="Selectionne une carte dans le catalogue, puis ajoute-la depuis son detail."
-            />
+              class="flex min-h-20 items-center justify-center rounded-lg border border-muted px-3 py-2 text-center text-muted"
+            >
+              <p class="text-sm">
+                Selectionne une carte dans le catalogue, puis ajoute-la depuis son detail.
+              </p>
+            </div>
           </div>
 
           <footer class="shrink-0 border-t border-muted/70 pt-4">
