@@ -15,7 +15,20 @@ const {
   endPhase,
   playCard,
   attachDon,
-  clearError
+  clearError,
+  combat,
+  isCombatInProgress,
+  isSelfAttacker,
+  isSelfDefender,
+  canDeclareAttack,
+  isBlockingStep,
+  isCounteringStep,
+  isAwaitingTriggerDecision,
+  declareAttack,
+  declareBlock,
+  declareCounter,
+  finishCounterStep,
+  resolveTrigger
 } = useDuelRoom()
 
 const phaseLabels: Record<string, string> = {
@@ -32,11 +45,19 @@ const phaseLabels: Record<string, string> = {
 const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
 const isAttachingDon = ref(false)
 const pendingCharacterInstanceId = ref<string | null>(null)
+const isSelectingAttacker = ref(false)
+const pendingAttackerInstanceId = ref<string | null>(null)
+const pendingCounterCardInstanceId = ref<string | null>(null)
+const counterPowerBonusInput = ref(1000)
 
 const phaseSteps: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end']
 
-const canAttachDon = computed(() => isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0)
+const canAttachDon = computed(() =>
+  isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0 && !isCombatInProgress.value
+)
 const isChoosingCharacterToDiscard = computed(() => pendingCharacterInstanceId.value !== null)
+const isChoosingTarget = computed(() => pendingAttackerInstanceId.value !== null)
+const isChoosingCounterCard = computed(() => pendingCounterCardInstanceId.value !== null)
 
 function formatLogTime(createdAt: string): string {
   const date = new Date(createdAt)
@@ -55,6 +76,114 @@ function toggleAttachDon() {
   isAttachingDon.value = !isAttachingDon.value
 }
 
+function toggleSelectingAttacker() {
+  isSelectingAttacker.value = !isSelectingAttacker.value
+  pendingAttackerInstanceId.value = null
+}
+
+function cancelTargetSelection() {
+  pendingAttackerInstanceId.value = null
+  isSelectingAttacker.value = false
+}
+
+function onSelfLeaderAttackerClick() {
+  if (!isSelectingAttacker.value || !self.value?.leader) {
+    return
+  }
+
+  if (self.value.leader.rested) {
+    return
+  }
+
+  pendingAttackerInstanceId.value = self.value.leader.instanceId
+  isSelectingAttacker.value = false
+}
+
+function onSelfCharacterAttackerClick(instanceId: string) {
+  if (!isSelectingAttacker.value) {
+    return
+  }
+
+  const character = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
+
+  if (!character || character.rested || character.playedThisTurn) {
+    return
+  }
+
+  pendingAttackerInstanceId.value = instanceId
+  isSelectingAttacker.value = false
+}
+
+function onOpponentLeaderTargetClick() {
+  if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
+    return
+  }
+
+  declareAttack(pendingAttackerInstanceId.value, 'leader')
+  pendingAttackerInstanceId.value = null
+}
+
+function onOpponentCharacterTargetClick(instanceId: string) {
+  if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
+    return
+  }
+
+  const target = opponent.value?.characters.find(candidate => candidate.instanceId === instanceId)
+
+  if (!target || !target.rested) {
+    return
+  }
+
+  declareAttack(pendingAttackerInstanceId.value, 'character', instanceId)
+  pendingAttackerInstanceId.value = null
+}
+
+function onBlockerCharacterClick(instanceId: string) {
+  if (!isBlockingStep.value || !isSelfDefender.value) {
+    return
+  }
+
+  const blocker = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
+
+  if (!blocker || blocker.rested) {
+    return
+  }
+
+  declareBlock(instanceId)
+}
+
+function skipBlock() {
+  declareBlock(null)
+}
+
+function onCounterHandCardClick(instanceId: string) {
+  if (!isCounteringStep.value || !isSelfDefender.value) {
+    return
+  }
+
+  const card = self.value?.hand.find(candidate => candidate.instanceId === instanceId)
+
+  if (!card) {
+    return
+  }
+
+  pendingCounterCardInstanceId.value = instanceId
+  counterPowerBonusInput.value = card.counter && card.counter > 0 ? card.counter : 1000
+}
+
+function confirmCounter() {
+  if (!pendingCounterCardInstanceId.value) {
+    return
+  }
+
+  declareCounter(pendingCounterCardInstanceId.value, counterPowerBonusInput.value)
+  pendingCounterCardInstanceId.value = null
+}
+
+function cancelCounterSelection() {
+  pendingCounterCardInstanceId.value = null
+}
+
 function onSelfHandCardClick(_side: 0 | 1, instanceId: string) {
   if (!isMainPhase.value || !isSelfTurn.value) {
     return
@@ -69,6 +198,11 @@ function onSelfHandCardClick(_side: 0 | 1, instanceId: string) {
 }
 
 function onSelfLeaderClick(_side: 0 | 1) {
+  if (isSelectingAttacker.value) {
+    onSelfLeaderAttackerClick()
+    return
+  }
+
   if (!isAttachingDon.value) {
     return
   }
@@ -84,12 +218,39 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     return
   }
 
+  if (isSelectingAttacker.value) {
+    onSelfCharacterAttackerClick(instanceId)
+    return
+  }
+
+  if (isBlockingStep.value && isSelfDefender.value) {
+    onBlockerCharacterClick(instanceId)
+    return
+  }
+
   if (!isAttachingDon.value) {
     return
   }
 
   attachDon('character', instanceId)
   isAttachingDon.value = false
+}
+
+function onOpponentLeaderClick() {
+  onOpponentLeaderTargetClick()
+}
+
+function onOpponentCharacterClick(_side: 0 | 1, instanceId: string) {
+  onOpponentCharacterTargetClick(instanceId)
+}
+
+function onSelfHandCardOrCounterClick(side: 0 | 1, instanceId: string) {
+  if (isCounteringStep.value && isSelfDefender.value) {
+    onCounterHandCardClick(instanceId)
+    return
+  }
+
+  onSelfHandCardClick(side, instanceId)
 }
 
 function cancelDiscardSelection() {
@@ -191,6 +352,16 @@ function cancelDiscardSelection() {
             {{ isAttachingDon ? 'Annuler' : 'Attacher DON!!' }}
           </UButton>
           <UButton
+            v-if="isMainPhase && isSelfTurn"
+            size="sm"
+            :color="isSelectingAttacker || isChoosingTarget ? 'primary' : 'neutral'"
+            :variant="isSelectingAttacker || isChoosingTarget ? 'solid' : 'subtle'"
+            :disabled="!canDeclareAttack && !isSelectingAttacker && !isChoosingTarget"
+            @click="isChoosingTarget ? cancelTargetSelection() : toggleSelectingAttacker()"
+          >
+            {{ isSelectingAttacker || isChoosingTarget ? 'Annuler' : 'Attaquer' }}
+          </UButton>
+          <UButton
             size="sm"
             color="primary"
             :disabled="!canEndPhase"
@@ -223,6 +394,153 @@ function cancelDiscardSelection() {
       @update:open="cancelDiscardSelection"
     />
 
+    <UAlert
+      v-if="isSelectingAttacker"
+      color="info"
+      variant="subtle"
+      title="Choisissez votre attaquant"
+      description="Selectionnez votre Leader ou un Personnage redresse n'ayant pas ete joue ce tour-ci."
+      class="shrink-0"
+    />
+
+    <UAlert
+      v-if="isChoosingTarget"
+      color="info"
+      variant="subtle"
+      title="Choisissez la cible"
+      description="Selectionnez le Leader adverse ou un Personnage adverse epuise."
+      class="shrink-0"
+    />
+
+    <UAlert
+      v-if="isBlockingStep && isSelfDefender"
+      color="warning"
+      variant="subtle"
+      title="Etape de Blocage"
+      description="Designez un Personnage redresse comme Bloqueur, ou ne bloquez pas."
+      class="shrink-0"
+    >
+      <template #actions>
+        <UButton
+          size="sm"
+          color="neutral"
+          variant="subtle"
+          @click="skipBlock"
+        >
+          Ne pas bloquer
+        </UButton>
+      </template>
+    </UAlert>
+
+    <UAlert
+      v-if="isBlockingStep && isSelfAttacker"
+      color="neutral"
+      variant="subtle"
+      title="Etape de Blocage"
+      description="En attente de la decision de blocage de l'adversaire..."
+      class="shrink-0"
+    />
+
+    <UAlert
+      v-if="isCounteringStep && isSelfDefender"
+      color="warning"
+      variant="subtle"
+      title="Etape de Contre"
+      description="Defaussez une carte avec Contre depuis votre main pour booster votre puissance de defense, ou terminez l'etape."
+      class="shrink-0"
+    >
+      <template #actions>
+        <UButton
+          size="sm"
+          color="primary"
+          variant="subtle"
+          @click="finishCounterStep"
+        >
+          Terminer l'etape de Contre
+        </UButton>
+      </template>
+    </UAlert>
+
+    <UAlert
+      v-if="isChoosingCounterCard"
+      color="warning"
+      variant="subtle"
+      title="Valeur de Contre"
+      description="Confirmez la valeur de Contre a ajouter pour la duree du combat."
+      class="shrink-0"
+    >
+      <template #actions>
+        <UInputNumber
+          v-model="counterPowerBonusInput"
+          :min="0"
+          :step="1000"
+          size="sm"
+        />
+        <UButton
+          size="sm"
+          color="primary"
+          variant="subtle"
+          @click="confirmCounter"
+        >
+          Confirmer
+        </UButton>
+        <UButton
+          size="sm"
+          color="neutral"
+          variant="ghost"
+          @click="cancelCounterSelection"
+        >
+          Annuler
+        </UButton>
+      </template>
+    </UAlert>
+
+    <UAlert
+      v-if="isCounteringStep && isSelfAttacker"
+      color="neutral"
+      variant="subtle"
+      title="Etape de Contre"
+      description="En attente de la decision de contre de l'adversaire..."
+      class="shrink-0"
+    />
+
+    <UAlert
+      v-if="isAwaitingTriggerDecision && isSelfDefender"
+      color="error"
+      variant="subtle"
+      title="Carte de Vie revelee : [Declenchement]"
+      description="Voulez-vous activer le Declenchement (la carte sera ecartee) ou l'ajouter simplement a votre main ?"
+      class="shrink-0"
+    >
+      <template #actions>
+        <UButton
+          size="sm"
+          color="error"
+          variant="subtle"
+          @click="resolveTrigger(true)"
+        >
+          Activer et ecarter
+        </UButton>
+        <UButton
+          size="sm"
+          color="neutral"
+          variant="subtle"
+          @click="resolveTrigger(false)"
+        >
+          Ajouter a la main
+        </UButton>
+      </template>
+    </UAlert>
+
+    <UAlert
+      v-if="isAwaitingTriggerDecision && isSelfAttacker"
+      color="neutral"
+      variant="subtle"
+      title="Carte de Vie revelee"
+      description="En attente de la decision de Declenchement du defenseur..."
+      class="shrink-0"
+    />
+
     <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
       <template #left>
         <UCard class="flex flex-col gap-3 h-full overflow-y-auto">
@@ -243,7 +561,10 @@ function cancelDiscardSelection() {
           :player="opponent"
           :side="1"
           is-adversary
+          :is-targetable="isChoosingTarget"
           @card-hover="hoveredCard = $event"
+          @leader-click="onOpponentLeaderClick"
+          @character-click="onOpponentCharacterClick"
         />
         <div
           v-else
@@ -258,9 +579,10 @@ function cancelDiscardSelection() {
           :player="self"
           :side="0"
           reveal-hand
-          :is-selectable="isAttachingDon || isChoosingCharacterToDiscard"
+          :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
+          :is-selectable="isAttachingDon || isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
           @card-hover="hoveredCard = $event"
-          @hand-card-click="onSelfHandCardClick"
+          @hand-card-click="onSelfHandCardOrCounterClick"
           @leader-click="onSelfLeaderClick"
           @character-click="onSelfCharacterClick"
         />

@@ -17,6 +17,25 @@ import {
   type GamePhase,
 } from '@onepiecetcg/shared';
 
+type DeclareAttackMessage = {
+  attackerInstanceId: string;
+  targetType: 'leader' | 'character';
+  targetInstanceId?: string;
+};
+
+type DeclareBlockMessage = {
+  blockerInstanceId?: string | null;
+};
+
+type DeclareCounterMessage = {
+  discardInstanceId: string;
+  counterPowerBonus: number;
+};
+
+type ResolveTriggerMessage = {
+  activate: boolean;
+};
+
 const RECONNECTION_SECONDS = 120;
 
 const MAX_CHARACTERS = 5;
@@ -83,6 +102,16 @@ export class DuelRoom extends Room<DuelState> {
 
   private readonly authUserIdBySession = new Map<string, string>();
 
+  /**
+   * The life-damage card currently awaiting the defender's manual
+   * [Declenchement] activation decision -- held server-side rather than in
+   * `DuelState` so it never gets replicated (would leak the trigger card's
+   * identity to the attacker before the defender decides).
+   */
+  private pendingTriggerCard: DuelCard | null = null;
+
+  private pendingTriggerOwnerSessionId = '';
+
   maxClients = 2;
 
   static async onAuth(
@@ -128,6 +157,38 @@ export class DuelRoom extends Room<DuelState> {
     this.onMessage('attachDon', (client: Client, message: AttachDonMessage) => {
       this.handleAttachDon(client, message);
     });
+
+    this.onMessage(
+      'declareAttack',
+      (client: Client, message: DeclareAttackMessage) => {
+        this.handleDeclareAttack(client, message);
+      },
+    );
+
+    this.onMessage(
+      'declareBlock',
+      (client: Client, message: DeclareBlockMessage) => {
+        this.handleDeclareBlock(client, message);
+      },
+    );
+
+    this.onMessage(
+      'declareCounter',
+      (client: Client, message: DeclareCounterMessage) => {
+        this.handleDeclareCounter(client, message);
+      },
+    );
+
+    this.onMessage('finishCounterStep', (client: Client) => {
+      this.handleFinishCounterStep(client);
+    });
+
+    this.onMessage(
+      'resolveTrigger',
+      (client: Client, message: ResolveTriggerMessage) => {
+        this.handleResolveTrigger(client, message);
+      },
+    );
   }
 
   async onJoin(client: Client, options: DuelJoinOptions, auth?: DuelAuthData) {
@@ -410,6 +471,11 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
+    if (this.isCombatInProgress()) {
+      this.sendError(client, 'Un combat est en cours.');
+      return;
+    }
+
     if (client.sessionId !== this.state.activePlayerSessionId) {
       this.sendError(client, "Ce n'est pas votre tour.");
       return;
@@ -627,6 +693,11 @@ export class DuelRoom extends Room<DuelState> {
       return null;
     }
 
+    if (this.isCombatInProgress()) {
+      this.sendError(client, 'Un combat est en cours.');
+      return null;
+    }
+
     if (client.sessionId !== this.state.activePlayerSessionId) {
       this.sendError(client, "Ce n'est pas votre tour.");
       return null;
@@ -639,6 +710,454 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     return player;
+  }
+
+  private isCombatInProgress(): boolean {
+    return this.state.combat.attackerInstanceId !== '';
+  }
+
+  private getOpponentSessionId(sessionId: string): string | null {
+    return (
+      Array.from(this.state.players.keys()).find(
+        (candidate) => candidate !== sessionId,
+      ) ?? null
+    );
+  }
+
+  private handleDeclareAttack(client: Client, message: DeclareAttackMessage) {
+    if (this.state.phase !== 'main') {
+      this.sendError(client, 'Action impossible hors de la phase Principale.');
+      return;
+    }
+
+    if (this.isCombatInProgress()) {
+      this.sendError(client, 'Un combat est deja en cours.');
+      return;
+    }
+
+    if (client.sessionId !== this.state.activePlayerSessionId) {
+      this.sendError(client, "Ce n'est pas votre tour.");
+      return;
+    }
+
+    const attacker = this.state.players.get(client.sessionId);
+
+    if (!attacker) {
+      return;
+    }
+
+    if (!attacker.hasTakenFirstTurn) {
+      this.sendError(
+        client,
+        "Aucune attaque n'est autorisee lors de votre premier tour.",
+      );
+      return;
+    }
+
+    let attackerCard: DuelCard | null = null;
+
+    if (attacker.zones.leader.instanceId === message.attackerInstanceId) {
+      attackerCard = attacker.zones.leader;
+    } else {
+      const found = this.findCardInZone(
+        attacker,
+        'characters',
+        message.attackerInstanceId,
+      );
+      attackerCard = found?.card ?? null;
+    }
+
+    if (!attackerCard) {
+      this.sendError(client, 'Attaquant introuvable.');
+      return;
+    }
+
+    if (attackerCard.rested) {
+      this.sendError(client, "L'attaquant est deja epuise.");
+      return;
+    }
+
+    if (attackerCard.playedThisTurn) {
+      this.sendError(
+        client,
+        'Un Personnage joue ce tour-ci ne peut pas attaquer.',
+      );
+      return;
+    }
+
+    const defenderSessionId = this.getOpponentSessionId(client.sessionId);
+
+    if (!defenderSessionId) {
+      this.sendError(client, 'Adversaire introuvable.');
+      return;
+    }
+
+    const defender = this.state.players.get(defenderSessionId);
+
+    if (!defender) {
+      return;
+    }
+
+    if (message.targetType === 'leader') {
+      // valid unconditionally: attacking the opposing Leader has no epuise requirement.
+    } else if (message.targetType === 'character') {
+      const targetFound = message.targetInstanceId
+        ? this.findCardInZone(defender, 'characters', message.targetInstanceId)
+        : null;
+
+      if (!targetFound) {
+        this.sendError(client, 'Cible introuvable.');
+        return;
+      }
+
+      if (!targetFound.card.rested) {
+        this.sendError(
+          client,
+          'Seul un Personnage adverse epuise peut etre cible.',
+        );
+        return;
+      }
+    } else {
+      this.sendError(client, 'Type de cible invalide.');
+      return;
+    }
+
+    attackerCard.rested = true;
+
+    this.state.combat.attackerSessionId = client.sessionId;
+    this.state.combat.attackerInstanceId = attackerCard.instanceId;
+    this.state.combat.defenderSessionId = defenderSessionId;
+    this.state.combat.targetType = message.targetType;
+    this.state.combat.targetInstanceId =
+      message.targetType === 'leader'
+        ? defender.zones.leader.instanceId
+        : (message.targetInstanceId ?? '');
+    this.state.combat.blockerInstanceId = '';
+    this.state.combat.step = 'declared';
+    this.state.combat.counterPowerBonus = 0;
+    this.state.combat.awaitingTriggerDecision = false;
+
+    const targetLabel =
+      message.targetType === 'leader'
+        ? `le Leader de ${defender.displayName}`
+        : (this.findCardInZone(
+            defender,
+            'characters',
+            this.state.combat.targetInstanceId,
+          )?.card.name ?? 'un Personnage');
+
+    this.addLog(
+      `${attacker.displayName} attaque avec ${attackerCard.name} vers ${targetLabel}.`,
+    );
+
+    this.state.combat.step = 'blocked';
+  }
+
+  private handleDeclareBlock(client: Client, message: DeclareBlockMessage) {
+    const combat = this.state.combat;
+
+    if (!this.isCombatInProgress() || combat.step !== 'blocked') {
+      this.sendError(client, 'Aucune etape de Blocage en cours.');
+      return;
+    }
+
+    if (client.sessionId !== combat.defenderSessionId) {
+      this.sendError(client, "Vous n'etes pas le defenseur de ce combat.");
+      return;
+    }
+
+    const defender = this.state.players.get(combat.defenderSessionId);
+
+    if (!defender) {
+      return;
+    }
+
+    if (message.blockerInstanceId) {
+      const blockerFound = this.findCardInZone(
+        defender,
+        'characters',
+        message.blockerInstanceId,
+      );
+
+      if (!blockerFound) {
+        this.sendError(client, 'Bloqueur introuvable.');
+        return;
+      }
+
+      if (blockerFound.card.rested) {
+        this.sendError(client, 'Le Bloqueur doit etre redresse.');
+        return;
+      }
+
+      blockerFound.card.rested = true;
+      combat.blockerInstanceId = blockerFound.card.instanceId;
+      this.addLog(
+        `${defender.displayName} declare ${blockerFound.card.name} comme Bloqueur.`,
+      );
+    } else {
+      this.addLog(`${defender.displayName} ne bloque pas.`);
+    }
+
+    combat.step = 'countering';
+  }
+
+  private getCombatDefendingCard(): DuelCard | null {
+    const combat = this.state.combat;
+    const defender = this.state.players.get(combat.defenderSessionId);
+
+    if (!defender) {
+      return null;
+    }
+
+    if (combat.blockerInstanceId) {
+      return (
+        this.findCardInZone(defender, 'characters', combat.blockerInstanceId)
+          ?.card ?? null
+      );
+    }
+
+    if (combat.targetType === 'leader') {
+      return defender.zones.leader;
+    }
+
+    return (
+      this.findCardInZone(defender, 'characters', combat.targetInstanceId)
+        ?.card ?? null
+    );
+  }
+
+  private getCombatAttackingCard(): DuelCard | null {
+    const combat = this.state.combat;
+    const attacker = this.state.players.get(combat.attackerSessionId);
+
+    if (!attacker) {
+      return null;
+    }
+
+    if (attacker.zones.leader.instanceId === combat.attackerInstanceId) {
+      return attacker.zones.leader;
+    }
+
+    return (
+      this.findCardInZone(attacker, 'characters', combat.attackerInstanceId)
+        ?.card ?? null
+    );
+  }
+
+  private handleDeclareCounter(client: Client, message: DeclareCounterMessage) {
+    const combat = this.state.combat;
+
+    if (!this.isCombatInProgress() || combat.step !== 'countering') {
+      this.sendError(client, 'Aucune etape de Contre en cours.');
+      return;
+    }
+
+    if (client.sessionId !== combat.defenderSessionId) {
+      this.sendError(client, "Vous n'etes pas le defenseur de ce combat.");
+      return;
+    }
+
+    const defender = this.state.players.get(combat.defenderSessionId);
+
+    if (!defender) {
+      return;
+    }
+
+    const found = this.findCardInZone(
+      defender,
+      'hand',
+      message.discardInstanceId,
+    );
+
+    if (!found) {
+      this.sendError(client, 'Carte introuvable en main.');
+      return;
+    }
+
+    const bonus = Math.max(0, Math.trunc(message.counterPowerBonus));
+
+    if (bonus <= 0) {
+      this.sendError(client, 'Valeur de Contre invalide.');
+      return;
+    }
+
+    defender.zones.hand.splice(found.index, 1);
+    defender.zones.trash.unshift(found.card);
+    combat.counterPowerBonus += bonus;
+
+    this.addLog(
+      `${defender.displayName} defausse ${found.card.name} et declare +${bonus} de Contre.`,
+    );
+  }
+
+  private handleFinishCounterStep(client: Client) {
+    const combat = this.state.combat;
+
+    if (!this.isCombatInProgress() || combat.step !== 'countering') {
+      this.sendError(client, 'Aucune etape de Contre en cours.');
+      return;
+    }
+
+    if (client.sessionId !== combat.defenderSessionId) {
+      this.sendError(client, "Vous n'etes pas le defenseur de ce combat.");
+      return;
+    }
+
+    this.resolveCombatDamage();
+  }
+
+  private resolveCombatDamage() {
+    const combat = this.state.combat;
+    combat.step = 'resolving';
+
+    const attackerCard = this.getCombatAttackingCard();
+    const defendingCard = this.getCombatDefendingCard();
+    const attacker = this.state.players.get(combat.attackerSessionId);
+    const defender = this.state.players.get(combat.defenderSessionId);
+
+    if (!attackerCard || !defendingCard || !attacker || !defender) {
+      this.endCombat();
+      return;
+    }
+
+    const attackerPower = this.cardPower(attackerCard);
+    const defenderPower =
+      this.cardPower(defendingCard) + combat.counterPowerBonus;
+
+    this.addLog(
+      `Etape de Degats : ${attackerCard.name} (${attackerPower}) contre ${defendingCard.name} (${defenderPower}).`,
+    );
+
+    if (attackerPower < defenderPower) {
+      this.addLog(`${attacker.displayName} perd le combat.`);
+      this.endCombat();
+      return;
+    }
+
+    this.addLog(`${attacker.displayName} remporte le combat.`);
+
+    if (combat.blockerInstanceId || combat.targetType === 'character') {
+      this.knockOutCharacter(defender, defendingCard);
+      this.endCombat();
+      return;
+    }
+
+    this.dealLeaderDamage(defender);
+  }
+
+  private cardPower(card: DuelCard): number {
+    return Math.max(card.power, 0) + card.attachedDon * 1000;
+  }
+
+  private knockOutCharacter(owner: DuelPlayer, card: DuelCard) {
+    const found = this.findCardInZone(owner, 'characters', card.instanceId);
+
+    if (!found) {
+      return;
+    }
+
+    owner.zones.characters.splice(found.index, 1);
+    const attachedDon = card.attachedDon;
+    card.attachedDon = 0;
+    card.rested = false;
+    owner.zones.trash.unshift(card);
+    this.returnDonToCost(owner, owner.sessionId, attachedDon);
+    this.addLog(`${card.name} est mis KO et rejoint la Defausse.`);
+  }
+
+  private dealLeaderDamage(defender: DuelPlayer) {
+    if (defender.zones.life.length === 0) {
+      this.state.phase = 'finished';
+      this.addLog(
+        `${defender.displayName} subit un degat sur une Vie deja vide : defaite.`,
+      );
+      this.endCombat();
+      return;
+    }
+
+    const revealedCard = defender.zones.life.shift();
+    this.syncZoneCounts(defender);
+
+    if (!revealedCard) {
+      this.endCombat();
+      return;
+    }
+
+    revealedCard.faceDown = false;
+
+    if (revealedCard.trigger) {
+      this.state.combat.awaitingTriggerDecision = true;
+      this.pendingTriggerCard = revealedCard;
+      this.pendingTriggerOwnerSessionId = defender.sessionId;
+      this.addLog(
+        `${defender.displayName} subit 1 degat et revele une carte avec [Declenchement] : decision en attente.`,
+      );
+      return;
+    }
+
+    defender.zones.hand.push(revealedCard);
+    this.syncZoneCounts(defender);
+    this.addLog(
+      `${defender.displayName} subit 1 degat et ajoute la carte de Vie a sa main.`,
+    );
+    this.endCombat();
+  }
+
+  private handleResolveTrigger(client: Client, message: ResolveTriggerMessage) {
+    const combat = this.state.combat;
+
+    if (!combat.awaitingTriggerDecision || !this.pendingTriggerCard) {
+      this.sendError(client, 'Aucune decision de Declenchement en attente.');
+      return;
+    }
+
+    if (client.sessionId !== this.pendingTriggerOwnerSessionId) {
+      this.sendError(
+        client,
+        "Seul le defenseur peut decider d'activer ce Declenchement.",
+      );
+      return;
+    }
+
+    const defender = this.state.players.get(client.sessionId);
+    const card = this.pendingTriggerCard;
+
+    if (!defender || !card) {
+      return;
+    }
+
+    if (message.activate) {
+      defender.zones.trash.unshift(card);
+      this.addLog(
+        `${defender.displayName} active le Declenchement de ${card.name} et l'ecarte (effet a appliquer manuellement).`,
+      );
+    } else {
+      defender.zones.hand.push(card);
+      this.addLog(
+        `${defender.displayName} ajoute ${card.name} a sa main sans activer le Declenchement.`,
+      );
+    }
+
+    this.syncZoneCounts(defender);
+    combat.awaitingTriggerDecision = false;
+    this.pendingTriggerCard = null;
+    this.pendingTriggerOwnerSessionId = '';
+    this.endCombat();
+  }
+
+  private endCombat() {
+    const combat = this.state.combat;
+    combat.step = 'resolved';
+    this.addLog('Fin du combat, retour a la phase Principale.');
+    combat.attackerSessionId = '';
+    combat.attackerInstanceId = '';
+    combat.defenderSessionId = '';
+    combat.targetType = 'leader';
+    combat.targetInstanceId = '';
+    combat.blockerInstanceId = '';
+    combat.step = 'declared';
+    combat.counterPowerBonus = 0;
+    combat.awaitingTriggerDecision = false;
   }
 
   private handlePlayCard(client: Client, message: PlayCardMessage) {

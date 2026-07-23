@@ -67,6 +67,33 @@ function createFakePlayer(sessionId: string, mulliganDecided: boolean) {
   }
 }
 
+type FakeCombat = {
+  attackerSessionId: string
+  attackerInstanceId: string
+  defenderSessionId: string
+  targetType: 'leader' | 'character'
+  targetInstanceId: string
+  blockerInstanceId: string
+  step: 'declared' | 'blocked' | 'countering' | 'resolving' | 'resolved'
+  counterPowerBonus: number
+  awaitingTriggerDecision: boolean
+}
+
+function createFakeCombat(overrides: Partial<FakeCombat> = {}): FakeCombat {
+  return {
+    attackerSessionId: '',
+    attackerInstanceId: '',
+    defenderSessionId: '',
+    targetType: 'leader',
+    targetInstanceId: '',
+    blockerInstanceId: '',
+    step: 'declared',
+    counterPowerBonus: 0,
+    awaitingTriggerDecision: false,
+    ...overrides
+  }
+}
+
 function createFakeRoom(options: {
   sessionId: string
   phase: string
@@ -74,6 +101,7 @@ function createFakeRoom(options: {
   firstPlayerSessionId: string
   activePlayerSessionId?: string
   players: Array<ReturnType<typeof createFakePlayer>>
+  combat?: FakeCombat
   send?: (type: string, message: unknown) => void
 }) {
   return {
@@ -86,7 +114,8 @@ function createFakeRoom(options: {
       players: {
         values: () => options.players.values()
       },
-      logs: []
+      logs: [],
+      combat: options.combat ?? createFakeCombat()
     },
     onStateChange: Object.assign(() => {}, { remove: () => {} }),
     onMessage: () => {},
@@ -304,5 +333,172 @@ describe('useDuelRoom turn/phase helpers (stage 7)', () => {
     attachDon('character', 'char-1')
 
     expect(sent).toEqual([{ type: 'attachDon', message: { target: 'character', targetInstanceId: 'char-1' } }])
+  })
+})
+
+describe('useDuelRoom combat helpers (stage 8)', () => {
+  it('reports no combat in progress when the wire combat has no attacker', () => {
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)]
+    }) as never
+
+    const { isCombatInProgress, canDeclareAttack } = useDuelRoom()
+
+    expect(isCombatInProgress.value).toBe(false)
+    expect(canDeclareAttack.value).toBe(true)
+  })
+
+  it('identifies the attacker and defender roles from the wire combat', () => {
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      combat: createFakeCombat({
+        attackerSessionId: 'session-a',
+        attackerInstanceId: 'leader-a',
+        defenderSessionId: 'session-b',
+        step: 'blocked'
+      })
+    }) as never
+
+    const { isCombatInProgress, isSelfAttacker, isSelfDefender, isBlockingStep, canDeclareAttack } = useDuelRoom()
+
+    expect(isCombatInProgress.value).toBe(true)
+    expect(isSelfAttacker.value).toBe(false)
+    expect(isSelfDefender.value).toBe(true)
+    expect(isBlockingStep.value).toBe(true)
+    expect(canDeclareAttack.value).toBe(false)
+  })
+
+  it('exposes the countering step and pending trigger decision flags', () => {
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      combat: createFakeCombat({
+        attackerSessionId: 'session-a',
+        attackerInstanceId: 'leader-a',
+        defenderSessionId: 'session-b',
+        step: 'countering',
+        awaitingTriggerDecision: true
+      })
+    }) as never
+
+    const { isCounteringStep, isAwaitingTriggerDecision } = useDuelRoom()
+
+    expect(isCounteringStep.value).toBe(true)
+    expect(isAwaitingTriggerDecision.value).toBe(true)
+  })
+
+  it('sends a declareAttack message with the attacker and target', () => {
+    const sent: Array<{ type: string, message: unknown }> = []
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send: (type, message) => sent.push({ type, message })
+    }) as never
+
+    const { declareAttack } = useDuelRoom()
+    declareAttack('leader-a', 'character', 'char-b')
+
+    expect(sent).toEqual([{
+      type: 'declareAttack',
+      message: { attackerInstanceId: 'leader-a', targetType: 'character', targetInstanceId: 'char-b' }
+    }])
+  })
+
+  it('sends a declareBlock message, allowing a null blocker for "no block"', () => {
+    const sent: Array<{ type: string, message: unknown }> = []
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send: (type, message) => sent.push({ type, message })
+    }) as never
+
+    const { declareBlock } = useDuelRoom()
+    declareBlock(null)
+
+    expect(sent).toEqual([{ type: 'declareBlock', message: { blockerInstanceId: null } }])
+  })
+
+  it('sends a declareCounter message with the discarded card and bonus', () => {
+    const sent: Array<{ type: string, message: unknown }> = []
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send: (type, message) => sent.push({ type, message })
+    }) as never
+
+    const { declareCounter } = useDuelRoom()
+    declareCounter('hand-1', 2000)
+
+    expect(sent).toEqual([{ type: 'declareCounter', message: { discardInstanceId: 'hand-1', counterPowerBonus: 2000 } }])
+  })
+
+  it('sends a finishCounterStep message', () => {
+    const sent: Array<{ type: string, message: unknown }> = []
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send: (type, message) => sent.push({ type, message })
+    }) as never
+
+    const { finishCounterStep } = useDuelRoom()
+    finishCounterStep()
+
+    expect(sent).toEqual([{ type: 'finishCounterStep', message: {} }])
+  })
+
+  it('sends a resolveTrigger message with the activation decision', () => {
+    const sent: Array<{ type: string, message: unknown }> = []
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send: (type, message) => sent.push({ type, message })
+    }) as never
+
+    const { resolveTrigger } = useDuelRoom()
+    resolveTrigger(true)
+
+    expect(sent).toEqual([{ type: 'resolveTrigger', message: { activate: true } }])
   })
 })

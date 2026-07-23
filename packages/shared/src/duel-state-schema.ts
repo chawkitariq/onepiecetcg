@@ -159,6 +159,42 @@ export class DuelLog extends Schema {
   createdAt = '';
 }
 
+/**
+ * Structural combat state (docs/optcg-rules.md §6). `step` drives which
+ * declarative prompt the defender sees; `blockerInstanceId`/counter fields
+ * are set by the defender's own declarations and never validated against
+ * card text, per the spec's declarative-Blocker/Counter model.
+ */
+export class DuelCombat extends Schema {
+  @type('string')
+  attackerSessionId = '';
+
+  @type('string')
+  attackerInstanceId = '';
+
+  @type('string')
+  defenderSessionId = '';
+
+  @type('string')
+  targetType: 'leader' | 'character' = 'leader';
+
+  @type('string')
+  targetInstanceId = '';
+
+  @type('string')
+  blockerInstanceId = '';
+
+  @type('string')
+  step: 'declared' | 'blocked' | 'countering' | 'resolving' | 'resolved' =
+    'declared';
+
+  @type('number')
+  counterPowerBonus = 0;
+
+  @type('boolean')
+  awaitingTriggerDecision = false;
+}
+
 export class DuelState extends Schema {
   @type('string')
   phase: GamePhase = 'setup';
@@ -182,6 +218,10 @@ export class DuelState extends Schema {
 
   @type([DuelLog])
   logs = new ArraySchema<DuelLog>();
+
+  /** `attackerInstanceId === ''` means no combat is currently in progress. */
+  @type(DuelCombat)
+  combat = new DuelCombat();
 }
 
 export function createDuelCard(

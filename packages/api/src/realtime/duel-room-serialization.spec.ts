@@ -269,4 +269,110 @@ describe('DuelRoom per-viewpoint serialization', () => {
     await alice.leave();
     await bob.leave();
   });
+
+  it('runs a full Leader-vs-Leader combat over the wire and reveals the damaged life card only to the defender (stage 8)', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(() => alice.state.phase === 'mulligan');
+    await waitUntil(() => bob.state.phase === 'mulligan');
+
+    const startingSessionId = alice.state.startingPlayerSessionId;
+    const startingClient = startingSessionId === alice.sessionId ? alice : bob;
+    const otherClient = startingSessionId === alice.sessionId ? bob : alice;
+
+    startingClient.send('chooseFirstOrSecond', { choice: 'first' });
+    await waitUntil(() => !!alice.state.firstPlayerSessionId);
+    startingClient.send('mulligan', { mulligan: false });
+    otherClient.send('mulligan', { mulligan: false });
+
+    await waitUntil(() => alice.state.phase === 'refresh');
+
+    const attackerClient =
+      alice.state.activePlayerSessionId === alice.sessionId ? alice : bob;
+    const defenderClient = attackerClient === alice ? bob : alice;
+
+    // First turn cannot attack -- burn it, then take a second full turn cycle.
+    attackerClient.send('endPhase', {}); // draw
+    attackerClient.send('endPhase', {}); // don
+    attackerClient.send('endPhase', {}); // main
+    await waitUntil(() => attackerClient.state.phase === 'main');
+    attackerClient.send('endPhase', {}); // end
+    attackerClient.send('endPhase', {}); // ends turn -> defender becomes active
+
+    await waitUntil(
+      () => defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
+    );
+    defenderClient.send('endPhase', {}); // draw
+    defenderClient.send('endPhase', {}); // don
+    defenderClient.send('endPhase', {}); // main
+    await waitUntil(() => defenderClient.state.phase === 'main');
+    defenderClient.send('endPhase', {}); // end
+    defenderClient.send('endPhase', {}); // ends turn -> attacker active again, its second turn
+
+    await waitUntil(
+      () => attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
+    );
+    attackerClient.send('endPhase', {}); // draw
+    attackerClient.send('endPhase', {}); // don
+    attackerClient.send('endPhase', {}); // main
+    await waitUntil(() => attackerClient.state.phase === 'main');
+
+    const attackerLeaderInstanceId = attackerClient.state.players.get(
+      attackerClient.sessionId,
+    )?.zones.leader.instanceId;
+    expect(attackerLeaderInstanceId).toBeTruthy();
+
+    const defenderLifeCountBefore = defenderClient.state.players.get(
+      defenderClient.sessionId,
+    )?.lifeCount;
+
+    attackerClient.send('declareAttack', {
+      attackerInstanceId: attackerLeaderInstanceId,
+      targetType: 'leader',
+    });
+
+    await waitUntil(() => attackerClient.state.combat.step === 'blocked');
+    await waitUntil(() => defenderClient.state.combat.step === 'blocked');
+
+    defenderClient.send('declareBlock', { blockerInstanceId: null });
+    await waitUntil(() => attackerClient.state.combat.step === 'countering');
+
+    defenderClient.send('finishCounterStep', {});
+
+    await waitUntil(
+      () =>
+        (defenderClient.state.players.get(defenderClient.sessionId)
+          ?.lifeCount ?? 0) < (defenderLifeCountBefore ?? 0),
+    );
+
+    expect(attackerClient.state.combat.attackerInstanceId).toBe('');
+
+    const defenderOwnLife = Array.from(
+      defenderClient.state.players.get(defenderClient.sessionId)?.zones
+        .hand ?? [],
+    );
+    const attackerViewOfDefenderHand = Array.from(
+      attackerClient.state.players.get(defenderClient.sessionId)?.zones
+        .hand ?? [],
+    );
+
+    // the revealed life card was added to the defender's own hand, visible in full to them...
+    expect(defenderOwnLife.some((card) => !!card.name)).toBe(true);
+    // ...but the attacker only ever sees hand card *counts*, never card identities.
+    expect(attackerViewOfDefenderHand.every((card) => !card.name)).toBe(true);
+
+    await alice.leave();
+    await bob.leave();
+  });
 });

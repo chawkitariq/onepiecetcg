@@ -45,6 +45,18 @@ type WireDuelPlayer = {
   zones: WireDuelZones
 }
 
+type WireDuelCombat = {
+  attackerSessionId: string
+  attackerInstanceId: string
+  defenderSessionId: string
+  targetType: 'leader' | 'character'
+  targetInstanceId: string
+  blockerInstanceId: string
+  step: 'declared' | 'blocked' | 'countering' | 'resolving' | 'resolved'
+  counterPowerBonus: number
+  awaitingTriggerDecision: boolean
+}
+
 function toPublicCard(card: WireDuelCard): PublicCard {
   return {
     instanceId: card.instanceId,
@@ -130,6 +142,14 @@ export function useDuelRoom() {
     previousRoom?.onStateChange.remove(onRoomStateChange)
     nextRoom?.onStateChange(onRoomStateChange)
     nextRoom?.onMessage?.('actionError', onActionError)
+
+    // A reconnect swaps in a brand-new Room instance carrying the latest
+    // full state, but nothing guarantees a fresh onStateChange patch
+    // follows immediately -- force a re-render now so the UI can't be left
+    // showing a stale combat/phase prompt until the next incremental patch.
+    if (nextRoom) {
+      version.value += 1
+    }
   }, { immediate: true })
 
   onScopeDispose(() => {
@@ -256,6 +276,62 @@ export function useDuelRoom() {
     errorMessage.value = null
   }
 
+  const combat = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { combat?: WireDuelCombat } | undefined
+    const wireCombat = state?.combat
+
+    if (!wireCombat || !wireCombat.attackerInstanceId) {
+      return null
+    }
+
+    return wireCombat
+  })
+
+  const isCombatInProgress = computed(() => combat.value !== null)
+
+  const isSelfAttacker = computed(() =>
+    combat.value !== null && combat.value.attackerSessionId === selfSessionId.value
+  )
+
+  const isSelfDefender = computed(() =>
+    combat.value !== null && combat.value.defenderSessionId === selfSessionId.value
+  )
+
+  const canDeclareAttack = computed(() =>
+    isSelfTurn.value && isMainPhase.value && !isCombatInProgress.value
+  )
+
+  const isBlockingStep = computed(() => combat.value?.step === 'blocked')
+  const isCounteringStep = computed(() => combat.value?.step === 'countering')
+  const isAwaitingTriggerDecision = computed(() => combat.value?.awaitingTriggerDecision ?? false)
+
+  function declareAttack(attackerInstanceId: string, targetType: 'leader' | 'character', targetInstanceId?: string) {
+    errorMessage.value = null
+    sendMessage('declareAttack', { attackerInstanceId, targetType, targetInstanceId })
+  }
+
+  function declareBlock(blockerInstanceId: string | null) {
+    errorMessage.value = null
+    sendMessage('declareBlock', { blockerInstanceId })
+  }
+
+  function declareCounter(discardInstanceId: string, counterPowerBonus: number) {
+    errorMessage.value = null
+    sendMessage('declareCounter', { discardInstanceId, counterPowerBonus })
+  }
+
+  function finishCounterStep() {
+    errorMessage.value = null
+    sendMessage('finishCounterStep', {})
+  }
+
+  function resolveTrigger(activate: boolean) {
+    errorMessage.value = null
+    sendMessage('resolveTrigger', { activate })
+  }
+
   return {
     phase,
     activePlayerSessionId,
@@ -266,6 +342,7 @@ export function useDuelRoom() {
     players,
     self,
     opponent,
+    selfSessionId,
     isSelfTurn,
     isMainPhase,
     canEndPhase,
@@ -279,6 +356,19 @@ export function useDuelRoom() {
     endPhase,
     playCard,
     attachDon,
-    clearError
+    clearError,
+    combat,
+    isCombatInProgress,
+    isSelfAttacker,
+    isSelfDefender,
+    canDeclareAttack,
+    isBlockingStep,
+    isCounteringStep,
+    isAwaitingTriggerDecision,
+    declareAttack,
+    declareBlock,
+    declareCounter,
+    finishCounterStep,
+    resolveTrigger
   }
 }
