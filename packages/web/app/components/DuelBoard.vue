@@ -3,10 +3,9 @@ import type { GamePhase } from '@onepiecetcg/shared'
 
 const { self, opponent, phase, isSelfTurn, logs } = useDuelRoom()
 
-const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
-
 const phaseLabels: Record<string, string> = {
   setup: 'Préparation',
+  mulligan: 'Mulligan',
   refresh: 'Recharge',
   draw: 'Pioche',
   don: 'DON!!',
@@ -14,6 +13,8 @@ const phaseLabels: Record<string, string> = {
   end: 'Fin',
   finished: 'Terminée'
 }
+
+const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
 
 const phaseSteps: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end']
 
@@ -120,7 +121,8 @@ function formatLogTime(createdAt: string): string {
         </UCard>
       </template>
 
-      <UContainer class="flex flex-col w-5xl gap-2 h-full min-h-0 overflow-hidden">
+      <UContainer class="relative flex flex-col w-5xl gap-2 h-full min-h-0 overflow-hidden">
+        <DuelSetupOverlay v-if="phase === 'mulligan'" />
         <PlayZone
           v-if="opponent"
           class="flex-1 min-h-0"

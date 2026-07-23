@@ -87,16 +87,21 @@ describe('DuelRoom', () => {
     expect(bob?.ready).toBe(true);
     expect(alice?.zones.leader.name).toBe('Leader');
     expect(alice?.zones.hand).toHaveLength(5);
-    expect(alice?.zones.life).toHaveLength(5);
-    expect(alice?.zones.deck).toHaveLength(40);
+    expect(alice?.zones.life).toHaveLength(0);
+    expect(alice?.zones.deck).toHaveLength(45);
     expect(alice?.zones.donDeck).toHaveLength(10);
     expect(Array.from(alice?.zones.hand ?? [])[0]?.privateToOwner).toBe(true);
-    expect(Array.from(alice?.zones.life ?? [])[0]?.privateToOwner).toBe(true);
     expect(alice?.zones.leader.privateToOwner).toBe(false);
     expect(alice?.handCount).toBe(5);
-    expect(alice?.lifeCount).toBe(5);
-    expect(alice?.deckCount).toBe(40);
-    expect(room.state.logs.at(-1)?.message).toContain('zones initiales');
+    expect(alice?.lifeCount).toBe(0);
+    expect(alice?.deckCount).toBe(45);
+    expect(room.state.phase).toBe('mulligan');
+    expect(
+      ['session-a', 'session-b'].includes(room.state.startingPlayerSessionId),
+    ).toBe(true);
+    expect(room.state.logs.at(-1)?.message).toContain(
+      'choisir de jouer en premier ou en second',
+    );
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();

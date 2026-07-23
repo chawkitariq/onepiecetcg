@@ -175,6 +175,8 @@ Correctif notable : un bug bloquant a été identifié et corrigé (2026-07-23) 
 
 Objectif : automatiser le setup officiel avant le premier tour.
 
+État : réalisé et audité. Après la jonction des deux joueurs, le backend mélange chaque deck, distribue une main de 5 cartes, désigne aléatoirement un joueur qui choisit de jouer en premier ou en second (`DuelState.startingPlayerSessionId`/`firstPlayerSessionId`), impose un mulligan unique par joueur en commençant par celui qui joue en premier (`DuelPlayer.mulliganDecided`, messages Colyseus `chooseFirstOrSecond`/`mulligan`), puis distribue la Vie selon la valeur du Leader et démarre le tour 1 (`phase` passe de `'mulligan'` à `'refresh'`, `turn=1`, `activePlayerSessionId` posé sur le premier joueur). Côté frontend, `DuelSetupOverlay.vue` affiche l'écran de choix premier/second puis l'interface de mulligan par-dessus le plateau tant que `phase==='mulligan'`, et bascule automatiquement vers l'affichage de partie une fois la mise en place terminée.
+
 ### Backend
 
 - Mélanger les decks serveur.

@@ -1,4 +1,4 @@
-import type { DuelLogEntry, DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
+import type { DuelLogEntry, DuelPlayerView, FirstOrSecondChoice, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 
 /** Wire-level shape of a DuelCard as decoded from packages/api/src/realtime/duel-state.schema.ts. */
 type WireDuelCard = {
@@ -38,6 +38,7 @@ type WireDuelPlayer = {
   deckId: string
   ready: boolean
   connected: boolean
+  mulliganDecided: boolean
   handCount: number
   deckCount: number
   lifeCount: number
@@ -85,6 +86,7 @@ function toDuelPlayerView(player: WireDuelPlayer): DuelPlayerView {
     deckId: player.deckId,
     ready: player.ready,
     connected: player.connected,
+    mulliganDecided: player.mulliganDecided,
     leader: toOptionalPublicCard(zones.leader),
     stage: toOptionalPublicCard(zones.stage),
     characters: colyseusArrayValues<WireDuelCard>(zones.characters).map(toPublicCard),
@@ -108,7 +110,7 @@ function toDuelPlayerView(player: WireDuelPlayer): DuelPlayerView {
  * supplied index.
  */
 export function useDuelRoom() {
-  const { room } = useColyseus()
+  const { room, sendMessage } = useColyseus()
   const version = ref(0)
 
   function onRoomStateChange() {
@@ -167,13 +169,61 @@ export function useDuelRoom() {
     return colyseusArrayValues<DuelLogEntry>(room.value?.state.logs)
   })
 
+  const startingPlayerSessionId = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { startingPlayerSessionId?: string } | undefined
+
+    return state?.startingPlayerSessionId || null
+  })
+
+  const firstPlayerSessionId = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { firstPlayerSessionId?: string } | undefined
+
+    return state?.firstPlayerSessionId || null
+  })
+
+  const isSelfDesignatedToChoose = computed(() =>
+    selfSessionId.value !== null && startingPlayerSessionId.value === selfSessionId.value
+  )
+
+  const isSelfTurnToMulligan = computed(() => {
+    if (!firstPlayerSessionId.value || !self.value || self.value.mulliganDecided) {
+      return false
+    }
+
+    if (selfSessionId.value === firstPlayerSessionId.value) {
+      return true
+    }
+
+    const firstPlayer = players.value.find(player => player.sessionId === firstPlayerSessionId.value)
+
+    return firstPlayer?.mulliganDecided ?? false
+  })
+
+  function chooseFirstOrSecond(choice: FirstOrSecondChoice) {
+    sendMessage('chooseFirstOrSecond', { choice })
+  }
+
+  function mulligan(shouldMulligan: boolean) {
+    sendMessage('mulligan', { mulligan: shouldMulligan })
+  }
+
   return {
     phase,
     activePlayerSessionId,
+    startingPlayerSessionId,
+    firstPlayerSessionId,
+    isSelfDesignatedToChoose,
+    isSelfTurnToMulligan,
     players,
     self,
     opponent,
     isSelfTurn,
-    logs
+    logs,
+    chooseFirstOrSecond,
+    mulligan
   }
 }

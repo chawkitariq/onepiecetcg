@@ -129,6 +129,9 @@ export class DuelPlayer extends Schema {
   @type('boolean')
   connected = true;
 
+  @type('boolean')
+  mulliganDecided = false;
+
   @type('number')
   handCount = 0;
 
@@ -162,6 +165,14 @@ export class DuelState extends Schema {
 
   @type('number')
   turn = 0;
+
+  /** Randomly designated player who chooses to play first or second (setup step 4). */
+  @type('string')
+  startingPlayerSessionId = '';
+
+  /** Session id of whoever will take the first turn, once the starting player has chosen (setup step 5). */
+  @type('string')
+  firstPlayerSessionId = '';
 
   @type({ map: DuelPlayer })
   players = new MapSchema<DuelPlayer>();

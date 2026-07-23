@@ -167,6 +167,10 @@ export function useColyseus() {
     clearReconnectionToken()
   }
 
+  function sendMessage<T extends object>(type: string, message: T) {
+    room.value?.send(type, message)
+  }
+
   return {
     client,
     room,
@@ -177,6 +181,7 @@ export function useColyseus() {
     joinPrivateRoom,
     reconnect,
     getStoredReconnectionToken,
-    leave
+    leave,
+    sendMessage
   }
 }

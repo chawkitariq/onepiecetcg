@@ -169,11 +169,11 @@ describe('DuelRoom per-viewpoint serialization', () => {
     const bobView = bob.state.players.get(bob.sessionId);
 
     expect(aliceView?.handCount).toBe(5);
-    expect(aliceView?.deckCount).toBe(40);
-    expect(aliceView?.lifeCount).toBe(5);
+    expect(aliceView?.deckCount).toBe(45);
+    expect(aliceView?.lifeCount).toBe(0);
     expect(bobView?.handCount).toBe(5);
-    expect(bobView?.deckCount).toBe(40);
-    expect(bobView?.lifeCount).toBe(5);
+    expect(bobView?.deckCount).toBe(45);
+    expect(bobView?.lifeCount).toBe(0);
 
     expect((aliceView as { authUserId?: string } | undefined)?.authUserId).toBe(
       undefined,
@@ -219,6 +219,52 @@ describe('DuelRoom per-viewpoint serialization', () => {
 
     expect(aliceViewOfBobHand).toHaveLength(5);
     expect(aliceViewOfBobHand.every((card) => !card.name)).toBe(true);
+
+    await alice.leave();
+    await bob.leave();
+  });
+
+  it('runs the full setup sequence over the wire: first/second choice, mulligan, life dealing, first turn', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(() => alice.state.phase === 'mulligan');
+    await waitUntil(() => bob.state.phase === 'mulligan');
+
+    const startingSessionId = alice.state.startingPlayerSessionId;
+    expect([alice.sessionId, bob.sessionId]).toContain(startingSessionId);
+
+    const startingClient = startingSessionId === alice.sessionId ? alice : bob;
+    const otherClient = startingSessionId === alice.sessionId ? bob : alice;
+
+    startingClient.send('chooseFirstOrSecond', { choice: 'first' });
+
+    await waitUntil(() => !!alice.state.firstPlayerSessionId);
+    await waitUntil(() => !!bob.state.firstPlayerSessionId);
+    expect(alice.state.firstPlayerSessionId).toBe(startingSessionId);
+
+    startingClient.send('mulligan', { mulligan: false });
+    otherClient.send('mulligan', { mulligan: true });
+
+    await waitUntil(() => alice.state.phase === 'refresh');
+    await waitUntil(() => bob.state.phase === 'refresh');
+
+    expect(alice.state.turn).toBe(1);
+    expect(alice.state.activePlayerSessionId).toBe(startingSessionId);
+    expect(alice.state.players.get(alice.sessionId)?.lifeCount).toBeGreaterThan(
+      0,
+    );
+    expect(bob.state.players.get(bob.sessionId)?.lifeCount).toBeGreaterThan(0);
 
     await alice.leave();
     await bob.leave();

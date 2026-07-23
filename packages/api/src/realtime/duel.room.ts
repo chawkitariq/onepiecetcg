@@ -13,6 +13,7 @@ import {
   DuelPlayer,
   DuelState,
   createDuelCard,
+  type FirstOrSecondChoice,
 } from '@onepiecetcg/shared';
 
 const RECONNECTION_SECONDS = 120;
@@ -28,6 +29,14 @@ type DuelJoinOptions = {
 
 type DuelAuthData = {
   userId: string;
+};
+
+type ChooseFirstOrSecondMessage = {
+  choice: FirstOrSecondChoice;
+};
+
+type MulliganMessage = {
+  mulligan: boolean;
 };
 
 type DuelSessionResolver = (
@@ -78,6 +87,17 @@ export class DuelRoom extends Room<DuelState> {
 
   onCreate() {
     this.setState(new DuelState());
+
+    this.onMessage(
+      'chooseFirstOrSecond',
+      (client: Client, message: ChooseFirstOrSecondMessage) => {
+        this.handleChooseFirstOrSecond(client, message);
+      },
+    );
+
+    this.onMessage('mulligan', (client: Client, message: MulliganMessage) => {
+      this.handleMulligan(client, message);
+    });
   }
 
   async onJoin(client: Client, options: DuelJoinOptions, auth?: DuelAuthData) {
@@ -192,40 +212,156 @@ export class DuelRoom extends Room<DuelState> {
 
   private initializeGame() {
     for (const player of this.state.players.values()) {
-      if (player.zones.hand.length > 0 || player.zones.life.length > 0) {
+      if (player.zones.hand.length > 0) {
         continue;
       }
 
       this.shuffle(player.zones.deck);
-
-      for (let index = 0; index < 5; index += 1) {
-        const card = player.zones.deck.shift();
-
-        if (card) {
-          card.faceDown = false;
-          player.zones.hand.push(card);
-        }
-      }
-
-      const lifeCount = Math.max(player.zones.leader.life, 0);
-
-      for (let index = 0; index < lifeCount; index += 1) {
-        const card = player.zones.deck.shift();
-
-        if (card) {
-          card.faceDown = true;
-          player.zones.life.push(card);
-        }
-      }
-
-      this.syncZoneCounts(player);
+      this.dealHand(player);
     }
 
-    this.state.phase = 'setup';
+    const sessionIds = Array.from(this.state.players.keys());
+    const startingPlayerSessionId =
+      sessionIds[Math.floor(Math.random() * sessionIds.length)];
+    this.state.startingPlayerSessionId = startingPlayerSessionId ?? '';
+    this.state.phase = 'mulligan';
+
+    const startingPlayer = startingPlayerSessionId
+      ? this.state.players.get(startingPlayerSessionId)
+      : undefined;
     this.addLog(
-      'Les deux joueurs sont prets. Les zones initiales sont creees.',
+      `${startingPlayer?.displayName ?? 'Un joueur'} a ete designe pour choisir de jouer en premier ou en second.`,
     );
     void this.lock();
+  }
+
+  private dealHand(player: DuelPlayer) {
+    for (let index = 0; index < 5; index += 1) {
+      const card = player.zones.deck.shift();
+
+      if (card) {
+        card.faceDown = false;
+        player.zones.hand.push(card);
+      }
+    }
+
+    this.syncZoneCounts(player);
+  }
+
+  private dealLife(player: DuelPlayer) {
+    const lifeCount = Math.max(player.zones.leader.life, 0);
+
+    for (let index = 0; index < lifeCount; index += 1) {
+      const card = player.zones.deck.shift();
+
+      if (card) {
+        card.faceDown = true;
+        player.zones.life.push(card);
+      }
+    }
+
+    this.syncZoneCounts(player);
+  }
+
+  private handleChooseFirstOrSecond(
+    client: Client,
+    message: ChooseFirstOrSecondMessage,
+  ) {
+    if (this.state.phase !== 'mulligan' || this.state.firstPlayerSessionId) {
+      return;
+    }
+
+    if (client.sessionId !== this.state.startingPlayerSessionId) {
+      return;
+    }
+
+    if (message.choice !== 'first' && message.choice !== 'second') {
+      return;
+    }
+
+    if (this.state.players.size !== this.maxClients) {
+      return;
+    }
+
+    const sessionIds = Array.from(this.state.players.keys());
+    const otherSessionId = sessionIds.find(
+      (sessionId) => sessionId !== client.sessionId,
+    );
+
+    if (!otherSessionId) {
+      return;
+    }
+
+    const firstPlayerSessionId =
+      message.choice === 'first' ? client.sessionId : otherSessionId;
+
+    this.state.firstPlayerSessionId = firstPlayerSessionId;
+
+    const firstPlayer = this.state.players.get(firstPlayerSessionId);
+    const choosingPlayer = this.state.players.get(client.sessionId);
+    this.addLog(
+      `${choosingPlayer?.displayName ?? 'Le joueur designe'} choisit de jouer en ${message.choice === 'first' ? 'premier' : 'second'}. ${firstPlayer?.displayName ?? ''} commencera.`.trim(),
+    );
+  }
+
+  private handleMulligan(client: Client, message: MulliganMessage) {
+    if (this.state.phase !== 'mulligan' || !this.state.firstPlayerSessionId) {
+      return;
+    }
+
+    const player = this.state.players.get(client.sessionId);
+
+    if (!player || player.mulliganDecided) {
+      return;
+    }
+
+    const isFirstPlayer = client.sessionId === this.state.firstPlayerSessionId;
+
+    if (!isFirstPlayer) {
+      const firstPlayer = this.state.players.get(
+        this.state.firstPlayerSessionId,
+      );
+
+      if (!firstPlayer?.mulliganDecided) {
+        return;
+      }
+    }
+
+    if (message.mulligan) {
+      player.zones.deck.push(...player.zones.hand.splice(0));
+      this.shuffle(player.zones.deck);
+      this.dealHand(player);
+      this.addLog(`${player.displayName} fait un mulligan.`);
+    } else {
+      this.addLog(`${player.displayName} garde sa main de depart.`);
+    }
+
+    player.mulliganDecided = true;
+
+    const allDecided =
+      this.state.players.size === this.maxClients &&
+      Array.from(this.state.players.values()).every(
+        (candidate) => candidate.mulliganDecided,
+      );
+
+    if (allDecided) {
+      this.startFirstTurn();
+    }
+  }
+
+  private startFirstTurn() {
+    for (const player of this.state.players.values()) {
+      this.dealLife(player);
+    }
+
+    this.state.turn = 1;
+    this.state.activePlayerSessionId = this.state.firstPlayerSessionId;
+    this.state.phase = 'refresh';
+
+    const firstPlayer = this.state.players.get(this.state.firstPlayerSessionId);
+    this.addLog(
+      `Mise en place terminee. ${firstPlayer?.displayName ?? 'Le premier joueur'} commence le premier tour.`,
+    );
   }
 
   private createDonCard(client: Client, index: number): DuelCard {

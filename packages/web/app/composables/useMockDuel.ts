@@ -166,6 +166,7 @@ function createPlayer(displayName: string, deckId: string, sessionId: string): M
     deckId,
     ready: true,
     connected: true,
+    mulliganDecided: true,
     leader,
     stage: null,
     characters: [],

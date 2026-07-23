@@ -114,6 +114,7 @@ export type DeckListResponse = {
 
 export type GamePhase =
   | 'setup'
+  | 'mulligan'
   | 'refresh'
   | 'draw'
   | 'don'
@@ -186,12 +187,15 @@ export type ActivePlayer = {
   turn: number;
 };
 
+export type FirstOrSecondChoice = 'first' | 'second';
+
 export type DuelPlayerView = {
   sessionId: string;
   displayName: string;
   deckId: string;
   ready: boolean;
   connected: boolean;
+  mulliganDecided: boolean;
   leader: PublicCard | null;
   stage: PublicCard | null;
   characters: PublicCard[];
@@ -218,6 +222,8 @@ export type DuelRoomView = {
   players: Record<string, DuelPlayerView>;
   logs: DuelLogEntry[];
   combat: CombatStatus | null;
+  startingPlayerSessionId: string | null;
+  firstPlayerSessionId: string | null;
 };
 
 export function normalizeCardId(cardId: string): string {
