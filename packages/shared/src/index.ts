@@ -97,9 +97,15 @@ export type DeckPayload = {
   cards: DeckCard[];
 };
 
+export type InvalidDeckLine = {
+  line: number;
+  raw: string;
+};
+
 export type DeckImportResult = {
   payload: DeckPayload;
   validation: DeckValidation;
+  invalidLines: InvalidDeckLine[];
 };
 
 export type DeckListResponse = {
@@ -248,28 +254,42 @@ export function exportDeckToText(deck: Pick<DeckPayload, 'leaderCardId' | 'cards
   return lines.join('\n');
 }
 
-export function parseDeckText(text: string, name = 'Deck importe'): DeckPayload {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const parsed = lines.map((line) => {
+export function parseDeckText(
+  text: string,
+  name = 'Deck importe',
+): { payload: DeckPayload; invalidLines: InvalidDeckLine[] } {
+  const rawLines = text.split(/\r?\n/);
+  const invalidLines: InvalidDeckLine[] = [];
+  const parsed: Array<DeckCard | null> = [];
+
+  rawLines.forEach((rawLine, index) => {
+    const line = rawLine.trim();
+
+    if (!line) {
+      return;
+    }
+
     const match = line.match(/^(\d+)\s*x\s*([A-Za-z0-9-]+)$/);
 
     if (!match) {
-      return null;
+      invalidLines.push({ line: index + 1, raw: rawLine });
+      parsed.push(null);
+      return;
     }
 
-    return {
+    parsed.push({
       quantity: Number(match[1]),
       cardId: normalizeCardId(match[2] ?? ''),
-    };
+    });
   });
   const [leader] = parsed;
 
   return {
-    name,
-    leaderCardId: leader?.quantity === 1 ? leader.cardId : '',
-    cards: normalizeDeckCards(parsed.slice(1).filter((card): card is DeckCard => card !== null)),
+    payload: {
+      name,
+      leaderCardId: leader?.quantity === 1 ? leader.cardId : '',
+      cards: normalizeDeckCards(parsed.slice(1).filter((card): card is DeckCard => card !== null)),
+    },
+    invalidLines,
   };
 }

@@ -114,11 +114,15 @@ export class DecksService {
   }
 
   async importText(text: string, name?: string): Promise<DeckImportResult> {
-    const payload = parseDeckText(text, name?.trim() || 'Deck importe');
+    const { payload, invalidLines } = parseDeckText(
+      text,
+      name?.trim() || 'Deck importe',
+    );
 
     return {
       payload,
       validation: await this.validate(payload),
+      invalidLines,
     };
   }
 
