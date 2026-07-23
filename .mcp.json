@@ -3,6 +3,13 @@
     "chrome-devtools": {
       "command": "pnpx",
       "args": ["chrome-devtools-mcp@latest"]
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": ["postgres-mcp", "--access-mode=unrestricted"],
+      "env": {
+        "DATABASE_URI": "postgresql://onepiecetcg:onepiecetcg@localhost:5432/onepiecetcg"
+      }
     }
   }
 }
