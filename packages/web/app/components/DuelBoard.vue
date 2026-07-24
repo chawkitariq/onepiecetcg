@@ -942,33 +942,35 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
             <UScrollArea
               ref="journal-scroll-area"
               class="flex-1 min-h-0"
-              :ui="{ viewport: 'pr-1' }"
+              :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
             >
-              <ul class="flex flex-col justify-end gap-2 min-h-full text-xs">
-                <li
-                  v-if="logs.length === 0"
-                  class="text-muted"
-                >
-                  Aucun événement.
-                </li>
-                <li
-                  v-for="entry in logs"
-                  :key="entry.id"
-                  class="rounded-lg border border-default/70 bg-muted/20 px-3 py-2"
-                >
-                  <div class="flex items-center gap-2 text-[11px]">
-                    <time
-                      :datetime="entry.createdAt"
-                      class="tabular-nums opacity-80"
-                    >
-                      {{ formatLogTime(entry.createdAt) }}
-                    </time>
-                  </div>
-                  <p class="mt-1 leading-relaxed">
-                    {{ entry.message }}
-                  </p>
-                </li>
-              </ul>
+              <div class="mt-auto flex flex-col">
+                <ul class="flex flex-col gap-2 text-xs">
+                  <li
+                    v-if="logs.length === 0"
+                    class="text-muted"
+                  >
+                    Aucun événement.
+                  </li>
+                  <li
+                    v-for="entry in logs"
+                    :key="entry.id"
+                    class="rounded-lg border border-default/70 bg-muted/20 px-3 py-2"
+                  >
+                    <div class="flex items-center gap-2 text-[11px]">
+                      <time
+                        :datetime="entry.createdAt"
+                        class="tabular-nums opacity-80"
+                      >
+                        {{ formatLogTime(entry.createdAt) }}
+                      </time>
+                    </div>
+                    <p class="mt-1 leading-relaxed">
+                      {{ entry.message }}
+                    </p>
+                  </li>
+                </ul>
+              </div>
             </UScrollArea>
           </div>
 
