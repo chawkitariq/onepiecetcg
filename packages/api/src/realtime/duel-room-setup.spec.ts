@@ -280,9 +280,14 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     expect(room.state.phase).toBe('refresh');
     expect(room.state.turn).toBe(1);
     expect(room.state.activePlayerSessionId).toBe(firstSessionId);
-    expect(room.state.logs.at(-1)?.message).toContain(
-      'commence le premier tour',
-    );
+    // "commence le premier tour" is logged when turn 1 starts, immediately
+    // followed by the auto-run Refresh Phase's own log entry -- so it's not
+    // necessarily the last log, just present in the setup log history.
+    expect(
+      Array.from(room.state.logs).some((log) =>
+        log.message.includes('commence le premier tour'),
+      ),
+    ).toBe(true);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();

@@ -1093,8 +1093,20 @@ export class DuelRoom extends Room<DuelState> {
     this.dealLeaderDamage(defender);
   }
 
+  /**
+   * DON!! attached to a Leader/Character only grants +1000 power "during
+   * your turn" (docs/rule_comprehensive.md 6-5-5-2) -- attachedDon isn't
+   * cleared until the owner's own next Refresh Phase, so the bonus must be
+   * excluded here whenever it's being evaluated on the opponent's turn
+   * (e.g. a Character defending an attack still carrying last turn's DON!!).
+   */
   private cardPower(card: DuelCard): number {
-    return Math.max(card.power, 0) + card.attachedDon * 1000;
+    const donBonus =
+      card.ownerSessionId === this.state.activePlayerSessionId
+        ? card.attachedDon * 1000
+        : 0;
+
+    return Math.max(card.power, 0) + donBonus;
   }
 
   private knockOutCharacter(owner: DuelPlayer, card: DuelCard) {
@@ -1302,7 +1314,11 @@ export class DuelRoom extends Room<DuelState> {
       );
     } else if (card.type === 'Stage') {
       if (player.zones.stage.instanceId) {
-        player.zones.trash.unshift(player.zones.stage);
+        const discardedStage = player.zones.stage;
+        const attachedDon = discardedStage.attachedDon;
+        discardedStage.attachedDon = 0;
+        player.zones.trash.unshift(discardedStage);
+        this.returnDonToCost(player, client.sessionId, attachedDon);
       }
 
       card.rested = false;

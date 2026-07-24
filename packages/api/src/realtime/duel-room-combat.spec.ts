@@ -703,6 +703,50 @@ describe('DuelRoom structural combat (stage 8)', () => {
     await disposeRoom(room);
   });
 
+  it('excludes a defending Personnage DON!! bonus carried over from a previous turn (6-5-5-2, "during your turn" only)', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    const defender = room.state.players.get(secondSessionId);
+    const targetInstanceId = putCharacterInPlay(defender, 'C-001', true);
+    const targetCharacter = defender!.zones.characters.find(
+      (card) => card.instanceId === targetInstanceId,
+    )!;
+    // Simulate DON!! given to this Personnage on a prior turn of its owner
+    // (defender) that hasn't been cleared yet because it's now the
+    // attacker's turn -- attachedDon only clears at the owner's own next
+    // Refresh Phase, so it must not grant +1000 power while defending here.
+    targetCharacter.attachedDon = 1;
+    // weakCharacter has 1000 base power; without the (incorrect) DON!!
+    // bonus it stays at 1000, so the attacking Leader (5000) still wins.
+
+    access.handleDeclareAttack(fakeClient(firstSessionId), {
+      attackerInstanceId: attacker!.zones.leader.instanceId,
+      targetType: 'character',
+      targetInstanceId,
+    });
+    access.handleDeclareBlock(fakeClient(secondSessionId), {
+      blockerInstanceId: null,
+    });
+    access.handleFinishCounterStep(fakeClient(secondSessionId));
+
+    expect(
+      defender!.zones.trash.some(
+        (card) => card.instanceId === targetInstanceId,
+      ),
+    ).toBe(true);
+    expect(
+      defender!.zones.characters.some(
+        (card) => card.instanceId === targetInstanceId,
+      ),
+    ).toBe(false);
+
+    await disposeRoom(room);
+  });
+
   it('rejects a target-less combat action for a non-attacker/defender session', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();

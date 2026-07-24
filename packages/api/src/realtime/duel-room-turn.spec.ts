@@ -63,6 +63,13 @@ const stageCard: Card = {
   counter: null,
 };
 
+const secondStageCard: Card = {
+  ...stageCard,
+  id: 'S-002',
+  number: 'S-002',
+  name: 'Second Stage',
+};
+
 type PrivateRoomAccess = {
   handleChooseFirstOrSecond: (
     client: { sessionId: string },
@@ -185,8 +192,9 @@ async function createRoomAtFirstTurn(): Promise<{
           leader,
           cards: [
             stageCard,
+            secondStageCard,
             eventCard,
-            ...Array.from({ length: 48 }, (_, index) => ({
+            ...Array.from({ length: 47 }, (_, index) => ({
               ...mainCard,
               copyIndex: index + 1,
             })),
@@ -578,6 +586,48 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     });
 
     expect(player?.zones.stage.instanceId).toBe(stageInstanceId);
+
+    const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
+    await disposableRoom._dispose();
+  });
+
+  it('returns attached DON!! to the cost zone rested when the Stage card is replaced', async () => {
+    const { room, firstSessionId } = await createRoomAtFirstTurn();
+    const player = room.state.players.get(firstSessionId);
+    const firstStageInstanceId = ensureHandContains(player, 'Stage');
+    placeUntappedDon(player, 1);
+
+    room.state.phase = 'main';
+    const access = asPrivateRoom(room);
+    access.handlePlayCard(fakeClient(firstSessionId), {
+      instanceId: firstStageInstanceId,
+    });
+
+    // Simulate a DON!! attached to the Stage card (no current path attaches
+    // DON!! to a Stage, but attachedDon exists on every DuelCard, and the
+    // zone-change rule must still hold if that ever becomes reachable).
+    if (player) {
+      player.zones.stage.attachedDon = 1;
+    }
+
+    const secondStageInstanceId = ensureHandContains(player, 'Stage');
+    placeUntappedDon(player, 1);
+    const costCountBeforePlay = player?.zones.cost.length ?? 0;
+
+    access.handlePlayCard(fakeClient(firstSessionId), {
+      instanceId: secondStageInstanceId,
+    });
+
+    expect(player?.zones.stage.instanceId).toBe(secondStageInstanceId);
+    // Paying cost only rests DON!! cards (they stay in the cost zone), and
+    // the replaced Stage's 1 attachedDon comes back as 1 new rested DON!!
+    // card -- net +1 to the cost zone's card count.
+    expect(player?.zones.cost.length).toBe(costCountBeforePlay + 1);
+    expect(
+      player?.zones.trash.find(
+        (card) => card.instanceId === firstStageInstanceId,
+      )?.attachedDon,
+    ).toBe(0);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();
