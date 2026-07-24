@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
+    "dev": "concurrently -n cjs,esm \"tsc -p tsconfig.json --watch --preserveWatchOutput\" \"tsc -p tsconfig.esm.json --watch --preserveWatchOutput\"",
     "postinstall": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
@@ -21,6 +22,7 @@
     "@colyseus/schema": "^3.0.76"
   },
   "devDependencies": {
+    "concurrently": "^10.0.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "pnpm --dir packages/shared build && concurrently -n shared,api,web -c blue,green,magenta \"pnpm --dir packages/shared dev\" \"pnpm --dir packages/api start:dev\" \"wait-on tcp:3000 && pnpm --dir packages/web dev\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,5 +17,9 @@
       "onFail": "download"
     }
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "wait-on": "^9.1.0"
+  }
 }

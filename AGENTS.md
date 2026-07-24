@@ -19,6 +19,8 @@ pnpm install
 
 Run package scripts with `--dir`, e.g. `pnpm --dir packages/api start:dev`. Backend commands are documented in `packages/api/CLAUDE.md`, frontend commands in `packages/web/CLAUDE.md`.
 
+`packages/shared` is consumed via its built `dist/` output (see its `exports` map), not `src/` directly — `api`/`web` won't see edits to `packages/shared/src` until it rebuilds. Run `pnpm --dir packages/shared dev` alongside `api`/`web` dev servers to rebuild it on change instead of rerunning `pnpm --dir packages/shared build` manually, or just run `pnpm dev` from the repo root to start `shared` (build once, then watch), `api`, and `web` together via `concurrently`. `web` needs `api` bound to port 3000 first (Nuxt's dev server would otherwise race for the same port) — the root script waits on `tcp:3000` (`wait-on`) before starting `web`.
+
 The root `pnpm test` script is a placeholder.
 
 ## Coding Style & Naming Conventions
