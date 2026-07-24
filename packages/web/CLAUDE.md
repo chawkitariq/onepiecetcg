@@ -28,7 +28,7 @@ CI (`packages/web/.github/workflows/ci.yml`) runs `pnpm install`, `pnpm run lint
 
 ### App structure (Nuxt 4 `app/` directory convention)
 
-- `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder + integrated card catalogue, no separate `/catalogue` route per spec), `room.vue` (matchmaking/lobby), `zone.vue` (live game board), `spike.vue` (technical spike page).
+- `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder + integrated card catalogue, no separate `/catalogue` route per spec), `room.vue` (matchmaking/lobby), `zone/[roomId].vue` (live game board, keyed by the Colyseus room id so the URL is shareable/bookmarkable — `room.vue` navigates here as `/zone/${room.roomId}` once both players are ready), `spike.vue` (technical spike page).
 - `app/components/` — Vue components (PascalCase filenames). `PlayZone.vue`/`DuelBoard.vue`/`MockDuelBoard.vue` render the game board; `DuelCard.vue`/`DuelZoneSlot.vue`/`DuelSetupOverlay.vue` are duel-board pieces; `UserAccountMenu.vue` and `AppConfirmDialog.vue` are shared chrome.
 - `app/layouts/` — `default.vue` and `lobby.vue` share the branded header (incl. logo), auth-aware user menu, and footer chrome; `simulator.vue` is a minimal layout for the live game board.
 - `app/middleware/` — route middleware, e.g. `auth.ts` (auth-gated route protection).

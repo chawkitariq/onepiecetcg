@@ -119,8 +119,8 @@ function watchRoom() {
   room.value?.onStateChange(() => {
     roomVersion.value += 1
 
-    if (players.value.length === 2 && players.value.every(player => player.ready)) {
-      void navigateTo('/zone')
+    if (players.value.length === 2 && players.value.every(player => player.ready) && room.value) {
+      void navigateTo(`/zone/${room.value.roomId}`)
     }
   })
 }
