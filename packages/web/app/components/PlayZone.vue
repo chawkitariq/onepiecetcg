@@ -17,6 +17,20 @@ type StackedCardStyleOptions = {
   centered?: boolean
 }
 
+type CharacterActionPopoverItem = {
+  label: string
+  icon?: string
+  disabled?: boolean
+  onSelect: () => void
+}
+
+type LeaderActionPopoverItem = {
+  label: string
+  icon?: string
+  disabled?: boolean
+  onSelect: () => void
+}
+
 const props = defineProps<{
   player: DuelPlayerView
   side: 0 | 1
@@ -29,6 +43,8 @@ const props = defineProps<{
   targetableCharacterIds?: string[]
   selectableLeader?: boolean
   selectableCharacterIds?: string[]
+  leaderActionPopoverItems?: LeaderActionPopoverItem[]
+  characterActionPopoverItems?: Record<string, CharacterActionPopoverItem[]>
   invalidLeaderPulse?: boolean
   invalidCharacterIds?: string[]
   draggableHandCardIds?: string[]
@@ -87,6 +103,7 @@ const donDeckGhosts = computed(() => transitionGhosts.value?.filter(ghost => gho
 const reducedMotion = usePreferredReducedMotion()
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
+const openActionPopoverKey = ref<string | null>(null)
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -157,6 +174,57 @@ function isCharacterInvalid(instanceId: string): boolean {
   return props.invalidCharacterIds?.includes(instanceId) ?? false
 }
 
+function getLeaderActionPopoverItems(): LeaderActionPopoverItem[] {
+  return props.leaderActionPopoverItems ?? []
+}
+
+function hasLeaderActionPopover(): boolean {
+  return getLeaderActionPopoverItems().length > 0
+}
+
+function getCharacterActionPopoverItems(instanceId: string): CharacterActionPopoverItem[] {
+  return props.characterActionPopoverItems?.[instanceId] ?? []
+}
+
+function hasCharacterActionPopover(instanceId: string): boolean {
+  return getCharacterActionPopoverItems(instanceId).length > 0
+}
+
+function isLeaderActionPopoverOpen(): boolean {
+  return openActionPopoverKey.value === 'leader'
+}
+
+function isCharacterActionPopoverOpen(instanceId: string): boolean {
+  return openActionPopoverKey.value === `character:${instanceId}`
+}
+
+function onLeaderActionPopoverOpenChange(open: boolean) {
+  openActionPopoverKey.value = open ? 'leader' : (openActionPopoverKey.value === 'leader' ? null : openActionPopoverKey.value)
+}
+
+function onCharacterActionPopoverOpenChange(instanceId: string, open: boolean) {
+  const key = `character:${instanceId}`
+  openActionPopoverKey.value = open
+    ? key
+    : (openActionPopoverKey.value === key ? null : openActionPopoverKey.value)
+}
+
+function onLeaderActionTriggerClick() {
+  if (hasLeaderActionPopover() && openActionPopoverKey.value && openActionPopoverKey.value !== 'leader') {
+    openActionPopoverKey.value = 'leader'
+  }
+}
+
+function onCharacterActionTriggerClick(instanceId: string) {
+  if (
+    hasCharacterActionPopover(instanceId)
+    && openActionPopoverKey.value
+    && openActionPopoverKey.value !== `character:${instanceId}`
+  ) {
+    openActionPopoverKey.value = `character:${instanceId}`
+  }
+}
+
 function isHandCardDraggable(instanceId: string): boolean {
   return props.draggableHandCardIds?.includes(instanceId) ?? false
 }
@@ -197,6 +265,28 @@ watch(draggedHandCardInstanceId, (nextDraggedCard) => {
   isCharacterZoneDraggedOver.value = false
   characterZoneDragDepth.value = 0
 })
+
+watch(() => props.characterActionPopoverItems, (nextItems) => {
+  if (!openActionPopoverKey.value?.startsWith('character:')) {
+    return
+  }
+
+  const instanceId = openActionPopoverKey.value.replace('character:', '')
+
+  if (!nextItems?.[instanceId]?.length) {
+    openActionPopoverKey.value = null
+  }
+}, { deep: true })
+
+watch(() => props.leaderActionPopoverItems, (nextItems) => {
+  if (openActionPopoverKey.value !== 'leader') {
+    return
+  }
+
+  if (!nextItems?.length) {
+    openActionPopoverKey.value = null
+  }
+}, { deep: true })
 
 function onHandCardDragStart(instanceId: string, event: DragEvent) {
   if (!isHandCardDraggable(instanceId)) {
@@ -310,36 +400,100 @@ function onCharacterZoneDrop(event: DragEvent) {
             @dragover="onCharacterZoneDragOver"
             @drop="onCharacterZoneDrop"
           >
-            <motion.button
+            <template
               v-for="character in player.characters"
               :key="character.instanceId"
-              type="button"
-              layout
-              :layout-id="character.instanceId"
-              :initial="false"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
-              class="duel-card-shell relative h-full shrink-0 rounded-lg"
-              :class="[
-                attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-                isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
-                isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
-                isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
-                isTargetable && character.rested ? 'cursor-crosshair' : '',
-                isSelectable ? 'cursor-pointer' : ''
-              ]"
-              @click="emit('characterClick', side, character.instanceId)"
-              @mouseenter="onCardHover(character.imageUrl)"
-              @mouseleave="onCardHover(null)"
             >
-              <DuelCard
-                :src="character.imageUrl"
-                :rotated="character.rested"
-              />
-              <AnimatedPowerBadge
-                :value="cardPower(character)"
-                :mirrored="isAdversary"
-              />
-            </motion.button>
+              <UPopover
+                v-if="hasCharacterActionPopover(character.instanceId)"
+                :open="isCharacterActionPopoverOpen(character.instanceId)"
+                :content="{ side: 'right', align: 'center', sideOffset: 10 }"
+                :ui="{ content: 'w-52 p-2' }"
+                @update:open="onCharacterActionPopoverOpenChange(character.instanceId, $event)"
+              >
+                <motion.button
+                  type="button"
+                  layout
+                  :layout-id="character.instanceId"
+                  :initial="false"
+                  :transition="{ duration: 0.22, ease: 'easeOut' }"
+                  class="duel-card-shell relative h-full shrink-0 rounded-lg"
+                  :class="[
+                    attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
+                    isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
+                    isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
+                    isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
+                    isTargetable && character.rested ? 'cursor-crosshair' : '',
+                    isSelectable ? 'cursor-pointer' : 'cursor-pointer'
+                  ]"
+                  @click="onCharacterActionTriggerClick(character.instanceId); emit('characterClick', side, character.instanceId)"
+                  @mouseenter="onCardHover(character.imageUrl)"
+                  @mouseleave="onCardHover(null)"
+                >
+                  <DuelCard
+                    :src="character.imageUrl"
+                    :rotated="character.rested"
+                  />
+                  <AnimatedPowerBadge
+                    :value="cardPower(character)"
+                    :mirrored="isAdversary"
+                  />
+                </motion.button>
+
+                <template #content>
+                  <div class="flex flex-col gap-1">
+                    <UButton
+                      v-for="action in getCharacterActionPopoverItems(character.instanceId)"
+                      :key="action.label"
+                      size="sm"
+                      color="neutral"
+                      variant="ghost"
+                      block
+                      :disabled="action.disabled"
+                      @click="action.onSelect()"
+                    >
+                      <template
+                        v-if="action.icon"
+                        #leading
+                      >
+                        <UIcon :name="action.icon" />
+                      </template>
+                      {{ action.label }}
+                    </UButton>
+                  </div>
+                </template>
+              </UPopover>
+
+              <motion.button
+                v-else
+                type="button"
+                layout
+                :layout-id="character.instanceId"
+                :initial="false"
+                :transition="{ duration: 0.22, ease: 'easeOut' }"
+                class="duel-card-shell relative h-full shrink-0 rounded-lg"
+                :class="[
+                  attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
+                  isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
+                  isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
+                  isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
+                  isTargetable && character.rested ? 'cursor-crosshair' : '',
+                  isSelectable ? 'cursor-pointer' : ''
+                ]"
+                @click="emit('characterClick', side, character.instanceId)"
+                @mouseenter="onCardHover(character.imageUrl)"
+                @mouseleave="onCardHover(null)"
+              >
+                <DuelCard
+                  :src="character.imageUrl"
+                  :rotated="character.rested"
+                />
+                <AnimatedPowerBadge
+                  :value="cardPower(character)"
+                  :mirrored="isAdversary"
+                />
+              </motion.button>
+            </template>
           </div>
         </DuelZoneSlot>
       </div>
@@ -351,7 +505,68 @@ function onCharacterZoneDrop(event: DragEvent) {
           hug-card
           allow-overflow
         >
+          <UPopover
+            v-if="hasLeaderActionPopover()"
+            :open="isLeaderActionPopoverOpen()"
+            :content="{ side: 'right', align: 'center', sideOffset: 10 }"
+            :ui="{ content: 'w-52 p-2' }"
+            @update:open="onLeaderActionPopoverOpenChange($event)"
+          >
+            <motion.button
+              type="button"
+              layout
+              :layout-id="player.leader?.instanceId"
+              :initial="false"
+              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              class="duel-card-shell relative h-full w-full rounded-lg"
+              :class="[
+                attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
+                targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
+                selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
+                invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
+              ]"
+              @click="onLeaderActionTriggerClick(); emit('leaderClick', side)"
+              @mouseenter="onCardHover(player.leader?.imageUrl)"
+              @mouseleave="onCardHover(null)"
+            >
+              <DuelCard
+                v-if="player.leader"
+                :src="player.leader.imageUrl"
+                :rotated="player.leader.rested"
+              />
+              <AnimatedPowerBadge
+                v-if="player.leader"
+                :value="cardPower(player.leader)"
+                :mirrored="isAdversary"
+              />
+            </motion.button>
+
+            <template #content>
+              <div class="flex flex-col gap-1">
+                <UButton
+                  v-for="action in getLeaderActionPopoverItems()"
+                  :key="action.label"
+                  size="sm"
+                  color="neutral"
+                  variant="ghost"
+                  block
+                  :disabled="action.disabled"
+                  @click="action.onSelect()"
+                >
+                  <template
+                    v-if="action.icon"
+                    #leading
+                  >
+                    <UIcon :name="action.icon" />
+                  </template>
+                  {{ action.label }}
+                </UButton>
+              </div>
+            </template>
+          </UPopover>
+
           <motion.button
+            v-else
             type="button"
             layout
             :layout-id="player.leader?.instanceId"

@@ -18,6 +18,7 @@ const resolveTrigger = vi.fn()
 const phase = ref('main')
 const isSelfTurn = ref(true)
 const isCombatInProgress = ref(false)
+const canDeclareAttack = ref(false)
 const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
 
@@ -100,7 +101,7 @@ mockNuxtImport('useDuelRoom', () => () => ({
   isCombatInProgress: computed(() => isCombatInProgress.value),
   isSelfAttacker: computed(() => false),
   isSelfDefender: computed(() => false),
-  canDeclareAttack: computed(() => false),
+  canDeclareAttack: computed(() => canDeclareAttack.value),
   isBlockingStep: computed(() => false),
   isCounteringStep: computed(() => false),
   isAwaitingTriggerDecision: computed(() => false),
@@ -116,13 +117,29 @@ const playZoneStub = defineComponent({
   name: 'PlayZone',
   props: {
     side: { type: Number, required: true },
-    draggableHandCardIds: { type: Array, default: () => [] }
+    draggableHandCardIds: { type: Array, default: () => [] },
+    leaderActionPopoverItems: { type: Array, default: () => [] },
+    characterActionPopoverItems: { type: Object, default: () => ({}) },
+    attackerId: { type: String, default: undefined },
+    isTargetable: { type: Boolean, default: false }
   },
   emits: ['handCardDragStart', 'handCardDropOnCharacters', 'handCardClick'],
   setup(props, { emit }) {
+    function getLeaderPopoverItems() {
+      return props.leaderActionPopoverItems as Array<{ label: string, onSelect: () => void }>
+    }
+
+    function getCharacterPopoverItems(instanceId: string) {
+      return (props.characterActionPopoverItems as Record<string, Array<{ label: string, onSelect: () => void }>>)[instanceId] ?? []
+    }
+
     return () => h('div', {
       'data-play-zone': props.side,
-      'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds)
+      'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
+      'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
+      'data-character-popover-character-a': JSON.stringify(getCharacterPopoverItems('character-a').map(item => item.label)),
+      'data-attacker-id': props.attackerId,
+      'data-is-targetable': String(props.isTargetable ?? false)
     }, [
       h('button', {
         'data-test': `drag-start-${props.side}`,
@@ -135,6 +152,22 @@ const playZoneStub = defineComponent({
       h('button', {
         'data-test': `hand-click-${props.side}`,
         'onClick': () => emit('handCardClick', props.side, 'hand-character')
+      }),
+      h('button', {
+        'data-test': `character-popover-attach-${props.side}`,
+        'onClick': () => getCharacterPopoverItems('character-a')[0]?.onSelect?.()
+      }),
+      h('button', {
+        'data-test': `character-popover-attack-${props.side}`,
+        'onClick': () => getCharacterPopoverItems('character-a')[1]?.onSelect?.()
+      }),
+      h('button', {
+        'data-test': `leader-popover-attach-${props.side}`,
+        'onClick': () => getLeaderPopoverItems()[0]?.onSelect?.()
+      }),
+      h('button', {
+        'data-test': `leader-popover-attack-${props.side}`,
+        'onClick': () => getLeaderPopoverItems()[1]?.onSelect?.()
       })
     ])
   }
@@ -152,8 +185,13 @@ describe('DuelBoard drag and drop', () => {
     phase.value = 'main'
     isSelfTurn.value = true
     isCombatInProgress.value = false
-    self.value = createPlayer('self')
-    opponent.value = createPlayer('opponent')
+    canDeclareAttack.value = false
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')]
+    })
+    opponent.value = createPlayer('opponent', {
+      characters: [createPublicCard('opponent-character-a', { rested: true })]
+    })
     playCard.mockReset()
     endPhase.mockReset()
     attachDon.mockReset()
@@ -216,5 +254,57 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.get('[data-test="drop-0"]').trigger('click')
 
     expect(playCard).not.toHaveBeenCalled()
+  })
+
+  it('exposes character popover actions on the self board during the main phase', () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard()
+    const selfZone = wrapper.get('[data-play-zone="0"]')
+
+    expect(selfZone.attributes('data-leader-popover')).toBe(JSON.stringify([
+      'Attacher un DON!!',
+      'Attaquer avec'
+    ]))
+    expect(selfZone.attributes('data-character-popover-character-a')).toBe(JSON.stringify([
+      'Attacher un DON!!',
+      'Attaquer avec'
+    ]))
+  })
+
+  it('lets the attach DON action be triggered multiple times from the character popover', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="character-popover-attach-0"]').trigger('click')
+    await wrapper.get('[data-test="character-popover-attach-0"]').trigger('click')
+
+    expect(attachDon).toHaveBeenNthCalledWith(1, 'character', 'character-a')
+    expect(attachDon).toHaveBeenNthCalledWith(2, 'character', 'character-a')
+  })
+
+  it('starts target selection from the character popover attack action', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="character-popover-attack-0"]').trigger('click')
+
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('character-a')
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
+    expect(declareAttack).not.toHaveBeenCalled()
+  })
+
+  it('lets the leader popover trigger repeated DON attachment and attack targeting', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
+    await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
+    await wrapper.get('[data-test="leader-popover-attack-0"]').trigger('click')
+
+    expect(attachDon).toHaveBeenNthCalledWith(1, 'leader')
+    expect(attachDon).toHaveBeenNthCalledWith(2, 'leader')
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('self-leader')
   })
 })

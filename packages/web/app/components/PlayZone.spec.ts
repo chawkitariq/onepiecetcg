@@ -12,6 +12,51 @@ const tooltipStub = defineComponent({
     return () => h('div', { 'data-tooltip-stub': 'true' }, slots.default?.())
   }
 })
+const popoverStub = defineComponent({
+  name: 'UPopover',
+  props: {
+    open: { type: Boolean, default: false }
+  },
+  emits: ['update:open'],
+  setup(props, { slots, emit }) {
+    return () => h('div', {
+      'data-popover-stub': 'true',
+      'data-open': String(props.open)
+    }, [
+      h('button', {
+        'data-popover-trigger': 'true',
+        'onClick': () => emit('update:open', !props.open)
+      }, slots.default?.({ open: props.open })),
+      h('div', { 'data-popover-content': String(props.open) }, slots.content?.({ close: () => emit('update:open', false) }))
+    ])
+  }
+})
+
+function popoverTestStubs() {
+  return {
+    UTooltip: tooltipStub,
+    UPopover: popoverStub,
+    UButton: defineComponent({
+      name: 'UButton',
+      inheritAttrs: false,
+      props: {
+        disabled: { type: Boolean, default: false }
+      },
+      setup(props, { slots, attrs }) {
+        return () => h('button', { ...attrs, disabled: props.disabled }, slots.default?.())
+      }
+    }),
+    UIcon: defineComponent({
+      name: 'UIcon',
+      props: {
+        name: { type: String, required: true }
+      },
+      setup(props) {
+        return () => h('span', { 'data-icon-name': props.name })
+      }
+    })
+  }
+}
 
 mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
 
@@ -146,9 +191,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -170,9 +213,7 @@ describe('PlayZone transitions', () => {
         ]
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -194,9 +235,7 @@ describe('PlayZone transitions', () => {
         revealedHandCardIds: ['revealed-hand']
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -224,9 +263,7 @@ describe('PlayZone transitions', () => {
         revealedHandCardIds: ['revealed-hand']
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -245,9 +282,7 @@ describe('PlayZone transitions', () => {
         draggableHandCardIds: ['hand-a']
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -274,9 +309,7 @@ describe('PlayZone transitions', () => {
         revealHand: true
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -303,9 +336,7 @@ describe('PlayZone transitions', () => {
         canDropOnCharacterZone: true
       },
       global: {
-        stubs: {
-          UTooltip: tooltipStub
-        }
+        stubs: popoverTestStubs()
       }
     })
 
@@ -320,5 +351,60 @@ describe('PlayZone transitions', () => {
     await characterZone.trigger('drop')
 
     expect(wrapper.emitted('handCardDropOnCharacters')).toEqual([[0]])
+  })
+
+  it('switches the open popover to another character on the first click', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [
+            createPublicCard('character-a'),
+            createPublicCard('character-b')
+          ]
+        }),
+        side: 0,
+        characterActionPopoverItems: {
+          'character-a': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }],
+          'character-b': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }]
+        }
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const triggers = wrapper.findAll('[data-popover-trigger="true"]')
+
+    await triggers[0]!.trigger('click')
+    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
+
+    await triggers[1]!.trigger('click')
+    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['false', 'true'])
+  })
+
+  it('switches the open popover from the leader to a character on the first click', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        leaderActionPopoverItems: [{ label: 'Attaquer avec', onSelect: vi.fn() }],
+        characterActionPopoverItems: {
+          'character-a': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }]
+        }
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const triggers = wrapper.findAll('[data-popover-trigger="true"]')
+
+    await triggers[0]!.trigger('click')
+    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
+
+    await triggers[1]!.trigger('click')
+    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['false', 'true'])
   })
 })

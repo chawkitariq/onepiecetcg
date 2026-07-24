@@ -3,6 +3,20 @@ import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/share
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 
+type CharacterActionPopoverItem = {
+  label: string
+  icon?: string
+  disabled?: boolean
+  onSelect: () => void
+}
+
+type LeaderActionPopoverItem = {
+  label: string
+  icon?: string
+  disabled?: boolean
+  onSelect: () => void
+}
+
 const {
   self,
   opponent,
@@ -47,7 +61,6 @@ const phaseLabels: Record<string, string> = {
 }
 
 const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
-const isAttachingDon = ref(false)
 const pendingCharacterInstanceId = ref<string | null>(null)
 const isSelectingAttacker = ref(false)
 const pendingAttackerInstanceId = ref<string | null>(null)
@@ -112,20 +125,10 @@ const selectableSelfCharacterIds = computed(() => {
       .map(character => character.instanceId)
   }
 
-  if (isAttachingDon.value) {
-    return self.value.characters.map(character => character.instanceId)
-  }
-
   return []
 })
 const selectableSelfLeader = computed(() =>
-  Boolean(
-    self.value?.leader
-    && (
-      isAttachingDon.value
-      || (isSelectingAttacker.value && !self.value.leader.rested)
-    )
-  )
+  Boolean(self.value?.leader && isSelectingAttacker.value && !self.value.leader.rested)
 )
 const invalidSelfLeaderPulse = ref(false)
 const invalidOpponentLeaderPulse = ref(false)
@@ -210,15 +213,6 @@ function formatLogTime(createdAt: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-function toggleAttachDon() {
-  isAttachingDon.value = !isAttachingDon.value
-}
-
-function toggleSelectingAttacker() {
-  isSelectingAttacker.value = !isSelectingAttacker.value
-  pendingAttackerInstanceId.value = null
 }
 
 function pulseLeader(target: Ref<boolean>) {
@@ -315,6 +309,44 @@ function onSelfCharacterAttackerClick(instanceId: string) {
   isSelectingAttacker.value = false
 }
 
+function startAttackWithCharacter(instanceId: string) {
+  if (!canDeclareAttack.value) {
+    pulseCharacter(invalidSelfCharacterIds, instanceId)
+    return
+  }
+
+  isSelectingAttacker.value = true
+  onSelfCharacterAttackerClick(instanceId)
+}
+
+function startAttackWithLeader() {
+  if (!canDeclareAttack.value) {
+    pulseLeader(invalidSelfLeaderPulse)
+    return
+  }
+
+  isSelectingAttacker.value = true
+  onSelfLeaderAttackerClick()
+}
+
+function attachDonToLeaderFromPopover() {
+  if (!canAttachDon.value) {
+    pulseLeader(invalidSelfLeaderPulse)
+    return
+  }
+
+  attachDon('leader')
+}
+
+function attachDonToCharacterFromPopover(instanceId: string) {
+  if (!canAttachDon.value) {
+    pulseCharacter(invalidSelfCharacterIds, instanceId)
+    return
+  }
+
+  attachDon('character', instanceId)
+}
+
 function onOpponentLeaderTargetClick() {
   if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
     return
@@ -394,15 +426,7 @@ function onSelfHandCardClick(_side: 0 | 1, instanceId: string) {
 function onSelfLeaderClick(_side: 0 | 1) {
   if (isSelectingAttacker.value) {
     onSelfLeaderAttackerClick()
-    return
   }
-
-  if (!isAttachingDon.value) {
-    return
-  }
-
-  attachDon('leader')
-  isAttachingDon.value = false
 }
 
 function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
@@ -422,12 +446,6 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     return
   }
 
-  if (!isAttachingDon.value) {
-    return
-  }
-
-  attachDon('character', instanceId)
-  isAttachingDon.value = false
 }
 
 function onOpponentLeaderClick() {
@@ -478,6 +496,77 @@ function onSelfCharacterZoneDrop() {
   resetDraggedHandCard()
   requestPlayFromHand(instanceId)
 }
+
+const selfCharacterActionPopoverItems = computed<Record<string, CharacterActionPopoverItem[]>>(() => {
+  if (
+    !self.value
+    || !isMainPhase.value
+    || !isSelfTurn.value
+    || isCombatInProgress.value
+    || isChoosingCharacterToDiscard.value
+    || isSelectingAttacker.value
+    || isChoosingTarget.value
+    || isBlockingStep.value
+    || isCounteringStep.value
+    || isAwaitingTriggerDecision.value
+  ) {
+    return {}
+  }
+
+  return Object.fromEntries(self.value.characters.map((character) => {
+    const canCharacterAttack = canDeclareAttack.value && !character.rested && !character.playedThisTurn
+
+    return [
+      character.instanceId,
+      [
+        {
+          label: 'Attacher un DON!!',
+          icon: 'i-lucide-plus',
+          disabled: !canAttachDon.value,
+          onSelect: () => attachDonToCharacterFromPopover(character.instanceId)
+        },
+        {
+          label: 'Attaquer avec',
+          icon: 'i-lucide-swords',
+          disabled: !canCharacterAttack,
+          onSelect: () => startAttackWithCharacter(character.instanceId)
+        }
+      ]
+    ]
+  }))
+})
+
+const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
+  if (
+    !self.value?.leader
+    || !isMainPhase.value
+    || !isSelfTurn.value
+    || isCombatInProgress.value
+    || isChoosingCharacterToDiscard.value
+    || isSelectingAttacker.value
+    || isChoosingTarget.value
+    || isBlockingStep.value
+    || isCounteringStep.value
+    || isAwaitingTriggerDecision.value
+  ) {
+    return []
+  }
+
+  return [
+    {
+      label: 'Attacher un DON!!',
+      icon: 'i-lucide-plus',
+      disabled: !canAttachDon.value,
+      onSelect: attachDonToLeaderFromPopover
+    },
+    {
+      label: 'Attaquer avec',
+      icon: 'i-lucide-swords',
+      disabled: !canDeclareAttack.value || self.value.leader.rested,
+      onSelect: startAttackWithLeader
+    }
+  ]
+})
 </script>
 
 <template>
@@ -563,26 +652,6 @@ function onSelfCharacterZoneDrop() {
           <p class="text-sm text-muted whitespace-nowrap">
             {{ isSelfTurn ? 'Votre tour' : "Tour de l'adversaire" }}
           </p>
-          <UButton
-            v-if="isMainPhase && isSelfTurn"
-            size="sm"
-            :color="isAttachingDon ? 'primary' : 'neutral'"
-            :variant="isAttachingDon ? 'solid' : 'subtle'"
-            :disabled="!canAttachDon && !isAttachingDon"
-            @click="toggleAttachDon"
-          >
-            {{ isAttachingDon ? 'Annuler' : 'Attacher DON!!' }}
-          </UButton>
-          <UButton
-            v-if="isMainPhase && isSelfTurn"
-            size="sm"
-            :color="isSelectingAttacker || isChoosingTarget ? 'primary' : 'neutral'"
-            :variant="isSelectingAttacker || isChoosingTarget ? 'solid' : 'subtle'"
-            :disabled="!canDeclareAttack && !isSelectingAttacker && !isChoosingTarget"
-            @click="isChoosingTarget ? cancelTargetSelection() : toggleSelectingAttacker()"
-          >
-            {{ isSelectingAttacker || isChoosingTarget ? 'Annuler' : 'Attaquer' }}
-          </UButton>
           <UButton
             size="sm"
             color="primary"
@@ -822,9 +891,11 @@ function onSelfCharacterZoneDrop() {
           :transition-ghosts="selfTransitionGhosts"
           :revealed-hand-card-ids="selfRevealedHandCardIds"
           :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
-          :is-selectable="isAttachingDon || isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+          :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+          :leader-action-popover-items="selfLeaderActionPopoverItems"
           :selectable-leader="selectableSelfLeader"
           :selectable-character-ids="selectableSelfCharacterIds"
+          :character-action-popover-items="selfCharacterActionPopoverItems"
           :invalid-leader-pulse="invalidSelfLeaderPulse"
           :invalid-character-ids="invalidSelfCharacterIds"
           @card-hover="hoveredCard = $event"
