@@ -237,6 +237,29 @@ export class DuelRoom extends Room<DuelState> {
       client.view.add(card);
     }
 
+    // Backfill this newly-joined client's view with any already-public
+    // cards from a player who joined earlier (leader, DON!! deck), and
+    // broadcast this player's own public cards to everyone already
+    // connected -- broadcastCardView() only reaches clients present in
+    // `this.clients` at call time.
+    for (const existingPlayer of this.state.players.values()) {
+      if (existingPlayer.sessionId === player.sessionId) {
+        continue;
+      }
+
+      client.view.add(existingPlayer.zones.leader);
+
+      for (const donCard of existingPlayer.zones.donDeck) {
+        client.view.add(donCard);
+      }
+    }
+
+    this.broadcastCardView(player.zones.leader);
+
+    for (const donCard of player.zones.donDeck) {
+      this.broadcastCardView(donCard);
+    }
+
     this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
 
     if (this.state.players.size === this.maxClients) {
@@ -304,6 +327,21 @@ export class DuelRoom extends Room<DuelState> {
     this.syncZoneCounts(player);
 
     return player;
+  }
+
+  /**
+   * Makes a card's `@view()`-tagged fields (name, imageUrl, power, ...)
+   * visible to every currently-connected client. Colyseus 0.16's `StateView`
+   * only serializes `@view()` fields for card instances explicitly added to
+   * a given client's view, so any card entering a publicly-visible zone
+   * (leader, characters, stage, cost, trash, DON!! deck) must be added here
+   * -- otherwise it renders blank for clients it wasn't added to, including
+   * its own owner.
+   */
+  private broadcastCardView(card: DuelCard) {
+    for (const otherClient of this.clients) {
+      otherClient.view?.add(card);
+    }
   }
 
   private syncZoneCounts(player: DuelPlayer) {
@@ -994,6 +1032,7 @@ export class DuelRoom extends Room<DuelState> {
 
     defender.zones.hand.splice(found.index, 1);
     defender.zones.trash.unshift(found.card);
+    this.broadcastCardView(found.card);
     combat.counterPowerBonus += bonus;
 
     this.addLog(
@@ -1139,6 +1178,7 @@ export class DuelRoom extends Room<DuelState> {
 
     if (message.activate) {
       defender.zones.trash.unshift(card);
+      this.broadcastCardView(card);
       this.addLog(
         `${defender.displayName} active le Declenchement de ${card.name} et l'ecarte (effet a appliquer manuellement).`,
       );
@@ -1258,6 +1298,7 @@ export class DuelRoom extends Room<DuelState> {
       card.playedThisTurn = true;
       card.rested = false;
       player.zones.characters.push(card);
+      this.broadcastCardView(card);
       this.addLog(
         `${player.displayName} joue ${card.name} en zone Personnage.`,
       );
@@ -1268,9 +1309,11 @@ export class DuelRoom extends Room<DuelState> {
 
       card.rested = false;
       player.zones.stage = card;
+      this.broadcastCardView(card);
       this.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
     } else {
       player.zones.trash.unshift(card);
+      this.broadcastCardView(card);
       this.addLog(
         `${player.displayName} active ${card.name} (effet a appliquer manuellement) puis la defausse.`,
       );

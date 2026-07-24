@@ -379,6 +379,127 @@ describe('DuelRoom per-viewpoint serialization', () => {
     await bob.leave();
   });
 
+  it('reveals leader and DON!! cost-zone cards to both viewpoints as soon as they join (open zones)', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(() => alice.state.phase === 'mulligan');
+    await waitUntil(() => bob.state.phase === 'mulligan');
+
+    const aliceOwnLeader = alice.state.players.get(alice.sessionId)?.zones
+      .leader;
+    const aliceViewOfBobLeader = alice.state.players.get(bob.sessionId)?.zones
+      .leader;
+    const bobViewOfAliceLeader = bob.state.players.get(alice.sessionId)?.zones
+      .leader;
+
+    // the leader is an open zone (docs/spec.md §6): both clients must see
+    // its full identity, not just Alice seeing her own.
+    expect(aliceOwnLeader?.name).toBe('Leader');
+    expect(aliceViewOfBobLeader?.name).toBe('Leader');
+    expect(bobViewOfAliceLeader?.name).toBe('Leader');
+
+    const aliceViewOfBobDon = Array.from(
+      alice.state.players.get(bob.sessionId)?.zones.donDeck ?? [],
+    );
+
+    // DON!! cards are always public (identity is never secret information).
+    expect(aliceViewOfBobDon).toHaveLength(10);
+    expect(aliceViewOfBobDon.every((card) => card.name === 'DON!!')).toBe(true);
+
+    await alice.leave();
+    await bob.leave();
+  });
+
+  it('reveals a played Character to both viewpoints once it enters the (open) Character zone', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(() => alice.state.phase === 'mulligan');
+    await waitUntil(() => bob.state.phase === 'mulligan');
+
+    const startingSessionId = alice.state.startingPlayerSessionId;
+    const startingClient = startingSessionId === alice.sessionId ? alice : bob;
+    const otherClient = startingSessionId === alice.sessionId ? bob : alice;
+    const opponentClient = startingClient === alice ? bob : alice;
+
+    startingClient.send('chooseFirstOrSecond', { choice: 'first' });
+    await waitUntil(() => !!alice.state.firstPlayerSessionId);
+    startingClient.send('mulligan', { mulligan: false });
+    otherClient.send('mulligan', { mulligan: false });
+
+    await waitUntil(() => startingClient.state.phase === 'refresh');
+    startingClient.send('endPhase', {}); // refresh -> draw
+    startingClient.send('endPhase', {}); // draw -> don
+    startingClient.send('endPhase', {}); // don -> main
+    await waitUntil(() => startingClient.state.phase === 'main');
+
+    const handCard = startingClient.state.players
+      .get(startingClient.sessionId)
+      ?.zones.hand.find((card) => card.type === 'Character');
+    expect(handCard).toBeTruthy();
+
+    // Before it's played, the opponent must only ever see a hand count.
+    const opponentViewOfHandCardBefore = Array.from(
+      opponentClient.state.players.get(startingClient.sessionId)?.zones.hand ??
+        [],
+    ).find((card) => card.instanceId === handCard?.instanceId);
+    expect(opponentViewOfHandCardBefore?.name).toBeFalsy();
+
+    startingClient.send('playCard', { instanceId: handCard?.instanceId });
+
+    await waitUntil(
+      () =>
+        (startingClient.state.players.get(startingClient.sessionId)?.zones
+          .characters.length ?? 0) > 0,
+    );
+    await waitUntil(
+      () =>
+        (opponentClient.state.players.get(startingClient.sessionId)?.zones
+          .characters.length ?? 0) > 0,
+    );
+
+    const ownViewOfPlayedCharacter = startingClient.state.players
+      .get(startingClient.sessionId)
+      ?.zones.characters.find(
+        (card) => card.instanceId === handCard?.instanceId,
+      );
+    const opponentViewOfPlayedCharacter = opponentClient.state.players
+      .get(startingClient.sessionId)
+      ?.zones.characters.find(
+        (card) => card.instanceId === handCard?.instanceId,
+      );
+
+    expect(ownViewOfPlayedCharacter?.name).toBe('Character');
+    // the Character zone is an open zone: the opponent must see the full
+    // card identity (name/imageUrl/power), not a blank placeholder.
+    expect(opponentViewOfPlayedCharacter?.name).toBe('Character');
+    expect(opponentViewOfPlayedCharacter?.power).toBe(1000);
+
+    await alice.leave();
+    await bob.leave();
+  });
+
   it('lists a hosted room only when it carries a description (stage 9)', async () => {
     colyseus.sdk.auth.token = 'token-alice';
     const undescribed = await colyseus.sdk.create(
