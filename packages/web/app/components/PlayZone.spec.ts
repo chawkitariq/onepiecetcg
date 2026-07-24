@@ -202,6 +202,26 @@ describe('PlayZone transitions', () => {
     expect(leaderZone?.props('allowOverflow')).toBe(true)
   })
 
+  it('keeps deck and hand overflow visible so draw transitions can travel between both zones', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0,
+        revealHand: true
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const zones = wrapper.findAllComponents({ name: 'DuelZoneSlot' })
+    const deckZone = zones.find(component => component.props('label') === 'Deck')
+    const handZone = zones.find(component => component.props('label') === 'Main')
+    expect(deckZone?.props('allowOverflow')).toBe(true)
+    expect(handZone?.props('allowOverflow')).toBe(true)
+    expect(wrapper.html()).toContain('overflow-visible')
+  })
+
   it('renders ghosts for hidden-zone transitions from life, deck and DON!! deck', () => {
     const wrapper = mount(PlayZone, {
       props: {

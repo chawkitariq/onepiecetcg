@@ -630,6 +630,7 @@ function onCharacterZoneDrop(event: DragEvent) {
           :count="player.deckCount"
           :flipped="isAdversary"
           hug-card
+          allow-overflow
         >
           <div class="relative h-full">
             <AnimatePresence>
@@ -743,11 +744,12 @@ function onCharacterZoneDrop(event: DragEvent) {
         label="Main"
         :count="player.handCount"
         :flipped="isAdversary"
+        allow-overflow
         class="flex-1 min-h-0"
       >
         <div
           ref="handStack"
-          class="relative h-full w-full overflow-hidden"
+          class="relative h-full w-full overflow-visible"
         >
           <template v-if="revealHand">
             <motion.button
