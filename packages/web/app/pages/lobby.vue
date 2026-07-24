@@ -9,21 +9,29 @@ definePageMeta({
 })
 
 const createLobbySchema = z.object({
-  description: z.string().trim().min(1, 'La description est requise')
+  description: z.string().trim().min(1, 'Décris ta lobby pour la publier')
 })
 
 type CreateLobbySchema = z.output<typeof createLobbySchema>
 
-const colorDotClasses: Record<string, string> = {
-  Red: 'bg-red-500',
-  Green: 'bg-green-500',
-  Blue: 'bg-blue-500',
-  Purple: 'bg-purple-500',
-  Black: 'bg-neutral-900 dark:bg-neutral-100',
-  Yellow: 'bg-yellow-400'
+const joinCodeSchema = z.object({
+  code: z.string().trim().min(1, 'Entre un code de room')
+})
+
+type JoinCodeSchema = z.output<typeof joinCodeSchema>
+
+const colorTokens: Record<string, { dot: string, hex: string }> = {
+  Red: { dot: 'bg-red-500', hex: '#ef4444' },
+  Green: { dot: 'bg-green-500', hex: '#22c55e' },
+  Blue: { dot: 'bg-blue-500', hex: '#3b82f6' },
+  Purple: { dot: 'bg-purple-500', hex: '#a855f7' },
+  Black: { dot: 'bg-neutral-900 dark:bg-neutral-100', hex: '#a1a1aa' },
+  Yellow: { dot: 'bg-yellow-400', hex: '#eab308' }
 }
+const fallbackColorToken = { dot: 'bg-neutral-400', hex: '#8b5cf6' }
 
 const api = useApi()
+const toast = useToast()
 const { profile, refresh } = useSession()
 const { room, status, error, joinDuel, createPrivateRoom, joinPrivateRoom, leave } = useColyseus()
 
@@ -31,15 +39,17 @@ const decks = ref<Deck[]>([])
 const cards = ref<Card[]>([])
 const selectedDeckId = ref('')
 const deckSearch = ref('')
-const roomCodeInput = ref('')
+const deckPickerOpen = ref(false)
 const createdRoomCode = ref('')
 const roomVersion = ref(0)
 const loadingDecks = ref(false)
 const deckError = ref('')
 const createLobbyState = reactive<Partial<CreateLobbySchema>>({ description: '' })
+const joinCodeState = reactive<Partial<JoinCodeSchema>>({ code: '' })
 const describedRooms = ref<DescribedRoomSummary[]>([])
 const loadingDescribedRooms = ref(false)
 const describedRoomsError = ref('')
+const joiningRoomId = ref('')
 
 await refresh()
 await loadDecks()
@@ -54,7 +64,8 @@ const deckSummaries = computed(() => decks.value.map((deck) => {
   return {
     deck,
     leader,
-    cardCount
+    cardCount,
+    isComplete: cardCount === 50
   }
 }))
 
@@ -86,8 +97,20 @@ const logs = computed(() => {
   return colyseusArrayValues<DuelLogEntry>(room.value?.state.logs)
 })
 
+const accentToken = computed(() => colorTokens[selectedDeckSummary.value?.leader?.colors[0] ?? ''] ?? fallbackColorToken)
+const accentStyle = computed(() => ({ '--accent': accentToken.value.hex }))
+
+const canPlay = computed(() => Boolean(profile.value && selectedDeckId.value && selectedDeckSummary.value?.isComplete))
+const isBusy = computed(() => status.value === 'connecting')
+const isInRoom = computed(() => Boolean(room.value))
+
 function dotClass(leader: Card | null) {
-  return colorDotClasses[leader?.colors[0] ?? ''] ?? 'bg-neutral-400'
+  return (colorTokens[leader?.colors[0] ?? ''] ?? fallbackColorToken).dot
+}
+
+function selectDeck(deckId: string) {
+  selectedDeckId.value = deckId
+  deckPickerOpen.value = false
 }
 
 async function loadDecks() {
@@ -103,7 +126,7 @@ async function loadDecks() {
     cards.value = catalogResponse.cards
     selectedDeckId.value = selectedDeckId.value || deckResponse.decks[0]?.id || ''
   } catch {
-    deckError.value = 'Impossible de charger les decks sauvegardés.'
+    deckError.value = 'Impossible de charger tes decks sauvegardés.'
   } finally {
     loadingDecks.value = false
   }
@@ -117,7 +140,7 @@ async function loadDescribedRooms() {
     const response = await api<DescribedRoomListResponse>('/lobby/rooms')
     describedRooms.value = response.rooms
   } catch {
-    describedRoomsError.value = 'Impossible de charger les lobbies décrites.'
+    describedRoomsError.value = 'Impossible de charger les lobbies en ligne.'
   } finally {
     loadingDescribedRooms.value = false
   }
@@ -142,10 +165,19 @@ async function quickMatch() {
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })
+
+  if (error.value) {
+    toast.add({ title: 'Impossible de rejoindre la file', description: error.value, color: 'error' })
+
+    return
+  }
+
   watchRoom()
 }
 
-async function createRoom() {
+async function createRoom(event: FormSubmitEvent<JoinCodeSchema> | null) {
+  void event
+
   if (!profile.value?.user.id || !selectedDeckId.value) {
     return
   }
@@ -155,7 +187,13 @@ async function createRoom() {
     deckId: selectedDeckId.value
   })
 
-  createdRoomCode.value = joinedRoom?.roomId ?? ''
+  if (!joinedRoom) {
+    toast.add({ title: 'Impossible de créer la room', description: error.value, color: 'error' })
+
+    return
+  }
+
+  createdRoomCode.value = joinedRoom.roomId
   watchRoom()
 }
 
@@ -170,21 +208,36 @@ async function createDescribedRoom(event: FormSubmitEvent<CreateLobbySchema>) {
     description: event.data.description
   })
 
-  createdRoomCode.value = joinedRoom?.roomId ?? ''
+  if (!joinedRoom) {
+    toast.add({ title: 'Impossible de publier la lobby', description: error.value, color: 'error' })
+
+    return
+  }
+
+  createdRoomCode.value = joinedRoom.roomId
   createLobbyState.description = ''
+  toast.add({ title: 'Lobby publiée', description: 'Ta room est visible dans la liste.', color: 'success' })
   watchRoom()
   await loadDescribedRooms()
 }
 
-async function joinRoomByCode() {
-  if (!profile.value?.user.id || !selectedDeckId.value || !roomCodeInput.value) {
+async function joinRoomByCode(event: FormSubmitEvent<JoinCodeSchema>) {
+  if (!profile.value?.user.id || !selectedDeckId.value) {
     return
   }
 
-  await joinPrivateRoom(roomCodeInput.value.trim(), {
+  await joinPrivateRoom(event.data.code.trim(), {
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })
+
+  if (error.value) {
+    toast.add({ title: 'Room introuvable', description: 'Vérifie le code et réessaie.', color: 'error' })
+
+    return
+  }
+
+  joinCodeState.code = ''
   watchRoom()
 }
 
@@ -193,30 +246,51 @@ async function joinDescribedRoom(roomId: string) {
     return
   }
 
+  joiningRoomId.value = roomId
+
   await joinPrivateRoom(roomId, {
     displayName: profile.value.profile.displayName,
     deckId: selectedDeckId.value
   })
+
+  joiningRoomId.value = ''
+
+  if (error.value) {
+    toast.add({ title: 'Impossible de rejoindre', description: 'Cette lobby est peut-être déjà complète.', color: 'error' })
+
+    return
+  }
+
   watchRoom()
 }
 
 async function leaveRoom() {
   await leave()
   createdRoomCode.value = ''
-  roomCodeInput.value = ''
+  joinCodeState.code = ''
   createLobbyState.description = ''
+}
+
+async function copyRoomCode() {
+  await navigator.clipboard.writeText(createdRoomCode.value)
+  toast.add({ title: 'Code copié', color: 'success' })
 }
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-    <header>
-      <h1 class="text-2xl font-bold text-highlighted">
-        Choisissez votre deck
-      </h1>
-      <p class="mt-1 text-sm text-muted">
-        Sélectionnez un deck sauvegardé pour rejoindre une partie.
-      </p>
+  <div
+    class="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6"
+    :style="accentStyle"
+  >
+    <header class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-highlighted">
+          Salle d'attente
+        </h1>
+        <p class="mt-1 text-sm text-muted">
+          Choisis ton deck, puis lance une partie ou rejoins un adversaire.
+        </p>
+      </div>
     </header>
 
     <UAlert
@@ -228,192 +302,291 @@ async function leaveRoom() {
     />
 
     <UAlert
-      v-else-if="deckError || error"
+      v-else-if="deckError"
       icon="i-lucide-circle-alert"
       color="error"
-      :title="deckError || error"
+      :title="deckError"
     />
 
-    <div class="grid gap-6 lg:grid-cols-[22rem_1fr]">
-      <UCard :ui="{ body: 'p-0' }">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-default">
-          <p class="text-xs font-medium tracking-wide text-muted uppercase">
-            {{ decks.length }} decks sauvegardés
-          </p>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            :loading="loadingDecks"
-            @click="loadDecks"
+    <template v-else>
+      <!-- Deck picker: compact chip that expands into a searchable list -->
+      <UPopover v-model:open="deckPickerOpen">
+        <button
+          type="button"
+          class="flex w-full items-center gap-3 rounded-lg border border-default bg-elevated px-4 py-3 text-left transition-colors hover:border-(--accent)/60 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="loadingDecks || decks.length === 0"
+        >
+          <span
+            class="h-3 w-3 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-elevated"
+            :class="dotClass(selectedDeckSummary?.leader ?? null)"
+            :style="{ '--tw-ring-color': 'var(--accent)' }"
           />
-        </div>
 
-        <div class="px-4 py-3 border-b border-default">
-          <UInput
-            v-model="deckSearch"
-            icon="i-lucide-search"
-            placeholder="Rechercher un deck..."
-            class="w-full"
-          />
-        </div>
-
-        <ul class="max-h-112 overflow-y-auto">
-          <li
-            v-if="filteredDeckSummaries.length === 0"
-            class="px-4 py-6 text-center text-sm text-muted"
-          >
-            Aucun deck ne correspond à cette recherche.
-          </li>
-          <li
-            v-for="summary in filteredDeckSummaries"
-            :key="summary.deck.id"
-          >
-            <button
-              type="button"
-              class="flex w-full items-center gap-3 px-4 py-3 text-left border-b border-default last:border-b-0 hover:bg-elevated transition-colors"
-              :class="selectedDeckId === summary.deck.id ? 'bg-primary/10' : ''"
-              @click="selectedDeckId = summary.deck.id"
-            >
-              <span
-                class="h-2.5 w-2.5 shrink-0 rounded-full"
-                :class="dotClass(summary.leader)"
-              />
-              <span class="min-w-0 flex-1">
-                <span class="block truncate text-sm font-medium text-highlighted">
-                  {{ summary.deck.name }}
-                </span>
-                <span class="block truncate text-xs text-muted">
-                  {{ summary.leader?.name ?? 'Leader inconnu' }}
-                </span>
-              </span>
-              <span
-                class="shrink-0 text-xs font-medium"
-                :class="summary.cardCount === 50 ? 'text-muted' : 'text-error'"
-              >
-                {{ summary.cardCount }}/50
-              </span>
-              <URadio
-                :model-value="selectedDeckId === summary.deck.id"
-                :value="true"
-                tabindex="-1"
-              />
-            </button>
-          </li>
-        </ul>
-      </UCard>
-
-      <div class="flex flex-col gap-6">
-        <UCard v-if="selectedDeckSummary">
-          <div class="flex items-stretch gap-4">
+          <span class="min-w-0 flex-1">
+            <span class="block text-[0.65rem] font-medium tracking-wide text-muted uppercase">
+              Deck sélectionné
+            </span>
             <span
-              class="w-1 shrink-0 rounded-full"
-              :class="dotClass(selectedDeckSummary.leader)"
-            />
-            <div class="min-w-0 flex-1">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="truncate text-lg font-semibold text-highlighted">
-                    {{ selectedDeckSummary.deck.name }}
-                  </p>
-                  <p class="truncate text-sm text-muted">
-                    {{ selectedDeckSummary.leader?.name ?? 'Leader inconnu' }}
-                  </p>
-                </div>
-                <UButton
-                  :to="{ path: '/decks', query: { deckId: selectedDeckSummary.deck.id } }"
-                  color="primary"
-                  variant="link"
-                  size="sm"
-                >
-                  Modifier le deck
-                </UButton>
-              </div>
-              <UBadge
-                class="mt-3"
-                color="neutral"
-                variant="subtle"
+              v-if="selectedDeckSummary"
+              class="flex items-baseline gap-2"
+            >
+              <span class="truncate text-sm font-semibold text-highlighted">
+                {{ selectedDeckSummary.deck.name }}
+              </span>
+              <span class="shrink-0 text-xs text-muted">
+                {{ selectedDeckSummary.leader?.name ?? 'Leader inconnu' }}
+              </span>
+            </span>
+            <span
+              v-else
+              class="text-sm text-muted"
+            >
+              {{ loadingDecks ? 'Chargement des decks…' : 'Aucun deck sauvegardé' }}
+            </span>
+          </span>
+
+          <UBadge
+            v-if="selectedDeckSummary && !selectedDeckSummary.isComplete"
+            color="error"
+            variant="subtle"
+            size="sm"
+          >
+            {{ selectedDeckSummary.cardCount }}/50
+          </UBadge>
+
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="size-4 shrink-0 text-muted"
+          />
+        </button>
+
+        <template #content>
+          <div class="w-80 max-w-[90vw]">
+            <div class="border-b border-default p-2">
+              <UInput
+                v-model="deckSearch"
+                icon="i-lucide-search"
+                placeholder="Rechercher un deck…"
+                class="w-full"
+                autofocus
+              />
+            </div>
+
+            <ul class="max-h-80 overflow-y-auto p-1">
+              <li
+                v-if="filteredDeckSummaries.length === 0"
+                class="px-3 py-6 text-center text-sm text-muted"
               >
-                {{ selectedDeckSummary.cardCount }}/50 cartes
-              </UBadge>
+                Aucun deck ne correspond à cette recherche.
+              </li>
+              <li
+                v-for="summary in filteredDeckSummaries"
+                :key="summary.deck.id"
+              >
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-elevated"
+                  :class="selectedDeckId === summary.deck.id ? 'bg-elevated' : ''"
+                  @click="selectDeck(summary.deck.id)"
+                >
+                  <span
+                    class="h-2.5 w-2.5 shrink-0 rounded-full"
+                    :class="dotClass(summary.leader)"
+                  />
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-medium text-highlighted">
+                      {{ summary.deck.name }}
+                    </span>
+                    <span class="block truncate text-xs text-muted">
+                      {{ summary.leader?.name ?? 'Leader inconnu' }}
+                    </span>
+                  </span>
+                  <span
+                    class="shrink-0 text-xs font-medium"
+                    :class="summary.isComplete ? 'text-muted' : 'text-error'"
+                  >
+                    {{ summary.cardCount }}/50
+                  </span>
+                </button>
+              </li>
+            </ul>
+
+            <div class="border-t border-default p-2">
+              <UButton
+                :to="{ path: '/decks', query: selectedDeckId ? { deckId: selectedDeckId } : {} }"
+                icon="i-lucide-layers-3"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                block
+              >
+                Gérer mes decks
+              </UButton>
             </div>
           </div>
-        </UCard>
+        </template>
+      </UPopover>
 
-        <div class="grid gap-6 sm:grid-cols-2">
-          <UCard>
+      <UAlert
+        v-if="selectedDeckSummary && !selectedDeckSummary.isComplete"
+        icon="i-lucide-triangle-alert"
+        color="error"
+        variant="subtle"
+        title="Ce deck n'est pas jouable"
+        :description="`Il lui manque ${50 - selectedDeckSummary.cardCount} carte(s) pour atteindre 50. Complète-le avant de jouer.`"
+      >
+        <template #actions>
+          <UButton
+            :to="{ path: '/decks', query: { deckId: selectedDeckSummary.deck.id } }"
+            color="error"
+            variant="subtle"
+            size="xs"
+          >
+            Modifier le deck
+          </UButton>
+        </template>
+      </UAlert>
+
+      <UAlert
+        v-if="decks.length === 0 && !loadingDecks"
+        icon="i-lucide-layers-3"
+        color="neutral"
+        variant="subtle"
+        title="Tu n'as pas encore de deck"
+        description="Construis un deck de 50 cartes pour pouvoir rejoindre une partie."
+      >
+        <template #actions>
+          <UButton
+            to="/decks"
+            color="neutral"
+            variant="subtle"
+            size="xs"
+          >
+            Créer un deck
+          </UButton>
+        </template>
+      </UAlert>
+
+      <UAlert
+        v-if="error"
+        icon="i-lucide-circle-alert"
+        color="error"
+        :title="error"
+      />
+
+      <!-- Primary action: this is the one thing most players came here to do -->
+      <div
+        class="relative overflow-hidden rounded-xl border border-default bg-elevated p-6"
+        style="background: radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 60%)"
+      >
+        <p class="text-xs font-medium tracking-wide text-muted uppercase">
+          Partie rapide
+        </p>
+        <p class="mt-1 max-w-md text-sm text-muted">
+          Rejoins la file d'attente et affronte le premier adversaire disponible avec
+          <span class="font-medium text-highlighted">{{ selectedDeckSummary?.deck.name ?? 'ton deck' }}</span>.
+        </p>
+        <UButton
+          class="mt-4"
+          data-test="quick-match"
+          size="lg"
+          :ui="{ base: 'bg-(--accent) hover:bg-(--accent)/90 text-white disabled:bg-(--accent)/40' }"
+          :loading="isBusy"
+          :disabled="!canPlay || isInRoom"
+          @click="quickMatch"
+        >
+          Rechercher une partie
+          <template #trailing>
+            <UIcon name="i-lucide-arrow-right" />
+          </template>
+        </UButton>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs text-muted">
+        <div class="h-px flex-1 bg-default" />
+        ou rejoins un salon
+        <div class="h-px flex-1 bg-default" />
+      </div>
+
+      <div class="grid gap-6 sm:grid-cols-2">
+        <UCard :ui="{ body: 'p-0' }">
+          <div class="border-b border-default px-4 py-3">
             <p class="text-sm font-semibold text-highlighted">
-              Partie rapide
+              Code privé
             </p>
-            <p class="mt-1 text-sm text-muted">
-              Rejoignez la file d'attente et affrontez un adversaire choisi au hasard.
+            <p class="mt-1 text-xs text-muted">
+              Partage un code à un ami ou entre celui qu'on t'a donné.
             </p>
-            <UButton
-              class="mt-4"
-              color="neutral"
-              block
-              :loading="status === 'connecting'"
-              :disabled="!profile || !selectedDeckId || Boolean(room)"
-              @click="quickMatch"
-            >
-              Rechercher une partie
-            </UButton>
-          </UCard>
+          </div>
 
-          <UCard>
-            <p class="text-sm font-semibold text-highlighted">
-              Room privée
-            </p>
-            <p class="mt-1 text-sm text-muted">
-              Créez un code à partager ou entrez celui d'un ami.
-            </p>
-
+          <div class="flex flex-col gap-3 p-4">
             <UButton
-              class="mt-4"
               color="neutral"
+              variant="subtle"
+              icon="i-lucide-plus"
               block
-              :loading="status === 'connecting'"
-              :disabled="!profile || !selectedDeckId || Boolean(room)"
-              @click="createRoom"
+              :loading="isBusy"
+              :disabled="!canPlay || isInRoom"
+              @click="createRoom(null)"
             >
-              Créer un code de room
+              Générer un code
             </UButton>
 
             <div
               v-if="createdRoomCode"
-              class="mt-3 rounded-md bg-primary/10 px-3 py-2 text-center text-sm font-semibold tracking-widest text-primary"
+              class="flex items-center justify-between gap-2 rounded-md bg-primary/10 px-3 py-2"
             >
-              {{ createdRoomCode }}
+              <span class="font-mono text-sm font-semibold tracking-widest text-primary">
+                {{ createdRoomCode }}
+              </span>
+              <UButton
+                icon="i-lucide-copy"
+                color="primary"
+                variant="ghost"
+                size="xs"
+                @click="copyRoomCode"
+              />
             </div>
 
-            <div class="mt-3 flex gap-2">
-              <UInput
-                v-model="roomCodeInput"
-                placeholder="Code de room"
+            <UForm
+              :schema="joinCodeSchema"
+              :state="joinCodeState"
+              data-test="join-code-form"
+              class="flex gap-2"
+              @submit="joinRoomByCode"
+            >
+              <UFormField
+                name="code"
                 class="flex-1"
-                :disabled="!profile || !selectedDeckId || Boolean(room)"
-              />
+              >
+                <UInput
+                  v-model="joinCodeState.code"
+                  data-test="join-code-input"
+                  placeholder="Code de room"
+                  class="w-full"
+                  :disabled="!canPlay || isInRoom"
+                />
+              </UFormField>
               <UButton
+                type="submit"
                 color="neutral"
-                :loading="status === 'connecting'"
-                :disabled="!profile || !selectedDeckId || !roomCodeInput || Boolean(room)"
-                @click="joinRoomByCode"
+                :loading="isBusy"
+                :disabled="!canPlay || isInRoom"
               >
                 Rejoindre
               </UButton>
-            </div>
-          </UCard>
-        </div>
+            </UForm>
+          </div>
+        </UCard>
 
         <UCard :ui="{ body: 'p-0' }">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-default">
+          <div class="flex items-center justify-between gap-2 border-b border-default px-4 py-3">
             <div>
               <p class="text-sm font-semibold text-highlighted">
-                Lobbies décrites
+                Lobbies publiques
               </p>
-              <p class="text-xs text-muted">
-                Rooms publiques hébergées avec une description libre.
+              <p class="mt-1 text-xs text-muted">
+                Rooms ouvertes avec une description libre.
               </p>
             </div>
             <UButton
@@ -423,9 +596,7 @@ async function leaveRoom() {
               size="xs"
               :loading="loadingDescribedRooms"
               @click="loadDescribedRooms"
-            >
-              Actualiser
-            </UButton>
+            />
           </div>
 
           <UAlert
@@ -439,7 +610,8 @@ async function leaveRoom() {
           <UForm
             :schema="createLobbySchema"
             :state="createLobbyState"
-            class="flex gap-2 px-4 py-3 border-b border-default"
+            data-test="create-lobby-form"
+            class="flex gap-2 border-b border-default p-4"
             @submit="createDescribedRoom"
           >
             <UFormField
@@ -448,27 +620,30 @@ async function leaveRoom() {
             >
               <UInput
                 v-model="createLobbyState.description"
-                placeholder="Décrivez votre lobby (ex: Débutants bienvenus)"
+                data-test="lobby-description-input"
+                placeholder="Ex : Débutants bienvenus"
                 class="w-full"
-                :disabled="!profile || !selectedDeckId || Boolean(room)"
+                :disabled="!canPlay || isInRoom"
               />
             </UFormField>
             <UButton
               type="submit"
+              icon="i-lucide-plus"
               color="neutral"
-              :loading="status === 'connecting'"
-              :disabled="!profile || !selectedDeckId || Boolean(room)"
+              variant="subtle"
+              :loading="isBusy"
+              :disabled="!canPlay || isInRoom"
             >
-              Créer une lobby
+              Publier
             </UButton>
           </UForm>
 
-          <ul>
+          <ul class="max-h-64 overflow-y-auto">
             <li
-              v-if="describedRooms.length === 0 && !describedRoomsError"
+              v-if="describedRooms.length === 0 && !describedRoomsError && !loadingDescribedRooms"
               class="px-4 py-6 text-center text-sm text-muted"
             >
-              Aucune lobby décrite disponible pour le moment.
+              Aucune lobby ouverte pour l'instant. Sois le premier à en publier une.
             </li>
             <li
               v-for="describedRoom in describedRooms"
@@ -485,9 +660,10 @@ async function leaveRoom() {
               </span>
               <UButton
                 color="neutral"
+                variant="subtle"
                 size="sm"
-                :loading="status === 'connecting'"
-                :disabled="!profile || !selectedDeckId || Boolean(room)"
+                :loading="joiningRoomId === describedRoom.roomId"
+                :disabled="!canPlay || isInRoom"
                 @click="joinDescribedRoom(describedRoom.roomId)"
               >
                 Rejoindre
@@ -495,60 +671,66 @@ async function leaveRoom() {
             </li>
           </ul>
         </UCard>
+      </div>
 
-        <UCard v-if="room">
-          <template #header>
-            <div class="flex items-center justify-between gap-3">
+      <UCard v-if="room">
+        <template #header>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="relative flex size-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-(--accent) opacity-75 motion-reduce:animate-none" />
+                <span class="relative inline-flex size-2 rounded-full bg-(--accent)" />
+              </span>
               <p class="text-sm font-semibold text-highlighted">
                 Room {{ createdRoomCode || room.roomId }}
               </p>
-              <UButton
-                icon="i-lucide-log-out"
-                color="neutral"
-                variant="soft"
-                size="sm"
-                @click="leaveRoom"
-              >
-                Quitter
-              </UButton>
             </div>
-          </template>
-
-          <div class="flex flex-wrap gap-2">
-            <UBadge
-              v-for="player in players"
-              :key="player.sessionId"
-              :color="player.connected ? 'success' : 'warning'"
+            <UButton
+              icon="i-lucide-log-out"
+              color="neutral"
               variant="soft"
+              size="sm"
+              @click="leaveRoom"
             >
-              {{ player.displayName }} — {{ player.ready ? 'Prêt' : 'En attente' }}
-            </UBadge>
-            <p
-              v-if="players.length === 0"
-              class="text-sm text-muted"
-            >
-              En attente d'un adversaire...
-            </p>
+              Quitter
+            </UButton>
           </div>
+        </template>
 
-          <USeparator class="my-4" />
+        <div class="flex flex-wrap gap-2">
+          <UBadge
+            v-for="player in players"
+            :key="player.sessionId"
+            :color="player.connected ? 'success' : 'warning'"
+            variant="soft"
+          >
+            {{ player.displayName }} — {{ player.ready ? 'Prêt' : 'En attente' }}
+          </UBadge>
+          <p
+            v-if="players.length === 0"
+            class="text-sm text-muted"
+          >
+            En attente d'un adversaire...
+          </p>
+        </div>
 
-          <ul class="space-y-1 text-sm text-default">
-            <li
-              v-for="log in logs"
-              :key="log.id"
-            >
-              {{ log.message }}
-            </li>
-            <li
-              v-if="logs.length === 0"
-              class="text-muted"
-            >
-              Aucun événement.
-            </li>
-          </ul>
-        </UCard>
-      </div>
-    </div>
+        <USeparator class="my-4" />
+
+        <ul class="space-y-1 text-sm text-default">
+          <li
+            v-for="log in logs"
+            :key="log.id"
+          >
+            {{ log.message }}
+          </li>
+          <li
+            v-if="logs.length === 0"
+            class="text-muted"
+          >
+            Aucun événement.
+          </li>
+        </ul>
+      </UCard>
+    </template>
   </div>
 </template>
