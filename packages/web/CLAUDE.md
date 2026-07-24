@@ -65,6 +65,10 @@ Built on `@nuxt/ui` (v4) and Tailwind CSS v4. ESLint stylistic config in `nuxt.c
 
 For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/docs/getting-started/ai/llms-txt`. Start with `https://ui.nuxt.com/llms.txt` for component and pattern guidance; use `https://ui.nuxt.com/llms-full.txt` only when deeper implementation or migration detail is needed.
 
+## AI-oriented documentation
+
+For general Nuxt 4 work (routing, data fetching, SSR, plugins, runtime config, etc.), consult the AI-oriented documentation at `https://nuxt.com/docs/4.x/guide/ai/llms-txt`.
+
 ## Testing
 
 Vitest with `@nuxt/test-utils` (`environment: 'nuxt'` in `vitest.config.ts`) and `@vue/test-utils`, using `happy-dom`. Test files follow `*.spec.ts` colocated next to the code they test — currently composables and utils (e.g. `app/composables/useDuelRoom.spec.ts`, `app/utils/cardStack.spec.ts`) have specs; no component has a `*.spec.ts` yet.
