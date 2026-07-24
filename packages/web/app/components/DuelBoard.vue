@@ -53,6 +53,8 @@ const isSelectingAttacker = ref(false)
 const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
+const draggedHandCardInstanceId = ref<string | null>(null)
+const invalidHandCardIds = ref<string[]>([])
 
 const phaseSteps = ['refresh', 'draw', 'don', 'main', 'end'] as const
 const emptyPublicCards: PublicCard[] = []
@@ -235,6 +237,49 @@ function pulseCharacter(target: Ref<string[]>, instanceId: string) {
   }, 220)
 }
 
+function pulseHandCard(instanceId: string) {
+  invalidHandCardIds.value = Array.from(new Set([...invalidHandCardIds.value, instanceId]))
+
+  window.setTimeout(() => {
+    invalidHandCardIds.value = invalidHandCardIds.value.filter(current => current !== instanceId)
+  }, 220)
+}
+
+const draggableHandCardIds = computed(() => {
+  if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
+    return []
+  }
+
+  return self.value.hand
+    .filter(card => card.type === 'Character' && (card.cost ?? Number.POSITIVE_INFINITY) <= selfUntappedDonCount.value)
+    .map(card => card.instanceId)
+})
+
+function resetDraggedHandCard() {
+  draggedHandCardInstanceId.value = null
+}
+
+function requestPlayFromHand(instanceId: string) {
+  if (!isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
+    pulseHandCard(instanceId)
+    return
+  }
+
+  const card = self.value?.hand.find(candidate => candidate.instanceId === instanceId)
+
+  if (!card || card.type !== 'Character' || (card.cost ?? Number.POSITIVE_INFINITY) > selfUntappedDonCount.value) {
+    pulseHandCard(instanceId)
+    return
+  }
+
+  if (isSelfCharacterZoneFull.value) {
+    pendingCharacterInstanceId.value = instanceId
+    return
+  }
+
+  playCard(instanceId)
+}
+
 function cancelTargetSelection() {
   pendingAttackerInstanceId.value = null
   isSelectingAttacker.value = false
@@ -343,16 +388,7 @@ function cancelCounterSelection() {
 }
 
 function onSelfHandCardClick(_side: 0 | 1, instanceId: string) {
-  if (!isMainPhase.value || !isSelfTurn.value) {
-    return
-  }
-
-  if (isSelfCharacterZoneFull.value) {
-    pendingCharacterInstanceId.value = instanceId
-    return
-  }
-
-  playCard(instanceId)
+  requestPlayFromHand(instanceId)
 }
 
 function onSelfLeaderClick(_side: 0 | 1) {
@@ -413,6 +449,34 @@ function onSelfHandCardOrCounterClick(side: 0 | 1, instanceId: string) {
 
 function cancelDiscardSelection() {
   pendingCharacterInstanceId.value = null
+}
+
+function onSelfHandCardDragStart(_side: 0 | 1, instanceId: string) {
+  if (!draggableHandCardIds.value.includes(instanceId)) {
+    pulseHandCard(instanceId)
+    return
+  }
+
+  draggedHandCardInstanceId.value = instanceId
+}
+
+function onSelfHandCardDragEnd() {
+  resetDraggedHandCard()
+}
+
+function onInvalidHandCardDragAttempt(_side: 0 | 1, instanceId: string) {
+  resetDraggedHandCard()
+  pulseHandCard(instanceId)
+}
+
+function onSelfCharacterZoneDrop() {
+  if (!draggedHandCardInstanceId.value) {
+    return
+  }
+
+  const instanceId = draggedHandCardInstanceId.value
+  resetDraggedHandCard()
+  requestPlayFromHand(instanceId)
 }
 </script>
 
@@ -751,6 +815,10 @@ function cancelDiscardSelection() {
           :player="self"
           :side="0"
           reveal-hand
+          :draggable-hand-card-ids="draggableHandCardIds"
+          :invalid-hand-card-ids="invalidHandCardIds"
+          :dragged-hand-card-instance-id="draggedHandCardInstanceId"
+          :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress"
           :transition-ghosts="selfTransitionGhosts"
           :revealed-hand-card-ids="selfRevealedHandCardIds"
           :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
@@ -761,6 +829,10 @@ function cancelDiscardSelection() {
           :invalid-character-ids="invalidSelfCharacterIds"
           @card-hover="hoveredCard = $event"
           @hand-card-click="onSelfHandCardOrCounterClick"
+          @hand-card-drag-start="onSelfHandCardDragStart"
+          @hand-card-drag-end="onSelfHandCardDragEnd"
+          @invalid-hand-card-drag-attempt="onInvalidHandCardDragAttempt"
+          @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
           @leader-click="onSelfLeaderClick"
           @character-click="onSelfCharacterClick"
         />

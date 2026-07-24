@@ -118,6 +118,11 @@ Repris et adapté des versions précédentes :
 - Vue adverse : main visible uniquement en nombre de cartes (dos de carte), Vie visible en nombre de cartes restantes (face cachée), zones Personnage/Lieu/Coût visibles en détail (information publique dans le vrai jeu).
 - Indicateurs de phase et de tour partagés en temps réel entre les deux clients.
 - Notifications d'action adverse (ex: "L'adversaire déclare une attaque avec [carte]") pour garder les deux joueurs synchronisés sans avoir à rafraîchir.
+- **Drag and drop contextuel depuis la main pendant la phase Principale** : le joueur actif peut faire glisser une carte **Personnage** depuis sa main vers un emplacement valide de sa zone Personnage pour exprimer l'intention de jeu, au lieu de passer uniquement par un clic/bouton.
+  - Le glisser-déposer n'est autorisé que pendant **sa propre phase Principale**, uniquement pour une carte de type **Personnage**, et uniquement si l'action est structurellement légale côté serveur (coût payable, place disponible ou remplacement du 6e Personnage explicitement géré par l'UI).
+  - Le drop sur une zone invalide (phase incorrecte, mauvaise zone, carte non jouable, zone adverse, coût insuffisant) ne doit jamais déplacer la carte localement de façon optimiste : l'interface annule visuellement le geste et laisse l'état serveur inchangé.
+  - La zone Personnage du joueur actif doit signaler visuellement qu'elle accepte le drop pendant le drag, sans empiéter sur les autres zones du plateau ni casser la lisibilité mobile.
+  - Le drag and drop reste une **surcouche ergonomique** de l'action structurelle "jouer une carte depuis la main" : les validations de règles et le déplacement réel de la carte restent entièrement autoritaires côté serveur.
 
 ## 7. Animations et transitions fonctionnelles
 
@@ -192,6 +197,7 @@ Le plateau temps réel doit guider l'attention du joueur quand l'état change, s
 - Deux utilisateurs peuvent se retrouver en partie via matchmaking aléatoire ou via un code de room partagé.
 - Un utilisateur peut héberger une lobby publique avec une description libre ; cette lobby est visible avec sa description par les autres utilisateurs dans un bloc dédié de l'écran `/room`, rafraîchissable manuellement, et un autre utilisateur peut la rejoindre depuis cette liste.
 - Une partie se déroule en temps réel avec information cachée réellement respectée côté serveur (main et Vie adverses non exposées côté client).
+- Pendant sa phase Principale, le joueur actif peut jouer un Personnage depuis sa main en le glissant-déposant dans sa zone Personnage ; hors de ce contexte, le geste est refusé visuellement et aucun état local n'entre en contradiction avec le serveur.
 - Le combat est résolu avec ciblage réel validé côté serveur ; Blocage et Contre restent déclaratifs (le joueur les applique lui-même, sans vérification du texte de la carte par le serveur).
 - Toutes les cartes du catalogue restent jouables avec leurs stats de base (coût, puissance, contre) ; leur texte d'effet est affiché mais jamais appliqué automatiquement, quel que soit le set.
 - La partie se termine correctement sur Vie à zéro ou deck-out, avec gestion propre d'une déconnexion temporaire d'un joueur.

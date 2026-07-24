@@ -235,4 +235,90 @@ describe('PlayZone transitions', () => {
 
     expect(animatedHandCard?.attributes('data-animate')).toBeUndefined()
   })
+
+  it('emits a drag start for a draggable hand card and populates the drag data payload', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0,
+        revealHand: true,
+        draggableHandCardIds: ['hand-a']
+      },
+      global: {
+        stubs: {
+          UTooltip: tooltipStub
+        }
+      }
+    })
+
+    const setData = vi.fn()
+    const handCard = wrapper.findAll('button')
+      .find(node => node.attributes('data-layout-id') === 'hand-a')
+
+    await handCard?.trigger('dragstart', {
+      dataTransfer: {
+        setData,
+        effectAllowed: ''
+      }
+    })
+
+    expect(setData).toHaveBeenCalledWith('text/plain', 'hand-a')
+    expect(wrapper.emitted('handCardDragStart')).toEqual([[0, 'hand-a']])
+  })
+
+  it('rejects a drag attempt for a non-draggable hand card', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0,
+        revealHand: true
+      },
+      global: {
+        stubs: {
+          UTooltip: tooltipStub
+        }
+      }
+    })
+
+    const handCard = wrapper.findAll('button')
+      .find(node => node.attributes('data-layout-id') === 'hand-a')
+
+    await handCard?.trigger('dragstart', {
+      dataTransfer: {
+        setData: vi.fn(),
+        effectAllowed: ''
+      }
+    })
+
+    expect(wrapper.emitted('invalidHandCardDragAttempt')).toEqual([[0, 'hand-a']])
+  })
+
+  it('emits a drop event when a dragged hand card is released over the character zone', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0,
+        revealHand: true,
+        draggedHandCardInstanceId: 'hand-a',
+        canDropOnCharacterZone: true
+      },
+      global: {
+        stubs: {
+          UTooltip: tooltipStub
+        }
+      }
+    })
+
+    const characterZone = wrapper.get('[data-drop-zone="character"]')
+
+    await characterZone.trigger('dragenter')
+    await characterZone.trigger('dragover', {
+      dataTransfer: {
+        dropEffect: 'none'
+      }
+    })
+    await characterZone.trigger('drop')
+
+    expect(wrapper.emitted('handCardDropOnCharacters')).toEqual([[0]])
+  })
 })

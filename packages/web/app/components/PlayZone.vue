@@ -31,6 +31,10 @@ const props = defineProps<{
   selectableCharacterIds?: string[]
   invalidLeaderPulse?: boolean
   invalidCharacterIds?: string[]
+  draggableHandCardIds?: string[]
+  invalidHandCardIds?: string[]
+  draggedHandCardInstanceId?: string | null
+  canDropOnCharacterZone?: boolean
   transitionGhosts?: TransitionGhost[]
   revealedHandCardIds?: string[]
 }>()
@@ -45,6 +49,8 @@ const {
   targetableLeader,
   selectableLeader,
   invalidLeaderPulse,
+  draggedHandCardInstanceId,
+  canDropOnCharacterZone,
   transitionGhosts,
   revealedHandCardIds
 } = toRefs(props)
@@ -62,6 +68,10 @@ const emit = defineEmits<{
   characterClick: [side: 0 | 1, instanceId: string]
   stageClick: [side: 0 | 1]
   handCardClick: [side: 0 | 1, instanceId: string]
+  handCardDragStart: [side: 0 | 1, instanceId: string]
+  handCardDragEnd: [side: 0 | 1, instanceId: string]
+  invalidHandCardDragAttempt: [side: 0 | 1, instanceId: string]
+  handCardDropOnCharacters: [side: 0 | 1]
   cardHover: [card: { imageUrl: string, alt?: string } | null]
 }>()
 
@@ -75,6 +85,8 @@ const lifeGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.
 const deckGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'deck') ?? [])
 const donDeckGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'donDeck') ?? [])
 const reducedMotion = usePreferredReducedMotion()
+const isCharacterZoneDraggedOver = ref(false)
+const characterZoneDragDepth = ref(0)
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -145,6 +157,14 @@ function isCharacterInvalid(instanceId: string): boolean {
   return props.invalidCharacterIds?.includes(instanceId) ?? false
 }
 
+function isHandCardDraggable(instanceId: string): boolean {
+  return props.draggableHandCardIds?.includes(instanceId) ?? false
+}
+
+function isHandCardInvalid(instanceId: string): boolean {
+  return props.invalidHandCardIds?.includes(instanceId) ?? false
+}
+
 function isRevealedHandCard(instanceId: string): boolean {
   return revealedHandCardIds.value?.includes(instanceId) ?? false
 }
@@ -159,6 +179,82 @@ function handRevealAnimation(instanceId: string) {
     scale: [0.94, 1],
     filter: ['brightness(1.16)', 'brightness(1)']
   }
+}
+
+const isCharacterZoneDropTargetActive = computed(() =>
+  Boolean(
+    canDropOnCharacterZone.value
+    && draggedHandCardInstanceId.value
+    && isCharacterZoneDraggedOver.value
+  )
+)
+
+watch(draggedHandCardInstanceId, (nextDraggedCard) => {
+  if (nextDraggedCard) {
+    return
+  }
+
+  isCharacterZoneDraggedOver.value = false
+  characterZoneDragDepth.value = 0
+})
+
+function onHandCardDragStart(instanceId: string, event: DragEvent) {
+  if (!isHandCardDraggable(instanceId)) {
+    event.preventDefault()
+    emit('invalidHandCardDragAttempt', side.value, instanceId)
+    return
+  }
+
+  event.dataTransfer?.setData('text/plain', instanceId)
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+  emit('handCardDragStart', side.value, instanceId)
+}
+
+function onHandCardDragEnd(instanceId: string) {
+  emit('handCardDragEnd', side.value, instanceId)
+}
+
+function onCharacterZoneDragEnter() {
+  if (!canDropOnCharacterZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  characterZoneDragDepth.value += 1
+  isCharacterZoneDraggedOver.value = true
+}
+
+function onCharacterZoneDragLeave() {
+  if (!canDropOnCharacterZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  characterZoneDragDepth.value = Math.max(0, characterZoneDragDepth.value - 1)
+  isCharacterZoneDraggedOver.value = characterZoneDragDepth.value > 0
+}
+
+function onCharacterZoneDragOver(event: DragEvent) {
+  if (!canDropOnCharacterZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+  isCharacterZoneDraggedOver.value = true
+}
+
+function onCharacterZoneDrop(event: DragEvent) {
+  if (!canDropOnCharacterZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  characterZoneDragDepth.value = 0
+  isCharacterZoneDraggedOver.value = false
+  emit('handCardDropOnCharacters', side.value)
 }
 </script>
 
@@ -204,8 +300,16 @@ function handRevealAnimation(instanceId: string) {
         <DuelZoneSlot
           label="Character"
           :flipped="isAdversary"
+          :class="isCharacterZoneDropTargetActive ? 'border-success bg-success/5 ring-2 ring-success/70' : ''"
         >
-          <div class="flex justify-center items-center gap-2 h-full">
+          <div
+            class="flex h-full items-center justify-center gap-2 transition-colors duration-150"
+            data-drop-zone="character"
+            @dragenter="onCharacterZoneDragEnter"
+            @dragleave="onCharacterZoneDragLeave"
+            @dragover="onCharacterZoneDragOver"
+            @drop="onCharacterZoneDrop"
+          >
             <motion.button
               v-for="character in player.characters"
               :key="character.instanceId"
@@ -427,14 +531,21 @@ function handRevealAnimation(instanceId: string) {
               v-for="(card, index) in player.hand"
               :key="card.instanceId"
               type="button"
+              draggable="true"
               layout
               :layout-id="card.instanceId"
               :initial="false"
               :animate="handRevealAnimation(card.instanceId)"
               :transition="{ duration: 0.22, ease: 'easeOut' }"
               class="absolute top-0 h-full transition-transform duration-150 ease-out hover:-translate-y-4 hover:z-50 focus-visible:-translate-y-4 focus-visible:z-50"
+              :class="[
+                isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
+                isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
+              ]"
               :style="stackedCardStyle(index, player.hand.length, handStackSize, { centered: true })"
               @click="emit('handCardClick', side, card.instanceId)"
+              @dragstart="onHandCardDragStart(card.instanceId, $event)"
+              @dragend="onHandCardDragEnd(card.instanceId)"
               @mouseenter="onCardHover(card.imageUrl)"
               @mouseleave="onCardHover(null)"
             >

@@ -292,11 +292,11 @@ Correctif notable : un test manuel à deux onglets navigateur (deux comptes rée
 - Les dégâts sur la Vie ne révèlent la carte qu'au défenseur.
 - La partie se termine correctement sur Vie vide plus dégât.
 
-## Étape 9 — Matchmaking et lobby
+## Étape 10 — Matchmaking et lobby
 
 Objectif : permettre aux joueurs de démarrer des parties via file publique ou code privé.
 
-État : réalisé et audité. La file aléatoire (`joinOrCreate`) et les rooms par code (`create`/`joinById`) existaient déjà côté room `duel` (étape 5) ; l'ajout de l'étape 9 est la lobby décrite. `DuelRoom.onCreate` accepte une `description` optionnelle dans les options de création et appelle `this.setMetadata({ description })` (`packages/api/src/realtime/duel.room.ts`) sans jamais l'interpréter ; les rooms sans description restent des rooms privées/rapides ordinaires, invisibles de la liste. `packages/api/src/realtime/lobby.ts` expose `listDescribedDuelRooms()` (interrogeant `matchMaker.query({ name: 'duel' })`, filtré sur non verrouillée, non complète, et `metadata.description` non vide) consommé par `GET /lobby/rooms` (`LobbyController`, protégé par `AuthGuard`). Le cycle de vie natif de Colyseus (verrouillage à 2 joueurs via `initializeGame()`, suppression du listing à la déconnexion/dispose) suffit à faire disparaître une room décrite dès qu'elle est complète ou abandonnée, sans nettoyage manuel supplémentaire. Côté frontend, `packages/web/app/pages/room.vue` ajoute un champ de description optionnel à la création de room privée et un bloc dédié "Lobbies décrites" (description, occupation, bouton rejoindre, rafraîchissement manuel via `GET /lobby/rooms`). Couvert par 3 tests d'intégration deux-sockets sur le vrai transport Colyseus dans `duel-room-serialization.spec.ts` (apparition uniquement si décrite, disparition une fois complète, disparition une fois abandonnée), et vérifié manuellement en navigateur avec trois comptes de test isolés : hébergement décrit, apparition après rafraîchissement manuel chez un autre utilisateur, jonction depuis la liste, puis disparition de la liste une fois la room complète — la file aléatoire (`joinOrCreate`) reste elle non listée comme attendu.
+État : réalisé et audité. La file aléatoire (`joinOrCreate`) et les rooms par code (`create`/`joinById`) existaient déjà côté room `duel` (étape 5) ; l'ajout de cette étape 10 est la lobby décrite. `DuelRoom.onCreate` accepte une `description` optionnelle dans les options de création et appelle `this.setMetadata({ description })` (`packages/api/src/realtime/duel.room.ts`) sans jamais l'interpréter ; les rooms sans description restent des rooms privées/rapides ordinaires, invisibles de la liste. `packages/api/src/realtime/lobby.ts` expose `listDescribedDuelRooms()` (interrogeant `matchMaker.query({ name: 'duel' })`, filtré sur non verrouillée, non complète, et `metadata.description` non vide) consommé par `GET /lobby/rooms` (`LobbyController`, protégé par `AuthGuard`). Le cycle de vie natif de Colyseus (verrouillage à 2 joueurs via `initializeGame()`, suppression du listing à la déconnexion/dispose) suffit à faire disparaître une room décrite dès qu'elle est complète ou abandonnée, sans nettoyage manuel supplémentaire. Côté frontend, `packages/web/app/pages/room.vue` ajoute un champ de description optionnel à la création de room privée et un bloc dédié "Lobbies décrites" (description, occupation, bouton rejoindre, rafraîchissement manuel via `GET /lobby/rooms`). Couvert par 3 tests d'intégration deux-sockets sur le vrai transport Colyseus dans `duel-room-serialization.spec.ts` (apparition uniquement si décrite, disparition une fois complète, disparition une fois abandonnée), et vérifié manuellement en navigateur avec trois comptes de test isolés : hébergement décrit, apparition après rafraîchissement manuel chez un autre utilisateur, jonction depuis la liste, puis disparition de la liste une fois la room complète — la file aléatoire (`joinOrCreate`) reste elle non listée comme attendu.
 
 ### Backend
 
@@ -323,7 +323,7 @@ Objectif : permettre aux joueurs de démarrer des parties via file publique ou c
 - 🆕 Un utilisateur peut héberger une lobby avec une description ; celle-ci apparaît, avec sa description, dans le bloc dédié de `/room` chez un autre utilisateur qui rafraîchit la liste, et ce dernier peut la rejoindre depuis cette entrée.
 - 🆕 Une lobby décrite disparaît de la liste une fois complète (2 joueurs) ou abandonnée.
 
-## Étape 10 — Finition MVP
+## Étape 11 — Finition MVP
 
 Objectif : rendre l'expérience complète, robuste et testable.
 
@@ -347,6 +347,30 @@ Objectif : rendre l'expérience complète, robuste et testable.
 - Les commandes de build, lint et typecheck passent pour les packages concernés.
 - Une partie complète peut être jouée de bout en bout entre deux utilisateurs.
 - Les critères d'acceptation de `docs/spec.md` sont tous couverts.
+
+## Étape 12 — Drag and drop main vers zone Personnage
+
+Objectif : ajouter une interaction directe de glisser-déposer pour jouer un Personnage depuis la main pendant la phase Principale, sans sortir du modèle d'autorité serveur.
+
+### Frontend
+
+- Ajouter une interaction de drag and drop depuis la main du joueur actif vers sa zone Personnage.
+- Limiter le démarrage du drag aux cartes de type Personnage jouables dans le contexte courant, ou afficher immédiatement un refus visuel si la carte n'est pas éligible.
+- Mettre en évidence la zone Personnage du joueur actif comme cible de drop uniquement pendant sa phase Principale.
+- Préserver le comportement existant de clic comme solution de repli, pour clavier, mobile ou en cas d'échec du drag.
+- Gérer le cas de la 6e carte Personnage via le même flux que l'action existante de remplacement obligatoire, sans contourner la sélection de la carte à défausser.
+- Annuler proprement le geste si le drop a lieu hors de la zone valide, sans déplacer la carte de façon optimiste dans l'état local.
+
+### Backend
+
+- Réutiliser la validation existante de `playCard` : type de carte, phase active, joueur actif, coût payable, limites de zone et remplacement éventuel.
+- Continuer à rejeter côté serveur toute tentative hors phase Principale ou structurellement invalide, même si le client a autorisé le drag.
+
+### Validation
+
+- En phase Principale, glisser-déposer un Personnage depuis la main vers la zone Personnage déclenche bien l'action de jeu normale et aboutit au même état final qu'un clic.
+- Hors phase Principale, avec une carte non-Personnage, avec un coût insuffisant ou vers une mauvaise zone, le drag and drop n'introduit aucun état local incohérent et l'action n'est pas exécutée.
+- Le flux reste utilisable sur mobile et au clavier grâce au fallback existant sans drag and drop.
 
 ## Hors périmètre à ne pas implémenter en v1
 
