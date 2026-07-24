@@ -28,6 +28,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/lint-on-save.mjs",
+            "timeout": 30,
+            "statusMessage": "Linting affected file..."
+          },
+          {
+            "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-on-save.mjs",
             "timeout": 60,
             "statusMessage": "Typechecking affected package..."
