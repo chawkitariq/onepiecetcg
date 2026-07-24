@@ -10,6 +10,14 @@
       "env": {
         "DATABASE_URI": "postgresql://onepiecetcg:onepiecetcg@localhost:5432/onepiecetcg"
       }
+    },
+    "nuxt-ui": {
+      "type": "http",
+      "url": "https://ui.nuxt.com/mcp"
+    },
+    "better-auth": {
+      "type": "http",
+      "url": "https://mcp.better-auth.com/mcp"
     }
   }
 }
