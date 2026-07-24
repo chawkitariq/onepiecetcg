@@ -135,7 +135,7 @@ export class DuelRoom extends Room<DuelState> {
     return { userId: session.user.id };
   }
 
-  onCreate(options: DuelJoinOptions = {}) {
+  async onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
 
     const description = options.description
@@ -143,7 +143,7 @@ export class DuelRoom extends Room<DuelState> {
       .slice(0, MAX_DESCRIPTION_LENGTH);
 
     if (description) {
-      void this.setMetadata({ description });
+      await this.setMetadata({ description });
     }
 
     this.onMessage(
