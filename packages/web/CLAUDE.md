@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Package overview
 
-`packages/web` is the Nuxt 4 frontend of the One Piece TCG simulator. It is a **pure client**: it holds no authority logic. Authentication, deck validation, game rules, and all state-of-record live in `packages/api` (NestJS). This package only renders UI, calls the API, and connects to the realtime Colyseus server. See `docs/spec.md` (source of truth for product scope) and `docs/optcg-rules.md` (source of truth for gameplay rules) before making changes that touch game logic or product scope — read them from the repo root.
+`packages/web` is the Nuxt 4 frontend of the One Piece TCG simulator. It is a **pure client**: it holds no authority logic. Authentication, deck validation, game rules, and all state-of-record live in `packages/api` (NestJS). This package only renders UI, calls the API, and connects to the realtime Colyseus server. See `docs/spec.md` (source of truth for product scope) and `docs/optcg-rules.md` (source of truth for gameplay rules) before making changes that touch game logic or product scope — read them from the repo root. For anything gameplay-adjacent (targeting, phase gating, combat prompts), also cross-check against the primary rules sources `docs/rule_comprehensive.md` and `docs/rule_manual/`, since `docs/optcg-rules.md` is a condensed summary that can omit nuance present in the official rules.
 
 ## Commands
 

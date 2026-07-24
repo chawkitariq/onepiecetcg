@@ -35,6 +35,8 @@ Backend linting uses ESLint, `typescript-eslint`, and Prettier (see `packages/ap
 
 Before any change, addition, or update, read `docs/spec.md` and `docs/optcg-rules.md` to confirm the implementation still matches the product scope and One Piece TCG rules. Treat `docs/spec.md` as the source of truth for product specs, MVP architecture, and feature boundaries. Treat `docs/optcg-rules.md` as the source of truth for One Piece TCG gameplay rules and gameplay structure. Keep `docs/plan.md` coherent, non-divergent, and up to date with `docs/spec.md`; when the spec changes, update the plan in the same work if the implementation steps are affected.
 
+Always cross-check actual gameplay behavior (not just docs) against `docs/rule_comprehensive.md` (the full official Comprehensive Rules) and `docs/rule_manual/` (the official Rule Manual, as page images) whenever touching turn/phase logic, combat resolution, zone limits, or DON!! handling — `docs/optcg-rules.md` is a condensed derivative of these two and can omit nuance (e.g. the DON!! power bonus applying "during your turn" only is explicit in both primary sources but easy to miss from the summary alone).
+
 ### Dependencies
 
 Before adding any dependency, always ask the user for both permission and their opinion on the proposed dependency.
