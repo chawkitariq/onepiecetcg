@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import type { Card, CardSearchResponse, Deck, DeckListResponse, DescribedRoomListResponse, DescribedRoomSummary, DuelLogEntry, DuelPlayerView } from '@onepiecetcg/shared'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import * as z from 'zod'
 
 definePageMeta({
   layout: 'lobby',
   middleware: 'auth'
 })
+
+const createLobbySchema = z.object({
+  description: z.string().trim().min(1, 'La description est requise')
+})
+
+type CreateLobbySchema = z.output<typeof createLobbySchema>
 
 const colorDotClasses: Record<string, string> = {
   Red: 'bg-red-500',
@@ -28,7 +36,7 @@ const createdRoomCode = ref('')
 const roomVersion = ref(0)
 const loadingDecks = ref(false)
 const deckError = ref('')
-const roomDescription = ref('')
+const createLobbyState = reactive<Partial<CreateLobbySchema>>({ description: '' })
 const describedRooms = ref<DescribedRoomSummary[]>([])
 const loadingDescribedRooms = ref(false)
 const describedRoomsError = ref('')
@@ -144,12 +152,28 @@ async function createRoom() {
 
   const joinedRoom = await createPrivateRoom({
     displayName: profile.value.profile.displayName,
-    deckId: selectedDeckId.value,
-    description: roomDescription.value.trim() || undefined
+    deckId: selectedDeckId.value
   })
 
   createdRoomCode.value = joinedRoom?.roomId ?? ''
   watchRoom()
+}
+
+async function createDescribedRoom(event: FormSubmitEvent<CreateLobbySchema>) {
+  if (!profile.value?.user.id || !selectedDeckId.value) {
+    return
+  }
+
+  const joinedRoom = await createPrivateRoom({
+    displayName: profile.value.profile.displayName,
+    deckId: selectedDeckId.value,
+    description: event.data.description
+  })
+
+  createdRoomCode.value = joinedRoom?.roomId ?? ''
+  createLobbyState.description = ''
+  watchRoom()
+  await loadDescribedRooms()
 }
 
 async function joinRoomByCode() {
@@ -180,7 +204,7 @@ async function leaveRoom() {
   await leave()
   createdRoomCode.value = ''
   roomCodeInput.value = ''
-  roomDescription.value = ''
+  createLobbyState.description = ''
 }
 </script>
 
@@ -345,15 +369,8 @@ async function leaveRoom() {
               Créez un code à partager ou entrez celui d'un ami.
             </p>
 
-            <UInput
-              v-model="roomDescription"
-              placeholder="Description (optionnel, rend la room publique)"
-              class="mt-4 w-full"
-              :disabled="!profile || !selectedDeckId || Boolean(room)"
-            />
-
             <UButton
-              class="mt-3"
+              class="mt-4"
               color="neutral"
               block
               :loading="status === 'connecting'"
@@ -418,6 +435,33 @@ async function leaveRoom() {
             color="error"
             :title="describedRoomsError"
           />
+
+          <UForm
+            :schema="createLobbySchema"
+            :state="createLobbyState"
+            class="flex gap-2 px-4 py-3 border-b border-default"
+            @submit="createDescribedRoom"
+          >
+            <UFormField
+              name="description"
+              class="flex-1"
+            >
+              <UInput
+                v-model="createLobbyState.description"
+                placeholder="Décrivez votre lobby (ex: Débutants bienvenus)"
+                class="w-full"
+                :disabled="!profile || !selectedDeckId || Boolean(room)"
+              />
+            </UFormField>
+            <UButton
+              type="submit"
+              color="neutral"
+              :loading="status === 'connecting'"
+              :disabled="!profile || !selectedDeckId || Boolean(room)"
+            >
+              Créer une lobby
+            </UButton>
+          </UForm>
 
           <ul>
             <li
