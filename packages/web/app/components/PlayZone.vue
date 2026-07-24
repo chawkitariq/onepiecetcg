@@ -171,6 +171,7 @@ function handRevealAnimation(instanceId: string) {
           :count="player.lifeCount"
           :flipped="isAdversary"
           hug-card
+          allow-overflow
         >
           <div class="relative h-full">
             <AnimatePresence>
@@ -194,8 +195,9 @@ function handRevealAnimation(instanceId: string) {
               :key="index"
               :src="cardBackRegular"
               alt="Vie"
-              :class="index === 0 ? 'relative z-50' : 'absolute left-0 top-0'"
-              :style="index > 0 ? { top: `${index * 4}%`, zIndex: 50 - index } : undefined"
+              class="absolute left-0 top-0"
+              :class="index === 0 ? 'z-50' : ''"
+              :style="{ top: `${index * 20}px`, zIndex: 50 - index }"
             />
           </div>
         </DuelZoneSlot>
