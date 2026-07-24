@@ -12,6 +12,7 @@ import type {
   DeckValidation
 } from '@onepiecetcg/shared'
 import { exportDeckToText, normalizeDeckCards, parseDeckText } from '@onepiecetcg/shared'
+import { fromBuilderDraft, toBuilderDraft } from '../utils/deckBuilderDraft'
 import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 
 definePageMeta({
@@ -33,6 +34,18 @@ const search = ref('')
 const allFilter = '__all'
 const catalogFilterStorageKey = 'onepiecetcg:deck-builder:catalog-filters'
 const persistedCatalogFilters = useLocalStorage<PersistedCatalogFilters>(catalogFilterStorageKey, {})
+const builderStateStorageKey = 'onepiecetcg:deck-builder:state'
+// `useLocalStorage` infers the serializer from the *default* value's type,
+// and locks it in from then on -- a `null` default guesses "any" (which
+// serializes with String(), producing "[object Object]" for real writes),
+// so a JSON serializer must be passed explicitly instead of relying on
+// inference from a null default.
+const persistedBuilderState = useLocalStorage<unknown>(builderStateStorageKey, null, {
+  serializer: {
+    read: value => JSON.parse(value) as unknown,
+    write: value => JSON.stringify(value)
+  }
+})
 const selectedSet = ref(allFilter)
 const selectedType = ref<CardType | typeof allFilter>(allFilter)
 const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
@@ -111,6 +124,13 @@ onMounted(async () => {
   await refreshSession()
   await refreshDecks()
   restoreCatalogFilters()
+
+  // A ?deckId= query always wins (handled by the watcher below); only fall
+  // back to a locally persisted draft when the page was reached directly
+  // (e.g. a plain refresh on /decks with unsaved builder edits).
+  if (!route.query.deckId) {
+    restoreBuilderState()
+  }
 })
 
 const { data: catalogData, pending: catalogPending } = await useAsyncData(
@@ -194,6 +214,8 @@ watch(payload, () => {
 }, { deep: true, immediate: true })
 
 watch([search, selectedSet, selectedType, selectedColor, selectedCost], persistCatalogFilters)
+
+watch([selectedDeckId, deckName, leaderCardId, deckCards], persistBuilderState, { deep: true })
 
 watch(
   [() => route.query.deckId, savedDecks],
@@ -321,6 +343,7 @@ function resetBuilder() {
   leaderCardId.value = ''
   deckCards.value = []
   builderNotice.value = null
+  clearBuilderState()
 }
 
 async function maybeResetBuilder() {
@@ -440,6 +463,33 @@ function persistCatalogFilters() {
     color: selectedColor.value,
     cost: selectedCost.value
   }
+}
+
+function restoreBuilderState() {
+  const draft = fromBuilderDraft(persistedBuilderState.value)
+
+  if (!draft) {
+    return
+  }
+
+  selectedDeckId.value = draft.selectedDeckId
+  deckName.value = draft.deckName
+  leaderCardId.value = draft.leaderCardId
+  deckCards.value = draft.deckCards
+  selectedCard.value = cardById.value.get(draft.leaderCardId) ?? null
+}
+
+function persistBuilderState() {
+  persistedBuilderState.value = toBuilderDraft({
+    selectedDeckId: selectedDeckId.value,
+    deckName: deckName.value,
+    leaderCardId: leaderCardId.value,
+    deckCards: deckCards.value
+  })
+}
+
+function clearBuilderState() {
+  persistedBuilderState.value = null
 }
 
 function getCardQuantity(card: Card): number {
