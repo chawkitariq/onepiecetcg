@@ -277,14 +277,14 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     await disposableRoom._dispose();
   });
 
-  it('draws a card and places 2 DON!! once a player is past their own first turn', async () => {
+  it('draws a card and places 2 DON!! on the second player turn (only the game turn 1 is special)', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
     const access = asPrivateRoom(room);
     const firstClient = fakeClient(firstSessionId);
     const secondClient = fakeClient(secondSessionId);
 
-    access.handleEndPhase(firstClient); // draw (skipped, first player's first turn)
+    access.handleEndPhase(firstClient); // draw (skipped, game turn 1)
     access.handleEndPhase(firstClient); // don (1 only)
     access.handleEndPhase(firstClient); // main
     access.handleEndPhase(firstClient); // end
@@ -293,11 +293,18 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     expect(room.state.activePlayerSessionId).toBe(secondSessionId);
     expect(room.state.phase).toBe('refresh');
 
-    access.handleEndPhase(secondClient); // draw (skipped, second player's first turn)
-    access.handleEndPhase(secondClient); // don
+    access.handleEndPhase(secondClient); // draw, turn 2: second player draws normally
+    const secondPlayer = room.state.players.get(secondSessionId);
+    expect(secondPlayer?.handCount).toBe(5 + 1);
+
+    access.handleEndPhase(secondClient); // don, 2 this time
+    expect(
+      secondPlayer?.zones.cost.filter((card) => !card.rested),
+    ).toHaveLength(2);
+
     access.handleEndPhase(secondClient); // main
     access.handleEndPhase(secondClient); // end
-    access.handleEndPhase(secondClient); // ends turn -> first player's refresh (2nd turn)
+    access.handleEndPhase(secondClient); // ends turn -> first player's refresh (turn 3)
 
     access.handleEndPhase(firstClient); // draw, now past first turn
     const firstPlayer = room.state.players.get(firstSessionId);
@@ -322,11 +329,9 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
       player.zones.deck.splice(0, player.zones.deck.length);
     }
 
-    // First turn does not draw; force turn counter forward manually to
+    // Game turn 1 does not draw; force the turn counter forward manually to
     // exercise the draw-phase deck-out path directly.
-    if (player) {
-      player.hasTakenFirstTurn = true;
-    }
+    room.state.turn = 2;
 
     access.handleEndPhase(fakeClient(firstSessionId)); // draw phase now runs
 

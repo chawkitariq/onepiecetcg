@@ -613,7 +613,7 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    if (!player.hasTakenFirstTurn) {
+    if (this.state.turn === 1) {
       this.addLog(
         `${player.displayName} ne pioche pas lors de son premier tour.`,
       );
@@ -647,9 +647,7 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    const desired = player.hasTakenFirstTurn
-      ? DON_PER_TURN
-      : FIRST_TURN_DON_COUNT;
+    const desired = this.state.turn === 1 ? FIRST_TURN_DON_COUNT : DON_PER_TURN;
     const count = Math.min(desired, player.zones.donDeck.length);
 
     for (let index = 0; index < count; index += 1) {
