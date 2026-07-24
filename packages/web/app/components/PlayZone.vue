@@ -17,6 +17,11 @@ type StackedCardStyleOptions = {
   centered?: boolean
 }
 
+const COST_STACK_PEEK_PX = 18
+const FALLBACK_COST_STACK_WIDTH_PX = 240
+const FALLBACK_COST_STACK_HEIGHT_PX = 112
+const FALLBACK_COST_CARD_WIDTH_PX = 80
+
 type CharacterActionPopoverItem = {
   label: string
   icon?: string
@@ -102,12 +107,14 @@ const emit = defineEmits<{
 const life = computed(() => Array.from({ length: props.player.lifeCount }))
 const topTrash = computed(() => props.player.trash[0] ?? null)
 const hiddenHand = computed(() => Array.from({ length: props.player.handCount }))
-const costCardWidthRatio = computed(() => props.player.cost.some(card => card.rested) ? 1 : undefined)
 const costStackSize = useMeasuredStackSize('costStack')
 const handStackSize = useMeasuredStackSize('handStack')
 const lifeGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'life') ?? [])
 const deckGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'deck') ?? [])
 const donDeckGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'donDeck') ?? [])
+const untappedCostCards = computed(() => props.player.cost.filter(card => !card.rested))
+const restedCostCards = computed(() => props.player.cost.filter(card => card.rested))
+const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && restedCostCards.value.length > 0)
 const reducedMotion = usePreferredReducedMotion()
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
@@ -162,6 +169,43 @@ function stackedCardStyle(
 
   return {
     left: `${startPercent + index * offsetPercent}%`,
+    zIndex: index + 1
+  }
+}
+
+function costStackAreaSize(cardWidthRatio?: number) {
+  const size: StackContainerSize = {
+    width: isCostStackSplit.value
+      ? Math.max((costStackSize.width || FALLBACK_COST_STACK_WIDTH_PX) / 2, 0)
+      : (costStackSize.width || FALLBACK_COST_STACK_WIDTH_PX),
+    height: costStackSize.height || FALLBACK_COST_STACK_HEIGHT_PX
+  }
+
+  return size
+}
+
+function costStackStartOffset(cardCount: number, size: StackContainerSize, cardWidthRatio?: number) {
+  const ratio = cardWidthRatio ?? 5 / 7
+  const cardWidth = (size.height || FALLBACK_COST_STACK_HEIGHT_PX) * ratio || FALLBACK_COST_CARD_WIDTH_PX
+  const stackWidth = cardWidth + Math.max(cardCount - 1, 0) * COST_STACK_PEEK_PX
+
+  return (size.width - stackWidth) / 2
+}
+
+function costStackStyle(
+  index: number,
+  cardCount: number,
+  direction: 'left' | 'right',
+  cardWidthRatio?: number
+) {
+  const size = costStackAreaSize(cardWidthRatio)
+  const startOffset = costStackStartOffset(cardCount, size, cardWidthRatio)
+  const offset = size.width > 0
+    ? ((startOffset + index * COST_STACK_PEEK_PX) / size.width) * 100
+    : 0
+
+  return {
+    [direction]: `${offset}%`,
     zIndex: index + 1
   }
 }
@@ -692,27 +736,57 @@ function onCharacterZoneDrop(event: DragEvent) {
         <DuelZoneSlot
           label="Cost"
           :flipped="isAdversary"
+          allow-overflow
         >
           <div
             ref="costStack"
-            class="relative h-full w-full overflow-hidden"
+            class="relative h-full w-full overflow-visible"
           >
-            <motion.div
-              v-for="(don, index) in player.cost"
-              :key="don.instanceId"
-              layout
-              :layout-id="don.instanceId"
-              class="absolute top-0 h-full"
-              :style="stackedCardStyle(index, player.cost.length, costStackSize, { cardWidthRatio: costCardWidthRatio })"
-              :initial="false"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+            <div
+              data-cost-stack="untapped"
+              class="absolute inset-y-0 left-0"
+              :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
             >
-              <DuelCard
-                :src="donFront"
-                alt="DON!!"
-                :rotated="don.rested"
-              />
-            </motion.div>
+              <motion.div
+                v-for="(don, index) in untappedCostCards"
+                :key="don.instanceId"
+                layout
+                :layout-id="don.instanceId"
+                data-cost-state="untapped"
+                class="absolute top-0 h-full"
+                :style="costStackStyle(index, untappedCostCards.length, 'left')"
+                :initial="false"
+                :transition="{ duration: 0.22, ease: 'easeOut' }"
+              >
+                <DuelCard
+                  :src="donFront"
+                  alt="DON!!"
+                />
+              </motion.div>
+            </div>
+            <div
+              data-cost-stack="rested"
+              class="absolute inset-y-0 right-0"
+              :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
+            >
+              <motion.div
+                v-for="(don, index) in restedCostCards"
+                :key="don.instanceId"
+                layout
+                :layout-id="don.instanceId"
+                data-cost-state="rested"
+                class="absolute top-0 h-full"
+                :style="costStackStyle(index, restedCostCards.length, 'right', 1)"
+                :initial="false"
+                :transition="{ duration: 0.22, ease: 'easeOut' }"
+              >
+                <DuelCard
+                  :src="donFront"
+                  alt="DON!!"
+                  :rotated="true"
+                />
+              </motion.div>
+            </div>
           </div>
         </DuelZoneSlot>
         <DuelZoneSlot

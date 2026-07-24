@@ -141,6 +141,12 @@ function createPrivateCard(instanceId: string): PrivateCard {
   }
 }
 
+function extractDirectionalOffset(style: string, direction: 'left' | 'right') {
+  const match = style.match(new RegExp(`${direction}:\\s*(-?[0-9.]+)%`))
+
+  return match ? Number.parseFloat(match[1] ?? '0') : null
+}
+
 function createPlayer(overrides: Partial<DuelPlayerView> = {}): DuelPlayerView {
   return {
     sessionId: 'player-a',
@@ -242,6 +248,49 @@ describe('PlayZone transitions', () => {
       .map(node => node.attributes('data-layout-id'))
 
     expect(ghostIds).toEqual(expect.arrayContaining(['life-ghost', 'deck-ghost', 'don-ghost']))
+  })
+
+  it('renders untapped and rested DON!! as two opposite cost stacks', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-2', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-rested-1', { type: 'DON!!', cost: null, power: null, counter: null, rested: true }),
+            createPublicCard('don-rested-2', { type: 'DON!!', cost: null, power: null, counter: null, rested: true })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const zones = wrapper.findAllComponents({ name: 'DuelZoneSlot' })
+    const costZone = zones.find(component => component.props('label') === 'Cost')
+    const untappedCards = wrapper.findAll('[data-cost-state="untapped"]')
+    const restedCards = wrapper.findAll('[data-cost-state="rested"]')
+
+    expect(costZone?.props('allowOverflow')).toBe(true)
+    expect(wrapper.find('[data-cost-stack="untapped"]').exists()).toBe(true)
+    expect(wrapper.find('[data-cost-stack="rested"]').exists()).toBe(true)
+    expect(untappedCards).toHaveLength(2)
+    expect(restedCards).toHaveLength(2)
+    const untappedFirstOffset = extractDirectionalOffset(untappedCards[0]?.attributes('style') ?? '', 'left')
+    const untappedSecondOffset = extractDirectionalOffset(untappedCards[1]?.attributes('style') ?? '', 'left')
+    const restedFirstOffset = extractDirectionalOffset(restedCards[0]?.attributes('style') ?? '', 'right')
+    const restedSecondOffset = extractDirectionalOffset(restedCards[1]?.attributes('style') ?? '', 'right')
+
+    expect(untappedFirstOffset).not.toBeNull()
+    expect(untappedSecondOffset).not.toBeNull()
+    expect(restedFirstOffset).not.toBeNull()
+    expect(restedSecondOffset).not.toBeNull()
+    expect(untappedFirstOffset).not.toBe(untappedSecondOffset)
+    expect(restedFirstOffset).not.toBe(restedSecondOffset)
+    expect(untappedSecondOffset).toBeGreaterThan(untappedFirstOffset ?? 0)
+    expect(restedSecondOffset).toBeGreaterThan(restedFirstOffset ?? 0)
   })
 
   it('attaches the reveal animation to newly revealed hand cards', () => {
