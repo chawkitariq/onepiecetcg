@@ -105,6 +105,8 @@ function createFakeRoom(options: {
   combat?: FakeCombat
   send?: (type: string, message: unknown) => void
 }) {
+  let stateChangeListener: (() => void) | null = null
+
   return {
     sessionId: options.sessionId,
     state: {
@@ -118,7 +120,16 @@ function createFakeRoom(options: {
       logs: [],
       combat: options.combat ?? createFakeCombat()
     },
-    onStateChange: Object.assign(() => {}, { remove: () => {} }),
+    onStateChange: Object.assign(
+      (listener: () => void) => {
+        stateChangeListener = listener
+      },
+      { remove: () => { stateChangeListener = null } }
+    ),
+    /** Simulates a Colyseus ROOM_STATE_PATCH: @colyseus/schema mutates state.combat in place rather than replacing it. */
+    emitStatePatch() {
+      stateChangeListener?.()
+    },
     onMessage: () => {},
     send: options.send ?? (() => {})
   }
@@ -390,6 +401,40 @@ describe('useDuelRoom combat helpers (stage 8)', () => {
     const { canDeclareAttack } = useDuelRoom()
 
     expect(canDeclareAttack.value).toBe(false)
+  })
+
+  it('reflects a combat.step change patched onto the same schema instance in place (Colyseus mutates DuelCombat rather than replacing it)', () => {
+    const { room } = useColyseus()
+    const combat = createFakeCombat({
+      attackerSessionId: 'session-a',
+      attackerInstanceId: 'attacker-1',
+      defenderSessionId: 'session-b',
+      step: 'blocked'
+    })
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      combat
+    })
+    room.value = fakeRoom as never
+
+    const { isBlockingStep, isCounteringStep } = useDuelRoom()
+
+    expect(isBlockingStep.value).toBe(true)
+    expect(isCounteringStep.value).toBe(false)
+
+    // Mutate the same combat object in place, exactly like @colyseus/schema
+    // does on a real ROOM_STATE_PATCH, then emit the patch notification --
+    // no new combat object, just a changed field on the existing instance.
+    combat.step = 'countering'
+    fakeRoom.emitStatePatch()
+
+    expect(isBlockingStep.value).toBe(false)
+    expect(isCounteringStep.value).toBe(true)
   })
 
   it('identifies the attacker and defender roles from the wire combat', () => {

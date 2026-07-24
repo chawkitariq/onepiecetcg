@@ -298,7 +298,15 @@ export function useDuelRoom() {
       return null
     }
 
-    return wireCombat
+    // @colyseus/schema mutates the DuelCombat instance in place rather than
+    // replacing it on each patch, so returning wireCombat directly would
+    // keep the same object reference across patches -- Vue's computed
+    // dependency invalidation compares the returned value by reference, so
+    // downstream computeds reading combat.value?.step (isBlockingStep etc.)
+    // would never re-run even though the field they read actually changed.
+    // Spreading into a fresh plain object each time gives every patch a new
+    // reference, so it propagates correctly.
+    return { ...wireCombat }
   })
 
   const isCombatInProgress = computed(() => combat.value !== null)
