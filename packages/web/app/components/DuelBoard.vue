@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
+import type { CardColor, DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 
@@ -80,7 +80,10 @@ type ScrollAreaInstance = {
   $el?: HTMLElement
 }
 
-const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
+type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
+  & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
+
+const hoveredCard = ref<HoveredDuelCard | null>(null)
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 const pendingCharacterInstanceId = ref<string | null>(null)
 const isSelectingAttacker = ref(false)
@@ -160,6 +163,23 @@ const selfTransitionGhosts = ref<TransitionGhost[]>([])
 const opponentTransitionGhosts = ref<TransitionGhost[]>([])
 const selfRevealedHandCardIds = ref<string[]>([])
 
+const hoveredCardRows = computed(() => {
+  if (!hoveredCard.value) {
+    return []
+  }
+
+  return [
+    ['Numero', hoveredCard.value.number],
+    ['Type', hoveredCard.value.type],
+    ['Couleur', hoveredCard.value.colors.join(', ') || 'Aucune'],
+    ['Cout', hoveredCard.value.cost ?? '-'],
+    ['Puissance', hoveredCard.value.power ?? '-'],
+    ['Contre', hoveredCard.value.counter ?? '-'],
+    ['Vie', hoveredCard.value.life ?? '-'],
+    ['Declenchement', hoveredCard.value.trigger ?? '-']
+  ]
+})
+
 function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) {
   if (ghosts.length === 0) {
     return
@@ -235,6 +255,19 @@ function formatLogTime(createdAt: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function getCardColorStyle(color: CardColor) {
+  const palette: Record<CardColor, string> = {
+    Red: 'border-color: color-mix(in oklab, var(--ui-error) 45%, transparent); color: var(--ui-error);',
+    Green: 'border-color: color-mix(in oklab, var(--ui-success) 45%, transparent); color: var(--ui-success);',
+    Blue: 'border-color: color-mix(in oklab, var(--ui-info) 45%, transparent); color: var(--ui-info);',
+    Purple: 'border-color: color-mix(in oklab, var(--ui-secondary) 45%, transparent); color: var(--ui-secondary);',
+    Black: 'border-color: color-mix(in oklab, var(--ui-text-dimmed) 55%, transparent); color: var(--ui-text-highlighted);',
+    Yellow: 'border-color: color-mix(in oklab, var(--ui-warning) 45%, transparent); color: var(--ui-warning);'
+  }
+
+  return palette[color]
 }
 
 watch(() => logs.value.length, async (newLength, previousLength) => {
@@ -1009,25 +1042,115 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
       <template #right>
         <UCard
           class="h-full overflow-hidden"
-          :ui="{ body: 'flex flex-col gap-2 h-full min-h-0 overflow-hidden' }"
+          :ui="{ root: 'h-full flex flex-col overflow-hidden', body: 'min-h-0 flex-1 overflow-hidden' }"
         >
-          <div class="flex flex-col gap-2 h-full min-h-0">
-            <p class="text-sm font-medium text-primary">
-              Aperçu
-            </p>
-            <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+          <template #header>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h2 class="text-base font-semibold text-highlighted">
+                    Details
+                  </h2>
+                  <p class="text-sm text-muted">
+                    {{ hoveredCard?.number ?? 'Aucune carte' }}
+                  </p>
+                </div>
+                <UBadge
+                  v-if="hoveredCard"
+                  color="neutral"
+                  variant="subtle"
+                >
+                  {{ hoveredCard.type }}
+                </UBadge>
+              </div>
+            </div>
+          </template>
+
+          <div
+            v-if="hoveredCard"
+            class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
+          >
+            <div class="w-full aspect-[4/5]">
               <img
-                v-if="hoveredCard"
+                v-if="hoveredCard.imageUrl"
                 :src="hoveredCard.imageUrl"
-                :alt="hoveredCard.alt ?? ''"
-                class="h-full max-w-full object-contain rounded"
+                :alt="hoveredCard.name"
+                class="w-full rounded-lg border border-muted object-cover"
               >
-              <p
+              <div
                 v-else
-                class="text-xs text-muted text-center px-2"
+                class="flex h-full w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
               >
-                Survolez une carte pour l'agrandir ici
-              </p>
+                <UIcon
+                  name="i-lucide-image-off"
+                  class="size-8"
+                />
+              </div>
+            </div>
+
+            <div class="flex min-h-0 min-w-0 flex-col gap-4">
+              <div class="min-w-0 space-y-3">
+                <div>
+                  <h3 class="text-base font-semibold text-highlighted">
+                    {{ hoveredCard.name }}
+                  </h3>
+                  <div class="mt-2 flex flex-wrap gap-1">
+                    <UBadge
+                      v-for="color in hoveredCard.colors"
+                      :key="color"
+                      variant="outline"
+                      :style="getCardColorStyle(color)"
+                    >
+                      {{ color }}
+                    </UBadge>
+                  </div>
+                </div>
+
+                <p class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted">
+                  {{ hoveredCard.text || 'Pas de texte.' }}
+                </p>
+              </div>
+
+              <dl class="grid gap-2 text-sm">
+                <div
+                  v-for="[label, value] in hoveredCardRows"
+                  :key="label"
+                  class="grid grid-cols-[92px_minmax(0,1fr)] gap-3"
+                >
+                  <dt class="text-muted">
+                    {{ label }}
+                  </dt>
+                  <dd class="min-w-0 text-highlighted">
+                    {{ value }}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="flex h-full min-h-0 flex-col gap-4"
+          >
+            <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+              <div class="flex min-h-full flex-col gap-4">
+                <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-elevated/50 p-6 text-center text-muted">
+                  <div class="flex flex-col items-center gap-3">
+                    <UIcon
+                      name="i-lucide-square-mouse-pointer"
+                      class="size-10"
+                    />
+                    <div class="space-y-1">
+                      <p class="text-sm font-medium text-highlighted">
+                        Aucune carte
+                      </p>
+                      <p class="text-sm">
+                        Survolez une carte du plateau.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </UCard>

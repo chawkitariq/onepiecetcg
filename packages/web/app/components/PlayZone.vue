@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuelPlayerView } from '@onepiecetcg/shared'
+import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import { AnimatePresence, LayoutGroup, motion } from 'motion-v'
 import cardBackDon from '~/assets/card-back-don.png'
@@ -35,6 +35,9 @@ type LeaderActionPopoverItem = {
   disabled?: boolean
   onSelect: () => void
 }
+
+type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
+  & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
 
 const props = defineProps<{
   player: DuelPlayerView
@@ -101,7 +104,7 @@ const emit = defineEmits<{
   handCardDragEnd: [side: 0 | 1, instanceId: string]
   invalidHandCardDragAttempt: [side: 0 | 1, instanceId: string]
   handCardDropOnCharacters: [side: 0 | 1]
-  cardHover: [card: { imageUrl: string, alt?: string } | null]
+  cardHover: [card: HoveredDuelCard | null]
 }>()
 
 const life = computed(() => Array.from({ length: props.player.lifeCount }))
@@ -210,8 +213,25 @@ function costStackStyle(
   }
 }
 
-function onCardHover(imageUrl: string | null | undefined, alt?: string) {
-  emit('cardHover', imageUrl ? { imageUrl, alt } : null)
+function onCardHover(card: PublicCard | PrivateCard | null | undefined) {
+  if (!card) {
+    emit('cardHover', null)
+    return
+  }
+
+  emit('cardHover', {
+    number: card.number,
+    name: card.name,
+    type: card.type,
+    colors: card.colors,
+    cost: card.cost,
+    power: card.power,
+    life: card.life,
+    counter: card.counter,
+    imageUrl: card.imageUrl,
+    text: 'text' in card ? card.text : undefined,
+    trigger: 'trigger' in card ? card.trigger : undefined
+  })
 }
 
 function isCharacterTargetable(instanceId: string): boolean {
@@ -479,7 +499,7 @@ function onCharacterZoneDrop(event: DragEvent) {
                     isSelectable ? 'cursor-pointer' : 'cursor-pointer'
                   ]"
                   @click="onCharacterActionTriggerClick(character.instanceId); emit('characterClick', side, character.instanceId)"
-                  @mouseenter="onCardHover(character.imageUrl)"
+                  @mouseenter="onCardHover(character)"
                   @mouseleave="onCardHover(null)"
                 >
                   <DuelCard
@@ -533,7 +553,7 @@ function onCharacterZoneDrop(event: DragEvent) {
                   isSelectable ? 'cursor-pointer' : ''
                 ]"
                 @click="emit('characterClick', side, character.instanceId)"
-                @mouseenter="onCardHover(character.imageUrl)"
+                @mouseenter="onCardHover(character)"
                 @mouseleave="onCardHover(null)"
               >
                 <DuelCard
@@ -578,7 +598,7 @@ function onCharacterZoneDrop(event: DragEvent) {
                 invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
               ]"
               @click="onLeaderActionTriggerClick(); emit('leaderClick', side)"
-              @mouseenter="onCardHover(player.leader?.imageUrl)"
+              @mouseenter="onCardHover(player.leader)"
               @mouseleave="onCardHover(null)"
             >
               <DuelCard
@@ -632,7 +652,7 @@ function onCharacterZoneDrop(event: DragEvent) {
               invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
             ]"
             @click="emit('leaderClick', side)"
-            @mouseenter="onCardHover(player.leader?.imageUrl)"
+            @mouseenter="onCardHover(player.leader)"
             @mouseleave="onCardHover(null)"
           >
             <DuelCard
@@ -660,7 +680,7 @@ function onCharacterZoneDrop(event: DragEvent) {
             :transition="{ duration: 0.22, ease: 'easeOut' }"
             class="h-full w-full"
             @click="emit('stageClick', side)"
-            @mouseenter="onCardHover(player.stage?.imageUrl)"
+            @mouseenter="onCardHover(player.stage)"
             @mouseleave="onCardHover(null)"
           >
             <DuelCard
@@ -798,7 +818,7 @@ function onCharacterZoneDrop(event: DragEvent) {
           <div
             v-if="topTrash"
             class="h-full"
-            @mouseenter="onCardHover(topTrash.imageUrl)"
+            @mouseenter="onCardHover(topTrash)"
             @mouseleave="onCardHover(null)"
           >
             <motion.div
@@ -845,7 +865,7 @@ function onCharacterZoneDrop(event: DragEvent) {
               @click="emit('handCardClick', side, card.instanceId)"
               @dragstart="onHandCardDragStart(card.instanceId, $event)"
               @dragend="onHandCardDragEnd(card.instanceId)"
-              @mouseenter="onCardHover(card.imageUrl)"
+              @mouseenter="onCardHover(card)"
               @mouseleave="onCardHover(null)"
             >
               <DuelCard :src="card.imageUrl" />
