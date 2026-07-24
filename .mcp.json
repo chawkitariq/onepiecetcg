@@ -2,11 +2,16 @@
   "mcpServers": {
     "chrome-devtools": {
       "command": "pnpx",
-      "args": ["chrome-devtools-mcp@latest"]
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ]
     },
     "postgres": {
       "command": "uvx",
-      "args": ["postgres-mcp", "--access-mode=unrestricted"],
+      "args": [
+        "postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
       "env": {
         "DATABASE_URI": "postgresql://onepiecetcg:onepiecetcg@localhost:5432/onepiecetcg"
       }
@@ -18,6 +23,10 @@
     "better-auth": {
       "type": "http",
       "url": "https://mcp.better-auth.com/mcp"
+    },
+    "nuxt-remote": {
+      "type": "http",
+      "url": "https://nuxt.com/mcp"
     }
   }
 }
