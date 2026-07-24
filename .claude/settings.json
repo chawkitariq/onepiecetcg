@@ -8,5 +8,32 @@
     "code-review@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/block-env-edits.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-on-save.mjs",
+            "timeout": 60,
+            "statusMessage": "Typechecking affected package..."
+          }
+        ]
+      }
+    ]
   }
 }
