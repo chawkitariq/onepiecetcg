@@ -37,7 +37,7 @@ export function colyseusArrayValues<T>(list: unknown): T[] {
 }
 
 // Module-scope singletons: the Colyseus room must survive navigation between
-// /room (lobby) and /zone (board), which are separate page components each
+// /lobby and /zone/:roomId (board), which are separate page components each
 // calling useColyseus() -- a Room/Client instance is not serializable, so it
 // cannot live in Nuxt's useState, but it only ever exists client-side anyway.
 const client = shallowRef<Client | null>(null)

@@ -32,7 +32,7 @@ onMounted(async () => {
   const token = getStoredReconnectionToken()
 
   if (!token) {
-    await navigateTo('/room')
+    await navigateTo('/lobby')
     return
   }
 
@@ -67,7 +67,7 @@ onMounted(async () => {
         </p>
         <UButton
           v-if="connectionFailed"
-          to="/room"
+          to="/lobby"
           color="neutral"
         >
           Retour au lobby

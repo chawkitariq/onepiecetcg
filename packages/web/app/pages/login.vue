@@ -19,7 +19,7 @@ const redirectTarget = computed(() => {
     && !redirect.startsWith('//')
     && !redirect.startsWith('/\\')
 
-  return isSafeInternalPath ? redirect : '/room'
+  return isSafeInternalPath ? redirect : '/lobby'
 })
 
 await refresh()

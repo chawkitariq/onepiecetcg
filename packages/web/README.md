@@ -52,7 +52,7 @@ CI runs `pnpm install`, `pnpm run lint`, and `pnpm run typecheck` — there's no
 
 ### App structure (Nuxt 4 `app/` directory convention)
 
-- `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder with the integrated card catalogue — there's no separate `/catalogue` route), `room.vue` (matchmaking/lobby), `zone.vue` (live game board).
+- `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder with the integrated card catalogue — there's no separate `/catalogue` route), `lobby.vue` (matchmaking/lobby, at `/lobby`), `zone/[roomId].vue` (live game board, at `/zone/:roomId`).
 - `app/components/` — Vue components. `PlayZone.vue`/`DuelBoard.vue` render the game board; `UserAccountMenu.vue` and `AppConfirmDialog.vue` are shared chrome.
 - `app/layouts/` — `default.vue` and `lobby.vue` share the branded header and footer chrome; `simulator.vue` is a minimal layout for the live game board.
 - `app/middleware/` — route middleware, e.g. `auth.ts` for auth-gated routes.

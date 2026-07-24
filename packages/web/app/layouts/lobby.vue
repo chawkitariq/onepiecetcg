@@ -5,7 +5,7 @@ const navigationItems = [
   {
     label: 'Lobby',
     icon: 'i-lucide-swords',
-    to: '/room'
+    to: '/lobby'
   },
   {
     label: 'Deck builder',

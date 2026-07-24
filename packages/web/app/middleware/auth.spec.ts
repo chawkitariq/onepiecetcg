@@ -25,18 +25,18 @@ describe('auth middleware', () => {
     const authMiddleware = (await import('./auth')).default
 
     const result = await authMiddleware(
-      { fullPath: '/room' } as never,
+      { fullPath: '/lobby' } as never,
       {} as never
     )
 
     expect(refreshMock).toHaveBeenCalled()
     expect(navigateToMock).toHaveBeenCalledWith({
       path: '/login',
-      query: { redirect: '/room' }
+      query: { redirect: '/lobby' }
     })
     expect(result).toEqual({
       path: '/login',
-      query: { redirect: '/room' }
+      query: { redirect: '/lobby' }
     })
   })
 

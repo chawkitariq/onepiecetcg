@@ -195,7 +195,7 @@ Le plateau temps réel doit guider l'attention du joueur quand l'état change, s
 - Un utilisateur peut construire un deck valide (50 cartes, plafond de 4, couleur cohérente avec le Leader) et le sauvegarder sur son compte.
 - Un utilisateur peut générer un deck complet aléatoire depuis le deck builder ; le résultat respecte les contraintes de construction et reste modifiable avant sauvegarde.
 - Deux utilisateurs peuvent se retrouver en partie via matchmaking aléatoire ou via un code de room partagé.
-- Un utilisateur peut héberger une lobby publique avec une description libre ; cette lobby est visible avec sa description par les autres utilisateurs dans un bloc dédié de l'écran `/room`, rafraîchissable manuellement, et un autre utilisateur peut la rejoindre depuis cette liste.
+- Un utilisateur peut héberger une lobby publique avec une description libre ; cette lobby est visible avec sa description par les autres utilisateurs dans un bloc dédié de l'écran `/lobby`, rafraîchissable manuellement, et un autre utilisateur peut la rejoindre depuis cette liste.
 - Une partie se déroule en temps réel avec information cachée réellement respectée côté serveur (main et Vie adverses non exposées côté client).
 - Pendant sa phase Principale, le joueur actif peut jouer un Personnage depuis sa main en le glissant-déposant dans sa zone Personnage ; hors de ce contexte, le geste est refusé visuellement et aucun état local n'entre en contradiction avec le serveur.
 - Le combat est résolu avec ciblage réel validé côté serveur ; Blocage et Contre restent déclaratifs (le joueur les applique lui-même, sans vérification du texte de la carte par le serveur).

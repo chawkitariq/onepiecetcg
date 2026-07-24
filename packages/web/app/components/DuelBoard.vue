@@ -62,7 +62,7 @@ async function confirmLeaveToLobby() {
   }
 
   await leave()
-  await navigateTo('/room')
+  await navigateTo('/lobby')
 }
 
 const phaseLabels: Record<string, string> = {
