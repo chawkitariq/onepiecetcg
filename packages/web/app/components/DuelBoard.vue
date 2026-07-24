@@ -76,7 +76,12 @@ const phaseLabels: Record<string, string> = {
   finished: 'Terminée'
 }
 
+type ScrollAreaInstance = {
+  $el?: HTMLElement
+}
+
 const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
+const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 const pendingCharacterInstanceId = ref<string | null>(null)
 const isSelectingAttacker = ref(false)
 const pendingAttackerInstanceId = ref<string | null>(null)
@@ -231,6 +236,24 @@ function formatLogTime(createdAt: string): string {
     minute: '2-digit'
   })
 }
+
+watch(() => logs.value.length, async (newLength, previousLength) => {
+  if (newLength <= previousLength) {
+    return
+  }
+
+  await nextTick()
+  const element = journalScrollArea.value?.$el
+
+  if (!element) {
+    return
+  }
+
+  element.scrollTo({
+    top: element.scrollHeight,
+    behavior: 'smooth'
+  })
+})
 
 function pulseLeader(target: Ref<boolean>) {
   target.value = true
@@ -872,13 +895,56 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
 
     <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
       <template #left>
-        <UCard class="flex flex-col gap-3 h-full overflow-y-auto">
-          <p class="text-sm font-medium text-primary">
-            Room Colyseus
+        <UCard
+          class="h-full overflow-hidden"
+          :ui="{ body: 'flex flex-col gap-2 h-full min-h-0 overflow-hidden' }"
+        >
+          <p class="text-sm font-medium text-primary shrink-0">
+            Journal
           </p>
-          <p class="text-xs text-muted">
+          <p class="text-xs text-muted shrink-0">
             Vue en lecture seule de la partie : zones publiques et compteurs des zones cachées adverses.
           </p>
+          <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-hidden">
+            <UScrollArea
+              ref="journal-scroll-area"
+              class="flex-1 min-h-0"
+              :ui="{ viewport: 'pr-1' }"
+            >
+              <ul class="flex flex-col justify-end gap-2 min-h-full text-xs">
+                <li
+                  v-if="logs.length === 0"
+                  class="text-muted"
+                >
+                  Aucun événement.
+                </li>
+                <li
+                  v-for="entry in logs"
+                  :key="entry.id"
+                  class="rounded-lg border border-default/70 bg-muted/20 px-3 py-2"
+                >
+                  <div class="flex items-center gap-2 text-[11px]">
+                    <time
+                      :datetime="entry.createdAt"
+                      class="tabular-nums opacity-80"
+                    >
+                      {{ formatLogTime(entry.createdAt) }}
+                    </time>
+                  </div>
+                  <p class="mt-1 leading-relaxed">
+                    {{ entry.message }}
+                  </p>
+                </li>
+              </ul>
+            </UScrollArea>
+          </div>
+
+          <div
+            v-if="status === 'connecting'"
+            class="text-[11px] text-muted shrink-0"
+          >
+            Reconnexion en cours...
+          </div>
         </UCard>
       </template>
 
@@ -945,7 +1011,7 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
           class="h-full overflow-hidden"
           :ui="{ body: 'flex flex-col gap-2 h-full min-h-0 overflow-hidden' }"
         >
-          <div class="flex flex-col gap-2 h-[700px] shrink-0">
+          <div class="flex flex-col gap-2 h-full min-h-0">
             <p class="text-sm font-medium text-primary">
               Aperçu
             </p>
@@ -963,42 +1029,6 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
                 Survolez une carte pour l'agrandir ici
               </p>
             </div>
-          </div>
-
-          <USeparator class="shrink-0 my-4" />
-
-          <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-hidden">
-            <p class="text-sm font-medium text-primary shrink-0">
-              Journal
-            </p>
-            <ul class="flex flex-col gap-1 text-xs overflow-y-auto">
-              <li
-                v-for="entry in logs"
-                :key="entry.id"
-                class="grid grid-cols-[3.25rem_1fr] gap-2 border-b border-default pb-1"
-              >
-                <time
-                  :datetime="entry.createdAt"
-                  class="tabular-nums text-muted"
-                >
-                  {{ formatLogTime(entry.createdAt) }}
-                </time>
-                <span>{{ entry.message }}</span>
-              </li>
-              <li
-                v-if="logs.length === 0"
-                class="text-muted"
-              >
-                Aucun événement.
-              </li>
-            </ul>
-          </div>
-
-          <div
-            v-if="status === 'connecting'"
-            class="text-[11px] text-muted shrink-0"
-          >
-            Reconnexion en cours...
           </div>
         </UCard>
       </template>

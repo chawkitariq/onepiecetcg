@@ -21,6 +21,7 @@ const isCombatInProgress = ref(false)
 const canDeclareAttack = ref(false)
 const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
+const logs = ref<Array<{ id: string, message: string, createdAt: string }>>([])
 
 function createPublicCard(instanceId: string, overrides: Partial<PublicCard> = {}): PublicCard {
   return {
@@ -102,7 +103,7 @@ mockNuxtImport('useDuelRoom', () => () => ({
   canEndPhase: computed(() => isSelfTurn.value),
   selfUntappedDonCount: computed(() => self.value?.cost.filter(card => !card.rested).length ?? 0),
   isSelfCharacterZoneFull: computed(() => (self.value?.characters.length ?? 0) >= 5),
-  logs: ref([]),
+  logs,
   errorMessage: ref<string | null>(null),
   endPhase,
   playCard,
@@ -191,6 +192,17 @@ const defaultStub = defineComponent({
   }
 })
 
+const pageStub = defineComponent({
+  name: 'UPage',
+  setup(_, { slots }) {
+    return () => h('div', [
+      slots.left?.(),
+      slots.default?.(),
+      slots.right?.()
+    ])
+  }
+})
+
 describe('DuelBoard drag and drop', () => {
   beforeEach(() => {
     phase.value = 'main'
@@ -203,6 +215,7 @@ describe('DuelBoard drag and drop', () => {
     opponent.value = createPlayer('opponent', {
       characters: [createPublicCard('opponent-character-a', { rested: true })]
     })
+    logs.value = []
     playCard.mockReset()
     endPhase.mockReset()
     attachDon.mockReset()
@@ -228,10 +241,11 @@ describe('DuelBoard drag and drop', () => {
           UBadge: defaultStub,
           UButton: defaultStub,
           UAlert: defaultStub,
-          UPage: defaultStub,
+          UPage: pageStub,
           UContainer: defaultStub,
           UCard: defaultStub,
           USeparator: defaultStub,
+          UScrollArea: defaultStub,
           UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub
@@ -318,6 +332,18 @@ describe('DuelBoard drag and drop', () => {
     expect(attachDon).toHaveBeenNthCalledWith(2, 'leader')
     expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('self-leader')
   })
+
+  it('renders journal entries in chronological order', () => {
+    logs.value = [
+      { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' },
+      { id: 'log-2', message: 'DON!! insuffisant pour jouer Zoro.', createdAt: '2026-07-24T10:01:00.000Z' }
+    ]
+
+    const wrapper = mountBoard()
+    const html = wrapper.html()
+
+    expect(html.indexOf('self commence la partie.')).toBeLessThan(html.indexOf('DON!! insuffisant pour jouer Zoro.'))
+  })
 })
 
 describe('DuelBoard leave to lobby', () => {
@@ -332,6 +358,7 @@ describe('DuelBoard leave to lobby', () => {
     opponent.value = createPlayer('opponent', {
       characters: [createPublicCard('opponent-character-a', { rested: true })]
     })
+    logs.value = []
     leave.mockReset()
     confirm.mockReset()
     vi.useFakeTimers()
@@ -361,10 +388,11 @@ describe('DuelBoard leave to lobby', () => {
           UBadge: defaultStub,
           UButton: defaultStub,
           UAlert: defaultStub,
-          UPage: defaultStub,
+          UPage: pageStub,
           UContainer: defaultStub,
           UCard: defaultStub,
           USeparator: defaultStub,
+          UScrollArea: defaultStub,
           UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub
