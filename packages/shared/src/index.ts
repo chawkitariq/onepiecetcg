@@ -207,6 +207,7 @@ export type DuelPlayerView = {
   ready: boolean;
   connected: boolean;
   mulliganDecided: boolean;
+  hasTakenFirstTurn: boolean;
   leader: PublicCard | null;
   stage: PublicCard | null;
   characters: PublicCard[];

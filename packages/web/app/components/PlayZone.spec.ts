@@ -149,6 +149,7 @@ function createPlayer(overrides: Partial<DuelPlayerView> = {}): DuelPlayerView {
     ready: true,
     connected: true,
     mulliganDecided: true,
+    hasTakenFirstTurn: true,
     leader: createPublicCard('leader-a', { type: 'Leader', power: 5000 }),
     stage: null,
     characters: [createPublicCard('character-a')],

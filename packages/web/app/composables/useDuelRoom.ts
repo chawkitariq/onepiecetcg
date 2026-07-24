@@ -39,6 +39,7 @@ type WireDuelPlayer = {
   ready: boolean
   connected: boolean
   mulliganDecided: boolean
+  hasTakenFirstTurn: boolean
   handCount: number
   deckCount: number
   lifeCount: number
@@ -99,6 +100,7 @@ function toDuelPlayerView(player: WireDuelPlayer): DuelPlayerView {
     ready: player.ready,
     connected: player.connected,
     mulliganDecided: player.mulliganDecided,
+    hasTakenFirstTurn: player.hasTakenFirstTurn,
     leader: toOptionalPublicCard(zones.leader),
     stage: toOptionalPublicCard(zones.stage),
     characters: colyseusArrayValues<WireDuelCard>(zones.characters).map(toPublicCard),
@@ -253,8 +255,16 @@ export function useDuelRoom() {
     self.value?.cost.filter(card => !card.rested).length ?? 0
   )
 
-  function cardPower(card: PublicCard): number {
-    return (card.power ?? 0) + card.attachedDon * 1000
+  /**
+   * DON!! attached to a Leader/Character only grants +1000 power "during
+   * your turn" (docs/rule_comprehensive.md 6-5-5-2) -- pass whether it's
+   * currently the card owner's turn to include the bonus, mirroring the
+   * server-side gate in duel.room.ts cardPower().
+   */
+  function cardPower(card: PublicCard, isOwnerTurn: boolean): number {
+    const donBonus = isOwnerTurn ? card.attachedDon * 1000 : 0
+
+    return (card.power ?? 0) + donBonus
   }
 
   function endPhase() {
@@ -302,7 +312,10 @@ export function useDuelRoom() {
   )
 
   const canDeclareAttack = computed(() =>
-    isSelfTurn.value && isMainPhase.value && !isCombatInProgress.value
+    isSelfTurn.value
+    && isMainPhase.value
+    && !isCombatInProgress.value
+    && (self.value?.hasTakenFirstTurn ?? false)
   )
 
   const isBlockingStep = computed(() => combat.value?.step === 'blocked')

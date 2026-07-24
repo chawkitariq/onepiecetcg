@@ -59,6 +59,7 @@ function createPlayer(sessionId: string, overrides: Partial<DuelPlayerView> = {}
     ready: true,
     connected: true,
     mulliganDecided: true,
+    hasTakenFirstTurn: true,
     leader: createPublicCard(`${sessionId}-leader`, { type: 'Leader', power: 5000 }),
     stage: null,
     characters: [],

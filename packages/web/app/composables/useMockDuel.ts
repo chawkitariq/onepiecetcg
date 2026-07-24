@@ -167,6 +167,7 @@ function createPlayer(displayName: string, deckId: string, sessionId: string): M
     ready: true,
     connected: true,
     mulliganDecided: true,
+    hasTakenFirstTurn: true,
     leader,
     stage: null,
     characters: [],
@@ -427,8 +428,15 @@ export function useMockDuel() {
     resync()
   }
 
-  function cardPower(card: PublicCard): number {
-    return (card.power ?? 0) + card.attachedDon * 1000
+  /**
+   * DON!! attached to a Leader/Character only grants +1000 power "during
+   * your turn" (docs/rule_comprehensive.md 6-5-5-2) -- pass whether it's
+   * currently the card owner's turn to include the bonus.
+   */
+  function cardPower(card: PublicCard, isOwnerTurn: boolean): number {
+    const donBonus = isOwnerTurn ? card.attachedDon * 1000 : 0
+
+    return (card.power ?? 0) + donBonus
   }
 
   function selectAttacker(idx: 0 | 1, instanceId: string) {
@@ -506,9 +514,9 @@ export function useMockDuel() {
     }
 
     attackerSelection.value = null
-    log(`${attackerPlayer.displayName} attaque avec ${attacker.name} (${cardPower(attacker)}) contre ${target.name} (${cardPower(target)}). Blocage/Contre non simulés dans ce mock.`)
+    log(`${attackerPlayer.displayName} attaque avec ${attacker.name} (${cardPower(attacker, true)}) contre ${target.name} (${cardPower(target, false)}). Blocage/Contre non simulés dans ce mock.`)
 
-    if (cardPower(attacker) < cardPower(target)) {
+    if (cardPower(attacker, true) < cardPower(target, false)) {
       log('Puissance insuffisante : l\'attaque est repoussée.')
       return
     }

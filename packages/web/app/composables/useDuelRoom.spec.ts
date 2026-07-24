@@ -50,6 +50,7 @@ function createFakePlayer(sessionId: string, mulliganDecided: boolean) {
     ready: true,
     connected: true,
     mulliganDecided,
+    hasTakenFirstTurn: true,
     handCount: 5,
     deckCount: 45,
     lifeCount: 0,
@@ -289,11 +290,12 @@ describe('useDuelRoom turn/phase helpers (stage 7)', () => {
     expect(isOpponentDisconnected.value).toBe(true)
   })
 
-  it('computes displayed power as base power plus 1000 per attached DON!!', () => {
+  it('computes displayed power as base power plus 1000 per attached DON!! only during the owner\'s turn', () => {
     const { cardPower } = useDuelRoom()
 
-    expect(cardPower(createFakeCard({ power: 3000, attachedDon: 2 }))).toBe(5000)
-    expect(cardPower(createFakeCard({ power: 1000, attachedDon: 0 }))).toBe(1000)
+    expect(cardPower(createFakeCard({ power: 3000, attachedDon: 2 }), true)).toBe(5000)
+    expect(cardPower(createFakeCard({ power: 1000, attachedDon: 0 }), true)).toBe(1000)
+    expect(cardPower(createFakeCard({ power: 3000, attachedDon: 2 }), false)).toBe(3000)
   })
 
   it('sends an endPhase message and clears any prior error', () => {
@@ -370,6 +372,24 @@ describe('useDuelRoom combat helpers (stage 8)', () => {
 
     expect(isCombatInProgress.value).toBe(false)
     expect(canDeclareAttack.value).toBe(true)
+  })
+
+  it('forbids declaring an attack during the player\'s own first turn (rule_comprehensive.md 6-5-6-1)', () => {
+    const { room } = useColyseus()
+    const self = createFakePlayer('session-a', true)
+    self.hasTakenFirstTurn = false
+    room.value = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [self, createFakePlayer('session-b', true)]
+    }) as never
+
+    const { canDeclareAttack } = useDuelRoom()
+
+    expect(canDeclareAttack.value).toBe(false)
   })
 
   it('identifies the attacker and defender roles from the wire combat', () => {

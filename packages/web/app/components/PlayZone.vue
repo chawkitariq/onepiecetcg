@@ -34,6 +34,7 @@ type LeaderActionPopoverItem = {
 const props = defineProps<{
   player: DuelPlayerView
   side: 0 | 1
+  isOwnerTurn?: boolean
   isAdversary?: boolean
   revealHand?: boolean
   attackerId?: string | null
@@ -71,12 +72,19 @@ const {
   revealedHandCardIds
 } = toRefs(props)
 
+/**
+ * DON!! attached to a Leader/Character only grants +1000 power "during your
+ * turn" (docs/rule_comprehensive.md 6-5-5-2) -- mirrors the server-side
+ * ownerSessionId === activePlayerSessionId gate in duel.room.ts cardPower().
+ */
 function cardPower(card: { power: number | null, attachedDon: number }): number | null {
   if (card.power === null) {
     return null
   }
 
-  return card.power + card.attachedDon * 1000
+  const donBonus = props.isOwnerTurn ? card.attachedDon * 1000 : 0
+
+  return card.power + donBonus
 }
 
 const emit = defineEmits<{

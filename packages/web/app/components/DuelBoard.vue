@@ -95,6 +95,7 @@ const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
   ready: false,
   connected: false,
   mulliganDecided: false,
+  hasTakenFirstTurn: false,
   leader: null,
   stage: null,
   characters: emptyPublicCards,
@@ -725,6 +726,8 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
       title="Choisissez votre attaquant"
       description="Selectionnez votre Leader ou un Personnage redresse n'ayant pas ete joue ce tour-ci."
       class="shrink-0"
+      :close="{ color: 'neutral', variant: 'link' }"
+      @update:open="cancelTargetSelection"
     />
 
     <UAlert
@@ -734,6 +737,8 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
       title="Choisissez la cible"
       description="Selectionnez le Leader adverse ou un Personnage adverse epuise."
       class="shrink-0"
+      :close="{ color: 'neutral', variant: 'link' }"
+      @update:open="cancelTargetSelection"
     />
 
     <UAlert
@@ -884,6 +889,7 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
           class="flex-1 min-h-0"
           :player="opponent ?? emptyOpponentPreview"
           :side="1"
+          :is-owner-turn="!isSelfTurn"
           :is-adversary="Boolean(opponent)"
           :transition-ghosts="opponent ? opponentTransitionGhosts : []"
           :is-targetable="Boolean(opponent) && isChoosingTarget"
@@ -907,6 +913,7 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
           class="flex-1 min-h-0"
           :player="self"
           :side="0"
+          :is-owner-turn="isSelfTurn"
           reveal-hand
           :draggable-hand-card-ids="draggableHandCardIds"
           :invalid-hand-card-ids="invalidHandCardIds"
