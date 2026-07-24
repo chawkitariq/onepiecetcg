@@ -16,3 +16,64 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+.duel-card-shell {
+  transition:
+    box-shadow 180ms ease-out,
+    transform 180ms ease-out,
+    filter 180ms ease-out;
+}
+
+.duel-targetable {
+  box-shadow:
+    0 0 0 0.24rem color-mix(in oklab, var(--ui-success) 16%, transparent),
+    0 0 1.2rem color-mix(in oklab, var(--ui-success) 18%, transparent);
+}
+
+.duel-invalid-target {
+  animation: duel-invalid-target 220ms ease-out;
+}
+
+.duel-connection-waiting,
+.duel-connection-banner {
+  animation: duel-connection-waiting 1.2s ease-in-out infinite;
+}
+
+@keyframes duel-invalid-target {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+
+  35% {
+    transform: translateX(-0.22rem) scale(1.01);
+  }
+
+  70% {
+    transform: translateX(0.22rem) scale(1.01);
+  }
+
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes duel-connection-waiting {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.48;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-card-shell,
+  .duel-invalid-target,
+  .duel-connection-waiting,
+  .duel-connection-banner {
+    animation: none !important;
+    transition-duration: 0ms !important;
+  }
+}

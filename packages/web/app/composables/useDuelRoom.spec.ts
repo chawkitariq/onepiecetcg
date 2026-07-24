@@ -271,6 +271,24 @@ describe('useDuelRoom turn/phase helpers (stage 7)', () => {
     expect(selfUntappedDonCount.value).toBe(2)
   })
 
+  it('flags the opponent as disconnected when their room presence is suspended', () => {
+    const { room } = useColyseus()
+    const opponent = createFakePlayer('session-b', true)
+    opponent.connected = false
+    room.value = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), opponent]
+    }) as never
+
+    const { isOpponentDisconnected } = useDuelRoom()
+
+    expect(isOpponentDisconnected.value).toBe(true)
+  })
+
   it('computes displayed power as base power plus 1000 per attached DON!!', () => {
     const { cardPower } = useDuelRoom()
 

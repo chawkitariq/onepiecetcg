@@ -119,6 +119,52 @@ Repris et adapté des versions précédentes :
 - Indicateurs de phase et de tour partagés en temps réel entre les deux clients.
 - Notifications d'action adverse (ex: "L'adversaire déclare une attaque avec [carte]") pour garder les deux joueurs synchronisés sans avoir à rafraîchir.
 
+## 7. Animations et transitions fonctionnelles
+
+Le plateau temps réel doit guider l'attention du joueur quand l'état change, sans jamais ralentir le déroulement d'une partie ni introduire d'ambiguïté sur l'état structurel envoyé par le serveur.
+
+### 7.1 Déplacement d'une carte entre deux zones
+
+- Quand une carte change de zone (main vers jeu, jeu vers défausse, deck vers main, DON!! deck vers zone de Coût, etc.), le client doit montrer un déplacement visuel entre l'origine et la destination plutôt qu'une disparition/réapparition instantanée.
+- L'animation doit rester courte (ordre de grandeur : 150 à 300 ms) et rester lisible si plusieurs mouvements surviennent presque en même temps.
+- Cette animation doit être désactivée ou fortement réduite si l'utilisateur exprime une préférence système de réduction des animations.
+
+### 7.2 Sélection, ciblage et refus d'action
+
+- Une carte choisie comme attaquant, cible ou Bloqueur doit afficher un état visuel continu et immédiatement identifiable.
+- Une fois un attaquant choisi, les cibles valides doivent rester mises en évidence en continu ; les cibles invalides ne doivent pas attendre un clic pour révéler leur indisponibilité.
+- Un clic sur une cible invalide doit produire un signal visuel bref de refus, sans ouvrir de dialogue ni dépendre d'un message textuel répétitif.
+
+### 7.3 Révélation d'une carte cachée
+
+- Quand une carte de Vie est retirée suite à un dégât et révélée au joueur concerné, le passage dos-visible vers face-visible doit être progressif et marquer l'événement.
+- Si la préférence système demande moins d'animations, la révélation peut devenir instantanée à condition de rester clairement signalée.
+
+### 7.4 Indicateur de phase
+
+- Le changement de phase doit être porté par un indicateur de progression visuel, pas seulement par un remplacement abrupt de texte.
+- Cet indicateur doit rester lisible même quand les phases s'enchaînent rapidement.
+- Retour validé après essai UI : l'indicateur de phase reste sur l'affichage original par badges textuels dans le header ; le `Stepper` horizontal Nuxt UI a été abandonné car moins lisible dans cette mise en page.
+
+### 7.5 Mise à jour de puissance affichée
+
+- Quand la puissance affichée d'une carte change (notamment via attachement/retrait de DON!! ou Contre déclaré), la valeur visible doit converger progressivement vers la nouvelle valeur au lieu de basculer instantanément.
+- Cette interpolation doit rester courte et ne jamais masquer durablement la valeur finale.
+
+### 7.6 Déconnexion temporaire
+
+- Quand un joueur est temporairement déconnecté pendant la fenêtre de reconnexion, l'adversaire doit voir un indicateur persistant d'attente, et non une notification ponctuelle.
+- Cet indicateur doit s'arrêter immédiatement dès que la connexion revient ou que la partie se termine.
+
+### 7.7 Stack UI retenue pour ces besoins
+
+- Déplacement inter-zones et révélation de carte cachée : `motion-v`.
+- Interpolation numérique de la puissance : VueUse (`useTransition`).
+- Sélection/ciblage/refus et indicateur de déconnexion : CSS/Tailwind pur.
+- Indicateur de phase : badges textuels horizontaux dans le header, avec mise en évidence de la phase active.
+- Détection de préférence de réduction d'animations : VueUse (`usePreferredReducedMotion`).
+- `@vueuse/motion` reste hors périmètre, redondant avec `motion-v`.
+
 ## Hors périmètre v1 (pivot multijoueur)
 
 - Résolution automatique du texte des effets de cartes, quel que soit le set — reste déclaratif indéfiniment dans cette version (pas de moteur de scripting prévu).
@@ -136,6 +182,7 @@ Repris et adapté des versions précédentes :
 3. Infrastructure Colyseus : room de partie, état synchronisé, autorité serveur.
 4. Couche structurelle complète (§3) : phases, DON!!, zones, ciblage réel, combat structurel avec Blocage/Contre déclaratifs, fin de partie.
 5. Matchmaking (file d'attente + code de room) et lobby.
+6. Animations et transitions fonctionnelles du plateau (§7), en respectant `prefers-reduced-motion`.
 
 ## Critères d'acceptation
 
@@ -148,6 +195,7 @@ Repris et adapté des versions précédentes :
 - Le combat est résolu avec ciblage réel validé côté serveur ; Blocage et Contre restent déclaratifs (le joueur les applique lui-même, sans vérification du texte de la carte par le serveur).
 - Toutes les cartes du catalogue restent jouables avec leurs stats de base (coût, puissance, contre) ; leur texte d'effet est affiché mais jamais appliqué automatiquement, quel que soit le set.
 - La partie se termine correctement sur Vie à zéro ou deck-out, avec gestion propre d'une déconnexion temporaire d'un joueur.
+- Les changements de zone importants, les révélations de cartes cachées, la progression de phase, les sélections/ciblages, la mise à jour de puissance et l'attente de reconnexion sont signalés par des transitions courtes, fonctionnelles et compatibles `prefers-reduced-motion`.
 
 ## Recommandation produit
 

@@ -4,7 +4,7 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const { room, reconnect, getStoredReconnectionToken } = useColyseus()
+const { room, reconnect, getStoredReconnectionToken, status } = useColyseus()
 const connecting = ref(!room.value)
 const connectionFailed = ref(false)
 
@@ -48,7 +48,7 @@ onMounted(async () => {
           v-else
           class="text-sm text-muted"
         >
-          {{ connecting ? 'Reconnexion à la partie...' : 'Préparation du duel...' }}
+          {{ status === 'connecting' || connecting ? 'Reconnexion à la partie...' : 'Préparation du duel...' }}
         </p>
         <UButton
           v-if="connectionFailed"

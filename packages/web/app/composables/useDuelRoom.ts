@@ -125,6 +125,7 @@ type ActionErrorMessage = {
   message: string
 }
 
+/** Maps the live Colyseus duel room into UI-friendly computed state and actions. */
 export function useDuelRoom() {
   const { room, sendMessage } = useColyseus()
   const version = ref(0)
@@ -192,6 +193,7 @@ export function useDuelRoom() {
   const isSelfTurn = computed(() =>
     selfSessionId.value !== null && activePlayerSessionId.value === selfSessionId.value
   )
+  const isOpponentDisconnected = computed(() => Boolean(opponent.value && !opponent.value.connected))
 
   const logs = computed(() => {
     void version.value
@@ -342,6 +344,7 @@ export function useDuelRoom() {
     players,
     self,
     opponent,
+    isOpponentDisconnected,
     selfSessionId,
     isSelfTurn,
     isMainPhase,

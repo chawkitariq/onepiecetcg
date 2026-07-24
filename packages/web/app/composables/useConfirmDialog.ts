@@ -5,7 +5,7 @@ export type ConfirmDialogOptions = {
   description?: string
   confirmLabel?: string
   cancelLabel?: string
-  confirmColor?: 'error' | 'primary'
+  confirmColor?: 'error' | 'primary' | 'warning'
 }
 
 /**

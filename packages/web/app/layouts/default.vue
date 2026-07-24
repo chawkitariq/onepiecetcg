@@ -12,7 +12,10 @@ import onePieceTcgLogo from '~/assets/onepiecetcg.png'
       }"
     >
       <template #left>
-        <NuxtLink to="/" class="flex items-center gap-2">
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2"
+        >
           <img
             :src="onePieceTcgLogo"
             alt="One Piece TCG"

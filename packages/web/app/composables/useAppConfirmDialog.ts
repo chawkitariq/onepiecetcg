@@ -5,7 +5,7 @@ export type AppConfirmDialogOptions = {
   description?: string
   confirmLabel?: string
   cancelLabel?: string
-  confirmColor?: 'error' | 'primary'
+  confirmColor?: 'error' | 'primary' | 'warning'
 }
 
 const useAppConfirmDialogState = createGlobalState(() => {
@@ -16,12 +16,8 @@ const useAppConfirmDialogState = createGlobalState(() => {
     cancelLabel: 'Annuler',
     confirmColor: 'error'
   })
-  const {
-    isRevealed,
-    reveal,
-    confirm: confirmDialog,
-    cancel: cancelDialog
-  } = useConfirmDialog<AppConfirmDialogOptions, boolean, boolean>()
+  const isRevealed = ref(false)
+  const pendingResolve = shallowRef<((confirmed: boolean) => void) | null>(null)
 
   async function open(nextOptions: AppConfirmDialogOptions): Promise<boolean> {
     options.value = {
@@ -31,17 +27,31 @@ const useAppConfirmDialogState = createGlobalState(() => {
       ...nextOptions
     }
 
-    const result = await reveal(options.value)
+    isRevealed.value = true
 
-    return !result.isCanceled && result.data === true
+    return await new Promise<boolean>((resolve) => {
+      pendingResolve.value = resolve
+    })
+  }
+
+  function settle(confirmed: boolean) {
+    if (!pendingResolve.value) {
+      isRevealed.value = false
+      return
+    }
+
+    const resolve = pendingResolve.value
+    pendingResolve.value = null
+    isRevealed.value = false
+    resolve(confirmed)
   }
 
   return {
     isRevealed,
     open,
     options: readonly(options),
-    confirmDialog,
-    cancelDialog
+    confirmDialog: () => settle(true),
+    cancelDialog: () => settle(false)
   }
 })
 
@@ -65,17 +75,17 @@ export function useAppConfirmDialogHost() {
     get: () => state.isRevealed.value,
     set: (value: boolean) => {
       if (!value) {
-        state.cancelDialog(false)
+        state.cancelDialog()
       }
     }
   })
 
   function confirm() {
-    state.confirmDialog(true)
+    state.confirmDialog()
   }
 
   function cancel() {
-    state.cancelDialog(false)
+    state.cancelDialog()
   }
 
   return {

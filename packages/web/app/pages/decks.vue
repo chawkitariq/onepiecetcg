@@ -39,7 +39,6 @@ const selectedColor = ref<CardColor | typeof allFilter>(allFilter)
 const selectedCost = ref<string>(allFilter)
 const selectedCard = ref<Card | null>(null)
 const {
-  hoveredCard,
   previewCard,
   selectCard,
   previewHoveredCard,
@@ -958,7 +957,6 @@ function extractErrorMessage(error: unknown): string {
                 </dd>
               </div>
             </dl>
-
           </div>
         </div>
 

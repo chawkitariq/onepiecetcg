@@ -4,7 +4,7 @@ withDefaults(defineProps<{
   description?: string
   confirmLabel?: string
   cancelLabel?: string
-  confirmColor?: 'error' | 'primary'
+  confirmColor?: 'error' | 'primary' | 'warning'
 }>(), {
   description: undefined,
   confirmLabel: 'Confirmer',

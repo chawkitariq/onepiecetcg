@@ -17,7 +17,7 @@ const { src, alt = '', rotated = false } = defineProps<{
     v-if="src"
     :src="src"
     :alt="alt"
-    class="h-full aspect-5/7 object-contain"
+    class="h-full aspect-5/7 object-contain transition-transform duration-200 ease-out"
     :class="rotated ? '-rotate-90' : ''"
   >
 </template>

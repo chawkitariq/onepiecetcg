@@ -50,7 +50,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [
         size="md"
         class="ml-2 cursor-pointer"
       />
-      
+
       <template #appearance>
         <div class="flex min-w-56 items-center justify-between gap-3">
           <div class="flex items-center gap-2">

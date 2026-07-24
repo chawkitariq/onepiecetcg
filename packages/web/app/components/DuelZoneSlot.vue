@@ -11,11 +11,12 @@
  *
  * `count`, when set, is only exposed through a hover tooltip so zone overlays stay clear.
  */
-const { label, flipped, hugCard = false, count } = defineProps<{
+const { label, flipped, hugCard = false, count, allowOverflow = false } = defineProps<{
   label?: string
   flipped?: boolean
   hugCard?: boolean
   count?: number
+  allowOverflow?: boolean
 }>()
 
 const countTooltip = computed(() => count?.toString() ?? '')
@@ -29,8 +30,8 @@ const countTooltip = computed(() => count?.toString() ?? '')
     :ui="{ content: 'text-sm' }"
   >
     <div
-      class="h-full relative overflow-hidden rounded-lg border border-dashed border-muted"
-      :class="hugCard ? 'w-auto aspect-5/7 max-w-full justify-self-center' : ''"
+      class="h-full relative rounded-lg border border-dashed border-muted"
+      :class="[allowOverflow ? 'overflow-visible' : 'overflow-hidden', hugCard ? 'w-auto aspect-5/7 max-w-full justify-self-center' : '']"
     >
       <p
         v-if="label"
@@ -46,8 +47,8 @@ const countTooltip = computed(() => count?.toString() ?? '')
   </UTooltip>
   <div
     v-else
-    class="h-full relative overflow-hidden rounded-lg border border-dashed border-muted"
-    :class="hugCard ? 'w-auto aspect-5/7 max-w-full justify-self-center' : ''"
+    class="h-full relative rounded-lg border border-dashed border-muted"
+    :class="[allowOverflow ? 'overflow-visible' : 'overflow-hidden', hugCard ? 'w-auto aspect-5/7 max-w-full justify-self-center' : '']"
   >
     <p
       v-if="label"

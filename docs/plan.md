@@ -238,6 +238,30 @@ Objectif : automatiser le combat mécanique sans interpréter les textes de cart
 
 État : réalisé et audité. Le backend étend `DuelState` avec un `DuelCombat` partagé (`packages/shared/src/duel-state-schema.ts`) répliqué à tous les clients (pas de donnée cachée dans sa structure), et la room `duel` gère le cycle complet via les messages Colyseus `declareAttack`, `declareBlock`, `declareCounter`, `finishCounterStep` et `resolveTrigger` : ciblage réel validé côté serveur (Leader adverse ou Personnage adverse épuisé, jamais un Personnage joué ce tour-ci ni un attaquant déjà épuisé), étape de Blocage et de Contre purement déclaratives (le serveur ne lit jamais `card_text`), comparaison de puissance automatique (`base + 1000/DON!!` + bonus de Contre déclaré), KO d'un Personnage vaincu vers la Défausse (DON!! attachés retournés épuisés en zone de Coût), et flux de dégât de Vie : défaite immédiate si la Vie est déjà vide, sinon la carte du dessus de la pile de Vie est déplacée en main du défenseur et retournée face visible — elle ne devient lisible pour l'attaquant qu'en tant que compteur de main, jamais en contenu, grâce au mécanisme `StateView`/`client.view.add` déjà en place depuis l'étape 5. Une carte de Vie avec [Déclenchement] met le combat en pause (`awaitingTriggerDecision`) jusqu'à la décision manuelle du défenseur (écarter ou ajouter à la main). Toute action hors étape ou hors rôle (attaquant/défenseur) est rejetée avec `actionError`, y compris `endPhase`/`playCard`/`attachDon` pendant qu'un combat est en cours. Côté frontend, `DuelBoard.vue` ajoute un mode "Attaquer" (sélection de l'attaquant redressé puis de la cible adverse valide, avec incrustations `attackerId`/`isTargetable` sur `PlayZone.vue`), des alertes contextuelles de Blocage/Contre/Déclenchement affichées uniquement au joueur concerné par le rôle (attaquant en attente vs défenseur avec actions), et une saisie de la valeur de Contre avant confirmation. Couvert par 15 tests unitaires (`duel-room-combat.spec.ts`) et un test d'intégration deux-sockets sur le vrai transport Colyseus (`duel-room-serialization.spec.ts`) vérifiant que la carte de Vie révélée reste invisible en contenu pour l'attaquant.
 
+## Étape 9 — Animations et transitions fonctionnelles
+
+Objectif : améliorer la lisibilité du plateau synchronisé par des transitions courtes, utiles et compatibles accessibilité, sans déplacer l'autorité hors du serveur.
+
+État : réalisé et audité. Le frontend combine VueUse (`useTransition`, `usePreferredReducedMotion`) pour l'interpolation de puissance et l'accessibilité, CSS/Tailwind pour les feedbacks continus de ciblage/refus/reconnexion ainsi que pour l'indicateur de phase par badges, et `motion-v` pour les transitions de layout entre zones visibles ainsi que les trajectoires temporaires depuis les zones cachées/condensées (`deck`, `life`, `donDeck`) vers les zones d'arrivée. `PlayZone.vue` anime les cartes publiques via `layout`/`layoutId`, et `DuelBoard.vue` dérive des "ghosts" de transition à partir des snapshots successifs du state Colyseus pour matérialiser une pioche, une perte de Vie révélée ou un ajout de DON!!. Un essai de `UStepper` (Nuxt UI) a été abandonné, le composant étant moins lisible que l'affichage d'origine dans le header. La logique de détection est couverte par `duelTransitions.spec.ts`, et le package `web` repasse `lint`, `typecheck` et les suites de tests ciblées.
+
+### Frontend
+
+- Conserver un indicateur de phase par badges textuels dans le header, avec accent visuel sur la phase active ; l'essai du `Stepper` horizontal Nuxt UI a été retiré pour raisons de lisibilité.
+- Ajouter des états visuels continus pour la sélection d'attaquant, le ciblage valide, le Bloqueur potentiel et les zones concernées par une action en cours.
+- Ajouter un signal visuel bref lors d'un clic sur une cible invalide, sans s'appuyer uniquement sur les alertes textuelles.
+- Interpoler l'affichage de puissance des Leaders et Personnages via VueUse (`useTransition`) tout en respectant `prefers-reduced-motion`.
+- Afficher un indicateur persistant d'attente quand l'adversaire est déconnecté dans la fenêtre de reconnexion.
+- Animer les déplacements inter-zones et la révélation d'une carte de Vie avec `motion-v`, avec réduction ou désactivation selon `prefers-reduced-motion`.
+
+### Validation
+
+- Les phases du tour restent lisibles sans lecture active d'un simple texte.
+- Une carte sélectionnée ou une cible valide est identifiable en continu pendant toute l'action.
+- Un clic invalide produit un refus visuel bref, distinct d'une notification classique.
+- Les changements de puissance convergent vers la valeur finale en quelques centaines de millisecondes maximum.
+- Une déconnexion temporaire adverse laisse une indication d'attente persistante jusqu'au retour ou à la fin de partie.
+- Les animations supplémentaires se réduisent ou se coupent quand le système demande moins d'animations.
+
 Correctif notable : un test manuel à deux onglets navigateur (deux comptes réels, room privée par code) a révélé qu'un client dont la connexion Colyseus se rétablit (reconnexion automatique après une coupure brève) pouvait rester bloqué sur une invite de combat obsolète (ex. étape de Blocage déjà résolue côté serveur) jusqu'à la prochaine action, faute de re-rendu immédiat au moment du remplacement de l'instance `Room`. Corrigé dans `useDuelRoom.ts` : le `watch(room, ...)` force désormais un incrément de la version réactive dès qu'une nouvelle instance `Room` est assignée (reconnexion), sans attendre le prochain patch entrant.
 
 ### Backend

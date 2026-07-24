@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { GamePhase } from '@onepiecetcg/shared'
+import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
+import type { TransitionGhost } from '~/utils/duelTransitions'
+import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 
 const {
   self,
@@ -28,8 +30,10 @@ const {
   declareBlock,
   declareCounter,
   finishCounterStep,
-  resolveTrigger
+  resolveTrigger,
+  isOpponentDisconnected
 } = useDuelRoom()
+const { status } = useColyseus()
 
 const phaseLabels: Record<string, string> = {
   setup: 'Préparation',
@@ -50,7 +54,29 @@ const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
 
-const phaseSteps: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end']
+const phaseSteps = ['refresh', 'draw', 'don', 'main', 'end'] as const
+const emptyPublicCards: PublicCard[] = []
+const emptyPrivateCards: PrivateCard[] = []
+const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
+  sessionId: 'waiting-opponent',
+  displayName: 'Adversaire en attente',
+  deckId: '',
+  ready: false,
+  connected: false,
+  mulliganDecided: false,
+  leader: null,
+  stage: null,
+  characters: emptyPublicCards,
+  cost: emptyPublicCards,
+  trash: emptyPublicCards,
+  donDeckCount: 0,
+  hand: emptyPrivateCards,
+  handCount: 0,
+  deck: emptyPrivateCards,
+  deckCount: 0,
+  life: emptyPrivateCards,
+  lifeCount: 0
+}))
 
 const canAttachDon = computed(() =>
   isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0 && !isCombatInProgress.value
@@ -58,6 +84,118 @@ const canAttachDon = computed(() =>
 const isChoosingCharacterToDiscard = computed(() => pendingCharacterInstanceId.value !== null)
 const isChoosingTarget = computed(() => pendingAttackerInstanceId.value !== null)
 const isChoosingCounterCard = computed(() => pendingCounterCardInstanceId.value !== null)
+const targetableOpponentCharacterIds = computed(() =>
+  isChoosingTarget.value
+    ? (opponent.value?.characters.filter(character => character.rested).map(character => character.instanceId) ?? [])
+    : []
+)
+const selectableSelfCharacterIds = computed(() => {
+  if (!self.value) {
+    return []
+  }
+
+  if (isChoosingCharacterToDiscard.value) {
+    return self.value.characters.map(character => character.instanceId)
+  }
+
+  if (isSelectingAttacker.value) {
+    return self.value.characters
+      .filter(character => !character.rested && !character.playedThisTurn)
+      .map(character => character.instanceId)
+  }
+
+  if (isBlockingStep.value && isSelfDefender.value) {
+    return self.value.characters
+      .filter(character => !character.rested)
+      .map(character => character.instanceId)
+  }
+
+  if (isAttachingDon.value) {
+    return self.value.characters.map(character => character.instanceId)
+  }
+
+  return []
+})
+const selectableSelfLeader = computed(() =>
+  Boolean(
+    self.value?.leader
+    && (
+      isAttachingDon.value
+      || (isSelectingAttacker.value && !self.value.leader.rested)
+    )
+  )
+)
+const invalidSelfLeaderPulse = ref(false)
+const invalidOpponentLeaderPulse = ref(false)
+const invalidSelfCharacterIds = ref<string[]>([])
+const invalidOpponentCharacterIds = ref<string[]>([])
+const selfTransitionGhosts = ref<TransitionGhost[]>([])
+const opponentTransitionGhosts = ref<TransitionGhost[]>([])
+const selfRevealedHandCardIds = ref<string[]>([])
+
+function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) {
+  if (ghosts.length === 0) {
+    return
+  }
+
+  const existingKeys = new Set(target.value.map(ghost => `${ghost.source}:${ghost.instanceId}`))
+  const freshGhosts = ghosts.filter(ghost => !existingKeys.has(`${ghost.source}:${ghost.instanceId}`))
+
+  if (freshGhosts.length === 0) {
+    return
+  }
+
+  target.value = [...target.value, ...freshGhosts]
+
+  window.setTimeout(() => {
+    const expiredKeys = new Set(freshGhosts.map(ghost => `${ghost.source}:${ghost.instanceId}`))
+    target.value = target.value.filter(ghost => !expiredKeys.has(`${ghost.source}:${ghost.instanceId}`))
+  }, 280)
+}
+
+function mergeRevealedHandCards(target: Ref<string[]>, ids: string[]) {
+  if (ids.length === 0) {
+    return
+  }
+
+  const freshIds = ids.filter(id => !target.value.includes(id))
+
+  if (freshIds.length === 0) {
+    return
+  }
+
+  target.value = [...target.value, ...freshIds]
+
+  window.setTimeout(() => {
+    target.value = target.value.filter(id => !freshIds.includes(id))
+  }, 320)
+}
+
+function syncPlayerTransitions(
+  current: DuelPlayerView | null,
+  previous: DuelPlayerView | null,
+  ghostsTarget: Ref<TransitionGhost[]>,
+  revealedHandTarget?: Ref<string[]>
+) {
+  if (!current) {
+    return
+  }
+
+  const diff = derivePlayerTransitionDiff(previous, current)
+  mergeGhosts(ghostsTarget, diff.ghosts)
+
+  if (revealedHandTarget) {
+    mergeRevealedHandCards(revealedHandTarget, diff.revealedHandCardIds)
+  }
+}
+
+watch(self, (current, previous) => {
+  syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds)
+})
+
+watch(opponent, (current, previous) => {
+  syncPlayerTransitions(current, previous, opponentTransitionGhosts)
+})
 
 function formatLogTime(createdAt: string): string {
   const date = new Date(createdAt)
@@ -81,6 +219,22 @@ function toggleSelectingAttacker() {
   pendingAttackerInstanceId.value = null
 }
 
+function pulseLeader(target: Ref<boolean>) {
+  target.value = true
+
+  window.setTimeout(() => {
+    target.value = false
+  }, 220)
+}
+
+function pulseCharacter(target: Ref<string[]>, instanceId: string) {
+  target.value = Array.from(new Set([...target.value, instanceId]))
+
+  window.setTimeout(() => {
+    target.value = target.value.filter(current => current !== instanceId)
+  }, 220)
+}
+
 function cancelTargetSelection() {
   pendingAttackerInstanceId.value = null
   isSelectingAttacker.value = false
@@ -92,6 +246,7 @@ function onSelfLeaderAttackerClick() {
   }
 
   if (self.value.leader.rested) {
+    pulseLeader(invalidSelfLeaderPulse)
     return
   }
 
@@ -107,6 +262,7 @@ function onSelfCharacterAttackerClick(instanceId: string) {
   const character = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
 
   if (!character || character.rested || character.playedThisTurn) {
+    pulseCharacter(invalidSelfCharacterIds, instanceId)
     return
   }
 
@@ -131,6 +287,7 @@ function onOpponentCharacterTargetClick(instanceId: string) {
   const target = opponent.value?.characters.find(candidate => candidate.instanceId === instanceId)
 
   if (!target || !target.rested) {
+    pulseCharacter(invalidOpponentCharacterIds, instanceId)
     return
   }
 
@@ -146,6 +303,7 @@ function onBlockerCharacterClick(instanceId: string) {
   const blocker = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
 
   if (!blocker || blocker.rested) {
+    pulseCharacter(invalidSelfCharacterIds, instanceId)
     return
   }
 
@@ -264,7 +422,7 @@ function cancelDiscardSelection() {
       class="static shrink-0"
       :ui="{
         center: 'flex min-w-0 justify-center',
-        container: 'max-w-none px-4'
+        container: 'max-w-none px-4 lg:px-6'
       }"
     >
       <template #left>
@@ -273,8 +431,8 @@ function cancelDiscardSelection() {
           class="flex items-center gap-2 min-w-0"
         >
           <span
-            class="h-2 w-2 rounded-full shrink-0"
-            :class="opponent.connected ? 'bg-success' : 'bg-muted'"
+            class="h-2.5 w-2.5 rounded-full shrink-0"
+            :class="opponent.connected ? 'bg-success' : 'duel-connection-waiting bg-warning'"
           />
           <span class="text-sm font-medium truncate">
             {{ opponent.displayName }}
@@ -316,7 +474,7 @@ function cancelDiscardSelection() {
         </p>
       </template>
 
-      <div class="flex items-center gap-1 min-w-0">
+      <div class="flex items-center gap-1 min-w-0 px-2 sm:px-4">
         <UBadge
           v-for="step in phaseSteps"
           :key="step"
@@ -381,6 +539,15 @@ function cancelDiscardSelection() {
       class="shrink-0"
       :close="{ color: 'neutral', variant: 'link' }"
       @update:open="clearError"
+    />
+
+    <UAlert
+      v-if="isOpponentDisconnected"
+      color="warning"
+      variant="subtle"
+      title="Adversaire temporairement deconnecte"
+      description="La partie reste en attente pendant la fenetre de reconnexion. Le duel reprend automatiquement si la connexion revient."
+      class="shrink-0 duel-connection-banner"
     />
 
     <UAlert
@@ -556,12 +723,17 @@ function cancelDiscardSelection() {
       <UContainer class="relative flex flex-col w-5xl gap-2 h-full min-h-0 overflow-hidden">
         <DuelSetupOverlay v-if="phase === 'mulligan'" />
         <PlayZone
-          v-if="opponent"
+          v-if="opponent || self"
           class="flex-1 min-h-0"
-          :player="opponent"
+          :player="opponent ?? emptyOpponentPreview"
           :side="1"
-          is-adversary
-          :is-targetable="isChoosingTarget"
+          :is-adversary="Boolean(opponent)"
+          :transition-ghosts="opponent ? opponentTransitionGhosts : []"
+          :is-targetable="Boolean(opponent) && isChoosingTarget"
+          :targetable-leader="Boolean(opponent) && isChoosingTarget"
+          :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+          :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
+          :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
           @card-hover="hoveredCard = $event"
           @leader-click="onOpponentLeaderClick"
           @character-click="onOpponentCharacterClick"
@@ -579,8 +751,14 @@ function cancelDiscardSelection() {
           :player="self"
           :side="0"
           reveal-hand
+          :transition-ghosts="selfTransitionGhosts"
+          :revealed-hand-card-ids="selfRevealedHandCardIds"
           :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
           :is-selectable="isAttachingDon || isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+          :selectable-leader="selectableSelfLeader"
+          :selectable-character-ids="selectableSelfCharacterIds"
+          :invalid-leader-pulse="invalidSelfLeaderPulse"
+          :invalid-character-ids="invalidSelfCharacterIds"
           @card-hover="hoveredCard = $event"
           @hand-card-click="onSelfHandCardOrCounterClick"
           @leader-click="onSelfLeaderClick"
@@ -640,6 +818,13 @@ function cancelDiscardSelection() {
                 Aucun événement.
               </li>
             </ul>
+          </div>
+
+          <div
+            v-if="status === 'connecting'"
+            class="text-[11px] text-muted shrink-0"
+          >
+            Reconnexion en cours...
           </div>
         </UCard>
       </template>
