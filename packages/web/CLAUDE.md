@@ -20,7 +20,7 @@ pnpm test              # vitest (watch mode)
 pnpm test:run          # vitest (single run)
 ```
 
-Run a single test file: `pnpm exec vitest run app/components/AppLogo.spec.ts`.
+Run a single test file: `pnpm exec vitest run app/composables/useDuelRoom.spec.ts`.
 
 CI (`packages/web/.github/workflows/ci.yml`) runs `pnpm install`, `pnpm run lint`, and `pnpm run typecheck` — no test step is wired into CI yet, so run tests locally before submitting changes.
 
@@ -29,16 +29,21 @@ CI (`packages/web/.github/workflows/ci.yml`) runs `pnpm install`, `pnpm run lint
 ### App structure (Nuxt 4 `app/` directory convention)
 
 - `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder + integrated card catalogue, no separate `/catalogue` route per spec), `room.vue` (matchmaking/lobby), `zone.vue` (live game board), `spike.vue` (technical spike page).
-- `app/components/` — Vue components (PascalCase filenames). `PlayZone.vue` renders the two-player board; `TemplateMenu.vue` and `AppLogo.vue` are shared chrome.
+- `app/components/` — Vue components (PascalCase filenames). `PlayZone.vue`/`DuelBoard.vue`/`MockDuelBoard.vue` render the game board; `DuelCard.vue`/`DuelZoneSlot.vue`/`DuelSetupOverlay.vue` are duel-board pieces; `UserAccountMenu.vue` and `AppConfirmDialog.vue` are shared chrome.
+- `app/layouts/` — `default.vue` and `lobby.vue` share the branded header (incl. logo), auth-aware user menu, and footer chrome; `simulator.vue` is a minimal layout for the live game board.
+- `app/middleware/` — route middleware, e.g. `auth.ts` (auth-gated route protection).
+- `app/utils/` — pure helpers used by components/composables, e.g. `cardStack.ts`, `deckRouteSelection.ts`.
 - `app/composables/` — the integration layer with the backend, see below.
-- `app/app.vue` — root layout (`UApp` shell: header with auth-aware user menu, `NuxtPage`, footer). French UI copy (`lang="fr"`) — keep new user-facing strings in French to match existing pages.
+- `app/app.vue` — thin root shell (`UApp` → `NuxtLayout` → `NuxtPage`, plus `useHead`/`useSeoMeta`); the header/footer chrome lives in `app/layouts/`, not here. French UI copy (`lang="fr"`) — keep new user-facing strings in French to match existing pages.
 - `app/assets/css/` — global CSS entrypoint registered in `nuxt.config.ts` (`css: ['~/assets/css/main.css']`).
 
 ### Composables (integration layer)
 
 - `useApi()` — returns a `$fetch` instance pre-configured with `runtimeConfig.public.apiBase`, `credentials: 'include'`, and forwarded cookies (`useRequestHeaders(['cookie'])`). **Always** go through this composable for API calls instead of raw `$fetch`/`fetch`, so cookies and base URL stay consistent between SSR and client.
-- `useSession()` — wraps auth state (`profile`, `loading`, `errorMessage`) using `useState` (SSR-safe shared state), backed by `GET /me` and Better Auth's social sign-in/sign-out endpoints (`/api/auth/sign-in/social`, `/api/auth/sign-out`) on the API. There is no local password/email flow — OAuth (Google, Discord) only, delegated entirely to the backend.
+- `useSession()` — wraps auth state (`profile`, `loading`, `errorMessage`) using `useState` (SSR-safe shared state), backed by `GET /me` and Better Auth's sign-in/sign-out endpoints on the API: `signIn('google' | 'discord')` for OAuth, and `signInWithEmailPassword()` for the dev-only fixture accounts (see `packages/api/CLAUDE.md`'s `dev-fixtures/`). `login.vue` renders the dev fixture-account picker alongside the OAuth buttons — both delegate entirely to the backend, no local password validation here.
 - `useColyseus()` — client-only (`import.meta.client` guarded) wrapper around `colyseus.js`, connecting to `runtimeConfig.public.colyseusEndpoint` and joining the `duel` room (`joinOrCreate('duel', options)`). This is the sole channel for realtime game state; do not add other websocket clients.
+- `useDuelRoom()` / `useMockDuel()` — game-board state composables built on top of `useColyseus()`; `useMockDuel()` backs the `spike.vue`/local-preview path without a real server connection.
+- `useCardPreview()`, `useConfirmDialog()` / `useAppConfirmDialog()` — smaller UI-state composables (card zoom preview, the app-wide confirm dialog).
 
 ### Runtime config
 
@@ -62,4 +67,4 @@ For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/
 
 ## Testing
 
-Vitest with `@nuxt/test-utils` (`environment: 'nuxt'` in `vitest.config.ts`) and `@vue/test-utils`, using `happy-dom`. Test files follow `*.spec.ts` colocated next to the component (see `app/components/AppLogo.spec.ts`).
+Vitest with `@nuxt/test-utils` (`environment: 'nuxt'` in `vitest.config.ts`) and `@vue/test-utils`, using `happy-dom`. Test files follow `*.spec.ts` colocated next to the code they test — currently composables and utils (e.g. `app/composables/useDuelRoom.spec.ts`, `app/utils/cardStack.spec.ts`) have specs; no component has a `*.spec.ts` yet.

@@ -53,6 +53,10 @@ Never run the package `build` commands (`pnpm build` / `pnpm --dir <package> bui
 
 For Better Auth work, consult the AI-oriented documentation at `https://better-auth.com/llms.txt`. Implementation details live in `packages/api/CLAUDE.md`.
 
+## Nuxt UI
+
+For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/docs/getting-started/ai/llms-txt`. Implementation details live in `packages/web/CLAUDE.md`.
+
 ## Commit & Pull Request Guidelines
 
 Use angular commit convention. Keep changes scoped by package where possible.
