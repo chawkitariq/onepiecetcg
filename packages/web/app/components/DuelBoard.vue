@@ -47,7 +47,23 @@ const {
   resolveTrigger,
   isOpponentDisconnected
 } = useDuelRoom()
-const { status } = useColyseus()
+const { status, leave } = useColyseus()
+const { confirm } = useConfirmDialog()
+
+async function confirmLeaveToLobby() {
+  const confirmed = await confirm({
+    title: 'Retourner au lobby ?',
+    description: 'Vous quitterez la partie en cours.',
+    confirmLabel: 'Retourner au lobby'
+  })
+
+  if (!confirmed) {
+    return
+  }
+
+  await leave()
+  await navigateTo('/room')
+}
 
 const phaseLabels: Record<string, string> = {
   setup: 'Préparation',
@@ -445,7 +461,6 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     onBlockerCharacterClick(instanceId)
     return
   }
-
 }
 
 function onOpponentLeaderClick() {
@@ -660,6 +675,15 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
           >
             {{ phase === 'end' ? 'Terminer le tour' : 'Phase suivante' }}
           </UButton>
+          <UButton
+            data-test="leave-to-lobby"
+            icon="i-lucide-log-out"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            aria-label="Retour au lobby"
+            @click="confirmLeaveToLobby"
+          />
         </div>
       </template>
     </UHeader>

@@ -78,9 +78,19 @@ function createPlayer(sessionId: string, overrides: Partial<DuelPlayerView> = {}
   }
 }
 
+const leave = vi.fn()
+const confirm = vi.fn()
+
 mockNuxtImport('useColyseus', () => () => ({
-  status: ref('connected')
+  status: ref('connected'),
+  leave
 }))
+
+mockNuxtImport('useConfirmDialog', () => () => ({
+  confirm
+}))
+
+mockNuxtImport('navigateTo', () => vi.fn())
 
 mockNuxtImport('useDuelRoom', () => () => ({
   self,
@@ -306,5 +316,85 @@ describe('DuelBoard drag and drop', () => {
     expect(attachDon).toHaveBeenNthCalledWith(1, 'leader')
     expect(attachDon).toHaveBeenNthCalledWith(2, 'leader')
     expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('self-leader')
+  })
+})
+
+describe('DuelBoard leave to lobby', () => {
+  beforeEach(() => {
+    phase.value = 'main'
+    isSelfTurn.value = true
+    isCombatInProgress.value = false
+    canDeclareAttack.value = false
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')]
+    })
+    opponent.value = createPlayer('opponent', {
+      characters: [createPublicCard('opponent-character-a', { rested: true })]
+    })
+    leave.mockReset()
+    confirm.mockReset()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers()
+    vi.useRealTimers()
+  })
+
+  const headerStub = defineComponent({
+    name: 'UHeader',
+    setup(_, { slots }) {
+      return () => h('div', [
+        slots.left?.(),
+        slots.default?.(),
+        slots.right?.()
+      ])
+    }
+  })
+
+  function mountBoard() {
+    return mount(DuelBoard, {
+      global: {
+        stubs: {
+          UHeader: headerStub,
+          UBadge: defaultStub,
+          UButton: defaultStub,
+          UAlert: defaultStub,
+          UPage: defaultStub,
+          UContainer: defaultStub,
+          UCard: defaultStub,
+          USeparator: defaultStub,
+          UInputNumber: defaultStub,
+          DuelSetupOverlay: defaultStub,
+          PlayZone: playZoneStub
+        }
+      }
+    })
+  }
+
+  it('leaves the room and does not navigate away when the confirmation is dismissed', async () => {
+    confirm.mockResolvedValue(false)
+
+    const wrapper = mountBoard()
+    await wrapper.get('[data-test="leave-to-lobby"]').trigger('click')
+    await Promise.resolve()
+
+    expect(confirm).toHaveBeenCalledWith({
+      title: 'Retourner au lobby ?',
+      description: 'Vous quitterez la partie en cours.',
+      confirmLabel: 'Retourner au lobby'
+    })
+    expect(leave).not.toHaveBeenCalled()
+  })
+
+  it('leaves the room when the confirmation is accepted', async () => {
+    confirm.mockResolvedValue(true)
+
+    const wrapper = mountBoard()
+    await wrapper.get('[data-test="leave-to-lobby"]').trigger('click')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(leave).toHaveBeenCalledTimes(1)
   })
 })
