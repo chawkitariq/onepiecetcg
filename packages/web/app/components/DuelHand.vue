@@ -23,6 +23,7 @@ const props = defineProps<{
   draggableHandCardIds?: string[]
   invalidHandCardIds?: string[]
   revealedHandCardIds?: string[]
+  align?: 'start' | 'center'
 }>()
 
 const emit = defineEmits<{
@@ -68,7 +69,10 @@ function useMeasuredStackSize(templateRefName: string) {
 }
 
 function stackedCardStyle(index: number, cardCount: number, size: StackContainerSize) {
-  const { startPercent, offsetPercent } = getStackedCardLayout(cardCount, size.width, size.height, { centered: true })
+  const { startPercent, offsetPercent } = getStackedCardLayout(cardCount, size.width, size.height, {
+    centered: props.align !== 'start',
+    sideSpaceCards: props.align === 'start' ? 0 : undefined
+  })
 
   return {
     left: `${startPercent + index * offsetPercent}%`,

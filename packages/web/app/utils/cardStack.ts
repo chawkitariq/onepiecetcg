@@ -10,6 +10,7 @@ export type StackedCardLayout = {
 export type StackedCardLayoutOptions = {
   cardWidthRatio?: number
   centered?: boolean
+  sideSpaceCards?: number
 }
 
 /**
@@ -30,9 +31,9 @@ export function getStackedCardLayout(
     }
   }
 
-  const { cardWidthRatio = CARD_WIDTH_RATIO, centered = false } = options
+  const { cardWidthRatio = CARD_WIDTH_RATIO, centered = false, sideSpaceCards = SIDE_CARD_SPACE } = options
   const cardWidth = containerHeight * cardWidthRatio
-  const desiredSideSpace = cardWidth * SIDE_CARD_SPACE
+  const desiredSideSpace = cardWidth * sideSpaceCards
   const maxSideSpace = Math.max((containerWidth - cardWidth) / 2, 0)
   const sideSpace = Math.min(desiredSideSpace, maxSideSpace)
 

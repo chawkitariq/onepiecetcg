@@ -16,6 +16,7 @@ type StackContainerSize = {
 
 const props = defineProps<{
   handCount: number
+  align?: 'start' | 'center'
 }>()
 
 const hiddenHand = computed(() => Array.from({ length: props.handCount }))
@@ -53,7 +54,10 @@ function useMeasuredStackSize(templateRefName: string) {
 }
 
 function stackedCardStyle(index: number, cardCount: number, size: StackContainerSize) {
-  const { startPercent, offsetPercent } = getStackedCardLayout(cardCount, size.width, size.height, { centered: true })
+  const { startPercent, offsetPercent } = getStackedCardLayout(cardCount, size.width, size.height, {
+    centered: props.align !== 'start',
+    sideSpaceCards: props.align === 'start' ? 0 : undefined
+  })
 
   return {
     left: `${startPercent + index * offsetPercent}%`,

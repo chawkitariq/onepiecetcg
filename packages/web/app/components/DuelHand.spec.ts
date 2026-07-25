@@ -3,7 +3,12 @@ import { mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getStackedCardLayout } from '~/utils/cardStack'
 import DuelHand from './DuelHand.vue'
+
+vi.mock('~/utils/cardStack', () => ({
+  getStackedCardLayout: vi.fn(() => ({ startPercent: 0, offsetPercent: 0 }))
+}))
 
 const reducedMotion = ref<'reduce' | 'no-preference'>('no-preference')
 const tooltipStub = defineComponent({
@@ -69,6 +74,7 @@ function createPrivateCard(instanceId: string, overrides: Partial<PrivateCard> =
 describe('DuelHand', () => {
   beforeEach(() => {
     reducedMotion.value = 'no-preference'
+    vi.mocked(getStackedCardLayout).mockClear()
     vi.stubGlobal('ResizeObserver', class {
       observe() {}
       disconnect() {}
@@ -184,5 +190,24 @@ describe('DuelHand', () => {
     await handCard?.trigger('click')
 
     expect(wrapper.emitted('cardClick')).toEqual([['hand-a']])
+  })
+
+  it('left-aligns the hand stack when requested by the board layout', () => {
+    mount(DuelHand, {
+      props: {
+        hand: [createPrivateCard('hand-a')],
+        align: 'start'
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub }
+      }
+    })
+
+    expect(vi.mocked(getStackedCardLayout)).toHaveBeenCalledWith(
+      1,
+      expect.any(Number),
+      expect.any(Number),
+      { centered: false, sideSpaceCards: 0 }
+    )
   })
 })

@@ -1042,7 +1042,33 @@ onKeyStroke('Escape', () => {
       </template>
     </USlideover>
 
-    <div class="mx-auto grid h-full min-h-0 w-full max-w-7xl flex-1 grid-cols-[1fr_0.25fr] gap-2 overflow-hidden p-2">
+    <div class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 grid-cols-[minmax(220px,0.42fr)_minmax(0,1fr)_minmax(260px,0.25fr)] gap-4 overflow-hidden p-4">
+      <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
+        <div class="w-full max-w-[26rem] shrink-0">
+          <DuelOpponentHand
+            v-if="opponent"
+            :hand-count="opponent.handCount"
+            align="start"
+          />
+        </div>
+
+        <div class="w-full max-w-[26rem] shrink-0">
+          <DuelHand
+            v-if="self"
+            :hand="self.hand"
+            align="start"
+            :draggable-hand-card-ids="draggableHandCardIds"
+            :invalid-hand-card-ids="invalidHandCardIds"
+            :revealed-hand-card-ids="selfRevealedHandCardIds"
+            @card-hover="hoveredCard = $event"
+            @card-click="onSelfHandCardOrCounterClick"
+            @card-drag-start="onSelfHandCardDragStart"
+            @card-drag-end="onSelfHandCardDragEnd"
+            @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
+          />
+        </div>
+      </div>
+
       <div
         class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden"
       >
@@ -1066,10 +1092,6 @@ onKeyStroke('Escape', () => {
             @done="removeFloatingNumber(entry.key)"
           />
           <DuelSetupOverlay v-if="phase === 'mulligan'" />
-          <DuelOpponentHand
-            v-if="opponent"
-            :hand-count="opponent.handCount"
-          />
           <LayoutGroup
             v-if="opponent || self"
             :id="`play-zone-${(opponent ?? emptyOpponentPreview).sessionId}`"
@@ -1122,17 +1144,6 @@ onKeyStroke('Escape', () => {
               @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
               @leader-click="onSelfLeaderClick"
               @character-click="onSelfCharacterClick"
-            />
-            <DuelHand
-              :hand="self.hand"
-              :draggable-hand-card-ids="draggableHandCardIds"
-              :invalid-hand-card-ids="invalidHandCardIds"
-              :revealed-hand-card-ids="selfRevealedHandCardIds"
-              @card-hover="hoveredCard = $event"
-              @card-click="onSelfHandCardOrCounterClick"
-              @card-drag-start="onSelfHandCardDragStart"
-              @card-drag-end="onSelfHandCardDragEnd"
-              @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
             />
           </LayoutGroup>
         </div>

@@ -50,6 +50,12 @@ describe('getStackedCardLayout', () => {
     expect(start).toBeCloseTo((containerWidth - stackWidth) / 2)
   })
 
+  it('can flush the stack to the left edge when side space is disabled', () => {
+    const layout = getStackedCardLayout(5, 1000, 140, { sideSpaceCards: 0 })
+
+    expect(layout.startPercent).toBe(0)
+  })
+
   it('increases overlap as more cards are stacked into the same zone', () => {
     const fiveCards = getStackedCardLayout(5, 700, 140)
     const tenCards = getStackedCardLayout(10, 700, 140)
