@@ -62,6 +62,7 @@ const saving = ref(false)
 const deleting = ref(false)
 const importing = ref(false)
 const exporting = ref(false)
+const mobilePanel = ref<'catalog' | 'details' | 'builder'>('catalog')
 
 type PersistedCatalogFilters = {
   search?: string
@@ -309,6 +310,26 @@ const deckBuilderActionItems = computed<DropdownMenuItem[][]>(() => [
     }
   ]
 ])
+
+const deckProgressColor = computed<'neutral' | 'primary' | 'success'>(() => {
+  if (mainDeckCount.value === 0) {
+    return 'neutral'
+  }
+
+  return mainDeckCount.value === 50 ? 'success' : 'primary'
+})
+
+const displayedValidationErrors = computed(() => {
+  if (!validationData.value || validationData.value.valid) {
+    return []
+  }
+
+  return validationData.value.errors.map((error) => {
+    const card = error.cardId ? cardById.value.get(error.cardId) : undefined
+
+    return card ? `${error.message} (${card.name})` : error.message
+  })
+})
 
 const selectedCardRows = computed(() => {
   if (!previewCard.value) {
@@ -665,9 +686,9 @@ async function saveDeck() {
     const method = selectedDeckId.value ? 'PUT' : 'POST'
     const saved = await api<Deck>(route, { method, body: payload.value })
 
+    await refreshDecks()
     selectedDeckId.value = saved.id
     toast.add(createDeckSavedToast())
-    await refreshDecks()
   } catch (error: unknown) {
     toast.add(createDeckActionErrorToast(extractErrorMessage(error)))
   } finally {
@@ -800,11 +821,23 @@ function extractErrorMessage(error: unknown): string {
 </script>
 
 <template>
-  <main class="fixed inset-x-0 bottom-0 top-(--ui-header-height) overflow-hidden px-2.5 py-2">
-    <div class="mx-auto grid h-full min-h-0 max-w-[2000px] min-w-0 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(244px,19%)_minmax(0,1fr)]">
+  <main class="fixed inset-x-0 bottom-0 top-(--ui-header-height) flex flex-col overflow-hidden px-2.5 py-2">
+    <UTabs
+      v-model="mobilePanel"
+      :content="false"
+      :items="[
+        { label: 'Catalogue', value: 'catalog', icon: 'i-lucide-layout-grid' },
+        { label: 'Details', value: 'details', icon: 'i-lucide-square-mouse-pointer' },
+        { label: 'Deck', value: 'builder', icon: 'i-lucide-layers', badge: `${mainDeckCount}/50` }
+      ]"
+      class="mb-2 shrink-0 xl:hidden"
+    />
+
+    <div class="mx-auto grid h-full min-h-0 max-w-[2000px] min-w-0 flex-1 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(244px,19%)_minmax(0,1fr)]">
       <UCard
         class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+        :class="mobilePanel === 'catalog' ? 'flex' : 'hidden xl:flex'"
+        :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
       >
         <template #header>
           <div class="flex items-start justify-between gap-3">
@@ -877,7 +910,7 @@ function extractErrorMessage(error: unknown): string {
               v-for="card in filteredCards"
               :key="card.id"
               type="button"
-              class="group aspect-[5/7] overflow-hidden rounded-lg border border-muted bg-elevated transition hover:border-primary hover:bg-accented"
+              class="group relative aspect-[5/7] overflow-hidden rounded-lg border border-muted bg-elevated transition hover:border-primary hover:bg-accented"
               :class="{ 'border-primary ring-2 ring-primary/30': selectedCard?.id === card.id }"
               :aria-label="`Selectionner ${card.name}`"
               @click="selectCard(card)"
@@ -898,6 +931,24 @@ function extractErrorMessage(error: unknown): string {
                   class="size-8"
                 />
               </div>
+
+              <UBadge
+                v-if="getCardQuantity(card) > 0"
+                color="primary"
+                variant="solid"
+                size="sm"
+                class="absolute right-1 top-1"
+              >
+                {{ getCardQuantity(card) }}/4
+              </UBadge>
+              <UBadge
+                v-if="card.id === leaderCardId"
+                color="warning"
+                variant="solid"
+                size="sm"
+                icon="i-lucide-crown"
+                class="absolute left-1 top-1"
+              />
             </button>
           </div>
         </div>
@@ -924,7 +975,8 @@ function extractErrorMessage(error: unknown): string {
 
       <UCard
         class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+        :class="mobilePanel === 'details' ? 'flex' : 'hidden xl:flex'"
+        :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
       >
         <template #header>
           <div class="space-y-3">
@@ -1074,22 +1126,30 @@ function extractErrorMessage(error: unknown): string {
 
       <UCard
         class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+        :class="mobilePanel === 'builder' ? 'flex' : 'hidden xl:flex'"
+        :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
       >
         <template #header>
           <div class="space-y-3">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
+            <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
+              <div class="min-w-40 flex-1">
                 <h2 class="text-base font-semibold text-highlighted">
                   Deck builder
                 </h2>
                 <p class="text-sm text-muted">
                   {{ mainDeckCount }} / 50 cartes
                 </p>
+                <UProgress
+                  :model-value="mainDeckCount"
+                  :max="50"
+                  :color="deckProgressColor"
+                  size="sm"
+                  class="mt-1.5"
+                />
               </div>
               <UFormField
                 label="Deck sauvegarde"
-                class="min-w-0 flex-1 xl:max-w-md"
+                class="w-full min-w-0 sm:max-w-full sm:flex-1 xl:w-full xl:max-w-md"
               >
                 <UFieldGroup class="w-full">
                   <USelectMenu
@@ -1097,7 +1157,7 @@ function extractErrorMessage(error: unknown): string {
                     :items="savedDeckItems"
                     value-key="value"
                     placeholder="Choisir un deck sauvegarde"
-                    class="w-full"
+                    class="min-w-0 flex-1"
                     :loading="deckListPending"
                     :disabled="savedDecks.length === 0"
                     @update:model-value="maybeSetFromSavedDeck"
@@ -1250,7 +1310,26 @@ function extractErrorMessage(error: unknown): string {
             </div>
           </div>
 
-          <footer class="shrink-0 border-t border-muted/70 pt-4">
+          <footer class="shrink-0 space-y-2 border-t border-muted/70 pt-4">
+            <UAlert
+              v-if="displayedValidationErrors.length > 0"
+              color="info"
+              variant="subtle"
+              icon="i-lucide-circle-alert"
+              title="Deck incomplet"
+            >
+              <template #description>
+                <ul class="list-inside list-disc space-y-0.5">
+                  <li
+                    v-for="error in displayedValidationErrors"
+                    :key="error"
+                  >
+                    {{ error }}
+                  </li>
+                </ul>
+              </template>
+            </UAlert>
+
             <div class="flex flex-wrap items-center justify-between gap-3">
               <UBadge
                 v-if="validationPending"
