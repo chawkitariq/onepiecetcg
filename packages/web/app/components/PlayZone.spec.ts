@@ -208,12 +208,11 @@ describe('PlayZone transitions', () => {
     expect(leaderZone?.props('allowOverflow')).toBe(true)
   })
 
-  it('keeps deck and hand overflow visible so draw transitions can travel between both zones', () => {
+  it('keeps deck overflow visible so draw transitions can travel between zones', () => {
     const wrapper = mount(PlayZone, {
       props: {
         player: createPlayer(),
-        side: 0,
-        revealHand: true
+        side: 0
       },
       global: {
         stubs: popoverTestStubs()
@@ -222,10 +221,23 @@ describe('PlayZone transitions', () => {
 
     const zones = wrapper.findAllComponents({ name: 'DuelZoneSlot' })
     const deckZone = zones.find(component => component.props('label') === 'Deck')
-    const handZone = zones.find(component => component.props('label') === 'Main')
     expect(deckZone?.props('allowOverflow')).toBe(true)
-    expect(handZone?.props('allowOverflow')).toBe(true)
     expect(wrapper.html()).toContain('overflow-visible')
+  })
+
+  it('does not render a Main zone -- the hand lives in DuelHand, not on the mirrored board', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const zones = wrapper.findAllComponents({ name: 'DuelZoneSlot' })
+    expect(zones.some(component => component.props('label') === 'Main')).toBe(false)
   })
 
   it('renders ghosts for hidden-zone transitions from life, deck and DON!! deck', () => {
@@ -293,115 +305,11 @@ describe('PlayZone transitions', () => {
     expect(restedSecondOffset).toBeGreaterThan(restedFirstOffset ?? 0)
   })
 
-  it('attaches the reveal animation to newly revealed hand cards', () => {
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer({
-          hand: [createPrivateCard('hand-a'), createPrivateCard('revealed-hand')],
-          handCount: 2
-        }),
-        side: 0,
-        revealHand: true,
-        revealedHandCardIds: ['revealed-hand']
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    const animatedHandCard = wrapper.findAll('button')
-      .find(node => node.attributes('data-layout-id') === 'revealed-hand')
-
-    expect(animatedHandCard?.attributes('data-animate')).toBe(JSON.stringify({
-      rotateY: [90, 0],
-      scale: [0.94, 1],
-      filter: ['brightness(1.16)', 'brightness(1)']
-    }))
-  })
-
-  it('disables reveal animation details when reduced motion is requested', () => {
-    reducedMotion.value = 'reduce'
-
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer({
-          hand: [createPrivateCard('revealed-hand')],
-          handCount: 1
-        }),
-        side: 0,
-        revealHand: true,
-        revealedHandCardIds: ['revealed-hand']
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    const animatedHandCard = wrapper.findAll('button')
-      .find(node => node.attributes('data-layout-id') === 'revealed-hand')
-
-    expect(animatedHandCard?.attributes('data-animate')).toBeUndefined()
-  })
-
-  it('emits a drag start for a draggable hand card and populates the drag data payload', async () => {
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer(),
-        side: 0,
-        revealHand: true,
-        draggableHandCardIds: ['hand-a']
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    const setData = vi.fn()
-    const handCard = wrapper.findAll('button')
-      .find(node => node.attributes('data-layout-id') === 'hand-a')
-
-    await handCard?.trigger('dragstart', {
-      dataTransfer: {
-        setData,
-        effectAllowed: ''
-      }
-    })
-
-    expect(setData).toHaveBeenCalledWith('text/plain', 'hand-a')
-    expect(wrapper.emitted('handCardDragStart')).toEqual([[0, 'hand-a']])
-  })
-
-  it('rejects a drag attempt for a non-draggable hand card', async () => {
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer(),
-        side: 0,
-        revealHand: true
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    const handCard = wrapper.findAll('button')
-      .find(node => node.attributes('data-layout-id') === 'hand-a')
-
-    await handCard?.trigger('dragstart', {
-      dataTransfer: {
-        setData: vi.fn(),
-        effectAllowed: ''
-      }
-    })
-
-    expect(wrapper.emitted('invalidHandCardDragAttempt')).toEqual([[0, 'hand-a']])
-  })
-
   it('emits a drop event when a dragged hand card is released over the character zone', async () => {
     const wrapper = mount(PlayZone, {
       props: {
         player: createPlayer(),
         side: 0,
-        revealHand: true,
         draggedHandCardInstanceId: 'hand-a',
         canDropOnCharacterZone: true
       },

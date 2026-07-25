@@ -129,13 +129,12 @@ const playZoneStub = defineComponent({
   name: 'PlayZone',
   props: {
     side: { type: Number, required: true },
-    draggableHandCardIds: { type: Array, default: () => [] },
     leaderActionPopoverItems: { type: Array, default: () => [] },
     characterActionPopoverItems: { type: Object, default: () => ({}) },
     attackerId: { type: String, default: undefined },
     isTargetable: { type: Boolean, default: false }
   },
-  emits: ['handCardDragStart', 'handCardDropOnCharacters', 'handCardClick'],
+  emits: ['handCardDropOnCharacters'],
   setup(props, { emit }) {
     function getLeaderPopoverItems() {
       return props.leaderActionPopoverItems as Array<{ label: string, onSelect: () => void }>
@@ -147,23 +146,14 @@ const playZoneStub = defineComponent({
 
     return () => h('div', {
       'data-play-zone': props.side,
-      'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
       'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
       'data-character-popover-character-a': JSON.stringify(getCharacterPopoverItems('character-a').map(item => item.label)),
       'data-attacker-id': props.attackerId,
       'data-is-targetable': String(props.isTargetable ?? false)
     }, [
       h('button', {
-        'data-test': `drag-start-${props.side}`,
-        'onClick': () => emit('handCardDragStart', props.side, 'hand-character')
-      }),
-      h('button', {
         'data-test': `drop-${props.side}`,
         'onClick': () => emit('handCardDropOnCharacters', props.side)
-      }),
-      h('button', {
-        'data-test': `hand-click-${props.side}`,
-        'onClick': () => emit('handCardClick', props.side, 'hand-character')
       }),
       h('button', {
         'data-test': `character-popover-attach-${props.side}`,
@@ -180,6 +170,29 @@ const playZoneStub = defineComponent({
       h('button', {
         'data-test': `leader-popover-attack-${props.side}`,
         'onClick': () => getLeaderPopoverItems()[1]?.onSelect?.()
+      })
+    ])
+  }
+})
+
+const duelHandStub = defineComponent({
+  name: 'DuelHand',
+  props: {
+    draggableHandCardIds: { type: Array, default: () => [] }
+  },
+  emits: ['cardDragStart', 'cardClick'],
+  setup(props, { emit }) {
+    return () => h('div', {
+      'data-duel-hand': 'true',
+      'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds)
+    }, [
+      h('button', {
+        'data-test': 'drag-start-0',
+        'onClick': () => emit('cardDragStart', 'hand-character')
+      }),
+      h('button', {
+        'data-test': 'hand-click-0',
+        'onClick': () => emit('cardClick', 'hand-character')
       })
     ])
   }
@@ -248,7 +261,9 @@ describe('DuelBoard drag and drop', () => {
           UScrollArea: defaultStub,
           UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
-          PlayZone: playZoneStub
+          PlayZone: playZoneStub,
+          DuelHand: duelHandStub,
+          DuelOpponentHand: defaultStub
         }
       }
     })
@@ -256,9 +271,9 @@ describe('DuelBoard drag and drop', () => {
 
   it('exposes only affordable character cards as draggable from the self hand', () => {
     const wrapper = mountBoard()
-    const selfZone = wrapper.get('[data-play-zone="0"]')
+    const hand = wrapper.get('[data-duel-hand]')
 
-    expect(selfZone.attributes('data-draggable-hand-card-ids')).toBe(JSON.stringify(['hand-character']))
+    expect(hand.attributes('data-draggable-hand-card-ids')).toBe(JSON.stringify(['hand-character']))
   })
 
   it('plays the dragged character when it is dropped onto the self character zone', async () => {
@@ -395,7 +410,9 @@ describe('DuelBoard leave to lobby', () => {
           UScrollArea: defaultStub,
           UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
-          PlayZone: playZoneStub
+          PlayZone: playZoneStub,
+          DuelHand: duelHandStub,
+          DuelOpponentHand: defaultStub
         }
       }
     })
