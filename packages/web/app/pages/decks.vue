@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
+import type { ChipProps, DropdownMenuItem } from '@nuxt/ui'
 import type {
   Card,
   CardColor,
@@ -260,10 +260,36 @@ const costItems = computed(() => [
   ...filters.value.costs.map(cost => ({ label: String(cost), value: String(cost) }))
 ])
 
-const savedDeckItems = computed(() => savedDecks.value.map(deck => ({
-  label: deck.name,
-  value: deck.id
-})))
+type SavedDeckSelectItem = {
+  label: string
+  value: string
+  leaderColors: CardColor[]
+  chip?: {
+    color: ChipProps['color']
+    size: 'sm'
+  }
+}
+
+const savedDeckItems = computed<SavedDeckSelectItem[]>(() => savedDecks.value.map((deck) => {
+  const leaderColors = getDeckLeaderColors(deck)
+  const primaryColor = leaderColors[0]
+
+  return {
+    label: deck.name,
+    value: deck.id,
+    leaderColors,
+    chip: primaryColor
+      ? {
+          color: CARD_COLOR_ACCENTS[primaryColor].chip,
+          size: 'sm' as const
+        }
+      : undefined
+  }
+}))
+
+const selectedSavedDeckItem = computed(() =>
+  savedDeckItems.value.find(item => item.value === selectedDeckId.value) ?? null
+)
 
 const deckBuilderActionItems = computed<DropdownMenuItem[][]>(() => [
   [
@@ -346,6 +372,10 @@ function setFromSavedDeck(deck: Deck) {
   deckCards.value = [...deck.cards]
   builderNotice.value = null
   selectedCard.value = cardById.value.get(deck.leaderCardId) ?? null
+}
+
+function getDeckLeaderColors(deck: Deck): CardColor[] {
+  return cardById.value.get(deck.leaderCardId)?.colors ?? []
 }
 
 function resetBuilder() {
@@ -1009,7 +1039,6 @@ function extractErrorMessage(error: unknown): string {
                   <UBadge
                     v-for="color in previewCard.colors"
                     :key="color"
-                    variant="outline"
                     :style="getCardColorStyle(color)"
                   >
                     {{ color }}
@@ -1110,9 +1139,19 @@ function extractErrorMessage(error: unknown): string {
           <div class="space-y-3">
             <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
               <div class="min-w-40 flex-1">
-                <h2 class="text-base font-semibold text-highlighted">
-                  Deck builder
-                </h2>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="text-base font-semibold text-highlighted">
+                    Deck builder
+                  </h2>
+                  <UBadge
+                    v-for="color in selectedLeader?.colors ?? []"
+                    :key="color"
+                    size="sm"
+                    :style="getCardColorStyle(color)"
+                  >
+                    {{ color }}
+                  </UBadge>
+                </div>
                 <p class="text-sm text-muted">
                   {{ mainDeckCount }} / 50 cartes
                 </p>
@@ -1138,7 +1177,18 @@ function extractErrorMessage(error: unknown): string {
                     :loading="deckListPending"
                     :disabled="savedDecks.length === 0"
                     @update:model-value="maybeSetFromSavedDeck"
-                  />
+                  >
+                    <template #leading="{ ui }">
+                      <UChip
+                        v-if="selectedSavedDeckItem?.chip"
+                        v-bind="selectedSavedDeckItem.chip"
+                        inset
+                        standalone
+                        :size="(ui.itemLeadingChipSize() as ChipProps['size'])"
+                        :class="ui.itemLeadingChip()"
+                      />
+                    </template>
+                  </USelectMenu>
                   <UButton
                     icon="i-lucide-plus"
                     color="neutral"
