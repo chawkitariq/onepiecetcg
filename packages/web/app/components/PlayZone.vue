@@ -390,6 +390,7 @@ function onCharacterZoneDrop(event: DragEvent) {
       <DuelZoneSlot
         label="Character"
         :flipped="isAdversary"
+        allow-overflow
         :class="isCharacterZoneDropTargetActive ? 'border-success bg-success/5 ring-2 ring-success/70' : ''"
       >
         <div
