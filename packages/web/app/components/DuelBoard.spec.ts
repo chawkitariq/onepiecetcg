@@ -35,6 +35,7 @@ const phase = ref('main')
 const isSelfTurn = ref(true)
 const isCombatInProgress = ref(false)
 const canDeclareAttack = ref(false)
+const reducedMotion = ref<'reduce' | 'no-preference'>('no-preference')
 const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
 const logs = ref<Array<{ id: string, message: string, createdAt: string }>>([])
@@ -110,6 +111,7 @@ mockNuxtImport('useConfirmDialog', () => () => ({
 }))
 
 mockNuxtImport('navigateTo', () => vi.fn())
+mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
 
 mockNuxtImport('useDuelRoom', () => () => ({
   self,
@@ -151,7 +153,9 @@ const playZoneStub = defineComponent({
     characterActionPopoverItems: { type: Object, default: () => ({}) },
     attackerId: { type: String, default: undefined },
     isTargetable: { type: Boolean, default: false },
-    transitionGhosts: { type: Array, default: () => [] }
+    transitionGhosts: { type: Array, default: () => [] },
+    deferredBoardCardIds: { type: Array, default: () => [] },
+    deferredCostCardIds: { type: Array, default: () => [] }
   },
   emits: ['handCardDropOnCharacters', 'handCardDropOnStage'],
   setup(props, { emit }) {
@@ -167,11 +171,29 @@ const playZoneStub = defineComponent({
       'data-play-zone': props.side,
       'data-player-hand': JSON.stringify((props.player as DuelPlayerView).hand.map(card => card.instanceId)),
       'data-transition-ghosts': JSON.stringify((props.transitionGhosts as Array<{ instanceId: string, source: string }>)),
+      'data-deferred-board-card-ids': JSON.stringify(props.deferredBoardCardIds),
+      'data-deferred-cost-card-ids': JSON.stringify(props.deferredCostCardIds),
       'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
       'data-character-popover-character-a': JSON.stringify(getCharacterPopoverItems('character-a').map(item => item.label)),
       'data-attacker-id': props.attackerId,
       'data-is-targetable': String(props.isTargetable ?? false)
     }, [
+      h('div', { 'data-don-deck-side': props.side }),
+      ...((props.player as DuelPlayerView).characters.map(character => h('div', {
+        'data-instance-id': character.instanceId,
+        'data-board-card-deferred': String((props.deferredBoardCardIds as string[]).includes(character.instanceId))
+      }))),
+      (props.player as DuelPlayerView).stage
+        ? h('div', {
+            'data-instance-id': (props.player as DuelPlayerView).stage?.instanceId,
+            'data-board-card-deferred': String((props.deferredBoardCardIds as string[]).includes((props.player as DuelPlayerView).stage?.instanceId ?? ''))
+          })
+        : null,
+      ...((props.player as DuelPlayerView).cost.map(card => h('div', {
+        'data-instance-id': card.instanceId,
+        'data-zone-side': props.side,
+        'data-cost-card-deferred': String((props.deferredCostCardIds as string[]).includes(card.instanceId))
+      }))),
       h('button', {
         'data-test': `drop-${props.side}`,
         'onClick': () => emit('handCardDropOnCharacters', props.side)
@@ -213,6 +235,9 @@ const duelHandStub = defineComponent({
       'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>).map(card => card.instanceId)),
       'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds)
     }, [
+      ...((props.hand as Array<PrivateCard>).map(card => h('div', {
+        'data-instance-id': card.instanceId
+      }))),
       h('button', {
         'data-test': 'drag-start-0',
         'onClick': () => emit('cardDragStart', 'hand-character')
@@ -268,6 +293,7 @@ describe('DuelBoard drag and drop', () => {
     isSelfTurn.value = true
     isCombatInProgress.value = false
     canDeclareAttack.value = false
+    reducedMotion.value = 'no-preference'
     self.value = createPlayer('self', {
       characters: [createPublicCard('character-a')]
     })
@@ -284,11 +310,18 @@ describe('DuelBoard drag and drop', () => {
     declareCounter.mockReset()
     finishCounterStep.mockReset()
     resolveTrigger.mockReset()
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(performance.now()), 16)
+    )
+    vi.stubGlobal('cancelAnimationFrame', (handle: number) => {
+      window.clearTimeout(handle)
+    })
     vi.useFakeTimers()
   })
 
   afterEach(() => {
     vi.runOnlyPendingTimers()
+    vi.unstubAllGlobals()
     vi.useRealTimers()
   })
 
@@ -517,11 +550,18 @@ describe('DuelBoard leave to lobby', () => {
     logs.value = []
     leave.mockReset()
     confirm.mockReset()
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(performance.now()), 16)
+    )
+    vi.stubGlobal('cancelAnimationFrame', (handle: number) => {
+      window.clearTimeout(handle)
+    })
     vi.useFakeTimers()
   })
 
   afterEach(() => {
     vi.runOnlyPendingTimers()
+    vi.unstubAllGlobals()
     vi.useRealTimers()
   })
 

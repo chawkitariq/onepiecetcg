@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
-import type { TransitionGhost } from '~/utils/duelTransitions'
+import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { LayoutGroup } from 'motion-v'
+import cardFrontDon from '~/assets/don.png'
 import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 
@@ -19,6 +20,22 @@ type LeaderActionPopoverItem = {
   disabled?: boolean
   onSelect: () => void
 }
+
+type BoardTravelOverlay = {
+  key: string
+  instanceId: string
+  imageUrl: string
+  sourceRect: DOMRect
+  destinationRect: DOMRect
+  translateX: number
+  translateY: number
+  scaleX: number
+  scaleY: number
+  settled: boolean
+  rotated?: boolean
+}
+
+const BOARD_TRAVEL_MS = 520
 
 const {
   self,
@@ -87,6 +104,7 @@ type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 
   & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
 
 const hoveredCard = ref<HoveredDuelCard | null>(null)
+const reducedMotion = usePreferredReducedMotion()
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 const isJournalOpen = ref(false)
 const seenLogCount = ref(0)
@@ -215,6 +233,10 @@ const selfTransitionGhosts = ref<TransitionGhost[]>([])
 const opponentTransitionGhosts = ref<TransitionGhost[]>([])
 const selfRevealedHandCardIds = ref<string[]>([])
 const selfDeferredHandCardIds = ref<string[]>([])
+const selfDeferredBoardCardIds = ref<string[]>([])
+const selfDeferredCostCardIds = ref<string[]>([])
+const boardTravelOverlays = ref<BoardTravelOverlay[]>([])
+const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
 
 const actionModalState = computed<DuelActionModalState | null>(() => {
   if (isBlockingStep.value && isSelfDefender.value) {
@@ -356,6 +378,14 @@ function mergeDeferredHandCards(target: Ref<string[]>, ids: string[]) {
   })
 }
 
+function mergeDeferredVisibleCards(target: Ref<string[]>, ids: string[]) {
+  if (ids.length === 0) {
+    return
+  }
+
+  target.value = Array.from(new Set([...target.value, ...ids]))
+}
+
 type FloatingNumberInstance = {
   key: number
   value: number
@@ -397,14 +427,18 @@ function syncPlayerTransitions(
   current: DuelPlayerView | null,
   previous: DuelPlayerView | null,
   ghostsTarget: Ref<TransitionGhost[]>,
-  revealedHandTarget?: Ref<string[]>
+  revealedHandTarget?: Ref<string[]>,
+  skippedGhostSources: TransitionGhost['source'][] = []
 ) {
   if (!current) {
-    return
+    return null
   }
 
   const diff = derivePlayerTransitionDiff(previous, current)
-  mergeGhosts(ghostsTarget, diff.ghosts)
+  mergeGhosts(
+    ghostsTarget,
+    diff.ghosts.filter(ghost => !skippedGhostSources.includes(ghost.source))
+  )
 
   if (revealedHandTarget && diff.ghosts.length > 0) {
     mergeDeferredHandCards(
@@ -422,10 +456,17 @@ function syncPlayerTransitions(
   if (diff.lifeLoss > 0) {
     nextTick(() => spawnLifeLossFloatingNumber(current.leader?.instanceId, diff.lifeLoss))
   }
+
+  return diff
 }
 
 watch(self, (current, previous) => {
-  syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds)
+  const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck'])
+
+  if (current) {
+    queuePendingBoardTravelOverlays(current, previous)
+    queueDonDeckToCostTravelOverlays(diff)
+  }
 })
 
 watch(opponent, (current, previous) => {
@@ -497,6 +538,202 @@ function pulseHandCard(instanceId: string) {
   }, 220)
 }
 
+function queryCardElement(instanceId: string): HTMLElement | null {
+  return document.querySelector(`[data-instance-id="${CSS.escape(instanceId)}"]`)
+}
+
+function querySelfDonDeckElement(): HTMLElement | null {
+  return document.querySelector('[data-don-deck-side="0"]')
+}
+
+function querySelfCostCardElement(instanceId: string): HTMLElement | null {
+  return document.querySelector(`[data-zone-side="0"][data-instance-id="${CSS.escape(instanceId)}"]`)
+}
+
+function revealDeferredVisibleCard(target: Ref<string[]>, instanceId: string) {
+  target.value = target.value.filter(id => id !== instanceId)
+}
+
+function removeBoardTravelOverlay(key: string, target: Ref<string[]>, instanceId: string) {
+  boardTravelOverlays.value = boardTravelOverlays.value.filter(overlay => overlay.key !== key)
+  revealDeferredVisibleCard(target, instanceId)
+}
+
+function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
+  return {
+    'left': `${overlay.sourceRect.left}px`,
+    'top': `${overlay.sourceRect.top}px`,
+    'width': `${overlay.sourceRect.width}px`,
+    'height': `${overlay.sourceRect.height}px`,
+    '--travel-duration': `${BOARD_TRAVEL_MS}ms`,
+    '--travel-x': `${overlay.settled ? overlay.translateX : 0}px`,
+    '--travel-y': `${overlay.settled ? overlay.translateY : 0}px`,
+    '--travel-scale-x': `${overlay.settled ? overlay.scaleX : 1}`,
+    '--travel-scale-y': `${overlay.settled ? overlay.scaleY : 1}`
+  }
+}
+
+function createTravelOverlay(
+  key: string,
+  instanceId: string,
+  imageUrl: string,
+  sourceRect: DOMRect,
+  destinationElement: HTMLElement,
+  target: Ref<string[]>,
+  rotated = false
+) {
+  const destinationRect = destinationElement.getBoundingClientRect()
+  const translateX = destinationRect.left - sourceRect.left
+  const translateY = destinationRect.top - sourceRect.top
+  const scaleX = sourceRect.width === 0 ? 1 : destinationRect.width / sourceRect.width
+  const scaleY = sourceRect.height === 0 ? 1 : destinationRect.height / sourceRect.height
+
+  boardTravelOverlays.value = [
+    ...boardTravelOverlays.value.filter(overlay => overlay.key !== key),
+    {
+      key,
+      instanceId,
+      imageUrl,
+      sourceRect,
+      destinationRect,
+      translateX,
+      translateY,
+      scaleX,
+      scaleY,
+      settled: false,
+      rotated
+    }
+  ]
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      boardTravelOverlays.value = boardTravelOverlays.value.map((overlay) => {
+        if (overlay.key !== key) {
+          return overlay
+        }
+
+        return {
+          ...overlay,
+          settled: true
+        }
+      })
+    })
+  })
+
+  window.setTimeout(() => removeBoardTravelOverlay(key, target, instanceId), BOARD_TRAVEL_MS)
+}
+
+function cacheBoardTravelSource(card: PrivateCard) {
+  if (reducedMotion.value === 'reduce' || typeof window === 'undefined' || !card.imageUrl) {
+    return
+  }
+
+  const sourceElement = queryCardElement(card.instanceId)
+
+  if (!sourceElement) {
+    return
+  }
+
+  pendingBoardTravelSources.set(card.instanceId, {
+    imageUrl: card.imageUrl,
+    sourceRect: sourceElement.getBoundingClientRect()
+  })
+}
+
+function queuePendingBoardTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
+  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const previousHandCards = new Map(previous.hand.map(card => [card.instanceId, card] as const))
+  const boardArrivalIds = [
+    ...current.characters
+      .filter(character =>
+        previousHandCards.has(character.instanceId)
+        && !previous.characters.some(previousCharacter => previousCharacter.instanceId === character.instanceId)
+      )
+      .map(character => character.instanceId),
+    ...(current.stage
+      && previousHandCards.has(current.stage.instanceId)
+      && previous.stage?.instanceId !== current.stage.instanceId
+      ? [current.stage.instanceId]
+      : [])
+  ]
+  const pendingArrivals = boardArrivalIds.filter(instanceId => pendingBoardTravelSources.has(instanceId))
+
+  if (pendingArrivals.length === 0) {
+    return
+  }
+
+  mergeDeferredVisibleCards(selfDeferredBoardCardIds, pendingArrivals)
+
+  nextTick(() => {
+    for (const instanceId of pendingArrivals) {
+      const pendingSource = pendingBoardTravelSources.get(instanceId)
+      pendingBoardTravelSources.delete(instanceId)
+
+      const destinationElement = queryCardElement(instanceId)
+
+      if (!pendingSource || !destinationElement) {
+        revealDeferredVisibleCard(selfDeferredBoardCardIds, instanceId)
+        continue
+      }
+
+      createTravelOverlay(
+        `board:${instanceId}`,
+        instanceId,
+        pendingSource.imageUrl,
+        pendingSource.sourceRect,
+        destinationElement,
+        selfDeferredBoardCardIds
+      )
+    }
+  })
+}
+
+function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
+  if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const donCostIds = diff.ghosts
+    .filter(ghost => ghost.source === 'donDeck')
+    .map(ghost => ghost.instanceId)
+
+  if (donCostIds.length === 0) {
+    return
+  }
+
+  const sourceElement = querySelfDonDeckElement()
+
+  if (!sourceElement) {
+    return
+  }
+
+  const sourceRect = sourceElement.getBoundingClientRect()
+  mergeDeferredVisibleCards(selfDeferredCostCardIds, donCostIds)
+
+  nextTick(() => {
+    for (const instanceId of donCostIds) {
+      const destinationElement = querySelfCostCardElement(instanceId)
+
+      if (!destinationElement) {
+        revealDeferredVisibleCard(selfDeferredCostCardIds, instanceId)
+        continue
+      }
+
+      createTravelOverlay(
+        `cost:${instanceId}`,
+        instanceId,
+        cardFrontDon,
+        sourceRect,
+        destinationElement,
+        selfDeferredCostCardIds
+      )
+    }
+  })
+}
+
 const draggableHandCardIds = computed(() => {
   if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
     return []
@@ -538,6 +775,10 @@ function requestPlayFromHand(instanceId: string) {
   if (card.type === 'Character' && isSelfCharacterZoneFull.value) {
     pendingCharacterInstanceId.value = instanceId
     return
+  }
+
+  if (card.type === 'Character' || card.type === 'Stage') {
+    cacheBoardTravelSource(card)
   }
 
   playCard(instanceId)
@@ -700,6 +941,12 @@ function onSelfLeaderClick(_side: 0 | 1) {
 
 function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
   if (isChoosingCharacterToDiscard.value && pendingCharacterInstanceId.value) {
+    const pendingCard = self.value?.hand.find(card => card.instanceId === pendingCharacterInstanceId.value)
+
+    if (pendingCard) {
+      cacheBoardTravelSource(pendingCard)
+    }
+
     playCard(pendingCharacterInstanceId.value, instanceId)
     pendingCharacterInstanceId.value = null
     return
@@ -1132,6 +1379,21 @@ onKeyStroke('Escape', () => {
                 class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
                 @pointermove="onBoardPointerMove"
               >
+                <div class="pointer-events-none fixed inset-0 z-[130]">
+                  <div
+                    v-for="overlay in boardTravelOverlays"
+                    :key="overlay.key"
+                    :data-board-travel-instance-id="overlay.instanceId"
+                    class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
+                    :class="{ 'duel-board-travel-overlay--settled': overlay.settled }"
+                    :style="boardTravelOverlayStyle(overlay)"
+                  >
+                    <DuelCard
+                      :src="overlay.imageUrl"
+                      :rotated="overlay.rotated"
+                    />
+                  </div>
+                </div>
                 <DuelAttackArrow
                   :from-instance-id="attackArrowFromInstanceId"
                   :to-instance-id="attackArrowToInstanceId"
@@ -1189,6 +1451,8 @@ onKeyStroke('Escape', () => {
                   :character-action-popover-items="selfCharacterActionPopoverItems"
                   :invalid-leader-pulse="invalidSelfLeaderPulse"
                   :invalid-character-ids="invalidSelfCharacterIds"
+                  :deferred-board-card-ids="selfDeferredBoardCardIds"
+                  :deferred-cost-card-ids="selfDeferredCostCardIds"
                   @card-hover="hoveredCard = $event"
                   @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
                   @hand-card-drop-on-stage="onSelfStageZoneDrop"
@@ -1291,3 +1555,16 @@ onKeyStroke('Escape', () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.duel-board-travel-overlay {
+  transform: translate3d(var(--travel-x), var(--travel-y), 0)
+    scaleX(var(--travel-scale-x))
+    scaleY(var(--travel-scale-y));
+  transform-origin: top left;
+  transition-duration: var(--travel-duration);
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
+  will-change: transform;
+}
+</style>

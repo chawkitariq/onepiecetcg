@@ -1,7 +1,7 @@
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import { mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import PlayZone from './PlayZone.vue'
 
@@ -15,19 +15,16 @@ const tooltipStub = defineComponent({
 const popoverStub = defineComponent({
   name: 'UPopover',
   props: {
-    open: { type: Boolean, default: false }
+    open: { type: Boolean, default: false },
+    reference: { type: null, default: null }
   },
-  emits: ['update:open'],
-  setup(props, { slots, emit }) {
+  setup(props, { slots }) {
     return () => h('div', {
       'data-popover-stub': 'true',
-      'data-open': String(props.open)
+      'data-open': String(props.open),
+      'data-has-reference': String(Boolean(props.reference))
     }, [
-      h('button', {
-        'data-popover-trigger': 'true',
-        'onClick': () => emit('update:open', !props.open)
-      }, slots.default?.({ open: props.open })),
-      h('div', { 'data-popover-content': String(props.open) }, slots.content?.({ close: () => emit('update:open', false) }))
+      h('div', { 'data-popover-content': String(props.open) }, slots.content?.({ close: () => undefined }))
     ])
   }
 })
@@ -226,6 +223,25 @@ describe('PlayZone transitions', () => {
     expect(wrapper.html()).toContain('overflow-visible')
   })
 
+  it('tags the DON!! deck container, not the Life stack, for DON!!-to-Cost travel source lookup', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const taggedContainers = wrapper.findAll('[data-don-deck-side="0"]')
+    const taggedMarkup = taggedContainers.map(node => node.html()).join('\n')
+
+    expect(taggedContainers).toHaveLength(1)
+    expect(taggedMarkup).toContain('Deck DON!!')
+    expect(taggedMarkup).not.toContain('alt="Vie"')
+  })
+
   it('does not render a Main zone -- the hand lives in DuelHand, not on the mirrored board', () => {
     const wrapper = mount(PlayZone, {
       props: {
@@ -288,6 +304,75 @@ describe('PlayZone transitions', () => {
     expect(wrapper.find('[data-layout-id="deck-ghost"]').attributes('data-transition')).toBe(expectedTransition)
     expect(wrapper.find('[data-layout-id="character-a"]').attributes('data-transition')).toBe(expectedTransition)
     expect(wrapper.find('[data-layout-id="stage-a"]').attributes('data-transition')).toBe(expectedTransition)
+  })
+
+  it('anchors character action popovers to the animated character card node', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        characterActionPopoverItems: {
+          'character-a': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }]
+        }
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    await nextTick()
+
+    expect(wrapper.find('[data-layout-id="character-a"]').exists()).toBe(true)
+    expect(wrapper.get('[data-popover-stub="true"]').attributes('data-has-reference')).toBe('true')
+  })
+
+  it('keeps deferred board cards hidden and out of shared-layout travel until the overlay completes', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')],
+          stage: createPublicCard('stage-a', { type: 'Stage', power: null, counter: null })
+        }),
+        side: 0,
+        deferredBoardCardIds: ['character-a', 'stage-a']
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const deferredCharacter = wrapper.get('[data-instance-id="character-a"]')
+    const deferredStage = wrapper.get('[data-instance-id="stage-a"]')
+
+    expect(deferredCharacter.classes()).toContain('opacity-0')
+    expect(deferredStage.classes()).toContain('opacity-0')
+    expect(deferredCharacter.attributes('data-layout-id')).toBeUndefined()
+    expect(deferredStage.attributes('data-layout-id')).toBeUndefined()
+  })
+
+  it('keeps deferred cost cards hidden and out of shared-layout travel until the DON!! overlay completes', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-2', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0,
+        deferredCostCardIds: ['don-ready-2']
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const deferredCostCard = wrapper.get('[data-instance-id="don-ready-2"]')
+
+    expect(deferredCostCard.classes()).toContain('opacity-0')
+    expect(deferredCostCard.attributes('data-layout-id')).toBeUndefined()
   })
 
   it('renders untapped and rested DON!! as two opposite cost stacks', () => {
@@ -401,12 +486,12 @@ describe('PlayZone transitions', () => {
       }
     })
 
-    const triggers = wrapper.findAll('[data-popover-trigger="true"]')
+    const characterButtons = wrapper.findAll('[data-instance-id="character-a"], [data-instance-id="character-b"]')
 
-    await triggers[0]!.trigger('click')
+    await characterButtons[0]!.trigger('click')
     expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
 
-    await triggers[1]!.trigger('click')
+    await characterButtons[1]!.trigger('click')
     expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['false', 'true'])
   })
 
@@ -427,12 +512,13 @@ describe('PlayZone transitions', () => {
       }
     })
 
-    const triggers = wrapper.findAll('[data-popover-trigger="true"]')
+    const leaderButton = wrapper.get('[data-instance-id="leader-a"]')
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
 
-    await triggers[0]!.trigger('click')
-    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
-
-    await triggers[1]!.trigger('click')
+    await leaderButton.trigger('click')
     expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['false', 'true'])
+
+    await characterButton.trigger('click')
+    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
   })
 })

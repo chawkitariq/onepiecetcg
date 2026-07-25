@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
+import type { ComponentPublicInstance } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
@@ -53,6 +54,8 @@ const props = defineProps<{
   canDropOnCharacterZone?: boolean
   canDropOnStageZone?: boolean
   transitionGhosts?: TransitionGhost[]
+  deferredBoardCardIds?: string[]
+  deferredCostCardIds?: string[]
 }>()
 const {
   player,
@@ -116,6 +119,8 @@ const characterZoneDragDepth = ref(0)
 const isStageZoneDraggedOver = ref(false)
 const stageZoneDragDepth = ref(0)
 const openActionPopoverKey = ref<string | null>(null)
+const leaderActionReference = ref<HTMLElement | null>(null)
+const characterActionReferences = reactive<Record<string, HTMLElement | null>>({})
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -221,6 +226,30 @@ function isCharacterInvalid(instanceId: string): boolean {
   return props.invalidCharacterIds?.includes(instanceId) ?? false
 }
 
+function isBoardCardDeferred(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return props.deferredBoardCardIds?.includes(instanceId) ?? false
+}
+
+function isCostCardDeferred(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return props.deferredCostCardIds?.includes(instanceId) ?? false
+}
+
+function visibleLayoutId(instanceId: string | null | undefined, deferred: boolean): string | undefined {
+  if (!instanceId || deferred) {
+    return undefined
+  }
+
+  return instanceId
+}
+
 function getLeaderActionPopoverItems(): LeaderActionPopoverItem[] {
   return props.leaderActionPopoverItems ?? []
 }
@@ -257,19 +286,52 @@ function onCharacterActionPopoverOpenChange(instanceId: string, open: boolean) {
 }
 
 function onLeaderActionTriggerClick() {
-  if (hasLeaderActionPopover() && openActionPopoverKey.value && openActionPopoverKey.value !== 'leader') {
-    openActionPopoverKey.value = 'leader'
+  if (!hasLeaderActionPopover()) {
+    return
   }
+
+  openActionPopoverKey.value = openActionPopoverKey.value === 'leader' ? null : 'leader'
 }
 
 function onCharacterActionTriggerClick(instanceId: string) {
-  if (
-    hasCharacterActionPopover(instanceId)
-    && openActionPopoverKey.value
-    && openActionPopoverKey.value !== `character:${instanceId}`
-  ) {
-    openActionPopoverKey.value = `character:${instanceId}`
+  if (!hasCharacterActionPopover(instanceId)) {
+    return
   }
+
+  const key = `character:${instanceId}`
+  openActionPopoverKey.value = openActionPopoverKey.value === key ? null : key
+}
+
+function resolvePopoverReference(
+  value: Element | ComponentPublicInstance | null
+): HTMLElement | null {
+  if (!value) {
+    return null
+  }
+
+  if ('$el' in value) {
+    return value.$el instanceof HTMLElement ? value.$el : null
+  }
+
+  return value instanceof HTMLElement ? value : null
+}
+
+function setLeaderActionReference(value: Element | ComponentPublicInstance | null) {
+  leaderActionReference.value = resolvePopoverReference(value)
+}
+
+function setCharacterActionReference(
+  instanceId: string,
+  value: Element | ComponentPublicInstance | null
+) {
+  const reference = resolvePopoverReference(value)
+
+  if (reference) {
+    characterActionReferences[instanceId] = reference
+    return
+  }
+
+  characterActionReferences[instanceId] = null
 }
 
 const isCharacterZoneDropTargetActive = computed(() =>
@@ -461,43 +523,46 @@ function onStageZoneDrop(event: DragEvent) {
             v-for="character in player.characters"
             :key="character.instanceId"
           >
+            <motion.button
+              :ref="(value) => setCharacterActionReference(character.instanceId, value)"
+              type="button"
+              layout
+              :layout-id="visibleLayoutId(character.instanceId, isBoardCardDeferred(character.instanceId))"
+              :data-instance-id="character.instanceId"
+              :initial="false"
+              :transition="sharedCardTravelTransition"
+              class="duel-card-shell relative h-full shrink-0 rounded-lg"
+              :class="[
+                attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
+                isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
+                isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
+                isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
+                isBoardCardDeferred(character.instanceId) ? 'pointer-events-none opacity-0' : '',
+                isTargetable && character.rested ? 'cursor-crosshair' : '',
+                isSelectable ? 'cursor-pointer' : ''
+              ]"
+              @click="onCharacterActionTriggerClick(character.instanceId); emit('characterClick', side, character.instanceId)"
+              @mouseenter="onCardHover(character)"
+              @mouseleave="onCardHover(null)"
+            >
+              <DuelCard
+                :src="character.imageUrl"
+                :rotated="character.rested"
+              />
+              <AnimatedPowerBadge
+                :value="cardPower(character)"
+                :mirrored="isAdversary"
+              />
+            </motion.button>
+
             <UPopover
               v-if="hasCharacterActionPopover(character.instanceId)"
               :open="isCharacterActionPopoverOpen(character.instanceId)"
+              :reference="characterActionReferences[character.instanceId] ?? undefined"
               :content="{ side: 'right', align: 'center', sideOffset: 10 }"
               :ui="{ content: 'w-52 p-2' }"
               @update:open="onCharacterActionPopoverOpenChange(character.instanceId, $event)"
             >
-              <motion.button
-                type="button"
-                layout
-                :layout-id="character.instanceId"
-                :data-instance-id="character.instanceId"
-                :initial="false"
-                :transition="sharedCardTravelTransition"
-                class="duel-card-shell relative h-full shrink-0 rounded-lg"
-                :class="[
-                  attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-                  isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
-                  isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
-                  isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
-                  isTargetable && character.rested ? 'cursor-crosshair' : '',
-                  isSelectable ? 'cursor-pointer' : 'cursor-pointer'
-                ]"
-                @click="onCharacterActionTriggerClick(character.instanceId); emit('characterClick', side, character.instanceId)"
-                @mouseenter="onCardHover(character)"
-                @mouseleave="onCardHover(null)"
-              >
-                <DuelCard
-                  :src="character.imageUrl"
-                  :rotated="character.rested"
-                />
-                <AnimatedPowerBadge
-                  :value="cardPower(character)"
-                  :mirrored="isAdversary"
-                />
-              </motion.button>
-
               <template #content>
                 <div class="flex flex-col gap-1">
                   <UButton
@@ -521,37 +586,6 @@ function onStageZoneDrop(event: DragEvent) {
                 </div>
               </template>
             </UPopover>
-
-            <motion.button
-              v-else
-              type="button"
-              layout
-              :layout-id="character.instanceId"
-              :data-instance-id="character.instanceId"
-              :initial="false"
-              :transition="sharedCardTravelTransition"
-              class="duel-card-shell relative h-full shrink-0 rounded-lg"
-              :class="[
-                attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-                isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
-                isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
-                isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
-                isTargetable && character.rested ? 'cursor-crosshair' : '',
-                isSelectable ? 'cursor-pointer' : ''
-              ]"
-              @click="emit('characterClick', side, character.instanceId)"
-              @mouseenter="onCardHover(character)"
-              @mouseleave="onCardHover(null)"
-            >
-              <DuelCard
-                :src="character.imageUrl"
-                :rotated="character.rested"
-              />
-              <AnimatedPowerBadge
-                :value="cardPower(character)"
-                :mirrored="isAdversary"
-              />
-            </motion.button>
           </template>
         </div>
       </DuelZoneSlot>
@@ -564,43 +598,45 @@ function onStageZoneDrop(event: DragEvent) {
         hug-card
         allow-overflow
       >
+        <motion.button
+          :ref="setLeaderActionReference"
+          type="button"
+          layout
+          :layout-id="visibleLayoutId(player.leader?.instanceId, false)"
+          :data-instance-id="player.leader?.instanceId"
+          :initial="false"
+          :transition="sharedCardTravelTransition"
+          class="duel-card-shell relative h-full w-full rounded-lg"
+          :class="[
+            attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
+            targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
+            selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
+            invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
+          ]"
+          @click="onLeaderActionTriggerClick(); emit('leaderClick', side)"
+          @mouseenter="onCardHover(player.leader)"
+          @mouseleave="onCardHover(null)"
+        >
+          <DuelCard
+            v-if="player.leader"
+            :src="player.leader.imageUrl"
+            :rotated="player.leader.rested"
+          />
+          <AnimatedPowerBadge
+            v-if="player.leader"
+            :value="cardPower(player.leader)"
+            :mirrored="isAdversary"
+          />
+        </motion.button>
+
         <UPopover
           v-if="hasLeaderActionPopover()"
           :open="isLeaderActionPopoverOpen()"
+          :reference="leaderActionReference ?? undefined"
           :content="{ side: 'right', align: 'center', sideOffset: 10 }"
           :ui="{ content: 'w-52 p-2' }"
           @update:open="onLeaderActionPopoverOpenChange($event)"
         >
-          <motion.button
-            type="button"
-            layout
-            :layout-id="player.leader?.instanceId"
-            :data-instance-id="player.leader?.instanceId"
-            :initial="false"
-            :transition="sharedCardTravelTransition"
-            class="duel-card-shell relative h-full w-full rounded-lg"
-            :class="[
-              attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-              targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
-              selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
-              invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
-            ]"
-            @click="onLeaderActionTriggerClick(); emit('leaderClick', side)"
-            @mouseenter="onCardHover(player.leader)"
-            @mouseleave="onCardHover(null)"
-          >
-            <DuelCard
-              v-if="player.leader"
-              :src="player.leader.imageUrl"
-              :rotated="player.leader.rested"
-            />
-            <AnimatedPowerBadge
-              v-if="player.leader"
-              :value="cardPower(player.leader)"
-              :mirrored="isAdversary"
-            />
-          </motion.button>
-
           <template #content>
             <div class="flex flex-col gap-1">
               <UButton
@@ -624,36 +660,6 @@ function onStageZoneDrop(event: DragEvent) {
             </div>
           </template>
         </UPopover>
-
-        <motion.button
-          v-else
-          type="button"
-          layout
-          :layout-id="player.leader?.instanceId"
-          :initial="false"
-          :transition="sharedCardTravelTransition"
-          class="duel-card-shell relative h-full w-full rounded-lg"
-          :class="[
-            attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-            targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
-            selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
-            invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
-          ]"
-          @click="emit('leaderClick', side)"
-          @mouseenter="onCardHover(player.leader)"
-          @mouseleave="onCardHover(null)"
-        >
-          <DuelCard
-            v-if="player.leader"
-            :src="player.leader.imageUrl"
-            :rotated="player.leader.rested"
-          />
-          <AnimatedPowerBadge
-            v-if="player.leader"
-            :value="cardPower(player.leader)"
-            :mirrored="isAdversary"
-          />
-        </motion.button>
       </DuelZoneSlot>
       <DuelZoneSlot
         label="Stage"
@@ -664,13 +670,16 @@ function onStageZoneDrop(event: DragEvent) {
           v-if="player.stage"
           type="button"
           layout
-          :layout-id="player.stage.instanceId"
+          :layout-id="visibleLayoutId(player.stage.instanceId, isBoardCardDeferred(player.stage.instanceId))"
           :data-instance-id="player.stage.instanceId"
           :initial="false"
           :transition="sharedCardTravelTransition"
           data-drop-zone="stage"
           class="duel-card-shell relative z-20 h-full w-full rounded-lg transition-colors duration-150"
-          :class="isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : ''"
+          :class="[
+            isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : '',
+            isBoardCardDeferred(player.stage.instanceId) ? 'pointer-events-none opacity-0' : ''
+          ]"
           @click="emit('stageClick', side)"
           @dragenter="onStageZoneDragEnter"
           @dragleave="onStageZoneDragLeave"
@@ -738,7 +747,10 @@ function onStageZoneDrop(event: DragEvent) {
         :count="player.donDeckCount"
         allow-overflow
       >
-        <div class="relative h-full">
+        <div
+          :data-don-deck-side="side"
+          class="relative h-full"
+        >
           <AnimatePresence>
             <motion.div
               v-for="ghost in donDeckGhosts"
@@ -781,9 +793,12 @@ function onStageZoneDrop(event: DragEvent) {
               v-for="(don, index) in untappedCostCards"
               :key="don.instanceId"
               layout
-              :layout-id="don.instanceId"
+              :layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
+              :data-instance-id="don.instanceId"
+              :data-zone-side="side"
               data-cost-state="untapped"
               class="absolute top-0 h-full"
+              :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : ''"
               :style="costStackStyle(index, untappedCostCards.length, 'left')"
               :initial="false"
               :transition="sharedCardTravelTransition"
@@ -803,9 +818,12 @@ function onStageZoneDrop(event: DragEvent) {
               v-for="(don, index) in restedCostCards"
               :key="don.instanceId"
               layout
-              :layout-id="don.instanceId"
+              :layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
+              :data-instance-id="don.instanceId"
+              :data-zone-side="side"
               data-cost-state="rested"
               class="absolute top-0 h-full"
+              :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : ''"
               :style="costStackStyle(index, restedCostCards.length, 'right', 1)"
               :initial="false"
               :transition="sharedCardTravelTransition"
