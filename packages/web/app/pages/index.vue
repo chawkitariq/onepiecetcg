@@ -1,103 +1,216 @@
+<script setup lang="ts">
+import { motion } from 'motion-v'
+import donCard from '~/assets/don.png'
+import cardBack from '~/assets/card-back-regular.png'
+
+const heroLinks = [
+  { label: 'Commencer', to: '/lobby', size: 'xl' as const, class: 'text-base font-semibold' },
+  { label: 'Voir le deck builder', to: '/decks', size: 'xl' as const, color: 'neutral' as const, variant: 'subtle' as const, class: 'text-base' }
+]
+
+const steps = [
+  {
+    number: '01',
+    title: 'Connecte-toi',
+    description: 'Un compte Google ou Discord suffit pour retrouver ton profil et tes decks sauvegardés d\'une session à l\'autre.',
+    icon: 'i-lucide-log-in'
+  },
+  {
+    number: '02',
+    title: 'Construis ton deck',
+    description: 'Choisis un Leader, complète tes 50 cartes depuis le catalogue complet, ou génère un deck aléatoire valide en un clic.',
+    icon: 'i-lucide-layers'
+  },
+  {
+    number: '03',
+    title: 'Entre en jeu',
+    description: 'File d\'attente aléatoire, code de room entre amis, ou lobby publique décrite : choisis ton adversaire et lance la partie.',
+    icon: 'i-lucide-swords'
+  }
+]
+
+const features = [
+  {
+    title: 'Deck builder complet',
+    description: 'Catalogue officiel filtrable par set, couleur, coût et type, plafond de 4 exemplaires respecté automatiquement, et génération de deck aléatoire valide en un clic.',
+    icon: 'i-lucide-layers'
+  },
+  {
+    title: 'Matchmaking flexible',
+    description: 'File d\'attente aléatoire, code de room privé entre amis, ou lobby publique avec description libre pour trouver le bon adversaire.',
+    icon: 'i-lucide-users'
+  },
+  {
+    title: 'Arbitre structurel automatique',
+    description: 'Phases, DON!!, zones, ciblage d\'attaque et résolution de combat gérés côté serveur — le texte des cartes reste entre tes mains, comme sur un vrai plateau.',
+    icon: 'i-lucide-gamepad-2'
+  },
+  {
+    title: 'Information cachée respectée',
+    description: 'Main adverse et cartes de Vie jamais exposées côté client, même dans le trafic réseau brut : le serveur ne triche pas avec l\'information cachée.',
+    icon: 'i-lucide-eye-off'
+  }
+]
+</script>
+
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen overflow-hidden">
     <!-- Hero Section -->
-    <UPageHero
-      title="Le simulateur One Piece TCG le plus rapide"
-      description="Construis tes decks, affronte d'autres joueurs en temps réel, et découvre l'expérience complète du One Piece Trading Card Game."
-      :links="[{ label: 'Commencer', to: '/lobby', size: 'xl', class: 'text-lg' }]"
-    >
-      <template #headline>
-        <UBadge
-          color="primary"
-          variant="subtle"
-          icon="i-lucide-shield-check"
-          size="lg"
+    <div class="relative isolate overflow-hidden bg-[#12153a]">
+      <div
+        class="pointer-events-none absolute inset-0 opacity-40"
+        style="background-image: radial-gradient(circle at 15% 20%, rgba(212,175,55,0.18), transparent 45%), radial-gradient(circle at 85% 0%, rgba(0,220,130,0.14), transparent 40%)"
+      />
+      <div
+        class="pointer-events-none absolute inset-0 opacity-[0.06]"
+        style="background-image: repeating-linear-gradient(120deg, #d4af37 0px, #d4af37 1px, transparent 1px, transparent 140px), repeating-linear-gradient(60deg, #d4af37 0px, #d4af37 1px, transparent 1px, transparent 140px)"
+      />
+
+      <UPageHero
+        orientation="horizontal"
+        title="Le pont t'attend."
+        description="Construis ton deck, appelle tes DON!!, et affronte d'autres joueurs en temps réel dans le simulateur One Piece TCG le plus rapide pour jouer entre amis ou en ligne."
+        :links="heroLinks"
+        :ui="{
+          title: 'text-white',
+          description: 'text-slate-300',
+          container: 'py-20 sm:py-28 lg:py-32'
+        }"
+      >
+        <template #headline>
+          <UBadge
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-anchor"
+            size="lg"
+            class="border border-[#d4af37]/30 bg-[#d4af37]/10 text-[#e8c766]"
+          >
+            Simulateur One Piece TCG — temps réel
+          </UBadge>
+        </template>
+
+        <motion.div
+          :initial="{ opacity: 0, y: 40, rotate: -14 }"
+          :animate="{ opacity: 1, y: 0, rotate: -6 }"
+          :transition="{ duration: 0.7, ease: 'easeOut', delay: 0.15 }"
+          :while-hover="{ rotate: -2, scale: 1.03 }"
+          class="relative mx-auto w-56 sm:w-64 lg:w-72"
         >
-          Simulateur One Piece TCG
-        </UBadge>
-      </template>
-    </UPageHero>
+          <div
+            class="absolute -inset-6 rounded-[2rem] opacity-60 blur-2xl"
+            style="background: radial-gradient(circle, rgba(212,175,55,0.35), transparent 70%)"
+          />
+          <img
+            :src="donCard"
+            alt="Carte DON!! — +1000 puissance pendant ton tour"
+            class="relative w-full rounded-2xl shadow-2xl ring-1 ring-[#d4af37]/40"
+          >
+          <motion.div
+            :initial="{ opacity: 0, scale: 0.7 }"
+            :animate="{ opacity: 1, scale: 1 }"
+            :transition="{ duration: 0.5, delay: 0.6, ease: 'backOut' }"
+            class="absolute -right-4 -top-4 flex items-center gap-1 rounded-full bg-[#d4af37] px-3 py-1.5 text-sm font-bold text-[#12153a] shadow-lg sm:-right-6 sm:-top-6"
+          >
+            <UIcon
+              name="i-lucide-zap"
+              class="size-4"
+            />
+            +1000
+          </motion.div>
+        </motion.div>
+      </UPageHero>
+    </div>
 
     <!-- How it works Section -->
     <UPageSection>
+      <template #headline>
+        Trois étapes
+      </template>
       <template #title>
-        Jouer en 3 étapes simples
+        Du menu à la partie, en quelques minutes
       </template>
 
       <div class="grid gap-8 md:grid-cols-3">
-        <UPageCard
-          title="Connecte-toi"
-          description="Utilise ton compte Google ou Discord pour accéder à ton profil et sauvegarder tes decks."
+        <div
+          v-for="step in steps"
+          :key="step.number"
+          class="relative rounded-2xl border border-default bg-elevated/40 p-6"
         >
-          <template #icon>
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-              1
+          <span class="pointer-events-none absolute right-4 top-2 font-mono text-5xl font-black text-muted/10">
+            {{ step.number }}
+          </span>
+          <div class="relative flex items-center gap-3">
+            <div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <UIcon
+                :name="step.icon"
+                class="size-5"
+              />
             </div>
-          </template>
-        </UPageCard>
-
-        <UPageCard
-          title="Construis ton deck"
-          description="Utilise le deck builder avec le catalogue complet des cartes pour créer des decks valides."
-        >
-          <template #icon>
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-              2
-            </div>
-          </template>
-        </UPageCard>
-
-        <UPageCard
-          title="Affronte tes adversaires"
-          description="Rejoins une file d'attente ou crée une room par code pour jouer en temps réel."
-        >
-          <template #icon>
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground">
-              3
-            </div>
-          </template>
-        </UPageCard>
+            <h3 class="text-lg font-semibold text-highlighted">
+              {{ step.title }}
+            </h3>
+          </div>
+          <p class="relative mt-4 text-[15px] text-muted">
+            {{ step.description }}
+          </p>
+        </div>
       </div>
     </UPageSection>
 
     <!-- Features Section -->
-    <UPageSection>
-      <template #title>
-        Tout ce que tu dois savoir
-      </template>
+    <div class="relative isolate overflow-hidden bg-[#12153a]">
+      <div
+        class="pointer-events-none absolute inset-0 opacity-30"
+        style="background-image: radial-gradient(circle at 90% 90%, rgba(212,175,55,0.16), transparent 45%)"
+      />
 
-      <div class="grid gap-8 md:grid-cols-2">
-        <UPageFeature
-          title="Deck Builder Complet"
-          description="Accès au catalogue complet des cartes One Piece TCG avec filtres avancés, validation automatique des règles de construction, et génération de decks aléatoires."
-          icon="i-lucide-layers"
-        />
+      <UPageSection
+        :ui="{
+          title: 'text-white',
+          description: 'text-slate-300'
+        }"
+      >
+        <template #headline>
+          <span class="text-[#e8c766]">Sous le capot</span>
+        </template>
+        <template #title>
+          Un arbitre fidèle aux règles, jamais dans ton chemin
+        </template>
 
-        <UPageFeature
-          title="Matchmaking Flexible"
-          description="File d'attente aléatoire pour jouer contre des joueurs du monde entier, ou code de room privé pour affronter tes amis."
-          icon="i-lucide-users"
-        />
-
-        <UPageFeature
-          title="Simulateur Assisté"
-          description="Plateau synchronisé qui gère automatiquement les règles structurelles (phases, DON!!, zones, combat) pendant que tu appliques les effets des cartes."
-          icon="i-lucide-gamepad-2"
-        />
-
-        <UPageFeature
-          title="Information Cachée Sécurisée"
-          description="Le serveur garantit que l'information cachée (main adverse, cartes Vie) reste réellement cachée pour une expérience de jeu équitable."
-          icon="i-lucide-shield-check"
-        />
-      </div>
-    </UPageSection>
+        <div class="grid gap-x-8 gap-y-10 sm:grid-cols-2">
+          <UPageFeature
+            v-for="feature in features"
+            :key="feature.title"
+            :title="feature.title"
+            :description="feature.description"
+            :icon="feature.icon"
+            :ui="{
+              title: 'text-white',
+              description: 'text-slate-400',
+              leadingIcon: 'text-[#e8c766]'
+            }"
+          />
+        </div>
+      </UPageSection>
+    </div>
 
     <!-- CTA Section -->
-    <UPageCTA
-      title="Prêt à jouer ?"
-      description="Rejoins des milliers de joueurs et construis ton légendaire deck One Piece TCG."
-      :links="[{ label: 'Commencer maintenant', to: '/lobby', size: 'xl', color: 'neutral', variant: 'solid', class: 'text-lg' }]"
-    />
+    <UPageSection :ui="{ container: 'py-16 sm:py-20 lg:py-24' }">
+      <UPageCTA
+        title="Prêt à hisser les voiles ?"
+        description="Construis ton deck, invite un ami avec un code de room ou lance-toi dans la file d'attente — ta prochaine partie t'attend."
+        orientation="horizontal"
+        :links="[{ label: 'Commencer maintenant', to: '/lobby', size: 'xl', color: 'neutral', variant: 'solid', class: 'text-base font-semibold' }]"
+        class="overflow-hidden bg-[#12153a] ring-1 ring-[#d4af37]/20"
+        :ui="{ title: 'text-white', description: 'text-slate-300' }"
+      >
+        <img
+          :src="cardBack"
+          alt=""
+          aria-hidden="true"
+          class="mx-auto w-40 rotate-3 rounded-xl shadow-xl ring-1 ring-[#d4af37]/30 sm:w-48"
+        >
+      </UPageCTA>
+    </UPageSection>
   </div>
 </template>
