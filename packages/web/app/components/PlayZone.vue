@@ -342,8 +342,8 @@ function onCharacterZoneDrop(event: DragEvent) {
 </script>
 
 <template>
-  <div :class="`flex flex-col gap-2 h-full min-h-0 ${isAdversary ? '-scale-x-100 -scale-y-100' : ''}`">
-    <div class="grid grid-cols-[min-content_1fr] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
+  <div :class="`flex flex-col gap-4 h-full min-h-0 ${isAdversary ? '-scale-x-100 -scale-y-100' : ''}`">
+    <div class="grid grid-cols-[min-content_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0">
       <DuelZoneSlot
         label="Life"
         :flipped="isAdversary"
@@ -387,7 +387,7 @@ function onCharacterZoneDrop(event: DragEvent) {
         :class="isCharacterZoneDropTargetActive ? 'border-success bg-success/5 ring-2 ring-success/70' : ''"
       >
         <div
-          class="relative flex h-full items-center justify-center gap-2 transition-colors duration-150"
+          class="relative flex h-full items-center justify-center gap-4 transition-colors duration-150"
           data-drop-zone="character"
           @dragenter="onCharacterZoneDragEnter"
           @dragleave="onCharacterZoneDragLeave"
@@ -494,7 +494,7 @@ function onCharacterZoneDrop(event: DragEvent) {
       </DuelZoneSlot>
     </div>
 
-    <div class="grid grid-cols-[repeat(3,min-content)] grid-rows-[minmax(0,1fr)] place-content-end gap-2 flex-1 min-h-0">
+    <div class="grid grid-cols-[repeat(3,min-content)] grid-rows-[minmax(0,1fr)] place-content-end gap-4 flex-1 min-h-0">
       <DuelZoneSlot
         label="Leader"
         :flipped="isAdversary"
@@ -647,7 +647,7 @@ function onCharacterZoneDrop(event: DragEvent) {
       </DuelZoneSlot>
     </div>
 
-    <div class="grid grid-cols-[min-content_1fr_min-content] grid-rows-[minmax(0,1fr)] gap-2 flex-1 min-h-0">
+    <div class="grid grid-cols-[min-content_1fr_min-content] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0">
       <DuelZoneSlot
         label="Don"
         :flipped="isAdversary"
