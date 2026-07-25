@@ -23,6 +23,7 @@ const props = defineProps<{
   draggableHandCardIds?: string[]
   invalidHandCardIds?: string[]
   revealedHandCardIds?: string[]
+  deferredHandCardIds?: string[]
   align?: 'start' | 'center'
 }>()
 
@@ -37,9 +38,15 @@ const emit = defineEmits<{
 const reducedMotion = usePreferredReducedMotion()
 const handStackSize = useMeasuredStackSize('handStack')
 const sharedCardTravelTransition = {
-  duration: 0.28,
-  ease: 'easeInOut'
+  layout: {
+    duration: 0.52,
+    ease: 'easeInOut',
+    type: 'tween'
+  }
 } as const
+const visibleHand = computed(() =>
+  props.hand.filter(card => !props.deferredHandCardIds?.includes(card.instanceId))
+)
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -155,7 +162,7 @@ function onCardDragStart(instanceId: string, event: DragEvent) {
       class="relative h-28 w-full shrink-0 overflow-visible sm:h-32"
     >
       <motion.button
-        v-for="(card, index) in hand"
+        v-for="(card, index) in visibleHand"
         v-show="handStackSize.width > 0"
         :key="card.instanceId"
         type="button"
@@ -166,12 +173,12 @@ function onCardDragStart(instanceId: string, event: DragEvent) {
         :initial="false"
         :animate="handRevealAnimation(card.instanceId)"
         :transition="sharedCardTravelTransition"
-        class="group absolute top-0 h-full hover:z-50 focus-visible:z-50"
+        class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
         :class="[
           isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
           isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
         ]"
-        :style="stackedCardStyle(index, hand.length, handStackSize)"
+        :style="stackedCardStyle(index, visibleHand.length, handStackSize)"
         @click="emit('cardClick', card.instanceId)"
         @dragstart="onCardDragStart(card.instanceId, $event)"
         @dragend="emit('cardDragEnd', card.instanceId)"

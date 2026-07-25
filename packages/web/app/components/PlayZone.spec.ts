@@ -278,8 +278,11 @@ describe('PlayZone transitions', () => {
     })
 
     const expectedTransition = JSON.stringify({
-      duration: 0.28,
-      ease: 'easeInOut'
+      layout: {
+        duration: 0.52,
+        ease: 'easeInOut',
+        type: 'tween'
+      }
     })
 
     expect(wrapper.find('[data-layout-id="deck-ghost"]').attributes('data-transition')).toBe(expectedTransition)

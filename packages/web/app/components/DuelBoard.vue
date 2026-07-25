@@ -214,6 +214,7 @@ const invalidOpponentCharacterIds = ref<string[]>([])
 const selfTransitionGhosts = ref<TransitionGhost[]>([])
 const opponentTransitionGhosts = ref<TransitionGhost[]>([])
 const selfRevealedHandCardIds = ref<string[]>([])
+const selfDeferredHandCardIds = ref<string[]>([])
 
 const actionModalState = computed<DuelActionModalState | null>(() => {
   if (isBlockingStep.value && isSelfDefender.value) {
@@ -314,7 +315,7 @@ function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) 
   window.setTimeout(() => {
     const expiredKeys = new Set(freshGhosts.map(ghost => `${ghost.source}:${ghost.instanceId}`))
     target.value = target.value.filter(ghost => !expiredKeys.has(`${ghost.source}:${ghost.instanceId}`))
-  }, 280)
+  }, 520)
 }
 
 function mergeRevealedHandCards(target: Ref<string[]>, ids: string[]) {
@@ -333,6 +334,26 @@ function mergeRevealedHandCards(target: Ref<string[]>, ids: string[]) {
   window.setTimeout(() => {
     target.value = target.value.filter(id => !freshIds.includes(id))
   }, 320)
+}
+
+function mergeDeferredHandCards(target: Ref<string[]>, ids: string[]) {
+  if (ids.length === 0) {
+    return
+  }
+
+  const freshIds = ids.filter(id => !target.value.includes(id))
+
+  if (freshIds.length === 0) {
+    return
+  }
+
+  target.value = [...target.value, ...freshIds]
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      target.value = target.value.filter(id => !freshIds.includes(id))
+    })
+  })
 }
 
 type FloatingNumberInstance = {
@@ -384,6 +405,15 @@ function syncPlayerTransitions(
 
   const diff = derivePlayerTransitionDiff(previous, current)
   mergeGhosts(ghostsTarget, diff.ghosts)
+
+  if (revealedHandTarget && diff.ghosts.length > 0) {
+    mergeDeferredHandCards(
+      selfDeferredHandCardIds,
+      diff.ghosts
+        .filter(ghost => ghost.source === 'deck' || ghost.source === 'life')
+        .map(ghost => ghost.instanceId)
+    )
+  }
 
   if (revealedHandTarget) {
     mergeRevealedHandCards(revealedHandTarget, diff.revealedHandCardIds)
@@ -1084,6 +1114,7 @@ onKeyStroke('Escape', () => {
                   :draggable-hand-card-ids="draggableHandCardIds"
                   :invalid-hand-card-ids="invalidHandCardIds"
                   :revealed-hand-card-ids="selfRevealedHandCardIds"
+                  :deferred-hand-card-ids="selfDeferredHandCardIds"
                   @card-hover="hoveredCard = $event"
                   @card-click="onSelfHandCardOrCounterClick"
                   @card-drag-start="onSelfHandCardDragStart"

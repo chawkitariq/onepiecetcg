@@ -212,6 +212,23 @@ describe('DuelHand', () => {
     )
   })
 
+  it('defers newly mounted hand cards when the board marks them as hidden-zone arrivals', () => {
+    const wrapper = mount(DuelHand, {
+      props: {
+        hand: [createPrivateCard('hand-a'), createPrivateCard('deferred-hand')],
+        deferredHandCardIds: ['deferred-hand']
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub }
+      }
+    })
+
+    const renderedIds = wrapper.findAll('button')
+      .map(node => node.attributes('data-layout-id'))
+
+    expect(renderedIds).toEqual(['hand-a'])
+  })
+
   it('uses a slightly longer shared-layout travel transition so hand movement stays visible', () => {
     const wrapper = mount(DuelHand, {
       props: {
@@ -226,8 +243,11 @@ describe('DuelHand', () => {
       .find(node => node.attributes('data-layout-id') === 'hand-a')
 
     expect(handCard?.attributes('data-transition')).toBe(JSON.stringify({
-      duration: 0.28,
-      ease: 'easeInOut'
+      layout: {
+        duration: 0.52,
+        ease: 'easeInOut',
+        type: 'tween'
+      }
     }))
   })
 })

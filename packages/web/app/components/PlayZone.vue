@@ -105,8 +105,11 @@ const restedCostCards = computed(() => props.player.cost.filter(card => card.res
 const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && restedCostCards.value.length > 0)
 const reducedMotion = usePreferredReducedMotion()
 const sharedCardTravelTransition = {
-  duration: 0.28,
-  ease: 'easeInOut'
+  layout: {
+    duration: 0.52,
+    ease: 'easeInOut',
+    type: 'tween'
+  }
 } as const
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
@@ -658,13 +661,15 @@ function onStageZoneDrop(event: DragEvent) {
         hug-card
       >
         <motion.button
+          v-if="player.stage"
           type="button"
           layout
-          :layout-id="player.stage?.instanceId"
+          :layout-id="player.stage.instanceId"
+          :data-instance-id="player.stage.instanceId"
           :initial="false"
           :transition="sharedCardTravelTransition"
           data-drop-zone="stage"
-          class="h-full w-full rounded-lg transition-colors duration-150"
+          class="duel-card-shell relative z-20 h-full w-full rounded-lg transition-colors duration-150"
           :class="isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : ''"
           @click="emit('stageClick', side)"
           @dragenter="onStageZoneDragEnter"
@@ -674,11 +679,23 @@ function onStageZoneDrop(event: DragEvent) {
           @mouseenter="onCardHover(player.stage)"
           @mouseleave="onCardHover(null)"
         >
-          <DuelCard
-            v-if="player.stage"
-            :src="player.stage.imageUrl"
-          />
+          <DuelCard :src="player.stage.imageUrl" />
         </motion.button>
+
+        <button
+          v-else
+          type="button"
+          data-drop-zone="stage"
+          class="h-full w-full rounded-lg transition-colors duration-150"
+          :class="isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : ''"
+          @click="emit('stageClick', side)"
+          @dragenter="onStageZoneDragEnter"
+          @dragleave="onStageZoneDragLeave"
+          @dragover="onStageZoneDragOver"
+          @drop="onStageZoneDrop"
+          @mouseenter="onCardHover(null)"
+          @mouseleave="onCardHover(null)"
+        />
       </DuelZoneSlot>
       <DuelZoneSlot
         label="Deck"
