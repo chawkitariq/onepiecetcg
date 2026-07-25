@@ -1042,102 +1042,106 @@ onKeyStroke('Escape', () => {
       </template>
     </USlideover>
 
-    <div class="flex flex-1 min-h-0 gap-2 overflow-hidden p-2">
-      <UContainer
-        ref="board-container"
-        class="relative flex flex-1 flex-col w-full gap-2 h-full min-h-0 overflow-hidden rounded-lg transition-shadow duration-300"
-        :class="isSelfTurn ? 'shadow-[0_0_0_2px_var(--ui-primary)]' : 'shadow-[0_0_0_2px_var(--ui-border)]'"
-        @pointermove="onBoardPointerMove"
+    <div class="mx-auto grid h-full min-h-0 w-full max-w-7xl flex-1 grid-cols-[1fr_0.25fr] gap-2 overflow-hidden p-2">
+      <div
+        class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-default bg-default shadow-sm transition-shadow duration-300"
+        :class="isSelfTurn ? 'shadow-[0_0_0_2px_var(--ui-primary)]' : 'shadow-[0_0_0_1px_var(--ui-border)]'"
       >
-        <DuelAttackArrow
-          :from-instance-id="attackArrowFromInstanceId"
-          :to-instance-id="attackArrowToInstanceId"
-          :to-point="attackArrowToPoint"
-        />
-        <DuelFloatingNumber
-          v-for="entry in floatingNumbers"
-          :key="entry.key"
-          :value="entry.value"
-          :x="entry.x"
-          :y="entry.y"
-          :tone="entry.tone"
-          @done="removeFloatingNumber(entry.key)"
-        />
-        <DuelSetupOverlay v-if="phase === 'mulligan'" />
-        <DuelOpponentHand
-          v-if="opponent"
-          :hand-count="opponent.handCount"
-        />
-        <LayoutGroup
-          v-if="opponent || self"
-          :id="`play-zone-${(opponent ?? emptyOpponentPreview).sessionId}`"
-        >
-          <PlayZone
-            class="flex-1 min-h-0"
-            :player="opponent ?? emptyOpponentPreview"
-            :side="1"
-            :is-owner-turn="!isSelfTurn"
-            :is-adversary="Boolean(opponent)"
-            :transition-ghosts="opponent ? opponentTransitionGhosts : []"
-            :is-targetable="Boolean(opponent) && isChoosingTarget"
-            :targetable-leader="Boolean(opponent) && isChoosingTarget"
-            :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
-            :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
-            :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
-            @card-hover="hoveredCard = $event"
-            @leader-click="onOpponentLeaderClick"
-            @character-click="onOpponentCharacterClick"
-          />
-        </LayoutGroup>
         <div
-          v-else
-          class="flex-1 min-h-0 flex items-center justify-center text-sm text-muted"
+          ref="board-container"
+          class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden p-2"
+          @pointermove="onBoardPointerMove"
         >
-          En attente d'un adversaire...
+          <DuelAttackArrow
+            :from-instance-id="attackArrowFromInstanceId"
+            :to-instance-id="attackArrowToInstanceId"
+            :to-point="attackArrowToPoint"
+          />
+          <DuelFloatingNumber
+            v-for="entry in floatingNumbers"
+            :key="entry.key"
+            :value="entry.value"
+            :x="entry.x"
+            :y="entry.y"
+            :tone="entry.tone"
+            @done="removeFloatingNumber(entry.key)"
+          />
+          <DuelSetupOverlay v-if="phase === 'mulligan'" />
+          <DuelOpponentHand
+            v-if="opponent"
+            :hand-count="opponent.handCount"
+          />
+          <LayoutGroup
+            v-if="opponent || self"
+            :id="`play-zone-${(opponent ?? emptyOpponentPreview).sessionId}`"
+          >
+            <PlayZone
+              class="flex-1 min-h-0"
+              :player="opponent ?? emptyOpponentPreview"
+              :side="1"
+              :is-owner-turn="!isSelfTurn"
+              :is-adversary="Boolean(opponent)"
+              :transition-ghosts="opponent ? opponentTransitionGhosts : []"
+              :is-targetable="Boolean(opponent) && isChoosingTarget"
+              :targetable-leader="Boolean(opponent) && isChoosingTarget"
+              :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+              :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
+              :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
+              @card-hover="hoveredCard = $event"
+              @leader-click="onOpponentLeaderClick"
+              @character-click="onOpponentCharacterClick"
+            />
+          </LayoutGroup>
+          <div
+            v-else
+            class="flex flex-1 min-h-0 items-center justify-center text-sm text-muted"
+          >
+            En attente d'un adversaire...
+          </div>
+          <USeparator class="shrink-0" />
+          <LayoutGroup
+            v-if="self"
+            :id="`play-zone-${self.sessionId}`"
+          >
+            <PlayZone
+              class="flex-1 min-h-0"
+              :player="self"
+              :side="0"
+              :is-owner-turn="isSelfTurn"
+              :dragged-hand-card-instance-id="draggedHandCardInstanceId"
+              :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress"
+              :transition-ghosts="selfTransitionGhosts"
+              :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
+              :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+              :leader-action-popover-items="selfLeaderActionPopoverItems"
+              :selectable-leader="selectableSelfLeader"
+              :selectable-character-ids="selectableSelfCharacterIds"
+              :character-action-popover-items="selfCharacterActionPopoverItems"
+              :invalid-leader-pulse="invalidSelfLeaderPulse"
+              :invalid-character-ids="invalidSelfCharacterIds"
+              @card-hover="hoveredCard = $event"
+              @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
+              @leader-click="onSelfLeaderClick"
+              @character-click="onSelfCharacterClick"
+            />
+            <DuelHand
+              :hand="self.hand"
+              :draggable-hand-card-ids="draggableHandCardIds"
+              :invalid-hand-card-ids="invalidHandCardIds"
+              :revealed-hand-card-ids="selfRevealedHandCardIds"
+              @card-hover="hoveredCard = $event"
+              @card-click="onSelfHandCardOrCounterClick"
+              @card-drag-start="onSelfHandCardDragStart"
+              @card-drag-end="onSelfHandCardDragEnd"
+              @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
+            />
+          </LayoutGroup>
         </div>
-        <USeparator class="shrink-0" />
-        <LayoutGroup
-          v-if="self"
-          :id="`play-zone-${self.sessionId}`"
-        >
-          <PlayZone
-            class="flex-1 min-h-0"
-            :player="self"
-            :side="0"
-            :is-owner-turn="isSelfTurn"
-            :dragged-hand-card-instance-id="draggedHandCardInstanceId"
-            :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress"
-            :transition-ghosts="selfTransitionGhosts"
-            :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
-            :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
-            :leader-action-popover-items="selfLeaderActionPopoverItems"
-            :selectable-leader="selectableSelfLeader"
-            :selectable-character-ids="selectableSelfCharacterIds"
-            :character-action-popover-items="selfCharacterActionPopoverItems"
-            :invalid-leader-pulse="invalidSelfLeaderPulse"
-            :invalid-character-ids="invalidSelfCharacterIds"
-            @card-hover="hoveredCard = $event"
-            @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
-            @leader-click="onSelfLeaderClick"
-            @character-click="onSelfCharacterClick"
-          />
-          <DuelHand
-            :hand="self.hand"
-            :draggable-hand-card-ids="draggableHandCardIds"
-            :invalid-hand-card-ids="invalidHandCardIds"
-            :revealed-hand-card-ids="selfRevealedHandCardIds"
-            @card-hover="hoveredCard = $event"
-            @card-click="onSelfHandCardOrCounterClick"
-            @card-drag-start="onSelfHandCardDragStart"
-            @card-drag-end="onSelfHandCardDragEnd"
-            @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
-          />
-        </LayoutGroup>
-      </UContainer>
+      </div>
 
       <UCard
-        class="h-full w-52 shrink-0 overflow-hidden"
-        :ui="{ root: 'h-full flex flex-col overflow-hidden', body: 'min-h-0 flex-1 overflow-hidden p-2' }"
+        class="min-h-0 min-w-0"
+        :ui="{ root: 'h-full flex flex-col overflow-hidden', body: 'flex min-h-0 flex-1 flex-col overflow-hidden p-3' }"
       >
         <template #header>
           <div class="flex items-center justify-between gap-2">
@@ -1157,7 +1161,7 @@ onKeyStroke('Escape', () => {
 
         <div
           v-if="hoveredCard"
-          class="flex h-full min-h-0 flex-col gap-2 overflow-y-auto pr-1"
+          class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
         >
           <div class="w-full aspect-[4/5]">
             <img
@@ -1211,7 +1215,7 @@ onKeyStroke('Escape', () => {
 
         <div
           v-else
-          class="flex h-full min-h-0 flex-col items-center justify-center gap-2 p-4 text-center text-muted"
+          class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-4 text-center text-muted"
         >
           <UIcon
             name="i-lucide-square-mouse-pointer"
