@@ -41,7 +41,8 @@ vi.mock('motion-v', async () => {
             ...attrs,
             'type': props.type,
             'data-layout-id': props.layoutId,
-            'data-animate': props.animate === undefined ? undefined : JSON.stringify(props.animate)
+            'data-animate': props.animate === undefined ? undefined : JSON.stringify(props.animate),
+            'data-transition': props.transition === undefined ? undefined : JSON.stringify(props.transition)
           }, slots.default?.())
         }
       })
@@ -209,5 +210,24 @@ describe('DuelHand', () => {
       expect.any(Number),
       { centered: false, sideSpaceCards: 0 }
     )
+  })
+
+  it('uses a slightly longer shared-layout travel transition so hand movement stays visible', () => {
+    const wrapper = mount(DuelHand, {
+      props: {
+        hand: [createPrivateCard('hand-a')]
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub }
+      }
+    })
+
+    const handCard = wrapper.findAll('button')
+      .find(node => node.attributes('data-layout-id') === 'hand-a')
+
+    expect(handCard?.attributes('data-transition')).toBe(JSON.stringify({
+      duration: 0.28,
+      ease: 'easeInOut'
+    }))
   })
 })

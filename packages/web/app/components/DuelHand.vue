@@ -36,6 +36,10 @@ const emit = defineEmits<{
 
 const reducedMotion = usePreferredReducedMotion()
 const handStackSize = useMeasuredStackSize('handStack')
+const sharedCardTravelTransition = {
+  duration: 0.28,
+  ease: 'easeInOut'
+} as const
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -158,9 +162,10 @@ function onCardDragStart(instanceId: string, event: DragEvent) {
         draggable="true"
         layout
         :layout-id="card.instanceId"
+        :data-instance-id="card.instanceId"
         :initial="false"
         :animate="handRevealAnimation(card.instanceId)"
-        :transition="{ duration: 0.22, ease: 'easeOut' }"
+        :transition="sharedCardTravelTransition"
         class="group absolute top-0 h-full hover:z-50 focus-visible:z-50"
         :class="[
           isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',

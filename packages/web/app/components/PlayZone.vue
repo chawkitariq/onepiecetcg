@@ -104,6 +104,10 @@ const untappedCostCards = computed(() => props.player.cost.filter(card => !card.
 const restedCostCards = computed(() => props.player.cost.filter(card => card.rested))
 const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && restedCostCards.value.length > 0)
 const reducedMotion = usePreferredReducedMotion()
+const sharedCardTravelTransition = {
+  duration: 0.28,
+  ease: 'easeInOut'
+} as const
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
 const isStageZoneDraggedOver = ref(false)
@@ -416,7 +420,7 @@ function onStageZoneDrop(event: DragEvent) {
               class="absolute left-0 top-0 z-[60] h-full"
               :initial="reducedMotion === 'reduce' ? false : { opacity: 1, scale: 1 }"
               :exit="reducedMotion === 'reduce' ? undefined : { opacity: 0 }"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
             >
               <DuelCard
                 :src="cardBackRegular"
@@ -467,7 +471,7 @@ function onStageZoneDrop(event: DragEvent) {
                 :layout-id="character.instanceId"
                 :data-instance-id="character.instanceId"
                 :initial="false"
-                :transition="{ duration: 0.22, ease: 'easeOut' }"
+                :transition="sharedCardTravelTransition"
                 class="duel-card-shell relative h-full shrink-0 rounded-lg"
                 :class="[
                   attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
@@ -522,7 +526,7 @@ function onStageZoneDrop(event: DragEvent) {
               :layout-id="character.instanceId"
               :data-instance-id="character.instanceId"
               :initial="false"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
               class="duel-card-shell relative h-full shrink-0 rounded-lg"
               :class="[
                 attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
@@ -570,7 +574,7 @@ function onStageZoneDrop(event: DragEvent) {
             :layout-id="player.leader?.instanceId"
             :data-instance-id="player.leader?.instanceId"
             :initial="false"
-            :transition="{ duration: 0.22, ease: 'easeOut' }"
+            :transition="sharedCardTravelTransition"
             class="duel-card-shell relative h-full w-full rounded-lg"
             :class="[
               attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
@@ -624,7 +628,7 @@ function onStageZoneDrop(event: DragEvent) {
           layout
           :layout-id="player.leader?.instanceId"
           :initial="false"
-          :transition="{ duration: 0.22, ease: 'easeOut' }"
+          :transition="sharedCardTravelTransition"
           class="duel-card-shell relative h-full w-full rounded-lg"
           :class="[
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
@@ -658,7 +662,7 @@ function onStageZoneDrop(event: DragEvent) {
           layout
           :layout-id="player.stage?.instanceId"
           :initial="false"
-          :transition="{ duration: 0.22, ease: 'easeOut' }"
+          :transition="sharedCardTravelTransition"
           data-drop-zone="stage"
           class="h-full w-full rounded-lg transition-colors duration-150"
           :class="isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : ''"
@@ -692,7 +696,7 @@ function onStageZoneDrop(event: DragEvent) {
               class="absolute left-0 top-0 z-[60] h-full"
               :initial="reducedMotion === 'reduce' ? false : { opacity: 1, scale: 1 }"
               :exit="reducedMotion === 'reduce' ? undefined : { opacity: 0 }"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
             >
               <DuelCard
                 :src="cardBackRegular"
@@ -726,7 +730,7 @@ function onStageZoneDrop(event: DragEvent) {
               class="absolute left-0 top-0 z-[60] h-full"
               :initial="reducedMotion === 'reduce' ? false : { opacity: 1, scale: 1 }"
               :exit="reducedMotion === 'reduce' ? undefined : { opacity: 0 }"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
             >
               <DuelCard
                 :src="cardBackDon"
@@ -765,7 +769,7 @@ function onStageZoneDrop(event: DragEvent) {
               class="absolute top-0 h-full"
               :style="costStackStyle(index, untappedCostCards.length, 'left')"
               :initial="false"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
             >
               <DuelCard
                 :src="donFront"
@@ -787,7 +791,7 @@ function onStageZoneDrop(event: DragEvent) {
               class="absolute top-0 h-full"
               :style="costStackStyle(index, restedCostCards.length, 'right', 1)"
               :initial="false"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
             >
               <DuelCard
                 :src="donFront"
@@ -816,7 +820,7 @@ function onStageZoneDrop(event: DragEvent) {
               layout
               :layout-id="topTrash.instanceId"
               :initial="false"
-              :transition="{ duration: 0.22, ease: 'easeOut' }"
+              :transition="sharedCardTravelTransition"
               class="h-full"
             >
               <DuelCard :src="topTrash.imageUrl" />

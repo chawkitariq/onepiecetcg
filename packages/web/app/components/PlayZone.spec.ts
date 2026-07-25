@@ -84,7 +84,8 @@ vi.mock('motion-v', async () => {
           'data-layout-id': props.layoutId,
           'data-animate': props.animate === undefined ? undefined : JSON.stringify(props.animate),
           'data-initial': props.initial === undefined ? undefined : JSON.stringify(props.initial),
-          'data-exit': props.exit === undefined ? undefined : JSON.stringify(props.exit)
+          'data-exit': props.exit === undefined ? undefined : JSON.stringify(props.exit),
+          'data-transition': props.transition === undefined ? undefined : JSON.stringify(props.transition)
         }, slots.default?.())
       }
     })
@@ -260,6 +261,30 @@ describe('PlayZone transitions', () => {
       .map(node => node.attributes('data-layout-id'))
 
     expect(ghostIds).toEqual(expect.arrayContaining(['life-ghost', 'deck-ghost', 'don-ghost']))
+  })
+
+  it('keeps card travel transitions readable across hidden-zone ghosts and board destinations', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          stage: createPublicCard('stage-a', { type: 'Stage', power: null, counter: null })
+        }),
+        side: 0,
+        transitionGhosts: [{ instanceId: 'deck-ghost', source: 'deck' }]
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const expectedTransition = JSON.stringify({
+      duration: 0.28,
+      ease: 'easeInOut'
+    })
+
+    expect(wrapper.find('[data-layout-id="deck-ghost"]').attributes('data-transition')).toBe(expectedTransition)
+    expect(wrapper.find('[data-layout-id="character-a"]').attributes('data-transition')).toBe(expectedTransition)
+    expect(wrapper.find('[data-layout-id="stage-a"]').attributes('data-transition')).toBe(expectedTransition)
   })
 
   it('renders untapped and rested DON!! as two opposite cost stacks', () => {
