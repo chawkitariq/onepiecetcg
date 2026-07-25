@@ -69,7 +69,8 @@ describe('derivePlayerTransitionDiff', () => {
 
     expect(derivePlayerTransitionDiff(previous, current)).toEqual({
       ghosts: [{ instanceId: 'revealed-life', source: 'life' }],
-      revealedHandCardIds: ['revealed-life']
+      revealedHandCardIds: ['revealed-life'],
+      lifeLoss: 1
     })
   })
 
@@ -87,7 +88,8 @@ describe('derivePlayerTransitionDiff', () => {
 
     expect(derivePlayerTransitionDiff(previous, current)).toEqual({
       ghosts: [{ instanceId: 'drawn-card', source: 'deck' }],
-      revealedHandCardIds: []
+      revealedHandCardIds: [],
+      lifeLoss: 0
     })
   })
 
@@ -103,7 +105,8 @@ describe('derivePlayerTransitionDiff', () => {
 
     expect(derivePlayerTransitionDiff(previous, current)).toEqual({
       ghosts: [{ instanceId: 'don-2', source: 'donDeck' }],
-      revealedHandCardIds: []
+      revealedHandCardIds: [],
+      lifeLoss: 0
     })
   })
 })

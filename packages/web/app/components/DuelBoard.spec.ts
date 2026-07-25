@@ -362,6 +362,35 @@ describe('DuelBoard drag and drop', () => {
     expect(declareAttack).not.toHaveBeenCalled()
   })
 
+  it('cancels target selection when Escape is pressed', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="character-popover-attack-0"]').trigger('click')
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
+  })
+
+  it('cancels target selection on a click outside the board', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="character-popover-attack-0"]').trigger('click')
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
+  })
+
   it('lets the leader popover trigger repeated DON attachment and attack targeting', async () => {
     canDeclareAttack.value = true
 

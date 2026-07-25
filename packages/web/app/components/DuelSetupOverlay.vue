@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
+
 const {
   self,
   opponent,
@@ -8,6 +10,8 @@ const {
   chooseFirstOrSecond,
   mulligan
 } = useDuelRoom()
+
+const reducedMotion = usePreferredReducedMotion()
 
 const waitingLabel = computed(() => {
   if (!firstPlayerSessionId.value) {
@@ -23,9 +27,9 @@ const waitingLabel = computed(() => {
 </script>
 
 <template>
-  <div class="absolute inset-0 z-10 flex items-center justify-center bg-default/80 backdrop-blur-sm">
-    <UCard class="w-full max-w-md">
-      <template v-if="isSelfDesignatedToChoose && !firstPlayerSessionId">
+  <div class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-6 bg-default/90 backdrop-blur-sm">
+    <template v-if="isSelfDesignatedToChoose && !firstPlayerSessionId">
+      <UCard class="w-full max-w-md">
         <div class="flex flex-col gap-4">
           <p class="text-sm font-medium text-primary">
             Vous avez ete designe pour choisir
@@ -50,40 +54,56 @@ const waitingLabel = computed(() => {
             </UButton>
           </div>
         </div>
-      </template>
+      </UCard>
+    </template>
 
-      <template v-else-if="isSelfTurnToMulligan">
-        <div class="flex flex-col gap-4">
-          <p class="text-sm font-medium text-primary">
-            Mulligan
-          </p>
-          <p class="text-sm text-muted">
-            Vous pouvez renvoyer votre main de depart, la remelanger dans le deck et en piocher une nouvelle. Ce choix est unique.
-          </p>
-          <div class="flex gap-2">
-            <UButton
-              class="flex-1 justify-center"
-              @click="mulligan(true)"
-            >
-              Faire un mulligan
-            </UButton>
-            <UButton
-              class="flex-1 justify-center"
-              color="neutral"
-              variant="subtle"
-              @click="mulligan(false)"
-            >
-              Garder ma main
-            </UButton>
-          </div>
-        </div>
-      </template>
+    <template v-else-if="isSelfTurnToMulligan">
+      <div class="flex flex-col items-center gap-2 text-center">
+        <p class="text-lg font-bold text-highlighted">
+          Votre main de depart
+        </p>
+        <p class="max-w-md text-sm text-muted">
+          Vous pouvez renvoyer cette main, la remelanger dans le deck et en piocher une nouvelle. Ce choix est unique.
+        </p>
+      </div>
 
-      <template v-else>
+      <div class="flex items-end justify-center gap-3 px-4">
+        <motion.div
+          v-for="(card, index) in self?.hand ?? []"
+          :key="card.instanceId"
+          class="w-28 sm:w-36"
+          :initial="reducedMotion === 'reduce' ? false : { opacity: 0, y: 24, scale: 0.9 }"
+          :animate="{ opacity: 1, y: 0, scale: 1 }"
+          :transition="{ duration: 0.28, ease: 'easeOut', delay: reducedMotion === 'reduce' ? 0 : index * 0.06 }"
+        >
+          <DuelCard :src="card.imageUrl" />
+        </motion.div>
+      </div>
+
+      <div class="flex gap-2">
+        <UButton
+          size="lg"
+          @click="mulligan(true)"
+        >
+          Faire un mulligan
+        </UButton>
+        <UButton
+          size="lg"
+          color="neutral"
+          variant="subtle"
+          @click="mulligan(false)"
+        >
+          Garder ma main
+        </UButton>
+      </div>
+    </template>
+
+    <template v-else>
+      <UCard class="w-full max-w-md">
         <p class="text-sm text-muted text-center">
           {{ waitingLabel ?? 'Mise en place de la partie en cours...' }}
         </p>
-      </template>
-    </UCard>
+      </UCard>
+    </template>
   </div>
 </template>

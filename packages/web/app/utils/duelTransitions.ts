@@ -10,6 +10,7 @@ export type TransitionGhost = {
 export type PlayerTransitionDiff = {
   ghosts: TransitionGhost[]
   revealedHandCardIds: string[]
+  lifeLoss: number
 }
 
 function getNewIds(previousIds: string[], currentIds: string[]) {
@@ -31,7 +32,8 @@ export function derivePlayerTransitionDiff(
   if (!previous) {
     return {
       ghosts: [],
-      revealedHandCardIds: []
+      revealedHandCardIds: [],
+      lifeLoss: 0
     }
   }
 
@@ -73,6 +75,7 @@ export function derivePlayerTransitionDiff(
 
   return {
     ghosts,
-    revealedHandCardIds
+    revealedHandCardIds,
+    lifeLoss
   }
 }

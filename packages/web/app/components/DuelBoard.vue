@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
+import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { LayoutGroup } from 'motion-v'
 import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
@@ -96,6 +97,46 @@ const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
 const draggedHandCardInstanceId = ref<string | null>(null)
+const pointerPosition = ref<{ x: number, y: number } | null>(null)
+const declaredAttackTargetInstanceId = ref<string | null>(null)
+
+function onBoardPointerMove(event: PointerEvent) {
+  pointerPosition.value = { x: event.clientX, y: event.clientY }
+}
+
+const attackArrowFromInstanceId = computed(() => {
+  if (pendingAttackerInstanceId.value) {
+    return pendingAttackerInstanceId.value
+  }
+
+  if (combat.value && isSelfAttacker.value && combat.value.step === 'declared') {
+    return combat.value.attackerInstanceId
+  }
+
+  return null
+})
+
+const attackArrowToInstanceId = computed(() => declaredAttackTargetInstanceId.value)
+
+const attackArrowToPoint = computed(() =>
+  isChoosingTarget.value && !declaredAttackTargetInstanceId.value ? pointerPosition.value : null
+)
+
+watch(() => combat.value?.step, (step, previousStep) => {
+  if (step === previousStep) {
+    return
+  }
+
+  if (step === 'declared' && combat.value) {
+    declaredAttackTargetInstanceId.value = combat.value.targetType === 'leader'
+      ? (isSelfAttacker.value ? opponent.value?.leader?.instanceId : self.value?.leader?.instanceId) ?? null
+      : combat.value.targetInstanceId
+  }
+
+  if (!step) {
+    declaredAttackTargetInstanceId.value = null
+  }
+})
 const invalidHandCardIds = ref<string[]>([])
 
 const phaseSteps = ['refresh', 'draw', 'don', 'main', 'end'] as const
@@ -174,6 +215,71 @@ const selfTransitionGhosts = ref<TransitionGhost[]>([])
 const opponentTransitionGhosts = ref<TransitionGhost[]>([])
 const selfRevealedHandCardIds = ref<string[]>([])
 
+const actionModalState = computed<DuelActionModalState | null>(() => {
+  if (isBlockingStep.value && isSelfDefender.value) {
+    return {
+      tone: 'decision',
+      title: 'Étape de Blocage',
+      description: 'Cliquez un Personnage redressé sur le plateau pour Bloquer, ou choisissez de ne pas bloquer.',
+      allowBoardInteraction: true,
+      actions: [{ label: 'Ne pas bloquer', color: 'neutral', onSelect: skipBlock }]
+    }
+  }
+
+  if (isChoosingCounterCard.value) {
+    return {
+      tone: 'decision',
+      title: 'Valeur de Contre',
+      description: 'Confirmez la valeur de Contre à ajouter pour la durée du combat.',
+      slot: 'counter-input',
+      actions: [
+        { label: 'Confirmer', color: 'primary', onSelect: confirmCounter },
+        { label: 'Annuler', color: 'neutral', onSelect: cancelCounterSelection }
+      ]
+    }
+  }
+
+  if (isCounteringStep.value && isSelfDefender.value) {
+    return {
+      tone: 'decision',
+      title: 'Étape de Contre',
+      description: 'Cliquez une carte avec Contre dans votre main pour la défausser et booster votre défense, ou terminez l\'étape.',
+      allowBoardInteraction: true,
+      actions: [{ label: 'Terminer l\'étape de Contre', color: 'primary', onSelect: finishCounterStep }]
+    }
+  }
+
+  if (isAwaitingTriggerDecision.value && isSelfDefender.value) {
+    return {
+      tone: 'danger',
+      title: 'Carte de Vie révélée : [Déclenchement]',
+      description: 'Voulez-vous activer le Déclenchement (la carte sera écartée) ou l\'ajouter simplement à votre main ?',
+      actions: [
+        { label: 'Activer et écarter', color: 'error', onSelect: () => resolveTrigger(true) },
+        { label: 'Ajouter à la main', color: 'neutral', onSelect: () => resolveTrigger(false) }
+      ]
+    }
+  }
+
+  return null
+})
+
+const waitingToastText = computed(() => {
+  if (isBlockingStep.value && isSelfAttacker.value) {
+    return 'En attente de la décision de blocage de l\'adversaire...'
+  }
+
+  if (isCounteringStep.value && isSelfAttacker.value) {
+    return 'En attente de la décision de contre de l\'adversaire...'
+  }
+
+  if (isAwaitingTriggerDecision.value && isSelfAttacker.value) {
+    return 'En attente de la décision de Déclenchement du défenseur...'
+  }
+
+  return null
+})
+
 const hoveredCardRows = computed(() => {
   if (!hoveredCard.value) {
     return []
@@ -229,6 +335,43 @@ function mergeRevealedHandCards(target: Ref<string[]>, ids: string[]) {
   }, 320)
 }
 
+type FloatingNumberInstance = {
+  key: number
+  value: number
+  x: number
+  y: number
+  tone: 'damage' | 'gain'
+}
+
+const floatingNumbers = ref<FloatingNumberInstance[]>([])
+let floatingNumberKey = 0
+
+function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeLoss: number) {
+  if (!leaderInstanceId || lifeLoss <= 0) {
+    return
+  }
+
+  const element = document.querySelector(`[data-instance-id="${CSS.escape(leaderInstanceId)}"]`)
+
+  if (!element) {
+    return
+  }
+
+  const rect = element.getBoundingClientRect()
+
+  floatingNumbers.value = [...floatingNumbers.value, {
+    key: floatingNumberKey++,
+    value: lifeLoss,
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+    tone: 'damage'
+  }]
+}
+
+function removeFloatingNumber(key: number) {
+  floatingNumbers.value = floatingNumbers.value.filter(entry => entry.key !== key)
+}
+
 function syncPlayerTransitions(
   current: DuelPlayerView | null,
   previous: DuelPlayerView | null,
@@ -244,6 +387,10 @@ function syncPlayerTransitions(
 
   if (revealedHandTarget) {
     mergeRevealedHandCards(revealedHandTarget, diff.revealedHandCardIds)
+  }
+
+  if (diff.lifeLoss > 0) {
+    nextTick(() => spawnLifeLossFloatingNumber(current.leader?.instanceId, diff.lifeLoss))
   }
 }
 
@@ -647,6 +794,35 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
     }
   ]
 })
+
+const isInstructionModeActive = computed(() =>
+  isChoosingCharacterToDiscard.value || isSelectingAttacker.value || isChoosingTarget.value
+)
+
+function cancelInstructionMode() {
+  if (isChoosingCharacterToDiscard.value) {
+    cancelDiscardSelection()
+    return
+  }
+
+  if (isSelectingAttacker.value || isChoosingTarget.value) {
+    cancelTargetSelection()
+  }
+}
+
+const boardContainer = useTemplateRef<HTMLElement>('board-container')
+
+onClickOutside(boardContainer, () => {
+  if (isInstructionModeActive.value) {
+    cancelInstructionMode()
+  }
+})
+
+onKeyStroke('Escape', () => {
+  if (isInstructionModeActive.value) {
+    cancelInstructionMode()
+  }
+})
 </script>
 
 <template>
@@ -793,166 +969,24 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
       class="shrink-0 duel-connection-banner"
     />
 
-    <UAlert
-      v-if="isChoosingCharacterToDiscard"
-      color="warning"
-      variant="subtle"
-      title="Zone Personnage pleine (5 max)"
-      description="Choisissez un Personnage a defausser pour jouer la carte selectionnee."
-      class="shrink-0"
-      :close="{ color: 'neutral', variant: 'link' }"
-      @update:open="cancelDiscardSelection"
-    />
-
-    <UAlert
-      v-if="isSelectingAttacker"
-      color="info"
-      variant="subtle"
-      title="Choisissez votre attaquant"
-      description="Selectionnez votre Leader ou un Personnage redresse n'ayant pas ete joue ce tour-ci."
-      class="shrink-0"
-      :close="{ color: 'neutral', variant: 'link' }"
-      @update:open="cancelTargetSelection"
-    />
-
-    <UAlert
-      v-if="isChoosingTarget"
-      color="info"
-      variant="subtle"
-      title="Choisissez la cible"
-      description="Selectionnez le Leader adverse ou un Personnage adverse epuise."
-      class="shrink-0"
-      :close="{ color: 'neutral', variant: 'link' }"
-      @update:open="cancelTargetSelection"
-    />
-
-    <UAlert
-      v-if="isBlockingStep && isSelfDefender"
-      color="warning"
-      variant="subtle"
-      title="Etape de Blocage"
-      description="Designez un Personnage redresse comme Bloqueur, ou ne bloquez pas."
-      class="shrink-0"
-    >
-      <template #actions>
-        <UButton
-          size="sm"
-          color="neutral"
-          variant="subtle"
-          @click="skipBlock"
-        >
-          Ne pas bloquer
-        </UButton>
-      </template>
-    </UAlert>
-
-    <UAlert
-      v-if="isBlockingStep && isSelfAttacker"
-      color="neutral"
-      variant="subtle"
-      title="Etape de Blocage"
-      description="En attente de la decision de blocage de l'adversaire..."
-      class="shrink-0"
-    />
-
-    <UAlert
-      v-if="isCounteringStep && isSelfDefender"
-      color="warning"
-      variant="subtle"
-      title="Etape de Contre"
-      description="Defaussez une carte avec Contre depuis votre main pour booster votre puissance de defense, ou terminez l'etape."
-      class="shrink-0"
-    >
-      <template #actions>
-        <UButton
-          size="sm"
-          color="primary"
-          variant="subtle"
-          @click="finishCounterStep"
-        >
-          Terminer l'etape de Contre
-        </UButton>
-      </template>
-    </UAlert>
-
-    <UAlert
-      v-if="isChoosingCounterCard"
-      color="warning"
-      variant="subtle"
-      title="Valeur de Contre"
-      description="Confirmez la valeur de Contre a ajouter pour la duree du combat."
-      class="shrink-0"
-    >
-      <template #actions>
+    <DuelActionModal :state="actionModalState">
+      <template
+        v-if="actionModalState?.slot === 'counter-input'"
+        #extra
+      >
         <UInputNumber
           v-model="counterPowerBonusInput"
           :min="0"
           :step="1000"
-          size="sm"
+          size="lg"
+          class="w-32"
         />
-        <UButton
-          size="sm"
-          color="primary"
-          variant="subtle"
-          @click="confirmCounter"
-        >
-          Confirmer
-        </UButton>
-        <UButton
-          size="sm"
-          color="neutral"
-          variant="ghost"
-          @click="cancelCounterSelection"
-        >
-          Annuler
-        </UButton>
       </template>
-    </UAlert>
+    </DuelActionModal>
 
-    <UAlert
-      v-if="isCounteringStep && isSelfAttacker"
-      color="neutral"
-      variant="subtle"
-      title="Etape de Contre"
-      description="En attente de la decision de contre de l'adversaire..."
-      class="shrink-0"
-    />
-
-    <UAlert
-      v-if="isAwaitingTriggerDecision && isSelfDefender"
-      color="error"
-      variant="subtle"
-      title="Carte de Vie revelee : [Declenchement]"
-      description="Voulez-vous activer le Declenchement (la carte sera ecartee) ou l'ajouter simplement a votre main ?"
-      class="shrink-0"
-    >
-      <template #actions>
-        <UButton
-          size="sm"
-          color="error"
-          variant="subtle"
-          @click="resolveTrigger(true)"
-        >
-          Activer et ecarter
-        </UButton>
-        <UButton
-          size="sm"
-          color="neutral"
-          variant="subtle"
-          @click="resolveTrigger(false)"
-        >
-          Ajouter a la main
-        </UButton>
-      </template>
-    </UAlert>
-
-    <UAlert
-      v-if="isAwaitingTriggerDecision && isSelfAttacker"
-      color="neutral"
-      variant="subtle"
-      title="Carte de Vie revelee"
-      description="En attente de la decision de Declenchement du defenseur..."
-      class="shrink-0"
+    <DuelWaitingToast
+      v-if="waitingToastText"
+      :text="waitingToastText"
     />
 
     <USlideover
@@ -1010,9 +1044,25 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
 
     <div class="flex flex-1 min-h-0 gap-2 overflow-hidden p-2">
       <UContainer
+        ref="board-container"
         class="relative flex flex-1 flex-col w-full gap-2 h-full min-h-0 overflow-hidden rounded-lg transition-shadow duration-300"
         :class="isSelfTurn ? 'shadow-[0_0_0_2px_var(--ui-primary)]' : 'shadow-[0_0_0_2px_var(--ui-border)]'"
+        @pointermove="onBoardPointerMove"
       >
+        <DuelAttackArrow
+          :from-instance-id="attackArrowFromInstanceId"
+          :to-instance-id="attackArrowToInstanceId"
+          :to-point="attackArrowToPoint"
+        />
+        <DuelFloatingNumber
+          v-for="entry in floatingNumbers"
+          :key="entry.key"
+          :value="entry.value"
+          :x="entry.x"
+          :y="entry.y"
+          :tone="entry.tone"
+          @done="removeFloatingNumber(entry.key)"
+        />
         <DuelSetupOverlay v-if="phase === 'mulligan'" />
         <DuelOpponentHand
           v-if="opponent"

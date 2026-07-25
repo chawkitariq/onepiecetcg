@@ -416,6 +416,7 @@ function onCharacterZoneDrop(event: DragEvent) {
                 type="button"
                 layout
                 :layout-id="character.instanceId"
+                :data-instance-id="character.instanceId"
                 :initial="false"
                 :transition="{ duration: 0.22, ease: 'easeOut' }"
                 class="duel-card-shell relative h-full shrink-0 rounded-lg"
@@ -470,6 +471,7 @@ function onCharacterZoneDrop(event: DragEvent) {
               type="button"
               layout
               :layout-id="character.instanceId"
+              :data-instance-id="character.instanceId"
               :initial="false"
               :transition="{ duration: 0.22, ease: 'easeOut' }"
               class="duel-card-shell relative h-full shrink-0 rounded-lg"
@@ -526,6 +528,7 @@ function onCharacterZoneDrop(event: DragEvent) {
             type="button"
             layout
             :layout-id="player.leader?.instanceId"
+            :data-instance-id="player.leader?.instanceId"
             :initial="false"
             :transition="{ duration: 0.22, ease: 'easeOut' }"
             class="duel-card-shell relative h-full w-full rounded-lg"
