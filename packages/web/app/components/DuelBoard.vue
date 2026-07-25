@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { CardColor, DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
+import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import { LayoutGroup } from 'motion-v'
+import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 
 type CharacterActionPopoverItem = {
@@ -86,6 +87,9 @@ type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 
 
 const hoveredCard = ref<HoveredDuelCard | null>(null)
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
+const isJournalOpen = ref(false)
+const seenLogCount = ref(0)
+const unseenLogCount = computed(() => Math.max(logs.value.length - seenLogCount.value, 0))
 const pendingCharacterInstanceId = ref<string | null>(null)
 const isSelectingAttacker = ref(false)
 const pendingAttackerInstanceId = ref<string | null>(null)
@@ -95,6 +99,12 @@ const draggedHandCardInstanceId = ref<string | null>(null)
 const invalidHandCardIds = ref<string[]>([])
 
 const phaseSteps = ['refresh', 'draw', 'don', 'main', 'end'] as const
+const phaseStepLabels = phaseSteps.map(step => phaseLabels[step])
+const currentPhaseStepIndex = computed(() => {
+  const index = phaseSteps.indexOf(phase.value as typeof phaseSteps[number])
+
+  return index === -1 ? 0 : index
+})
 const emptyPublicCards: PublicCard[] = []
 const emptyPrivateCards: PrivateCard[] = []
 const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
@@ -258,22 +268,13 @@ function formatLogTime(createdAt: string): string {
   })
 }
 
-function getCardColorStyle(color: CardColor) {
-  const palette: Record<CardColor, string> = {
-    Red: 'border-color: color-mix(in oklab, var(--ui-error) 45%, transparent); color: var(--ui-error);',
-    Green: 'border-color: color-mix(in oklab, var(--ui-success) 45%, transparent); color: var(--ui-success);',
-    Blue: 'border-color: color-mix(in oklab, var(--ui-info) 45%, transparent); color: var(--ui-info);',
-    Purple: 'border-color: color-mix(in oklab, var(--ui-secondary) 45%, transparent); color: var(--ui-secondary);',
-    Black: 'border-color: color-mix(in oklab, var(--ui-text-dimmed) 55%, transparent); color: var(--ui-text-highlighted);',
-    Yellow: 'border-color: color-mix(in oklab, var(--ui-warning) 45%, transparent); color: var(--ui-warning);'
-  }
-
-  return palette[color]
-}
-
 watch(() => logs.value.length, async (newLength, previousLength) => {
   if (newLength <= previousLength) {
     return
+  }
+
+  if (isJournalOpen.value) {
+    seenLogCount.value = newLength
   }
 
   await nextTick()
@@ -287,6 +288,12 @@ watch(() => logs.value.length, async (newLength, previousLength) => {
     top: element.scrollHeight,
     behavior: 'smooth'
   })
+})
+
+watch(isJournalOpen, (open) => {
+  if (open) {
+    seenLogCount.value = logs.value.length
+  }
 })
 
 function pulseLeader(target: Ref<boolean>) {
@@ -652,79 +659,100 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
       }"
     >
       <template #left>
-        <div
-          v-if="opponent"
-          class="flex items-center gap-2 min-w-0"
-        >
-          <span
-            class="h-2.5 w-2.5 rounded-full shrink-0"
-            :class="opponent.connected ? 'bg-success' : 'duel-connection-waiting bg-warning'"
-          />
-          <span class="text-sm font-medium truncate">
-            {{ opponent.displayName }}
-          </span>
-          <UBadge
-            color="neutral"
-            variant="subtle"
+        <div class="flex items-center gap-3 min-w-0">
+          <UButton
+            icon="i-lucide-scroll-text"
             size="sm"
-          >
-            Deck {{ opponent.deckCount }}
-          </UBadge>
-          <UBadge
             color="neutral"
-            variant="subtle"
-            size="sm"
+            variant="ghost"
+            aria-label="Journal"
+            @click="isJournalOpen = true"
           >
-            DON!! {{ opponent.donDeckCount }}
-          </UBadge>
-          <UBadge
-            color="neutral"
-            variant="subtle"
-            size="sm"
+            <UBadge
+              v-if="unseenLogCount > 0"
+              color="primary"
+              variant="solid"
+              size="sm"
+            >
+              {{ unseenLogCount }}
+            </UBadge>
+          </UButton>
+          <div
+            v-if="opponent"
+            class="flex items-center gap-2 min-w-0"
           >
-            Main {{ opponent.handCount }}
-          </UBadge>
-          <UBadge
-            color="neutral"
-            variant="subtle"
-            size="sm"
+            <span
+              class="h-2.5 w-2.5 rounded-full shrink-0"
+              :class="opponent.connected ? 'bg-success' : 'duel-connection-waiting bg-warning'"
+            />
+            <span class="text-sm font-medium truncate">
+              {{ opponent.displayName }}
+            </span>
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              size="sm"
+            >
+              Deck {{ opponent.deckCount }}
+            </UBadge>
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              size="sm"
+            >
+              DON!! {{ opponent.donDeckCount }}
+            </UBadge>
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              size="sm"
+            >
+              Main {{ opponent.handCount }}
+            </UBadge>
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              size="sm"
+            >
+              Vie {{ opponent.lifeCount }}
+            </UBadge>
+          </div>
+          <p
+            v-else
+            class="text-sm text-muted"
           >
-            Vie {{ opponent.lifeCount }}
-          </UBadge>
+            En attente d'un adversaire...
+          </p>
         </div>
-        <p
-          v-else
-          class="text-sm text-muted"
-        >
-          En attente d'un adversaire...
-        </p>
       </template>
 
-      <div class="flex items-center gap-1 min-w-0 px-2 sm:px-4">
-        <UBadge
-          v-for="step in phaseSteps"
-          :key="step"
-          color="neutral"
-          :variant="phase === step ? 'solid' : 'subtle'"
+      <div class="w-full max-w-xs px-2 sm:px-4">
+        <UProgress
+          :model-value="currentPhaseStepIndex + 1"
+          :max="phaseStepLabels"
           size="sm"
-        >
-          {{ phaseLabels[step] }}
-        </UBadge>
+        />
       </div>
 
       <template #right>
-        <div class="flex items-center gap-2">
-          <UBadge
+        <div class="flex items-center gap-3">
+          <div
             v-if="self"
-            color="neutral"
-            variant="subtle"
+            class="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1"
+          >
+            <UIcon
+              name="i-lucide-zap"
+              class="size-4 text-warning"
+            />
+            <span class="text-sm font-semibold tabular-nums">{{ selfUntappedDonCount }}</span>
+          </div>
+          <UBadge
+            :color="isSelfTurn ? 'primary' : 'neutral'"
+            :variant="isSelfTurn ? 'solid' : 'subtle'"
             size="sm"
           >
-            DON!! {{ selfUntappedDonCount }}
-          </UBadge>
-          <p class="text-sm text-muted whitespace-nowrap">
             {{ isSelfTurn ? 'Votre tour' : "Tour de l'adversaire" }}
-          </p>
+          </UBadge>
           <UButton
             size="sm"
             color="primary"
@@ -927,53 +955,48 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
       class="shrink-0"
     />
 
-    <UPage class="grid grid-cols-[1fr_12.25%_1fr] grid-rows-[minmax(0,1fr)] gap-4 flex-1 min-h-0 overflow-hidden">
-      <template #left>
-        <UCard
-          class="h-full overflow-hidden"
-          :ui="{ body: 'flex flex-col gap-2 h-full min-h-0 overflow-hidden' }"
-        >
-          <p class="text-sm font-medium text-primary shrink-0">
-            Journal
-          </p>
-          <p class="text-xs text-muted shrink-0">
-            Vue en lecture seule de la partie : zones publiques et compteurs des zones cachées adverses.
-          </p>
-          <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-hidden">
-            <UScrollArea
-              ref="journal-scroll-area"
-              class="flex-1 min-h-0"
-              :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
-            >
-              <div class="mt-auto flex flex-col">
-                <ul class="flex flex-col gap-2 text-xs">
-                  <li
-                    v-if="logs.length === 0"
-                    class="text-muted"
-                  >
-                    Aucun événement.
-                  </li>
-                  <li
-                    v-for="entry in logs"
-                    :key="entry.id"
-                    class="rounded-lg border border-default/70 bg-muted/20 px-3 py-2"
-                  >
-                    <div class="flex items-center gap-2 text-[11px]">
-                      <time
-                        :datetime="entry.createdAt"
-                        class="tabular-nums opacity-80"
-                      >
-                        {{ formatLogTime(entry.createdAt) }}
-                      </time>
-                    </div>
-                    <p class="mt-1 leading-relaxed">
-                      {{ entry.message }}
-                    </p>
-                  </li>
-                </ul>
-              </div>
-            </UScrollArea>
-          </div>
+    <USlideover
+      v-model:open="isJournalOpen"
+      title="Journal"
+      description="Vue en lecture seule de la partie : zones publiques et compteurs des zones cachées adverses."
+      :modal="false"
+      side="left"
+    >
+      <template #body>
+        <div class="flex h-full min-h-0 flex-col gap-2">
+          <UScrollArea
+            ref="journal-scroll-area"
+            class="flex-1 min-h-0"
+            :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
+          >
+            <div class="mt-auto flex flex-col">
+              <ul class="flex flex-col gap-2 text-xs">
+                <li
+                  v-if="logs.length === 0"
+                  class="text-muted"
+                >
+                  Aucun événement.
+                </li>
+                <li
+                  v-for="entry in logs"
+                  :key="entry.id"
+                  class="rounded-lg border border-default/70 bg-muted/20 px-3 py-2"
+                >
+                  <div class="flex items-center gap-2 text-[11px]">
+                    <time
+                      :datetime="entry.createdAt"
+                      class="tabular-nums opacity-80"
+                    >
+                      {{ formatLogTime(entry.createdAt) }}
+                    </time>
+                  </div>
+                  <p class="mt-1 leading-relaxed">
+                    {{ entry.message }}
+                  </p>
+                </li>
+              </ul>
+            </div>
+          </UScrollArea>
 
           <div
             v-if="status === 'connecting'"
@@ -981,10 +1004,15 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
           >
             Reconnexion en cours...
           </div>
-        </UCard>
+        </div>
       </template>
+    </USlideover>
 
-      <UContainer class="relative flex flex-col w-5xl gap-2 h-full min-h-0 overflow-hidden">
+    <div class="flex flex-1 min-h-0 gap-2 overflow-hidden p-2">
+      <UContainer
+        class="relative flex flex-1 flex-col w-full gap-2 h-full min-h-0 overflow-hidden rounded-lg transition-shadow duration-300"
+        :class="isSelfTurn ? 'shadow-[0_0_0_2px_var(--ui-primary)]' : 'shadow-[0_0_0_2px_var(--ui-border)]'"
+      >
         <DuelSetupOverlay v-if="phase === 'mulligan'" />
         <DuelOpponentHand
           v-if="opponent"
@@ -1057,122 +1085,94 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
         </LayoutGroup>
       </UContainer>
 
-      <template #right>
-        <UCard
-          class="h-full overflow-hidden"
-          :ui="{ root: 'h-full flex flex-col overflow-hidden', body: 'min-h-0 flex-1 overflow-hidden' }"
+      <UCard
+        class="h-full w-52 shrink-0 overflow-hidden"
+        :ui="{ root: 'h-full flex flex-col overflow-hidden', body: 'min-h-0 flex-1 overflow-hidden p-2' }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-medium text-muted">
+              {{ hoveredCard?.number ?? 'Details' }}
+            </p>
+            <UBadge
+              v-if="hoveredCard"
+              color="neutral"
+              variant="subtle"
+              size="sm"
+            >
+              {{ hoveredCard.type }}
+            </UBadge>
+          </div>
+        </template>
+
+        <div
+          v-if="hoveredCard"
+          class="flex h-full min-h-0 flex-col gap-2 overflow-y-auto pr-1"
         >
-          <template #header>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <h2 class="text-base font-semibold text-highlighted">
-                    Details
-                  </h2>
-                  <p class="text-sm text-muted">
-                    {{ hoveredCard?.number ?? 'Aucune carte' }}
-                  </p>
-                </div>
-                <UBadge
-                  v-if="hoveredCard"
-                  color="neutral"
-                  variant="subtle"
-                >
-                  {{ hoveredCard.type }}
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="hoveredCard"
-            class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
-          >
-            <div class="w-full aspect-[4/5]">
-              <img
-                v-if="hoveredCard.imageUrl"
-                :src="hoveredCard.imageUrl"
-                :alt="hoveredCard.name"
-                class="w-full rounded-lg border border-muted object-cover"
-              >
-              <div
-                v-else
-                class="flex h-full w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
-              >
-                <UIcon
-                  name="i-lucide-image-off"
-                  class="size-8"
-                />
-              </div>
-            </div>
-
-            <div class="flex min-h-0 min-w-0 flex-col gap-4">
-              <div class="min-w-0 space-y-3">
-                <div>
-                  <h3 class="text-base font-semibold text-highlighted">
-                    {{ hoveredCard.name }}
-                  </h3>
-                  <div class="mt-2 flex flex-wrap gap-1">
-                    <UBadge
-                      v-for="color in hoveredCard.colors"
-                      :key="color"
-                      variant="outline"
-                      :style="getCardColorStyle(color)"
-                    >
-                      {{ color }}
-                    </UBadge>
-                  </div>
-                </div>
-
-                <p class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted">
-                  {{ hoveredCard.text || 'Pas de texte.' }}
-                </p>
-              </div>
-
-              <dl class="grid gap-2 text-sm">
-                <div
-                  v-for="[label, value] in hoveredCardRows"
-                  :key="label"
-                  class="grid grid-cols-[92px_minmax(0,1fr)] gap-3"
-                >
-                  <dt class="text-muted">
-                    {{ label }}
-                  </dt>
-                  <dd class="min-w-0 text-highlighted">
-                    {{ value }}
-                  </dd>
-                </div>
-              </dl>
+          <div class="w-full aspect-[4/5]">
+            <img
+              v-if="hoveredCard.imageUrl"
+              :src="hoveredCard.imageUrl"
+              :alt="hoveredCard.name"
+              class="w-full rounded-lg border border-muted object-cover"
+            >
+            <div
+              v-else
+              class="flex h-full w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
+            >
+              <UIcon
+                name="i-lucide-image-off"
+                class="size-8"
+              />
             </div>
           </div>
 
-          <div
-            v-else
-            class="flex h-full min-h-0 flex-col gap-4"
-          >
-            <div class="flex-1 min-h-0 overflow-y-auto pr-1">
-              <div class="flex min-h-full flex-col gap-4">
-                <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-elevated/50 p-6 text-center text-muted">
-                  <div class="flex flex-col items-center gap-3">
-                    <UIcon
-                      name="i-lucide-square-mouse-pointer"
-                      class="size-10"
-                    />
-                    <div class="space-y-1">
-                      <p class="text-sm font-medium text-highlighted">
-                        Aucune carte
-                      </p>
-                      <p class="text-sm">
-                        Survolez une carte du plateau.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div class="min-w-0 space-y-2">
+            <h3 class="truncate text-sm font-semibold text-highlighted">
+              {{ hoveredCard.name }}
+            </h3>
+            <div class="flex flex-wrap gap-1">
+              <UBadge
+                v-for="color in hoveredCard.colors"
+                :key="color"
+                size="sm"
+                variant="outline"
+                :style="getCardColorStyle(color)"
+              >
+                {{ color }}
+              </UBadge>
             </div>
           </div>
-        </UCard>
-      </template>
-    </UPage>
+
+          <dl class="grid gap-1 text-xs">
+            <div
+              v-for="[label, value] in hoveredCardRows"
+              :key="label"
+              class="grid grid-cols-[64px_minmax(0,1fr)] gap-2"
+            >
+              <dt class="text-muted">
+                {{ label }}
+              </dt>
+              <dd class="min-w-0 text-highlighted">
+                {{ value }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div
+          v-else
+          class="flex h-full min-h-0 flex-col items-center justify-center gap-2 p-4 text-center text-muted"
+        >
+          <UIcon
+            name="i-lucide-square-mouse-pointer"
+            class="size-8"
+          />
+          <p class="text-xs">
+            Survolez une carte du plateau.
+          </p>
+        </div>
+      </UCard>
+    </div>
   </div>
 </template>

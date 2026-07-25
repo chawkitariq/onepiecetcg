@@ -12,6 +12,7 @@ import type {
   DeckValidation
 } from '@onepiecetcg/shared'
 import { exportDeckToText, normalizeDeckCards, parseDeckText } from '@onepiecetcg/shared'
+import { CARD_COLOR_ACCENTS, getCardColorStyle } from '~/utils/cardColors'
 import { fromBuilderDraft, toBuilderDraft } from '../utils/deckBuilderDraft'
 import { findDeckByRouteQuery } from '../utils/deckRouteSelection'
 
@@ -244,25 +245,14 @@ const typeItems = computed(() => [
 
 const colorItems = computed(() => [
   { label: 'Toutes les couleurs', value: allFilter },
-  ...filters.value.colors.map((color) => {
-    const chipColorByCardColor: Record<CardColor, 'error' | 'success' | 'info' | 'secondary' | 'neutral' | 'warning'> = {
-      Red: 'error',
-      Green: 'success',
-      Blue: 'info',
-      Purple: 'secondary',
-      Black: 'neutral',
-      Yellow: 'warning'
+  ...filters.value.colors.map(color => ({
+    label: color,
+    value: color,
+    chip: {
+      color: CARD_COLOR_ACCENTS[color].chip,
+      size: 'sm' as const
     }
-
-    return {
-      label: color,
-      value: color,
-      chip: {
-        color: chipColorByCardColor[color],
-        size: 'sm' as const
-      }
-    }
-  })
+  }))
 ])
 
 const costItems = computed(() => [
@@ -588,19 +578,6 @@ function shuffle<T>(items: T[]): T[] {
   }
 
   return shuffledItems
-}
-
-function getCardColorStyle(color: CardColor) {
-  const styles: Record<CardColor, { backgroundColor: string, borderColor: string, color: string }> = {
-    Red: { backgroundColor: '#fee2e2', borderColor: '#f87171', color: '#991b1b' },
-    Green: { backgroundColor: '#dcfce7', borderColor: '#4ade80', color: '#166534' },
-    Blue: { backgroundColor: '#dbeafe', borderColor: '#60a5fa', color: '#1e40af' },
-    Purple: { backgroundColor: '#f3e8ff', borderColor: '#c084fc', color: '#6b21a8' },
-    Black: { backgroundColor: '#e5e7eb', borderColor: '#6b7280', color: '#111827' },
-    Yellow: { backgroundColor: '#fef9c3', borderColor: '#facc15', color: '#854d0e' }
-  }
-
-  return styles[color]
 }
 
 function addCard(card: Card) {

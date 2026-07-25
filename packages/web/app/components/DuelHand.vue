@@ -148,6 +148,7 @@ function onCardDragStart(instanceId: string, event: DragEvent) {
     >
       <motion.button
         v-for="(card, index) in hand"
+        v-show="handStackSize.width > 0"
         :key="card.instanceId"
         type="button"
         draggable="true"

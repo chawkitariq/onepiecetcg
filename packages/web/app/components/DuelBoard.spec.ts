@@ -205,14 +205,10 @@ const defaultStub = defineComponent({
   }
 })
 
-const pageStub = defineComponent({
-  name: 'UPage',
+const slideoverStub = defineComponent({
+  name: 'USlideover',
   setup(_, { slots }) {
-    return () => h('div', [
-      slots.left?.(),
-      slots.default?.(),
-      slots.right?.()
-    ])
+    return () => h('div', slots.body?.())
   }
 })
 
@@ -254,7 +250,7 @@ describe('DuelBoard drag and drop', () => {
           UBadge: defaultStub,
           UButton: defaultStub,
           UAlert: defaultStub,
-          UPage: pageStub,
+          USlideover: slideoverStub,
           UContainer: defaultStub,
           UCard: defaultStub,
           USeparator: defaultStub,
@@ -403,7 +399,7 @@ describe('DuelBoard leave to lobby', () => {
           UBadge: defaultStub,
           UButton: defaultStub,
           UAlert: defaultStub,
-          UPage: pageStub,
+          USlideover: slideoverStub,
           UContainer: defaultStub,
           UCard: defaultStub,
           USeparator: defaultStub,
