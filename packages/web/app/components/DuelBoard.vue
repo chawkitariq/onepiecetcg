@@ -1186,7 +1186,6 @@ onKeyStroke('Escape', () => {
                 v-for="color in hoveredCard.colors"
                 :key="color"
                 size="sm"
-                variant="outline"
                 :style="getCardColorStyle(color)"
               >
                 {{ color }}
