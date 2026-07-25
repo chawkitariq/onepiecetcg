@@ -212,6 +212,21 @@ const slideoverStub = defineComponent({
   }
 })
 
+const progressStub = defineComponent({
+  name: 'UProgress',
+  props: {
+    modelValue: { type: Number, default: null },
+    max: { type: Array, default: () => [] }
+  },
+  setup(props) {
+    return () => h('div', {
+      'data-test': 'phase-progress',
+      'data-model-value': props.modelValue,
+      'data-max': JSON.stringify(props.max)
+    })
+  }
+})
+
 describe('DuelBoard drag and drop', () => {
   beforeEach(() => {
     phase.value = 'main'
@@ -256,6 +271,7 @@ describe('DuelBoard drag and drop', () => {
           USeparator: defaultStub,
           UScrollArea: defaultStub,
           UInputNumber: defaultStub,
+          UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
           DuelHand: duelHandStub,
@@ -264,6 +280,22 @@ describe('DuelBoard drag and drop', () => {
       }
     })
   }
+
+  it('aligns the phase progress indicator with the actual current phase', () => {
+    phase.value = 'main'
+
+    const wrapper = mountBoard()
+    const progress = wrapper.get('[data-test="phase-progress"]')
+
+    expect(JSON.parse(progress.attributes('data-max') ?? '[]')).toEqual([
+      'Recharge',
+      'Pioche',
+      'DON!!',
+      'Principale',
+      'Fin'
+    ])
+    expect(Number(progress.attributes('data-model-value'))).toBe(3)
+  })
 
   it('exposes only affordable character cards as draggable from the self hand', () => {
     const wrapper = mountBoard()
@@ -405,6 +437,7 @@ describe('DuelBoard leave to lobby', () => {
           USeparator: defaultStub,
           UScrollArea: defaultStub,
           UInputNumber: defaultStub,
+          UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
           DuelHand: duelHandStub,

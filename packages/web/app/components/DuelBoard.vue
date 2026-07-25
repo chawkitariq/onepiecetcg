@@ -728,7 +728,7 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
 
       <div class="w-full max-w-xs px-2 sm:px-4">
         <UProgress
-          :model-value="currentPhaseStepIndex + 1"
+          :model-value="currentPhaseStepIndex"
           :max="phaseStepLabels"
           size="sm"
         />
