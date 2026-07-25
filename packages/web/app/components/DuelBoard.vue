@@ -1044,12 +1044,11 @@ onKeyStroke('Escape', () => {
 
     <div class="mx-auto grid h-full min-h-0 w-full max-w-7xl flex-1 grid-cols-[1fr_0.25fr] gap-2 overflow-hidden p-2">
       <div
-        class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-default bg-default shadow-sm transition-shadow duration-300"
-        :class="isSelfTurn ? 'shadow-[0_0_0_2px_var(--ui-primary)]' : 'shadow-[0_0_0_1px_var(--ui-border)]'"
+        class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden"
       >
         <div
           ref="board-container"
-          class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden p-2"
+          class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
           @pointermove="onBoardPointerMove"
         >
           <DuelAttackArrow
