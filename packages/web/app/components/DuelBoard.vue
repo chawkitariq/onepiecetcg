@@ -6,6 +6,7 @@ import { LayoutGroup } from 'motion-v'
 import cardFrontDon from '~/assets/don.png'
 import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
+import { createStaggeredTravelPlan } from '~/utils/travelStagger'
 
 type CharacterActionPopoverItem = {
   label: string
@@ -36,6 +37,7 @@ type BoardTravelOverlay = {
 }
 
 const BOARD_TRAVEL_MS = 520
+const BOARD_TRAVEL_STAGGER_MS = 90
 
 const {
   self,
@@ -580,7 +582,8 @@ function createTravelOverlay(
   sourceRect: DOMRect,
   destinationElement: HTMLElement,
   target: Ref<string[]>,
-  rotated = false
+  rotated = false,
+  delayMs = 0
 ) {
   const destinationRect = destinationElement.getBoundingClientRect()
   const translateX = destinationRect.left - sourceRect.left
@@ -588,39 +591,41 @@ function createTravelOverlay(
   const scaleX = sourceRect.width === 0 ? 1 : destinationRect.width / sourceRect.width
   const scaleY = sourceRect.height === 0 ? 1 : destinationRect.height / sourceRect.height
 
-  boardTravelOverlays.value = [
-    ...boardTravelOverlays.value.filter(overlay => overlay.key !== key),
-    {
-      key,
-      instanceId,
-      imageUrl,
-      sourceRect,
-      destinationRect,
-      translateX,
-      translateY,
-      scaleX,
-      scaleY,
-      settled: false,
-      rotated
-    }
-  ]
+  window.setTimeout(() => {
+    boardTravelOverlays.value = [
+      ...boardTravelOverlays.value.filter(overlay => overlay.key !== key),
+      {
+        key,
+        instanceId,
+        imageUrl,
+        sourceRect,
+        destinationRect,
+        translateX,
+        translateY,
+        scaleX,
+        scaleY,
+        settled: false,
+        rotated
+      }
+    ]
 
-  requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      boardTravelOverlays.value = boardTravelOverlays.value.map((overlay) => {
-        if (overlay.key !== key) {
-          return overlay
-        }
+      requestAnimationFrame(() => {
+        boardTravelOverlays.value = boardTravelOverlays.value.map((overlay) => {
+          if (overlay.key !== key) {
+            return overlay
+          }
 
-        return {
-          ...overlay,
-          settled: true
-        }
+          return {
+            ...overlay,
+            settled: true
+          }
+        })
       })
     })
-  })
 
-  window.setTimeout(() => removeBoardTravelOverlay(key, target, instanceId), BOARD_TRAVEL_MS)
+    window.setTimeout(() => removeBoardTravelOverlay(key, target, instanceId), BOARD_TRAVEL_MS)
+  }, delayMs)
 }
 
 function cacheBoardTravelSource(card: PrivateCard) {
@@ -668,7 +673,7 @@ function queuePendingBoardTravelOverlays(current: DuelPlayerView, previous: Duel
   mergeDeferredVisibleCards(selfDeferredBoardCardIds, pendingArrivals)
 
   nextTick(() => {
-    for (const instanceId of pendingArrivals) {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(pendingArrivals, BOARD_TRAVEL_STAGGER_MS)) {
       const pendingSource = pendingBoardTravelSources.get(instanceId)
       pendingBoardTravelSources.delete(instanceId)
 
@@ -685,7 +690,9 @@ function queuePendingBoardTravelOverlays(current: DuelPlayerView, previous: Duel
         pendingSource.imageUrl,
         pendingSource.sourceRect,
         destinationElement,
-        selfDeferredBoardCardIds
+        selfDeferredBoardCardIds,
+        false,
+        delayMs
       )
     }
   })
@@ -714,7 +721,7 @@ function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
   mergeDeferredVisibleCards(selfDeferredCostCardIds, donCostIds)
 
   nextTick(() => {
-    for (const instanceId of donCostIds) {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(donCostIds, BOARD_TRAVEL_STAGGER_MS)) {
       const destinationElement = querySelfCostCardElement(instanceId)
 
       if (!destinationElement) {
@@ -728,7 +735,9 @@ function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
         cardFrontDon,
         sourceRect,
         destinationElement,
-        selfDeferredCostCardIds
+        selfDeferredCostCardIds,
+        false,
+        delayMs
       )
     }
   })
