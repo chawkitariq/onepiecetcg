@@ -1,7 +1,7 @@
 import type { Card, Deck, DescribedRoomSummary } from '@onepiecetcg/shared'
-import { mount } from '@vue/test-utils'
+import { flushPromises as flushVuePromises, mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { defineComponent, h, ref } from 'vue'
+import { Suspense, defineComponent, h, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LobbyPage from './lobby.vue'
 
@@ -10,7 +10,7 @@ function createDeck(overrides: Partial<Deck> = {}): Deck {
     id: 'deck-1',
     name: 'Deck aleatoire - Kouzuki Oden (SPR)',
     leaderCardId: 'leader-red',
-    cards: Array.from({ length: 49 }, (_, index) => ({ cardId: `card-${index}`, quantity: 1 })),
+    cards: Array.from({ length: 50 }, (_, index) => ({ cardId: `card-${index}`, quantity: 1 })),
     exportText: '',
     createdAt: '2026-07-24T10:00:00.000Z',
     updatedAt: '2026-07-24T10:00:00.000Z',
@@ -108,20 +108,34 @@ const buttonStub = defineComponent({
 
 const inputStub = defineComponent({
   props: ['modelValue'],
-  emits: ['update:modelValue'],
-  setup(props, { emit, attrs }) {
+  setup(props, { attrs }) {
     return () => h('input', {
       ...attrs,
       value: props.modelValue,
-      onInput: (inputEvent: Event) => emit('update:modelValue', (inputEvent.target as HTMLInputElement).value)
+      onInput: (inputEvent: Event) => {
+        const updateModelValue = attrs['onUpdate:modelValue']
+
+        if (typeof updateModelValue === 'function') {
+          updateModelValue((inputEvent.target as HTMLInputElement).value)
+        }
+      }
     })
   }
 })
 
 function mountLobby() {
-  return mount(LobbyPage, {
+  const SuspendedLobbyPage = defineComponent({
+    setup() {
+      return () => h(Suspense, null, {
+        default: () => h(LobbyPage)
+      })
+    }
+  })
+
+  return mount(SuspendedLobbyPage, {
     global: {
       stubs: {
+        Suspense: false,
         UAlert: passthroughStub,
         UCard: passthroughStub,
         UBadge: passthroughStub,
@@ -176,7 +190,7 @@ describe('lobby page', () => {
     await flushPromises()
 
     const quickMatchButton = wrapper.get('[data-test="quick-match"]')
-    expect(quickMatchButton.attributes('disabled')).toBeUndefined()
+    expect((quickMatchButton.element as HTMLButtonElement).disabled).toBe(false)
 
     await quickMatchButton.trigger('click')
 
@@ -244,6 +258,6 @@ describe('lobby page', () => {
 })
 
 async function flushPromises() {
-  await Promise.resolve()
-  await Promise.resolve()
+  await flushVuePromises()
+  await nextTick()
 }
