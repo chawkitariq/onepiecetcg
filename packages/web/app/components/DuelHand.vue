@@ -157,7 +157,7 @@ function onCardDragStart(instanceId: string, event: DragEvent) {
         :initial="false"
         :animate="handRevealAnimation(card.instanceId)"
         :transition="{ duration: 0.22, ease: 'easeOut' }"
-        class="absolute top-0 h-full transition-transform duration-150 ease-out hover:-translate-y-4 hover:z-50 focus-visible:-translate-y-4 focus-visible:z-50"
+        class="group absolute top-0 h-full hover:z-50 focus-visible:z-50"
         :class="[
           isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
           isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
@@ -169,7 +169,9 @@ function onCardDragStart(instanceId: string, event: DragEvent) {
         @mouseenter="onCardHover(card)"
         @mouseleave="onCardHover(null)"
       >
-        <DuelCard :src="card.imageUrl" />
+        <div class="h-full transition-transform duration-150 ease-out group-hover:-translate-y-4 group-focus-visible:-translate-y-4">
+          <DuelCard :src="card.imageUrl" />
+        </div>
       </motion.button>
     </div>
   </UTooltip>
