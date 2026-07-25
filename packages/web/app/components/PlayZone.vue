@@ -348,6 +348,7 @@ function onCharacterZoneDrop(event: DragEvent) {
         label="Life"
         :flipped="isAdversary"
         hug-card
+        :count="player.lifeCount"
         allow-overflow
       >
         <div class="relative h-full">
@@ -376,20 +377,12 @@ function onCharacterZoneDrop(event: DragEvent) {
             :class="index === 0 ? 'z-50' : ''"
             :style="{ top: `${index * 20}px`, zIndex: 50 - index }"
           />
-          <UBadge
-            color="neutral"
-            variant="solid"
-            size="sm"
-            class="absolute right-1 top-1 z-70"
-            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
-          >
-            {{ player.lifeCount }}
-          </UBadge>
         </div>
       </DuelZoneSlot>
       <DuelZoneSlot
         label="Character"
         :flipped="isAdversary"
+        :count="player.characters.length"
         allow-overflow
         :class="isCharacterZoneDropTargetActive ? 'border-success bg-success/5 ring-2 ring-success/70' : ''"
       >
@@ -497,15 +490,6 @@ function onCharacterZoneDrop(event: DragEvent) {
               />
             </motion.button>
           </template>
-          <UBadge
-            color="neutral"
-            variant="solid"
-            size="sm"
-            class="absolute right-1 top-1 z-70"
-            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
-          >
-            {{ player.characters.length }}
-          </UBadge>
         </div>
       </DuelZoneSlot>
     </div>
@@ -634,6 +618,7 @@ function onCharacterZoneDrop(event: DragEvent) {
         label="Deck"
         :flipped="isAdversary"
         hug-card
+        :count="player.deckCount"
         allow-overflow
       >
         <div class="relative h-full">
@@ -658,15 +643,6 @@ function onCharacterZoneDrop(event: DragEvent) {
             :src="cardBackRegular"
             alt="Deck"
           />
-          <UBadge
-            color="neutral"
-            variant="solid"
-            size="sm"
-            class="absolute right-1 top-1 z-70"
-            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
-          >
-            {{ player.deckCount }}
-          </UBadge>
         </div>
       </DuelZoneSlot>
     </div>
@@ -676,6 +652,7 @@ function onCharacterZoneDrop(event: DragEvent) {
         label="Don"
         :flipped="isAdversary"
         hug-card
+        :count="player.donDeckCount"
         allow-overflow
       >
         <div class="relative h-full">
@@ -700,20 +677,12 @@ function onCharacterZoneDrop(event: DragEvent) {
             :src="cardBackDon"
             alt="Deck DON!!"
           />
-          <UBadge
-            color="neutral"
-            variant="solid"
-            size="sm"
-            class="absolute right-1 top-1 z-70"
-            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
-          >
-            {{ player.donDeckCount }}
-          </UBadge>
         </div>
       </DuelZoneSlot>
       <DuelZoneSlot
         label="Cost"
         :flipped="isAdversary"
+        :count="player.cost.length"
         allow-overflow
       >
         <div
@@ -765,21 +734,13 @@ function onCharacterZoneDrop(event: DragEvent) {
               />
             </motion.div>
           </div>
-          <UBadge
-            color="neutral"
-            variant="solid"
-            size="sm"
-            class="absolute right-1 top-1 z-70"
-            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
-          >
-            {{ player.cost.length }}
-          </UBadge>
         </div>
       </DuelZoneSlot>
       <DuelZoneSlot
         label="Trash"
         :flipped="isAdversary"
         hug-card
+        :count="player.trash.length"
         allow-overflow
       >
         <div class="relative h-full">
@@ -799,15 +760,6 @@ function onCharacterZoneDrop(event: DragEvent) {
               <DuelCard :src="topTrash.imageUrl" />
             </motion.div>
           </div>
-          <UBadge
-            color="neutral"
-            variant="solid"
-            size="sm"
-            class="absolute right-1 top-1 z-70"
-            :class="isAdversary ? '-scale-x-100 -scale-y-100' : ''"
-          >
-            {{ player.trash.length }}
-          </UBadge>
         </div>
       </DuelZoneSlot>
     </div>

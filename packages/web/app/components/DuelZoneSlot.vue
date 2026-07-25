@@ -9,7 +9,8 @@
  * the card size precisely. Multi-card zones (character, cost, main) leave it off and stay
  * stretched to their track so several cards can lay out inside.
  *
- * `count`, when set, is only exposed through a hover tooltip so zone overlays stay clear.
+ * `count`, when set, appears as a small chip only while the zone is hovered/focused so overlays
+ * stay clear during normal play.
  */
 const { label, flipped, hugCard = false, count, allowOverflow = false } = defineProps<{
   label?: string
@@ -18,36 +19,11 @@ const { label, flipped, hugCard = false, count, allowOverflow = false } = define
   count?: number
   allowOverflow?: boolean
 }>()
-
-const countTooltip = computed(() => count?.toString() ?? '')
 </script>
 
 <template>
-  <UTooltip
-    v-if="count !== undefined"
-    :text="countTooltip"
-    :delay-duration="0"
-    :ui="{ content: 'text-sm' }"
-  >
-    <div
-      class="h-full relative rounded-lg border border-dashed border-muted"
-      :class="[allowOverflow ? 'overflow-visible' : 'overflow-hidden', hugCard ? 'w-auto aspect-5/7 max-w-full justify-self-center' : '']"
-    >
-      <p
-        v-if="label"
-        class="uppercase text-xs absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 z-[-1]"
-        :class="flipped ? '-scale-x-100 -scale-y-100' : ''"
-      >
-        {{ label }}
-      </p>
-      <div class="relative h-full">
-        <slot />
-      </div>
-    </div>
-  </UTooltip>
   <div
-    v-else
-    class="h-full relative rounded-lg border border-dashed border-muted"
+    class="group h-full relative rounded-lg border border-dashed border-muted"
     :class="[allowOverflow ? 'overflow-visible' : 'overflow-hidden', hugCard ? 'w-auto aspect-5/7 max-w-full justify-self-center' : '']"
   >
     <p
@@ -57,6 +33,16 @@ const countTooltip = computed(() => count?.toString() ?? '')
     >
       {{ label }}
     </p>
+    <UBadge
+      v-if="count !== undefined"
+      color="primary"
+      variant="solid"
+      size="sm"
+      class="pointer-events-none absolute right-1 top-1 z-70 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+      :class="flipped ? '-scale-x-100 -scale-y-100' : ''"
+    >
+      {{ count }}
+    </UBadge>
     <div class="relative h-full">
       <slot />
     </div>
