@@ -5,6 +5,22 @@ import { computed, defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DuelBoard from './DuelBoard.vue'
 
+vi.mock('motion-v', async () => {
+  const { defineComponent, h } = await import('vue')
+
+  return {
+    LayoutGroup: defineComponent({
+      name: 'MockLayoutGroup',
+      props: {
+        id: { type: String, default: undefined }
+      },
+      setup(props, { slots }) {
+        return () => h('div', { 'data-layout-group': props.id }, slots.default?.())
+      }
+    })
+  }
+})
+
 const playCard = vi.fn()
 const endPhase = vi.fn()
 const attachDon = vi.fn()
@@ -69,9 +85,10 @@ function createPlayer(sessionId: string, overrides: Partial<DuelPlayerView> = {}
     donDeckCount: 10,
     hand: [
       createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+      createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
       createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
     ],
-    handCount: 2,
+    handCount: 3,
     deck: [],
     deckCount: 30,
     life: [],
@@ -129,12 +146,14 @@ const playZoneStub = defineComponent({
   name: 'PlayZone',
   props: {
     side: { type: Number, required: true },
+    player: { type: Object, required: true },
     leaderActionPopoverItems: { type: Array, default: () => [] },
     characterActionPopoverItems: { type: Object, default: () => ({}) },
     attackerId: { type: String, default: undefined },
-    isTargetable: { type: Boolean, default: false }
+    isTargetable: { type: Boolean, default: false },
+    transitionGhosts: { type: Array, default: () => [] }
   },
-  emits: ['handCardDropOnCharacters'],
+  emits: ['handCardDropOnCharacters', 'handCardDropOnStage'],
   setup(props, { emit }) {
     function getLeaderPopoverItems() {
       return props.leaderActionPopoverItems as Array<{ label: string, onSelect: () => void }>
@@ -146,6 +165,8 @@ const playZoneStub = defineComponent({
 
     return () => h('div', {
       'data-play-zone': props.side,
+      'data-player-hand': JSON.stringify((props.player as DuelPlayerView).hand.map(card => card.instanceId)),
+      'data-transition-ghosts': JSON.stringify((props.transitionGhosts as Array<{ instanceId: string, source: string }>)),
       'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
       'data-character-popover-character-a': JSON.stringify(getCharacterPopoverItems('character-a').map(item => item.label)),
       'data-attacker-id': props.attackerId,
@@ -154,6 +175,10 @@ const playZoneStub = defineComponent({
       h('button', {
         'data-test': `drop-${props.side}`,
         'onClick': () => emit('handCardDropOnCharacters', props.side)
+      }),
+      h('button', {
+        'data-test': `drop-stage-${props.side}`,
+        'onClick': () => emit('handCardDropOnStage', props.side)
       }),
       h('button', {
         'data-test': `character-popover-attach-${props.side}`,
@@ -178,12 +203,14 @@ const playZoneStub = defineComponent({
 const duelHandStub = defineComponent({
   name: 'DuelHand',
   props: {
+    hand: { type: Array, default: () => [] },
     draggableHandCardIds: { type: Array, default: () => [] }
   },
   emits: ['cardDragStart', 'cardClick'],
   setup(props, { emit }) {
     return () => h('div', {
       'data-duel-hand': 'true',
+      'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>).map(card => card.instanceId)),
       'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds)
     }, [
       h('button', {
@@ -191,8 +218,16 @@ const duelHandStub = defineComponent({
         'onClick': () => emit('cardDragStart', 'hand-character')
       }),
       h('button', {
+        'data-test': 'drag-start-stage',
+        'onClick': () => emit('cardDragStart', 'hand-stage')
+      }),
+      h('button', {
         'data-test': 'hand-click-0',
         'onClick': () => emit('cardClick', 'hand-character')
+      }),
+      h('button', {
+        'data-test': 'hand-click-stage',
+        'onClick': () => emit('cardClick', 'hand-stage')
       })
     ])
   }
@@ -301,7 +336,39 @@ describe('DuelBoard drag and drop', () => {
     const wrapper = mountBoard()
     const hand = wrapper.get('[data-duel-hand]')
 
-    expect(hand.attributes('data-draggable-hand-card-ids')).toBe(JSON.stringify(['hand-character']))
+    expect(hand.attributes('data-draggable-hand-card-ids')).toBe(JSON.stringify(['hand-character', 'hand-stage']))
+  })
+
+  it('keeps the hand lane and board zones inside a shared layout group for card travel animations', () => {
+    const wrapper = mountBoard()
+
+    expect(wrapper.find('[data-layout-group="duel-surface-self"]').exists()).toBe(true)
+  })
+
+  it('surfaces a deck ghost and the new hand card together after a draw so travel can animate deck-to-hand', async () => {
+    const wrapper = mountBoard()
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null }),
+        createPrivateCard('drawn-card', { type: 'Character', cost: 2 })
+      ],
+      handCount: 4,
+      deckCount: 29
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    const selfZone = wrapper.get('[data-play-zone="0"]')
+    const hand = wrapper.get('[data-duel-hand]')
+
+    expect(selfZone.attributes('data-transition-ghosts')).toContain('"instanceId":"drawn-card"')
+    expect(selfZone.attributes('data-transition-ghosts')).toContain('"source":"deck"')
+    expect(hand.attributes('data-hand-ids')).toContain('drawn-card')
+    expect(wrapper.find('[data-layout-group="duel-surface-self"]').exists()).toBe(true)
   })
 
   it('plays the dragged character when it is dropped onto the self character zone', async () => {
@@ -322,6 +389,23 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.get('[data-test="drop-0"]').trigger('click')
 
     expect(playCard).not.toHaveBeenCalled()
+  })
+
+  it('plays a stage card from hand on click so it can travel into the stage block', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="hand-click-stage"]').trigger('click')
+
+    expect(playCard).toHaveBeenCalledWith('hand-stage')
+  })
+
+  it('plays the dragged stage card when it is dropped onto the self stage zone', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="drag-start-stage"]').trigger('click')
+    await wrapper.get('[data-test="drop-stage-0"]').trigger('click')
+
+    expect(playCard).toHaveBeenCalledWith('hand-stage')
   })
 
   it('exposes character popover actions on the self board during the main phase', () => {

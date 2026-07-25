@@ -331,6 +331,28 @@ describe('PlayZone transitions', () => {
     expect(wrapper.emitted('handCardDropOnCharacters')).toEqual([[0]])
   })
 
+  it('emits a drop event when a dragged hand card is released over the stage zone', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer(),
+        side: 0,
+        draggedHandCardInstanceId: 'hand-a',
+        canDropOnStageZone: true
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const stageZoneButton = wrapper.get('[data-drop-zone="stage"]')
+
+    await stageZoneButton.trigger('dragenter')
+    await stageZoneButton.trigger('dragover', { dataTransfer: { dropEffect: '' } })
+    await stageZoneButton.trigger('drop')
+
+    expect(wrapper.emitted('handCardDropOnStage')).toEqual([[0]])
+  })
+
   it('switches the open popover to another character on the first click', async () => {
     const wrapper = mount(PlayZone, {
       props: {

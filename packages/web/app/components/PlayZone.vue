@@ -51,6 +51,7 @@ const props = defineProps<{
   invalidCharacterIds?: string[]
   draggedHandCardInstanceId?: string | null
   canDropOnCharacterZone?: boolean
+  canDropOnStageZone?: boolean
   transitionGhosts?: TransitionGhost[]
 }>()
 const {
@@ -65,6 +66,7 @@ const {
   invalidLeaderPulse,
   draggedHandCardInstanceId,
   canDropOnCharacterZone,
+  canDropOnStageZone,
   transitionGhosts
 } = toRefs(props)
 
@@ -88,6 +90,7 @@ const emit = defineEmits<{
   characterClick: [side: 0 | 1, instanceId: string]
   stageClick: [side: 0 | 1]
   handCardDropOnCharacters: [side: 0 | 1]
+  handCardDropOnStage: [side: 0 | 1]
   cardHover: [card: HoveredDuelCard | null]
 }>()
 
@@ -103,6 +106,8 @@ const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && re
 const reducedMotion = usePreferredReducedMotion()
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
+const isStageZoneDraggedOver = ref(false)
+const stageZoneDragDepth = ref(0)
 const openActionPopoverKey = ref<string | null>(null)
 
 function useMeasuredStackSize(templateRefName: string) {
@@ -268,6 +273,14 @@ const isCharacterZoneDropTargetActive = computed(() =>
   )
 )
 
+const isStageZoneDropTargetActive = computed(() =>
+  Boolean(
+    canDropOnStageZone.value
+    && draggedHandCardInstanceId.value
+    && isStageZoneDraggedOver.value
+  )
+)
+
 watch(draggedHandCardInstanceId, (nextDraggedCard) => {
   if (nextDraggedCard) {
     return
@@ -275,6 +288,8 @@ watch(draggedHandCardInstanceId, (nextDraggedCard) => {
 
   isCharacterZoneDraggedOver.value = false
   characterZoneDragDepth.value = 0
+  isStageZoneDraggedOver.value = false
+  stageZoneDragDepth.value = 0
 })
 
 watch(() => props.characterActionPopoverItems, (nextItems) => {
@@ -338,6 +353,47 @@ function onCharacterZoneDrop(event: DragEvent) {
   characterZoneDragDepth.value = 0
   isCharacterZoneDraggedOver.value = false
   emit('handCardDropOnCharacters', side.value)
+}
+
+function onStageZoneDragEnter() {
+  if (!canDropOnStageZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  stageZoneDragDepth.value += 1
+  isStageZoneDraggedOver.value = true
+}
+
+function onStageZoneDragLeave() {
+  if (!canDropOnStageZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  stageZoneDragDepth.value = Math.max(0, stageZoneDragDepth.value - 1)
+  isStageZoneDraggedOver.value = stageZoneDragDepth.value > 0
+}
+
+function onStageZoneDragOver(event: DragEvent) {
+  if (!canDropOnStageZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+  isStageZoneDraggedOver.value = true
+}
+
+function onStageZoneDrop(event: DragEvent) {
+  if (!canDropOnStageZone.value || !draggedHandCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  stageZoneDragDepth.value = 0
+  isStageZoneDraggedOver.value = false
+  emit('handCardDropOnStage', side.value)
 }
 </script>
 
@@ -603,8 +659,14 @@ function onCharacterZoneDrop(event: DragEvent) {
           :layout-id="player.stage?.instanceId"
           :initial="false"
           :transition="{ duration: 0.22, ease: 'easeOut' }"
-          class="h-full w-full"
+          data-drop-zone="stage"
+          class="h-full w-full rounded-lg transition-colors duration-150"
+          :class="isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : ''"
           @click="emit('stageClick', side)"
+          @dragenter="onStageZoneDragEnter"
+          @dragleave="onStageZoneDragLeave"
+          @dragover="onStageZoneDragOver"
+          @drop="onStageZoneDrop"
           @mouseenter="onCardHover(player.stage)"
           @mouseleave="onCardHover(null)"
         >

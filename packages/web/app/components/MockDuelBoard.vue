@@ -25,7 +25,7 @@ const {
 
 const viewingPlayerIndex = ref<0 | 1>(0)
 const donMode = ref(false)
-const hoveredCard = ref<{ imageUrl: string, alt?: string } | null>(null)
+const hoveredCard = ref<{ imageUrl: string | null, name: string } | null>(null)
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 
 const phaseLabels: Record<string, string> = {
@@ -384,9 +384,9 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
             </p>
             <div class="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
               <img
-                v-if="hoveredCard"
+                v-if="hoveredCard?.imageUrl"
                 :src="hoveredCard.imageUrl"
-                :alt="hoveredCard.alt ?? ''"
+                :alt="hoveredCard.name"
                 class="h-full max-w-full object-contain rounded"
               >
               <p
