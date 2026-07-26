@@ -57,60 +57,6 @@ function popoverTestStubs() {
 
 mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
 
-vi.mock('motion-v', async () => {
-  const { defineComponent, h } = await import('vue')
-
-  function createMotionComponent(tag: 'div' | 'button') {
-    return defineComponent({
-      name: `MockMotion${tag}`,
-      inheritAttrs: false,
-      props: {
-        layout: { type: Boolean, default: false },
-        layoutId: { type: String, default: undefined },
-        animate: { type: [Object, Boolean], default: undefined },
-        initial: { type: [Object, Boolean], default: undefined },
-        exit: { type: Object, default: undefined },
-        transition: { type: Object, default: undefined },
-        type: { type: String, default: undefined }
-      },
-      setup(props, { slots, attrs }) {
-        return () => h(tag, {
-          ...attrs,
-          'type': tag === 'button' ? props.type : undefined,
-          'data-layout': String(props.layout),
-          'data-layout-id': props.layoutId,
-          'data-animate': props.animate === undefined ? undefined : JSON.stringify(props.animate),
-          'data-initial': props.initial === undefined ? undefined : JSON.stringify(props.initial),
-          'data-exit': props.exit === undefined ? undefined : JSON.stringify(props.exit),
-          'data-transition': props.transition === undefined ? undefined : JSON.stringify(props.transition)
-        }, slots.default?.())
-      }
-    })
-  }
-
-  return {
-    AnimatePresence: defineComponent({
-      name: 'MockAnimatePresence',
-      setup(_, { slots }) {
-        return () => h('div', { 'data-motion-presence': 'true' }, slots.default?.())
-      }
-    }),
-    LayoutGroup: defineComponent({
-      name: 'MockLayoutGroup',
-      props: {
-        id: { type: String, required: true }
-      },
-      setup(props, { slots }) {
-        return () => h('div', { 'data-layout-group': props.id }, slots.default?.())
-      }
-    }),
-    motion: {
-      div: createMotionComponent('div'),
-      button: createMotionComponent('button')
-    }
-  }
-})
-
 function createPublicCard(instanceId: string, overrides: Partial<PublicCard> = {}): PublicCard {
   return {
     instanceId,
@@ -279,7 +225,7 @@ describe('PlayZone transitions', () => {
     expect(ghostIds).toEqual(expect.arrayContaining(['life-ghost', 'deck-ghost', 'don-ghost']))
   })
 
-  it('keeps card travel transitions readable across hidden-zone ghosts and board destinations', () => {
+  it('keeps custom layout classes on hidden-zone ghosts and board destinations', () => {
     const wrapper = mount(PlayZone, {
       props: {
         player: createPlayer({
@@ -293,17 +239,9 @@ describe('PlayZone transitions', () => {
       }
     })
 
-    const expectedTransition = JSON.stringify({
-      layout: {
-        duration: 0.52,
-        ease: 'easeInOut',
-        type: 'tween'
-      }
-    })
-
-    expect(wrapper.find('[data-layout-id="deck-ghost"]').attributes('data-transition')).toBe(expectedTransition)
-    expect(wrapper.find('[data-layout-id="character-a"]').attributes('data-transition')).toBe(expectedTransition)
-    expect(wrapper.find('[data-layout-id="stage-a"]').attributes('data-transition')).toBe(expectedTransition)
+    expect(wrapper.find('[data-layout-id="deck-ghost"]').classes()).toContain('duel-zone-ghost')
+    expect(wrapper.find('[data-layout-id="character-a"]').classes()).toContain('duel-layout-card')
+    expect(wrapper.find('[data-layout-id="stage-a"]').classes()).toContain('duel-layout-card')
   })
 
   it('anchors character action popovers to the animated character card node', async () => {

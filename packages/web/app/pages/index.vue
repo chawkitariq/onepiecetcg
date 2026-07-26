@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
+import { animate } from 'animejs'
 import donCard from '~/assets/don.png'
 import cardBack from '~/assets/card-back-regular.png'
 
@@ -51,6 +51,46 @@ const features = [
     icon: 'i-lucide-eye-off'
   }
 ]
+
+const reducedMotion = usePreferredReducedMotion()
+const heroVisual = useTemplateRef<HTMLElement>('hero-visual')
+const heroBadge = useTemplateRef<HTMLElement>('hero-badge')
+
+onMounted(() => {
+  if (reducedMotion.value === 'reduce') {
+    if (heroVisual.value) {
+      heroVisual.value.style.opacity = '1'
+      heroVisual.value.style.transform = 'translateY(0) rotate(-6deg)'
+    }
+
+    if (heroBadge.value) {
+      heroBadge.value.style.opacity = '1'
+      heroBadge.value.style.transform = 'scale(1)'
+    }
+
+    return
+  }
+
+  if (heroVisual.value) {
+    animate(heroVisual.value, {
+      opacity: [0, 1],
+      y: [40, 0],
+      rotate: [-14, -6],
+      duration: 700,
+      ease: 'outCubic'
+    })
+  }
+
+  if (heroBadge.value) {
+    animate(heroBadge.value, {
+      opacity: [0, 1],
+      scale: [0.7, 1],
+      delay: 450,
+      duration: 500,
+      ease: 'outBack'
+    })
+  }
+})
 </script>
 
 <template>
@@ -89,12 +129,9 @@ const features = [
           </UBadge>
         </template>
 
-        <motion.div
-          :initial="{ opacity: 0, y: 40, rotate: -14 }"
-          :animate="{ opacity: 1, y: 0, rotate: -6 }"
-          :transition="{ duration: 0.7, ease: 'easeOut', delay: 0.15 }"
-          :while-hover="{ rotate: -2, scale: 1.03 }"
-          class="relative mx-auto w-56 sm:w-64 lg:w-72"
+        <div
+          ref="hero-visual"
+          class="hero-card-visual relative mx-auto w-56 sm:w-64 lg:w-72"
         >
           <div
             class="absolute -inset-6 rounded-[2rem] opacity-60 blur-2xl"
@@ -105,19 +142,17 @@ const features = [
             alt="Carte DON!! — +1000 puissance pendant ton tour"
             class="relative w-full rounded-2xl shadow-2xl ring-1 ring-[#d4af37]/40"
           >
-          <motion.div
-            :initial="{ opacity: 0, scale: 0.7 }"
-            :animate="{ opacity: 1, scale: 1 }"
-            :transition="{ duration: 0.5, delay: 0.6, ease: 'backOut' }"
-            class="absolute -right-4 -top-4 flex items-center gap-1 rounded-full bg-[#d4af37] px-3 py-1.5 text-sm font-bold text-[#12153a] shadow-lg sm:-right-6 sm:-top-6"
+          <div
+            ref="hero-badge"
+            class="hero-card-badge absolute -right-4 -top-4 flex items-center gap-1 rounded-full bg-[#d4af37] px-3 py-1.5 text-sm font-bold text-[#12153a] shadow-lg sm:-right-6 sm:-top-6"
           >
             <UIcon
               name="i-lucide-zap"
               class="size-4"
             />
             +1000
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </UPageHero>
     </div>
 
@@ -214,3 +249,28 @@ const features = [
     </UPageSection>
   </div>
 </template>
+
+<style scoped>
+.hero-card-visual {
+  opacity: 0;
+  transform: translateY(40px) rotate(-14deg);
+}
+
+.hero-card-visual:hover,
+.hero-card-visual:focus-within {
+  transform: translateY(0) rotate(-2deg) scale(1.03);
+}
+
+.hero-card-badge {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-card-visual,
+  .hero-card-badge {
+    opacity: 1;
+    transform: none !important;
+  }
+}
+</style>

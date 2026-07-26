@@ -3,7 +3,6 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    'motion-v/nuxt',
     '@vueuse/nuxt',
     '@nuxt/test-utils/module',
     'nuxt-charts'

@@ -29,36 +29,6 @@ const chipStub = defineComponent({
 
 mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
 
-vi.mock('motion-v', async () => {
-  const { defineComponent, h } = await import('vue')
-
-  return {
-    motion: {
-      button: defineComponent({
-        name: 'MockMotionButton',
-        inheritAttrs: false,
-        props: {
-          layout: { type: Boolean, default: false },
-          layoutId: { type: String, default: undefined },
-          animate: { type: [Object, Boolean], default: undefined },
-          initial: { type: [Object, Boolean], default: undefined },
-          transition: { type: Object, default: undefined },
-          type: { type: String, default: undefined }
-        },
-        setup(props, { slots, attrs }) {
-          return () => h('button', {
-            ...attrs,
-            'type': props.type,
-            'data-layout-id': props.layoutId,
-            'data-animate': props.animate === undefined ? undefined : JSON.stringify(props.animate),
-            'data-transition': props.transition === undefined ? undefined : JSON.stringify(props.transition)
-          }, slots.default?.())
-        }
-      })
-    }
-  }
-})
-
 function createPrivateCard(instanceId: string, overrides: Partial<PrivateCard> = {}): PrivateCard {
   return {
     instanceId,
@@ -109,11 +79,7 @@ describe('DuelHand', () => {
     const animatedHandCard = wrapper.findAll('button')
       .find(node => node.attributes('data-layout-id') === 'revealed-hand')
 
-    expect(animatedHandCard?.attributes('data-animate')).toBe(JSON.stringify({
-      rotateY: [90, 0],
-      scale: [0.94, 1],
-      filter: ['brightness(1.16)', 'brightness(1)']
-    }))
+    expect(animatedHandCard?.classes()).toContain('duel-hand-card--revealed')
   })
 
   it('disables reveal animation details when reduced motion is requested', () => {
@@ -132,7 +98,7 @@ describe('DuelHand', () => {
     const animatedHandCard = wrapper.findAll('button')
       .find(node => node.attributes('data-layout-id') === 'revealed-hand')
 
-    expect(animatedHandCard?.attributes('data-animate')).toBeUndefined()
+    expect(animatedHandCard?.classes()).not.toContain('duel-hand-card--revealed')
   })
 
   it('emits a drag start for a draggable hand card and populates the drag data payload', async () => {
@@ -268,7 +234,7 @@ describe('DuelHand', () => {
     const hiddenHand = wrapper.get('[data-opponent-hand="true"]')
 
     expect(hiddenHand.attributes('data-duel-hand')).toBeUndefined()
-    expect(wrapper.findAllComponents({ name: 'MockMotionButton' })).toHaveLength(0)
+    expect(wrapper.findAll('button')).toHaveLength(0)
     expect(vi.mocked(getStackedCardLayout)).toHaveBeenCalledWith(
       3,
       expect.any(Number),
@@ -294,7 +260,7 @@ describe('DuelHand', () => {
     expect(renderedIds).toEqual(['hand-a'])
   })
 
-  it('uses a slightly longer shared-layout travel transition so hand movement stays visible', () => {
+  it('keeps custom position transitions on hand cards so stack movement stays visible', () => {
     const wrapper = mount(DuelHand, {
       props: {
         hand: [createPrivateCard('hand-a')]
@@ -307,12 +273,6 @@ describe('DuelHand', () => {
     const handCard = wrapper.findAll('button')
       .find(node => node.attributes('data-layout-id') === 'hand-a')
 
-    expect(handCard?.attributes('data-transition')).toBe(JSON.stringify({
-      layout: {
-        duration: 0.52,
-        ease: 'easeInOut',
-        type: 'tween'
-      }
-    }))
+    expect(handCard?.classes()).toContain('duel-hand-card')
   })
 })

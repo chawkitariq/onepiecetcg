@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PrivateCard, PublicCard } from '@onepiecetcg/shared'
-import { motion } from 'motion-v'
+import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import { getStackedCardLayout } from '~/utils/cardStack'
 
@@ -42,13 +42,7 @@ const emit = defineEmits<{
 
 const reducedMotion = usePreferredReducedMotion()
 const handStackSize = useMeasuredStackSize('handStack')
-const sharedCardTravelTransition = {
-  layout: {
-    duration: 0.52,
-    ease: 'easeInOut',
-    type: 'tween'
-  }
-} as const
+const handCardElements = new Map<string, HTMLElement>()
 const visibleHand = computed(() =>
   (props.hand ?? []).filter(card => !props.deferredHandCardIds?.includes(card.instanceId))
 )
@@ -125,15 +119,36 @@ function shouldShowSelectedHandCount(instanceId: string): boolean {
 }
 
 function handRevealAnimation(instanceId: string) {
-  if (!isRevealedHandCard(instanceId) || reducedMotion.value === 'reduce') {
-    return undefined
+  return isRevealedHandCard(instanceId) && reducedMotion.value !== 'reduce'
+}
+
+function setHandCardElement(instanceId: string, value: Element | null) {
+  if (value instanceof HTMLElement) {
+    handCardElements.set(instanceId, value)
+    return
   }
 
-  return {
-    rotateY: [90, 0],
-    scale: [0.94, 1],
-    filter: ['brightness(1.16)', 'brightness(1)']
+  handCardElements.delete(instanceId)
+}
+
+function runHandRevealAnimation(instanceId: string) {
+  if (reducedMotion.value === 'reduce') {
+    return
   }
+
+  const element = handCardElements.get(instanceId)
+
+  if (!element) {
+    return
+  }
+
+  animate(element, {
+    rotateY: ['90deg', '0deg'],
+    scale: [0.94, 1],
+    filter: ['brightness(1.16)', 'brightness(1)'],
+    duration: 320,
+    ease: 'outQuad'
+  })
 }
 
 function onCardHover(card: PrivateCard | null) {
@@ -176,6 +191,25 @@ function onCardClick(instanceId: string, event: MouseEvent) {
     ctrlKey: event.ctrlKey
   })
 }
+
+watch(
+  () => props.revealedHandCardIds ?? [],
+  (current, previous) => {
+    const previousIds = new Set(previous ?? [])
+    const freshIds = current.filter(id => !previousIds.has(id))
+
+    if (freshIds.length === 0) {
+      return
+    }
+
+    nextTick(() => {
+      for (const instanceId of freshIds) {
+        runHandRevealAnimation(instanceId)
+      }
+    })
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -201,21 +235,20 @@ function onCardClick(instanceId: string, event: MouseEvent) {
         />
       </template>
       <template v-else>
-        <motion.button
+        <button
           v-for="(card, index) in visibleHand"
           v-show="handStackSize.width > 0"
           :key="card.instanceId"
+          :ref="(value: Element | null) => setHandCardElement(card.instanceId, value)"
           type="button"
           draggable="true"
-          layout
-          :layout-id="card.instanceId"
           :data-instance-id="card.instanceId"
-          :initial="false"
-          :animate="handRevealAnimation(card.instanceId)"
-          :transition="sharedCardTravelTransition"
+          :data-layout-id="card.instanceId"
           class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
           :class="[
+            'duel-hand-card',
             isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
+            handRevealAnimation(card.instanceId) ? 'duel-hand-card--revealed' : '',
             isHandCardSelected(card.instanceId) ? 'rounded-lg ring-4 ring-info/70' : '',
             isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
           ]"
@@ -249,8 +282,29 @@ function onCardClick(instanceId: string, event: MouseEvent) {
           >
             x{{ draggedHandCardCount }}
           </span>
-        </motion.button>
+        </button>
       </template>
     </div>
   </UTooltip>
 </template>
+
+<style scoped>
+.duel-hand-card {
+  transition:
+    left 520ms ease-in-out,
+    top 520ms ease-in-out,
+    transform 180ms ease-out,
+    opacity 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+.duel-hand-card--revealed {
+  transform-origin: center center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-hand-card {
+    transition-duration: 0ms !important;
+  }
+}
+</style>

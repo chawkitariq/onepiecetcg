@@ -2,7 +2,7 @@
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import type { ComponentPublicInstance } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
+import { animate } from 'animejs'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
@@ -125,13 +125,6 @@ const untappedCostCards = computed(() => props.player.cost.filter(card => !card.
 const restedCostCards = computed(() => props.player.cost.filter(card => card.rested))
 const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && restedCostCards.value.length > 0)
 const reducedMotion = usePreferredReducedMotion()
-const sharedCardTravelTransition = {
-  layout: {
-    duration: 0.52,
-    ease: 'easeInOut',
-    type: 'tween'
-  }
-} as const
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
 const isStageZoneDraggedOver = ref(false)
@@ -143,6 +136,7 @@ const donDraggedOverCharacterIds = ref<string[]>([])
 const openActionPopoverKey = ref<string | null>(null)
 const leaderActionReference = ref<HTMLElement | null>(null)
 const characterActionReferences = reactive<Record<string, HTMLElement | null>>({})
+const ghostElements = new Map<string, HTMLElement>()
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -339,6 +333,52 @@ function hasLeaderActionPopover(): boolean {
 function getCharacterActionPopoverItems(instanceId: string): CharacterActionPopoverItem[] {
   return props.characterActionPopoverItems?.[instanceId] ?? []
 }
+
+function setGhostElement(key: string, value: Element | null) {
+  if (value instanceof HTMLElement) {
+    ghostElements.set(key, value)
+    return
+  }
+
+  ghostElements.delete(key)
+}
+
+function animateGhost(key: string) {
+  if (reducedMotion.value === 'reduce') {
+    return
+  }
+
+  const element = ghostElements.get(key)
+
+  if (!element) {
+    return
+  }
+
+  animate(element, {
+    opacity: [1, 0],
+    duration: 520,
+    ease: 'outQuad'
+  })
+}
+
+watch(
+  () => transitionGhosts.value?.map(ghost => `${ghost.source}:${ghost.instanceId}`) ?? [],
+  (current, previous) => {
+    const previousKeys = new Set(previous ?? [])
+    const freshKeys = current.filter(key => !previousKeys.has(key))
+
+    if (freshKeys.length === 0) {
+      return
+    }
+
+    nextTick(() => {
+      for (const key of freshKeys) {
+        animateGhost(key)
+      }
+    })
+  },
+  { immediate: true }
+)
 
 function hasCharacterActionPopover(instanceId: string): boolean {
   return getCharacterActionPopoverItems(instanceId).length > 0
@@ -703,22 +743,18 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           :data-life-side="side"
           class="relative h-full"
         >
-          <AnimatePresence>
-            <motion.div
-              v-for="ghost in lifeGhosts"
-              :key="`${ghost.source}-${ghost.instanceId}`"
-              :layout-id="ghost.instanceId"
-              class="absolute left-0 top-0 z-[60] h-full"
-              :initial="reducedMotion === 'reduce' ? false : { opacity: 1, scale: 1 }"
-              :exit="reducedMotion === 'reduce' ? undefined : { opacity: 0 }"
-              :transition="sharedCardTravelTransition"
-            >
-              <DuelCard
-                :src="cardBackRegular"
-                alt="Vie"
-              />
-            </motion.div>
-          </AnimatePresence>
+          <div
+            v-for="ghost in lifeGhosts"
+            :key="`${ghost.source}-${ghost.instanceId}`"
+            :ref="(value: Element | null) => setGhostElement(`${ghost.source}:${ghost.instanceId}`, value)"
+            :data-layout-id="ghost.instanceId"
+            class="duel-zone-ghost absolute left-0 top-0 z-[60] h-full"
+          >
+            <DuelCard
+              :src="cardBackRegular"
+              alt="Vie"
+            />
+          </div>
           <DuelCard
             v-for="(_, index) in life"
             :key="index"
@@ -750,16 +786,13 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             v-for="character in player.characters"
             :key="character.instanceId"
           >
-            <motion.button
-              :ref="(value) => setCharacterActionReference(character.instanceId, value)"
+            <button
+              :ref="(value: Element | ComponentPublicInstance | null) => setCharacterActionReference(character.instanceId, value)"
               type="button"
-              layout
-              :layout-id="visibleLayoutId(character.instanceId, isBoardCardDeferred(character.instanceId))"
               :data-instance-id="character.instanceId"
+              :data-layout-id="visibleLayoutId(character.instanceId, isBoardCardDeferred(character.instanceId))"
               data-don-attach-target="true"
-              :initial="false"
-              :transition="sharedCardTravelTransition"
-              class="duel-card-shell relative h-full shrink-0 overflow-visible rounded-lg"
+              class="duel-card-shell duel-layout-card relative h-full shrink-0 overflow-visible rounded-lg"
               :class="[
                 attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
                 isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
@@ -804,7 +837,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
                 :value="cardPower(character)"
                 :mirrored="isAdversary"
               />
-            </motion.button>
+            </button>
 
             <UPopover
               v-if="hasCharacterActionPopover(character.instanceId)"
@@ -852,16 +885,13 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         hug-card
         allow-overflow
       >
-        <motion.button
+        <button
           :ref="setLeaderActionReference"
           type="button"
-          layout
-          :layout-id="visibleLayoutId(player.leader?.instanceId, false)"
           :data-instance-id="player.leader?.instanceId"
+          :data-layout-id="visibleLayoutId(player.leader?.instanceId, false)"
           data-don-attach-target="true"
-          :initial="false"
-          :transition="sharedCardTravelTransition"
-          class="duel-card-shell relative h-full w-full overflow-visible rounded-lg"
+          class="duel-card-shell duel-layout-card relative h-full w-full overflow-visible rounded-lg"
           :class="[
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
             targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
@@ -905,7 +935,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             :value="cardPower(player.leader)"
             :mirrored="isAdversary"
           />
-        </motion.button>
+        </button>
 
         <UPopover
           v-if="hasLeaderActionPopover()"
@@ -947,16 +977,13 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         :flipped="isAdversary"
         hug-card
       >
-        <motion.button
+        <button
           v-if="player.stage"
           type="button"
-          layout
-          :layout-id="visibleLayoutId(player.stage.instanceId, isBoardCardDeferred(player.stage.instanceId))"
           :data-instance-id="player.stage.instanceId"
-          :initial="false"
-          :transition="sharedCardTravelTransition"
+          :data-layout-id="visibleLayoutId(player.stage.instanceId, isBoardCardDeferred(player.stage.instanceId))"
           data-drop-zone="stage"
-          class="duel-card-shell relative z-20 h-full w-full rounded-lg transition-colors duration-150"
+          class="duel-card-shell duel-layout-card relative z-20 h-full w-full rounded-lg transition-colors duration-150"
           :class="[
             isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : '',
             isBoardCardDeferred(player.stage.instanceId) ? 'pointer-events-none opacity-0' : ''
@@ -970,7 +997,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           @mouseleave="onCardHover(null)"
         >
           <DuelCard :src="player.stage.imageUrl" />
-        </motion.button>
+        </button>
 
         <button
           v-else
@@ -995,26 +1022,24 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         allow-overflow
       >
         <div class="relative h-full">
-          <AnimatePresence>
-            <motion.div
-              v-for="ghost in deckGhosts"
-              :key="`${ghost.source}-${ghost.instanceId}`"
-              :layout-id="ghost.instanceId"
-              class="absolute left-0 top-0 z-[60] h-full"
-              :initial="reducedMotion === 'reduce' ? false : { opacity: 1, scale: 1 }"
-              :exit="reducedMotion === 'reduce' ? undefined : { opacity: 0 }"
-              :transition="sharedCardTravelTransition"
-            >
-              <DuelCard
-                :src="cardBackRegular"
-                alt="Deck"
-              />
-            </motion.div>
-          </AnimatePresence>
+          <div
+            v-for="ghost in deckGhosts"
+            :key="`${ghost.source}-${ghost.instanceId}`"
+            :ref="(value: Element | null) => setGhostElement(`${ghost.source}:${ghost.instanceId}`, value)"
+            :data-layout-id="ghost.instanceId"
+            class="duel-zone-ghost absolute left-0 top-0 z-[60] h-full"
+          >
+            <DuelCard
+              :src="cardBackRegular"
+              alt="Deck"
+            />
+          </div>
           <DuelCard
             v-if="player.deckCount > 0"
             :src="cardBackRegular"
             alt="Deck"
+            :data-deck-side="side"
+            data-deck-top="true"
           />
         </div>
       </DuelZoneSlot>
@@ -1032,22 +1057,18 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           :data-don-deck-side="side"
           class="relative h-full"
         >
-          <AnimatePresence>
-            <motion.div
-              v-for="ghost in donDeckGhosts"
-              :key="`${ghost.source}-${ghost.instanceId}`"
-              :layout-id="ghost.instanceId"
-              class="absolute left-0 top-0 z-[60] h-full"
-              :initial="reducedMotion === 'reduce' ? false : { opacity: 1, scale: 1 }"
-              :exit="reducedMotion === 'reduce' ? undefined : { opacity: 0 }"
-              :transition="sharedCardTravelTransition"
-            >
-              <DuelCard
-                :src="cardBackDon"
-                alt="Deck DON!!"
-              />
-            </motion.div>
-          </AnimatePresence>
+          <div
+            v-for="ghost in donDeckGhosts"
+            :key="`${ghost.source}-${ghost.instanceId}`"
+            :ref="(value: Element | null) => setGhostElement(`${ghost.source}:${ghost.instanceId}`, value)"
+            :data-layout-id="ghost.instanceId"
+            class="duel-zone-ghost absolute left-0 top-0 z-[60] h-full"
+          >
+            <DuelCard
+              :src="cardBackDon"
+              alt="Deck DON!!"
+            />
+          </div>
           <DuelCard
             v-if="player.donDeckCount > 0"
             :src="cardBackDon"
@@ -1070,26 +1091,23 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             class="absolute inset-y-0 left-0"
             :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
           >
-            <motion.button
+            <button
               v-for="(don, index) in untappedCostCards"
               :key="don.instanceId"
               type="button"
               draggable="true"
-              layout
-              :layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
               :data-instance-id="don.instanceId"
+              :data-layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
               :data-zone-side="side"
               :data-don-selected="String(isDonCardSelected(don.instanceId))"
               data-cost-state="untapped"
-              class="absolute top-0 h-full"
+              class="duel-layout-card absolute top-0 h-full"
               :class="[
                 isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : '',
                 isDonCardSelected(don.instanceId) ? 'ring-4 ring-info/70 rounded-lg' : '',
                 isDonCardDraggable(don.instanceId) ? 'cursor-grab active:cursor-grabbing' : ''
               ]"
               :style="costStackStyle(index, untappedCostCards.length, 'left')"
-              :initial="false"
-              :transition="sharedCardTravelTransition"
               @mousedown="onDonCardSelectionStart(don.instanceId, $event)"
               @mouseenter="onDonCardSelectionHover(don.instanceId, $event)"
               @dragstart="onDonCardDragStart(don.instanceId, $event)"
@@ -1114,33 +1132,30 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               >
                 x{{ draggedDonCardCount }}
               </span>
-            </motion.button>
+            </button>
           </div>
           <div
             data-cost-stack="rested"
             class="absolute inset-y-0 right-0"
             :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
           >
-            <motion.div
+            <div
               v-for="(don, index) in restedCostCards"
               :key="don.instanceId"
-              layout
-              :layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
               :data-instance-id="don.instanceId"
+              :data-layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
               :data-zone-side="side"
               data-cost-state="rested"
-              class="absolute top-0 h-full"
+              class="duel-layout-card absolute top-0 h-full"
               :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : ''"
               :style="costStackStyle(index, restedCostCards.length, 'right', 1)"
-              :initial="false"
-              :transition="sharedCardTravelTransition"
             >
               <DuelCard
                 :src="donFront"
                 alt="DON!!"
                 :rotated="true"
               />
-            </motion.div>
+            </div>
           </div>
         </div>
       </DuelZoneSlot>
@@ -1161,20 +1176,40 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             @mouseenter="onCardHover(topTrash)"
             @mouseleave="onCardHover(null)"
           >
-            <motion.div
-              layout
-              :layout-id="visibleLayoutId(topTrash.instanceId, isTrashCardDeferred(topTrash.instanceId))"
+            <div
+              :data-layout-id="visibleLayoutId(topTrash.instanceId, isTrashCardDeferred(topTrash.instanceId))"
               :data-instance-id="topTrash.instanceId"
-              :initial="false"
-              :transition="sharedCardTravelTransition"
-              class="h-full"
+              class="duel-layout-card h-full"
               :class="isTrashCardDeferred(topTrash.instanceId) ? 'pointer-events-none opacity-0' : ''"
             >
               <DuelCard :src="topTrash.imageUrl" />
-            </motion.div>
+            </div>
           </div>
         </div>
       </DuelZoneSlot>
     </div>
   </div>
 </template>
+
+<style scoped>
+.duel-layout-card {
+  transition:
+    left 520ms ease-in-out,
+    right 520ms ease-in-out,
+    top 520ms ease-in-out,
+    transform 520ms ease-in-out,
+    opacity 180ms ease-out,
+    box-shadow 180ms ease-out,
+    filter 180ms ease-out;
+}
+
+.duel-zone-ghost {
+  will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-layout-card {
+    transition-duration: 0ms !important;
+  }
+}
+</style>

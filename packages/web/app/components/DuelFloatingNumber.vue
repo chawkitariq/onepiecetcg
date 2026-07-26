@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
+import { animate } from 'animejs'
 
 /**
  * A single number that rises and fades out from a fixed screen position, Hearthstone-style
@@ -18,6 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const reducedMotion = usePreferredReducedMotion()
+const floatingNumberElement = useTemplateRef<HTMLElement>('floating-number')
 
 const label = computed(() => (props.tone === 'gain' ? `+${props.value}` : `-${props.value}`))
 
@@ -28,18 +29,41 @@ const toneClass = computed(() =>
 function onAnimationComplete() {
   emit('done')
 }
+
+onMounted(() => {
+  if (!floatingNumberElement.value) {
+    onAnimationComplete()
+    return
+  }
+
+  if (reducedMotion.value === 'reduce') {
+    animate(floatingNumberElement.value, {
+      opacity: [1, 1, 0],
+      duration: 600,
+      ease: 'linear',
+      onComplete: onAnimationComplete
+    })
+    return
+  }
+
+  animate(floatingNumberElement.value, {
+    opacity: [0, 1, 1, 0],
+    y: [0, -56],
+    scale: [0.6, 1],
+    duration: 900,
+    ease: 'outCubic',
+    onComplete: onAnimationComplete
+  })
+})
 </script>
 
 <template>
-  <motion.span
+  <span
+    ref="floating-number"
     class="pointer-events-none fixed z-80 text-2xl font-black tabular-nums drop-shadow-[0_2px_4px_rgb(0_0_0/0.6)] sm:text-3xl"
     :class="toneClass"
     :style="{ left: `${x}px`, top: `${y}px`, translate: '-50% -50%' }"
-    :initial="reducedMotion === 'reduce' ? { opacity: 1 } : { opacity: 0, y: 0, scale: 0.6 }"
-    :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: -56, scale: 1 }"
-    :transition="{ duration: reducedMotion === 'reduce' ? 0.6 : 0.9, ease: 'easeOut' }"
-    @animation-complete="onAnimationComplete"
   >
     {{ label }}
-  </motion.span>
+  </span>
 </template>

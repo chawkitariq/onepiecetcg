@@ -2,7 +2,7 @@
 import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
 import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
-import { AnimatePresence, LayoutGroup, motion } from 'motion-v'
+import { animate } from 'animejs'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
 import { getCardColorStyle } from '~/utils/cardColors'
@@ -307,6 +307,9 @@ const selfDeferredCostCardIds = ref<string[]>([])
 const selfDeferredTrashCardIds = ref<string[]>([])
 const opponentDeferredTrashCardIds = ref<string[]>([])
 const boardTravelOverlays = ref<BoardTravelOverlay[]>([])
+const boardTravelOverlayElements = new Map<string, HTMLElement>()
+const cardFeedbackElements = new Map<number, HTMLElement>()
+const bannerFeedbackElements = new Map<number, HTMLElement>()
 const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
 const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect }> = []
 const attachedDonOverlayTarget = ref<string[]>([])
@@ -432,26 +435,6 @@ function mergeRevealedHandCards(target: Ref<string[]>, ids: string[]) {
   }, 320)
 }
 
-function mergeDeferredHandCards(target: Ref<string[]>, ids: string[]) {
-  if (ids.length === 0) {
-    return
-  }
-
-  const freshIds = ids.filter(id => !target.value.includes(id))
-
-  if (freshIds.length === 0) {
-    return
-  }
-
-  target.value = [...target.value, ...freshIds]
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      target.value = target.value.filter(id => !freshIds.includes(id))
-    })
-  })
-}
-
 function mergeDeferredVisibleCards(target: Ref<string[]>, ids: string[]) {
   if (ids.length === 0) {
     return
@@ -516,6 +499,30 @@ function spawnCardFeedbackAtPosition(
     y,
     tone
   }]
+
+  nextTick(() => {
+    const element = cardFeedbackElements.get(key)
+
+    if (!element) {
+      return
+    }
+
+    animate(element, reducedMotion.value === 'reduce'
+      ? {
+          opacity: [1, 1, 0],
+          duration: 700,
+          ease: 'linear',
+          onComplete: () => removeCardFeedback(key)
+        }
+      : {
+          opacity: [0, 1, 1, 0],
+          y: [6, -20, -28],
+          scale: [0.9, 1, 1],
+          duration: 1000,
+          ease: 'outCubic',
+          onComplete: () => removeCardFeedback(key)
+        })
+  })
 }
 
 function spawnCardFeedback(instanceId: string | undefined, label: string, tone: CardFeedbackTone) {
@@ -548,6 +555,7 @@ function spawnCardFeedback(instanceId: string | undefined, label: string, tone: 
 }
 
 function removeCardFeedback(key: number) {
+  cardFeedbackElements.delete(key)
   cardFeedbacks.value = cardFeedbacks.value.filter(entry => entry.key !== key)
 }
 
@@ -559,9 +567,34 @@ function spawnBannerFeedback(message: string, tone: BannerFeedbackTone) {
     message,
     tone
   }]
+
+  nextTick(() => {
+    const element = bannerFeedbackElements.get(key)
+
+    if (!element) {
+      return
+    }
+
+    animate(element, reducedMotion.value === 'reduce'
+      ? {
+          opacity: [1, 1, 0],
+          duration: 900,
+          ease: 'linear',
+          onComplete: () => removeBannerFeedback(key)
+        }
+      : {
+          opacity: [0, 1, 1, 0],
+          y: [-10, 0, 0, -6],
+          scale: [0.96, 1, 1, 0.99],
+          duration: 1400,
+          ease: 'outCubic',
+          onComplete: () => removeBannerFeedback(key)
+        })
+  })
 }
 
 function removeBannerFeedback(key: number) {
+  bannerFeedbackElements.delete(key)
   bannerFeedbacks.value = bannerFeedbacks.value.filter(entry => entry.key !== key)
 }
 
@@ -748,15 +781,6 @@ function syncPlayerTransitions(
     diff.ghosts.filter(ghost => !skippedGhostSources.includes(ghost.source))
   )
 
-  if (revealedHandTarget && diff.ghosts.length > 0) {
-    mergeDeferredHandCards(
-      selfDeferredHandCardIds,
-      diff.ghosts
-        .filter(ghost => ghost.source === 'deck')
-        .map(ghost => ghost.instanceId)
-    )
-  }
-
   if (revealedHandTarget && !skippedGhostSources.includes('life')) {
     mergeRevealedHandCards(revealedHandTarget, diff.revealedHandCardIds)
   }
@@ -773,6 +797,7 @@ watch(self, (current, previous) => {
   const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck', 'life'])
 
   if (current) {
+    queueDeckToHandTravelOverlays(diff, current)
     queueLifeToHandTravelOverlays(diff, current)
     queuePendingBoardTravelOverlays(current, previous)
     queueDonDeckToCostTravelOverlays(diff)
@@ -879,6 +904,10 @@ function querySelfDonDeckElement(): HTMLElement | null {
   return document.querySelector('[data-don-deck-side="0"]')
 }
 
+function querySelfDeckElement(): HTMLElement | null {
+  return document.querySelector('[data-deck-side="0"][data-deck-top="true"]')
+}
+
 function queryLifeStackElement(side: 0 | 1): HTMLElement | null {
   return document.querySelector(`[data-life-side="${side}"] [data-life-top="true"]`)
 }
@@ -906,6 +935,7 @@ function revealDeferredVisibleCard(target: Ref<string[]>, instanceId: string) {
 }
 
 function removeBoardTravelOverlay(key: string, target: Ref<string[]>, instanceId: string) {
+  boardTravelOverlayElements.delete(key)
   boardTravelOverlays.value = boardTravelOverlays.value.filter(overlay => overlay.key !== key)
   revealDeferredVisibleCard(target, instanceId)
 }
@@ -915,13 +945,35 @@ function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
     'left': `${overlay.sourceRect.left}px`,
     'top': `${overlay.sourceRect.top}px`,
     'width': `${overlay.sourceRect.width}px`,
-    'height': `${overlay.sourceRect.height}px`,
-    '--travel-duration': `${BOARD_TRAVEL_MS}ms`,
-    '--travel-x': `${overlay.settled ? overlay.translateX : 0}px`,
-    '--travel-y': `${overlay.settled ? overlay.translateY : 0}px`,
-    '--travel-scale-x': `${overlay.settled ? overlay.scaleX : 1}`,
-    '--travel-scale-y': `${overlay.settled ? overlay.scaleY : 1}`
+    'height': `${overlay.sourceRect.height}px`
   }
+}
+
+function setBoardTravelOverlayElement(key: string, value: Element | null) {
+  if (value instanceof HTMLElement) {
+    boardTravelOverlayElements.set(key, value)
+    return
+  }
+
+  boardTravelOverlayElements.delete(key)
+}
+
+function setCardFeedbackElement(key: number, value: Element | null) {
+  if (value instanceof HTMLElement) {
+    cardFeedbackElements.set(key, value)
+    return
+  }
+
+  cardFeedbackElements.delete(key)
+}
+
+function setBannerFeedbackElement(key: number, value: Element | null) {
+  if (value instanceof HTMLElement) {
+    bannerFeedbackElements.set(key, value)
+    return
+  }
+
+  bannerFeedbackElements.delete(key)
 }
 
 function createTravelOverlayFromRect(
@@ -958,25 +1010,28 @@ function createTravelOverlayFromRect(
       }
     ]
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        boardTravelOverlays.value = boardTravelOverlays.value.map((overlay) => {
-          if (overlay.key !== key) {
-            return overlay
-          }
+    nextTick(() => {
+      const element = boardTravelOverlayElements.get(key)
 
-          return {
-            ...overlay,
-            settled: true
-          }
-        })
+      if (!element) {
+        removeBoardTravelOverlay(key, target, instanceId)
+        onComplete?.()
+        return
+      }
+
+      animate(element, {
+        translateX: [0, translateX],
+        translateY: [0, translateY],
+        scaleX: [1, scaleX],
+        scaleY: [1, scaleY],
+        duration: BOARD_TRAVEL_MS,
+        ease: 'inOutQuad',
+        onComplete: () => {
+          removeBoardTravelOverlay(key, target, instanceId)
+          onComplete?.()
+        }
       })
     })
-
-    window.setTimeout(() => {
-      removeBoardTravelOverlay(key, target, instanceId)
-      onComplete?.()
-    }, BOARD_TRAVEL_MS)
   }, delayMs)
 }
 
@@ -1069,6 +1124,76 @@ function queueLifeToHandTravelOverlays(diff: PlayerTransitionDiff | null, curren
         false,
         delayMs,
         () => mergeRevealedHandCards(selfRevealedHandCardIds, [card.instanceId])
+      )
+    }
+  })
+}
+
+function queueDeckToHandTravelOverlays(diff: PlayerTransitionDiff | null, current: DuelPlayerView) {
+  if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const drawnCards = diff.ghosts
+    .filter(ghost => ghost.source === 'deck')
+    .map((ghost) => {
+      const card = current.hand.find(candidate => candidate.instanceId === ghost.instanceId)
+
+      return card
+    })
+    .filter((card): card is PrivateCard & { imageUrl: string } => typeof card?.imageUrl === 'string' && card.imageUrl.length > 0)
+
+  if (drawnCards.length === 0) {
+    return
+  }
+
+  const sourceElement = querySelfDeckElement()
+
+  if (!sourceElement) {
+    return
+  }
+
+  const sourceRect = sourceElement.getBoundingClientRect()
+
+  nextTick(() => {
+    const destinationRects = new Map<string, DOMRect>()
+
+    for (const card of drawnCards) {
+      const destinationElement = queryCardElement(card.instanceId)
+
+      if (destinationElement) {
+        destinationRects.set(card.instanceId, destinationElement.getBoundingClientRect())
+      }
+    }
+
+    if (destinationRects.size === 0) {
+      return
+    }
+
+    mergeDeferredVisibleCards(
+      selfDeferredHandCardIds,
+      drawnCards
+        .filter(card => destinationRects.has(card.instanceId))
+        .map(card => card.instanceId)
+    )
+
+    for (const { item: card, delayMs } of createStaggeredTravelPlan(drawnCards, BOARD_TRAVEL_STAGGER_MS)) {
+      const destinationRect = destinationRects.get(card.instanceId)
+
+      if (!destinationRect) {
+        revealDeferredVisibleCard(selfDeferredHandCardIds, card.instanceId)
+        continue
+      }
+
+      createTravelOverlayFromRect(
+        `deck-hand:${card.instanceId}`,
+        card.instanceId,
+        card.imageUrl,
+        sourceRect,
+        destinationRect,
+        selfDeferredHandCardIds,
+        false,
+        delayMs
       )
     }
   })
@@ -2275,7 +2400,6 @@ defineShortcuts({
 
     <div class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,0.25fr)] gap-4 overflow-hidden p-4">
       <div class="min-h-0 min-w-0">
-        <LayoutGroup :id="`duel-surface-${self?.sessionId ?? (opponent?.sessionId ?? 'preview')}`">
           <div class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(220px,0.42fr)_minmax(0,1fr)] gap-4">
             <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
               <div class="w-full max-w-[26rem] shrink-0">
@@ -2319,9 +2443,9 @@ defineShortcuts({
                   <div
                     v-for="overlay in boardTravelOverlays"
                     :key="overlay.key"
+                    :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
                     :data-board-travel-instance-id="overlay.instanceId"
                     class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
-                    :class="{ 'duel-board-travel-overlay--settled': overlay.settled }"
                     :style="boardTravelOverlayStyle(overlay)"
                   >
                     <DuelCard
@@ -2331,41 +2455,29 @@ defineShortcuts({
                   </div>
                 </div>
                 <div class="pointer-events-none fixed inset-0 z-[135]">
-                  <AnimatePresence>
-                    <motion.div
-                      v-for="entry in cardFeedbacks"
-                      :key="entry.key"
-                      :data-test="`card-feedback-${entry.label}`"
-                      class="absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
-                      :class="cardFeedbackToneClass(entry.tone)"
-                      :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
-                      :initial="reducedMotion === 'reduce' ? { opacity: 1 } : { opacity: 0, y: 6, scale: 0.9 }"
-                      :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: -28, scale: [0.9, 1, 1] }"
-                      :exit="{ opacity: 0 }"
-                      :transition="{ duration: reducedMotion === 'reduce' ? 0.7 : 1, ease: 'easeOut' }"
-                      @animation-complete="removeCardFeedback(entry.key)"
-                    >
-                      {{ entry.label }}
-                    </motion.div>
-                  </AnimatePresence>
+                  <div
+                    v-for="entry in cardFeedbacks"
+                    :key="entry.key"
+                    :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
+                    :data-test="`card-feedback-${entry.label}`"
+                    class="duel-card-feedback absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
+                    :class="cardFeedbackToneClass(entry.tone)"
+                    :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
+                  >
+                    {{ entry.label }}
+                  </div>
                 </div>
                 <div class="pointer-events-none fixed inset-x-0 top-18 z-[136] flex flex-col items-center gap-2 px-4">
-                  <AnimatePresence>
-                    <motion.div
-                      v-for="entry in bannerFeedbacks"
-                      :key="entry.key"
-                      :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
-                      class="max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
-                      :class="bannerFeedbackToneClass(entry.tone)"
-                      :initial="reducedMotion === 'reduce' ? { opacity: 1 } : { opacity: 0, y: -10, scale: 0.96 }"
-                      :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: [-10, 0, 0, -6], scale: [0.96, 1, 1, 0.99] }"
-                      :exit="{ opacity: 0 }"
-                      :transition="{ duration: reducedMotion === 'reduce' ? 0.9 : 1.4, ease: 'easeOut' }"
-                      @animation-complete="removeBannerFeedback(entry.key)"
-                    >
-                      {{ entry.message }}
-                    </motion.div>
-                  </AnimatePresence>
+                  <div
+                    v-for="entry in bannerFeedbacks"
+                    :key="entry.key"
+                    :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
+                    :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
+                    class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
+                    :class="bannerFeedbackToneClass(entry.tone)"
+                  >
+                    {{ entry.message }}
+                  </div>
                 </div>
                 <DuelAttackArrow
                   :from-instance-id="attackArrowFromInstanceId"
@@ -2448,7 +2560,6 @@ defineShortcuts({
               </div>
             </div>
           </div>
-        </LayoutGroup>
       </div>
 
       <UCard
@@ -2544,13 +2655,22 @@ defineShortcuts({
 
 <style scoped>
 .duel-board-travel-overlay {
-  transform: translate3d(var(--travel-x), var(--travel-y), 0)
-    scaleX(var(--travel-scale-x))
-    scaleY(var(--travel-scale-y));
   transform-origin: top left;
-  transition-duration: var(--travel-duration);
-  transition-property: transform;
-  transition-timing-function: ease-in-out;
   will-change: transform;
+}
+
+.duel-card-feedback {
+  will-change: transform, opacity;
+}
+
+.duel-banner-feedback {
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-card-feedback,
+  .duel-banner-feedback {
+    will-change: auto;
+  }
 }
 </style>

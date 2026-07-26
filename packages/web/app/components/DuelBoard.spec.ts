@@ -5,40 +5,6 @@ import { computed, defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DuelBoard from './DuelBoard.vue'
 
-vi.mock('motion-v', async () => {
-  const { defineComponent, h } = await import('vue')
-  const motionComponent = defineComponent({
-    name: 'MockMotion',
-    inheritAttrs: false,
-    setup(_, { attrs, slots }) {
-      return () => h('div', attrs, slots.default?.())
-    }
-  })
-
-  return {
-    AnimatePresence: defineComponent({
-      name: 'MockAnimatePresence',
-      setup(_, { slots }) {
-        return () => h('div', slots.default?.())
-      }
-    }),
-    LayoutGroup: defineComponent({
-      name: 'MockLayoutGroup',
-      props: {
-        id: { type: String, default: undefined }
-      },
-      setup(props, { slots }) {
-        return () => h('div', { 'data-layout-group': props.id }, slots.default?.())
-      }
-    }),
-    motion: new Proxy({}, {
-      get() {
-        return motionComponent
-      }
-    })
-  }
-})
-
 const playCard = vi.fn()
 const endPhase = vi.fn()
 const attachDon = vi.fn()
@@ -226,6 +192,7 @@ const playZoneStub = defineComponent({
       h('div', { 'data-life-side': props.side }, [
         h('div', { 'data-life-top': 'true' })
       ]),
+      h('div', { 'data-deck-side': props.side, 'data-deck-top': 'true' }),
       h('div', { 'data-don-deck-side': props.side }),
       ...((props.player as DuelPlayerView).characters.map(character => h('div', {
         'data-instance-id': character.instanceId,
@@ -530,13 +497,7 @@ describe('DuelBoard drag and drop', () => {
     expect(hand.attributes('data-draggable-hand-card-ids')).toBe(JSON.stringify(['hand-character', 'hand-stage']))
   })
 
-  it('keeps the hand lane and board zones inside a shared layout group for card travel animations', () => {
-    const wrapper = mountBoard()
-
-    expect(wrapper.find('[data-layout-group="duel-surface-self"]').exists()).toBe(true)
-  })
-
-  it('surfaces a deck ghost and the new hand card together after a draw so travel can animate deck-to-hand', async () => {
+  it('surfaces a deck ghost and queues the new hand card for custom deck-to-hand travel', async () => {
     const wrapper = mountBoard()
 
     self.value = createPlayer('self', {
@@ -561,7 +522,6 @@ describe('DuelBoard drag and drop', () => {
     expect(selfZone.attributes('data-transition-ghosts')).toContain('"instanceId":"drawn-card"')
     expect(selfZone.attributes('data-transition-ghosts')).toContain('"source":"deck"')
     expect(hand.attributes('data-hand-ids')).toContain('drawn-card')
-    expect(wrapper.find('[data-layout-group="duel-surface-self"]').exists()).toBe(true)
   })
 
   it('creates an explicit overlay when a revealed life card travels into the self hand', async () => {
