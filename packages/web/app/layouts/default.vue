@@ -21,7 +21,6 @@ import onePieceTcgLogo from '~/assets/onepiecetcg.png'
             alt="One Piece TCG"
             class="h-9 w-9 shrink-0 rounded-md border border-default bg-default p-1 shadow-sm ring-1 ring-inset ring-default/60"
           >
-          <AppLogo class="h-6 w-auto shrink-0" />
         </NuxtLink>
       </template>
 

@@ -33,6 +33,7 @@ Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`US
 ### Module layout (`src/`)
 
 - `app.module.ts` — composition root: wires `ConfigModule`, Better Auth (`AuthModule.forRoot`), TypeORM (`TypeOrmModule.forRoot`), and the domain modules below. `disableGlobalAuthGuard: true` — auth is opt-in per route via `@UseGuards(AuthGuard)`, not applied globally.
+- `common/all-exceptions.filter.ts` — global `AllExceptionsFilter`, registered in `main.ts` via `app.useGlobalFilters`. Logs every request error server-side (stack trace for 5xx/non-`HttpException` errors) without changing the response body Nest already produces for `HttpException`.
 - `accounts/` — maps an authenticated Better Auth user to a persisted `PlayerAccount` (`findOrCreateForAuthUser`), exposes `GET /me`.
 - `catalog/` — card catalogue: fetches and normalizes cards from the external OPTCG API (`https://optcgapi.com/api`) into the shared `Card` schema, with a 12h in-memory cache (`CatalogService`).
 - `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.

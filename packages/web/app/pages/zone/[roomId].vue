@@ -53,18 +53,24 @@ onMounted(async () => {
       class="grid grid-cols-[1fr_12.25%_1fr] gap-4"
     >
       <UContainer class="grid gap-4">
-        <p
+        <UAlert
           v-if="connectionFailed"
-          class="text-sm text-error"
-        >
-          Impossible de rejoindre la partie. Retournez au lobby pour en rejoindre une nouvelle.
-        </p>
-        <p
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          title="Impossible de rejoindre la partie"
+          description="Retournez au lobby pour en rejoindre une nouvelle."
+        />
+        <div
           v-else
-          class="text-sm text-muted"
+          class="flex items-center gap-2 text-sm text-muted"
         >
-          {{ status === 'connecting' || connecting ? 'Reconnexion à la partie...' : 'Préparation du duel...' }}
-        </p>
+          <UIcon
+            name="i-lucide-loader-2"
+            class="size-4 animate-spin"
+          />
+          <span>{{ status === 'connecting' || connecting ? 'Reconnexion à la partie...' : 'Préparation du duel...' }}</span>
+        </div>
         <UButton
           v-if="connectionFailed"
           to="/lobby"
@@ -77,9 +83,13 @@ onMounted(async () => {
     <template #fallback>
       <UPage class="grid grid-cols-[1fr_12.25%_1fr] gap-4">
         <UContainer class="grid gap-4">
-          <p class="text-sm text-muted">
-            Préparation du duel...
-          </p>
+          <div class="flex items-center gap-2 text-sm text-muted">
+            <UIcon
+              name="i-lucide-loader-2"
+              class="size-4 animate-spin"
+            />
+            <span>Préparation du duel...</span>
+          </div>
         </UContainer>
       </UPage>
     </template>

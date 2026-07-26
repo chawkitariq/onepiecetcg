@@ -37,6 +37,7 @@ Copy `.env.example` to `.env` and adjust as needed. Defaults match the root `doc
 | `WEB_ORIGIN` | Origin of the Nuxt client, for CORS. |
 | `NODE_ENV` | Set to `development` to enable dev-only email/password auth (see [Authentication](#authentication)). Never enabled otherwise. |
 | `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` | Postgres connection. |
+| `DATABASE_URL` | Optional: a single connection string that overrides the `DATABASE_*` fields above. |
 | `BETTER_AUTH_SECRET` | Better Auth signing secret. Change this for anything beyond local development. |
 | `BETTER_AUTH_URL` | Base URL Better Auth uses for callbacks. |
 | `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAME_SITE` | Session cookie behavior; matters most for cross-domain cookies between `api` and `web` in production. |

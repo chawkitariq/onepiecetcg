@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import type { Server as HttpServer } from 'node:http';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { ColyseusService } from './realtime/colyseus.service';
 import { getApiConfig } from './runtime-config';
 
@@ -22,6 +23,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   await app.init();
   const httpServer = app.getHttpServer() as HttpServer;

@@ -561,9 +561,9 @@ function removeBannerFeedback(key: number) {
 
 function cardFeedbackToneClass(tone: CardFeedbackTone) {
   return {
-    'power': 'border-primary/40 bg-primary/15 text-primary',
-    'warning': 'border-warning/40 bg-warning/15 text-warning',
-    'danger': 'border-error/40 bg-error/15 text-error'
+    power: 'border-primary/40 bg-primary/15 text-primary',
+    warning: 'border-warning/40 bg-warning/15 text-warning',
+    danger: 'border-error/40 bg-error/15 text-error'
   }[tone]
 }
 
@@ -2051,7 +2051,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <div class="flex flex-col h-full min-h-0 overflow-hidden">
+  <div class="flex flex-col h-full min-h-0 min-w-5xl overflow-hidden">
     <UHeader
       class="static shrink-0"
       :ui="{
@@ -2351,7 +2351,7 @@ defineShortcuts({
                       class="max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
                       :class="bannerFeedbackToneClass(entry.tone)"
                       :initial="reducedMotion === 'reduce' ? { opacity: 1 } : { opacity: 0, y: -10, scale: 0.96 }"
-                      :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: [ -10, 0, 0, -6 ], scale: [0.96, 1, 1, 0.99] }"
+                      :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: [-10, 0, 0, -6], scale: [0.96, 1, 1, 0.99] }"
                       :exit="{ opacity: 0 }"
                       :transition="{ duration: reducedMotion === 'reduce' ? 0.9 : 1.4, ease: 'easeOut' }"
                       @animation-complete="removeBannerFeedback(entry.key)"

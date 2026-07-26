@@ -359,8 +359,8 @@ const duelHandStub = defineComponent({
       ...((props.hand as Array<PrivateCard>)
         .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
         .map(card => h('div', {
-        'data-instance-id': card.instanceId
-      }))),
+          'data-instance-id': card.instanceId
+        }))),
       h('button', {
         'data-test': 'drag-end-0',
         'onClick': () => emit('cardDragEnd', 'hand-character')
