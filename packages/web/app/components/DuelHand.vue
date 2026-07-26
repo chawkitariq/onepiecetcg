@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import { motion } from 'motion-v'
+import cardBackRegular from '~/assets/card-back-regular.png'
 import { getStackedCardLayout } from '~/utils/cardStack'
 
 /**
- * Renders the owner's own hand as a fixed strip docked below the mirrored board (DuelBoard.vue),
- * not as a zone inside PlayZone.vue -- per docs/optcg-rules.md, Main is one of the nine duel zones
- * but is not part of "le terrain" (Leader/Character/Stage/Cost), so it never belongs on the
- * gridded, mirrored board alongside the opponent's side.
+ * Renders a fixed hand strip docked outside the mirrored board (DuelBoard.vue), either as the
+ * owner's interactive revealed hand or as the opponent's face-down count-only hand. Per
+ * docs/optcg-rules.md, Main is one of the nine duel zones but is not part of "le terrain"
+ * (Leader/Character/Stage/Cost), so it never belongs on the gridded, mirrored board itself.
  */
 
 type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
@@ -19,7 +20,9 @@ type StackContainerSize = {
 }
 
 const props = defineProps<{
-  hand: PrivateCard[]
+  hand?: PrivateCard[]
+  handCount?: number
+  hidden?: boolean
   draggableHandCardIds?: string[]
   invalidHandCardIds?: string[]
   revealedHandCardIds?: string[]
@@ -47,8 +50,10 @@ const sharedCardTravelTransition = {
   }
 } as const
 const visibleHand = computed(() =>
-  props.hand.filter(card => !props.deferredHandCardIds?.includes(card.instanceId))
+  (props.hand ?? []).filter(card => !props.deferredHandCardIds?.includes(card.instanceId))
 )
+const renderedHandCount = computed(() => props.hidden ? (props.handCount ?? 0) : (props.hand?.length ?? 0))
+const hiddenHand = computed(() => Array.from({ length: props.handCount ?? 0 }))
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -175,64 +180,77 @@ function onCardClick(instanceId: string, event: MouseEvent) {
 
 <template>
   <UTooltip
-    :text="String(hand.length)"
+    :text="String(renderedHandCount)"
     :delay-duration="0"
     :ui="{ content: 'text-sm' }"
   >
     <div
       ref="handStack"
-      data-duel-hand="true"
+      :data-duel-hand="hidden ? undefined : 'true'"
+      :data-opponent-hand="hidden ? 'true' : undefined"
       class="relative h-28 w-full shrink-0 overflow-visible sm:h-32"
     >
-      <motion.button
-        v-for="(card, index) in visibleHand"
-        v-show="handStackSize.width > 0"
-        :key="card.instanceId"
-        type="button"
-        draggable="true"
-        layout
-        :layout-id="card.instanceId"
-        :data-instance-id="card.instanceId"
-        :initial="false"
-        :animate="handRevealAnimation(card.instanceId)"
-        :transition="sharedCardTravelTransition"
-        class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
-        :class="[
-          isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
-          isHandCardSelected(card.instanceId) ? 'rounded-lg ring-4 ring-info/70' : '',
-          isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
-        ]"
-        :style="stackedCardStyle(index, visibleHand.length, handStackSize)"
-        @click="onCardClick(card.instanceId, $event)"
-        @dragstart="onCardDragStart(card.instanceId, $event)"
-        @dragend="emit('cardDragEnd', card.instanceId)"
-        @mouseenter="onCardHover(card)"
-        @mouseleave="onCardHover(null)"
-      >
-        <div class="h-full transition-transform duration-150 ease-out group-hover:-translate-y-4 group-focus-visible:-translate-y-4">
-          <DuelCard :src="card.imageUrl" />
-        </div>
-        <div
-          v-if="shouldShowSelectedHandCount(card.instanceId)"
-          class="pointer-events-none absolute -right-2 -top-2 z-10"
-          :title="`${selectedHandCount} cartes selectionnees`"
-          :aria-label="`${selectedHandCount} cartes selectionnees`"
+      <template v-if="hidden">
+        <DuelCard
+          v-for="(_, index) in hiddenHand"
+          :key="index"
+          :src="cardBackRegular"
+          alt="Main adverse"
+          class="absolute top-0"
+          :style="stackedCardStyle(index, hiddenHand.length, handStackSize)"
+        />
+      </template>
+      <template v-else>
+        <motion.button
+          v-for="(card, index) in visibleHand"
+          v-show="handStackSize.width > 0"
+          :key="card.instanceId"
+          type="button"
+          draggable="true"
+          layout
+          :layout-id="card.instanceId"
+          :data-instance-id="card.instanceId"
+          :initial="false"
+          :animate="handRevealAnimation(card.instanceId)"
+          :transition="sharedCardTravelTransition"
+          class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
+          :class="[
+            isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
+            isHandCardSelected(card.instanceId) ? 'rounded-lg ring-4 ring-info/70' : '',
+            isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
+          ]"
+          :style="stackedCardStyle(index, visibleHand.length, handStackSize)"
+          @click="onCardClick(card.instanceId, $event)"
+          @dragstart="onCardDragStart(card.instanceId, $event)"
+          @dragend="emit('cardDragEnd', card.instanceId)"
+          @mouseenter="onCardHover(card)"
+          @mouseleave="onCardHover(null)"
         >
-          <UChip
-            :text="String(selectedHandCount)"
-            color="info"
-            size="lg"
-            standalone
-            inset
-          />
-        </div>
-        <span
-          v-if="draggedHandCardCount && draggedHandCardCount > 1 && isHandCardSelected(card.instanceId)"
-          class="pointer-events-none absolute -right-2 -top-2 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground"
-        >
-          x{{ draggedHandCardCount }}
-        </span>
-      </motion.button>
+          <div class="h-full transition-transform duration-150 ease-out group-hover:-translate-y-4 group-focus-visible:-translate-y-4">
+            <DuelCard :src="card.imageUrl" />
+          </div>
+          <div
+            v-if="shouldShowSelectedHandCount(card.instanceId)"
+            class="pointer-events-none absolute -right-2 -top-2 z-10"
+            :title="`${selectedHandCount} cartes selectionnees`"
+            :aria-label="`${selectedHandCount} cartes selectionnees`"
+          >
+            <UChip
+              :text="String(selectedHandCount)"
+              color="info"
+              size="lg"
+              standalone
+              inset
+            />
+          </div>
+          <span
+            v-if="draggedHandCardCount && draggedHandCardCount > 1 && isHandCardSelected(card.instanceId)"
+            class="pointer-events-none absolute -right-2 -top-2 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground"
+          >
+            x{{ draggedHandCardCount }}
+          </span>
+        </motion.button>
+      </template>
     </div>
   </UTooltip>
 </template>

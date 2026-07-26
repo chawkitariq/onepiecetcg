@@ -253,6 +253,30 @@ describe('DuelHand', () => {
     )
   })
 
+  it('renders a hidden opponent hand from only the public card count', () => {
+    const wrapper = mount(DuelHand, {
+      props: {
+        hidden: true,
+        handCount: 3,
+        align: 'start'
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
+      }
+    })
+
+    const hiddenHand = wrapper.get('[data-opponent-hand="true"]')
+
+    expect(hiddenHand.attributes('data-duel-hand')).toBeUndefined()
+    expect(wrapper.findAllComponents({ name: 'MockMotionButton' })).toHaveLength(0)
+    expect(vi.mocked(getStackedCardLayout)).toHaveBeenCalledWith(
+      3,
+      expect.any(Number),
+      expect.any(Number),
+      { centered: false, sideSpaceCards: 0 }
+    )
+  })
+
   it('defers newly mounted hand cards when the board marks them as hidden-zone arrivals', () => {
     const wrapper = mount(DuelHand, {
       props: {

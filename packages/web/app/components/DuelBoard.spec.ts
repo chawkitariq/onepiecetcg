@@ -328,6 +328,8 @@ const duelHandStub = defineComponent({
   name: 'DuelHand',
   props: {
     hand: { type: Array, default: () => [] },
+    handCount: { type: Number, default: 0 },
+    hidden: { type: Boolean, default: false },
     draggableHandCardIds: { type: Array, default: () => [] },
     deferredHandCardIds: { type: Array, default: () => [] },
     selectedHandCardIds: { type: Array, default: () => [] },
@@ -348,7 +350,9 @@ const duelHandStub = defineComponent({
     }
 
     return () => h('div', {
-      'data-duel-hand': 'true',
+      'data-duel-hand': props.hidden ? undefined : 'true',
+      'data-opponent-hand': props.hidden ? 'true' : undefined,
+      'data-opponent-hand-count': props.hidden ? String(props.handCount) : undefined,
       'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>)
         .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
         .map(card => card.instanceId)),
@@ -356,29 +360,33 @@ const duelHandStub = defineComponent({
       'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
       'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
-      ...((props.hand as Array<PrivateCard>)
+      ...((props.hidden ? [] : (props.hand as Array<PrivateCard>))
         .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
         .map(card => h('div', {
           'data-instance-id': card.instanceId
         }))),
-      h('button', {
-        'data-test': 'drag-end-0',
-        'onClick': () => emit('cardDragEnd', 'hand-character')
-      }),
-      ...((props.hand as Array<PrivateCard>).flatMap(card => [
-        h('button', {
-          'data-test': dragStartTestId(card.instanceId),
-          'onClick': () => emit('cardDragStart', card.instanceId)
-        }),
-        h('button', {
-          'data-test': clickTestId(card.instanceId),
-          'onClick': () => emit('cardClick', card.instanceId, { ctrlKey: false })
-        }),
-        h('button', {
-          'data-test': ctrlClickTestId(card.instanceId),
-          'onClick': () => emit('cardClick', card.instanceId, { ctrlKey: true })
-        })
-      ]))
+      ...(props.hidden
+        ? []
+        : [
+            h('button', {
+              'data-test': 'drag-end-0',
+              'onClick': () => emit('cardDragEnd', 'hand-character')
+            }),
+            ...((props.hand as Array<PrivateCard>).flatMap(card => [
+              h('button', {
+                'data-test': dragStartTestId(card.instanceId),
+                'onClick': () => emit('cardDragStart', card.instanceId)
+              }),
+              h('button', {
+                'data-test': clickTestId(card.instanceId),
+                'onClick': () => emit('cardClick', card.instanceId, { ctrlKey: false })
+              }),
+              h('button', {
+                'data-test': ctrlClickTestId(card.instanceId),
+                'onClick': () => emit('cardClick', card.instanceId, { ctrlKey: true })
+              })
+            ]))
+          ])
     ])
   }
 })
@@ -475,8 +483,7 @@ describe('DuelBoard drag and drop', () => {
           UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
-          DuelHand: duelHandStub,
-          DuelOpponentHand: defaultStub
+          DuelHand: duelHandStub
         }
       }
     })
@@ -498,13 +505,13 @@ describe('DuelBoard drag and drop', () => {
     expect(Number(progress.attributes('data-model-value'))).toBe(3)
   })
 
-  it('uses only the owner hand lane during mulligan while keeping both hand lanes hidden in setup', () => {
+  it('shows the opponent hidden hand lane during setup and mulligan while the owner hand waits for mulligan', () => {
     phase.value = 'setup'
 
     const setupWrapper = mountBoard()
 
     expect(setupWrapper.find('[data-duel-hand]').exists()).toBe(false)
-    expect(setupWrapper.find('[data-opponent-hand]').exists()).toBe(false)
+    expect(setupWrapper.find('[data-opponent-hand]').exists()).toBe(true)
 
     setupWrapper.unmount()
 
@@ -513,7 +520,7 @@ describe('DuelBoard drag and drop', () => {
     const mulliganWrapper = mountBoard()
 
     expect(mulliganWrapper.find('[data-duel-hand]').exists()).toBe(true)
-    expect(mulliganWrapper.find('[data-opponent-hand]').exists()).toBe(false)
+    expect(mulliganWrapper.find('[data-opponent-hand]').exists()).toBe(true)
   })
 
   it('exposes only affordable character cards as draggable from the self hand', () => {
@@ -1043,8 +1050,7 @@ describe('DuelBoard leave to lobby', () => {
           UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
-          DuelHand: duelHandStub,
-          DuelOpponentHand: defaultStub
+          DuelHand: duelHandStub
         }
       }
     })

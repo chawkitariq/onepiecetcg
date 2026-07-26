@@ -222,7 +222,7 @@ const shouldShowSelfHandLane = computed(() =>
   Boolean(self.value) && phase.value !== 'setup'
 )
 const shouldShowOpponentHandLane = computed(() =>
-  Boolean(opponent.value) && phase.value !== 'setup' && phase.value !== 'mulligan'
+  Boolean(opponent.value)
 )
 const selectableHandCardIds = computed(() => {
   if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
@@ -2279,8 +2279,9 @@ defineShortcuts({
           <div class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(220px,0.42fr)_minmax(0,1fr)] gap-4">
             <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
               <div class="w-full max-w-[26rem] shrink-0">
-                <DuelOpponentHand
+                <DuelHand
                   v-if="shouldShowOpponentHandLane && opponent"
+                  hidden
                   :hand-count="opponent.handCount"
                   align="start"
                 />
