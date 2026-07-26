@@ -271,4 +271,123 @@ describe('DuelRoom match result recording (stage 13)', () => {
 
     await disposeRoom(room);
   });
+
+  it('declares the remaining player the winner and records a forfeit when a player explicitly leaves mid-match (e.g. "Retourner au lobby")', async () => {
+    const recordMatchResult = jest.fn().mockResolvedValue(undefined);
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn({ recordMatchResult });
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    await room.onLeave(fakeClient(firstSessionId) as never, true);
+
+    expect(room.state.phase).toBe('finished');
+    expect(room.state.endReason).toBe('forfeit');
+    expect(room.state.winnerSessionId).toBe(secondSessionId);
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(recordMatchResult).toHaveBeenCalledTimes(1);
+    const [input] = recordMatchResult.mock.calls[0] as [
+      { winnerAuthUserId: string; loserAuthUserId: string; endReason: string },
+    ];
+    expect(input.winnerAuthUserId).toBe(
+      secondSessionId === 'session-a' ? 'user-a' : 'user-b',
+    );
+    expect(input.loserAuthUserId).toBe(
+      firstSessionId === 'session-a' ? 'user-a' : 'user-b',
+    );
+    expect(input.endReason).toBe('forfeit');
+
+    await disposeRoom(room);
+  });
+
+  it('does not record a forfeit for a consented leave before the match has started (setup/mulligan)', async () => {
+    const recordMatchResult = jest.fn().mockResolvedValue(undefined);
+    configureDuelRoomServices({
+      decksService: {
+        getValidatedGameDeck: jest.fn((authUserId: string, deckId: string) =>
+          Promise.resolve({
+            id: deckId,
+            name: 'Valid deck',
+            ownerAuthUserId: authUserId,
+            leader,
+            cards: Array.from({ length: 50 }, (_, index) => ({
+              ...weakCharacter,
+              copyIndex: index + 1,
+            })),
+          }),
+        ),
+      } as never,
+      statsService: { recordMatchResult } as never,
+    });
+
+    const room = new DuelRoom();
+    (
+      room as DuelRoom & { listing: { remove: jest.Mock; metadata: object } }
+    ).listing = {
+      remove: jest.fn(),
+      metadata: {},
+    };
+    room.onCreate();
+    jest.spyOn(room, 'lock').mockImplementation(() => undefined);
+
+    await room.onJoin(
+      { sessionId: 'session-a' } as never,
+      { displayName: 'Alice', deckId: 'deck-a' },
+      { userId: 'user-a' },
+    );
+    await room.onJoin(
+      { sessionId: 'session-b' } as never,
+      { displayName: 'Bob', deckId: 'deck-b' },
+      { userId: 'user-b' },
+    );
+
+    expect(room.state.phase).toBe('mulligan');
+
+    await room.onLeave(fakeClient('session-a') as never, true);
+
+    expect(room.state.phase).not.toBe('finished');
+    expect(room.state.winnerSessionId).toBe('');
+    expect(room.state.endReason).toBe('');
+    expect(recordMatchResult).not.toHaveBeenCalled();
+
+    await disposeRoom(room);
+  });
+
+  it('does not record a forfeit for a consented leave once the match is already finished', async () => {
+    const recordMatchResult = jest.fn().mockResolvedValue(undefined);
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn({ recordMatchResult });
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    const defender = room.state.players.get(secondSessionId);
+    defender!.zones.life.splice(0);
+    defender!.lifeCount = 0;
+
+    access.handleDeclareAttack(fakeClient(firstSessionId), {
+      attackerInstanceId: attacker!.zones.leader.instanceId,
+      targetType: 'leader',
+    });
+    access.handleDeclareBlock(fakeClient(secondSessionId), {
+      blockerInstanceId: null,
+    });
+    access.handleFinishCounterStep(fakeClient(secondSessionId));
+
+    await Promise.resolve();
+    await Promise.resolve();
+    recordMatchResult.mockClear();
+
+    // The loser leaving the room after the game already ended must not
+    // overwrite the already-recorded result with a second "forfeit" one.
+    await room.onLeave(fakeClient(secondSessionId) as never, true);
+
+    expect(room.state.endReason).toBe('life');
+    expect(room.state.winnerSessionId).toBe(firstSessionId);
+    expect(recordMatchResult).not.toHaveBeenCalled();
+
+    await disposeRoom(room);
+  });
 });

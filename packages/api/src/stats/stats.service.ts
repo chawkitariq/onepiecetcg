@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type {
   DeckStats,
+  DuelEndReason,
   LeaderStats,
   PlayerStats,
   ResultBreakdown,
@@ -20,7 +21,7 @@ export type RecordMatchResultInput = {
   winnerLeaderCardId: string;
   loserLeaderCardId: string;
   winnerWentFirst: boolean;
-  endReason: 'life' | 'deckOut';
+  endReason: DuelEndReason;
   startedAt: Date;
   endedAt: Date;
 };

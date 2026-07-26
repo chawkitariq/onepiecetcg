@@ -1,3 +1,4 @@
+import type { DuelEndReason } from '@onepiecetcg/shared';
 import {
   Column,
   CreateDateColumn,
@@ -10,9 +11,11 @@ import { PlayerAccount } from '../accounts/player-account.entity';
 import { SavedDeck } from '../decks/saved-deck.entity';
 
 /**
- * One row per duel that ended via a clean structural game-end (life-to-zero
- * or deck-out, docs/spec.md §3). Forfeits from a disconnection that outlasts
- * the reconnection window (docs/spec.md §3) are never recorded here (§8).
+ * One row per duel that ended via a clean structural game-end: life-to-zero,
+ * deck-out, or a player explicitly forfeiting (leaving the room mid-match,
+ * e.g. via "Retourner au lobby"). A forfeit from a disconnection that
+ * outlasts the reconnection window (docs/spec.md §3) is never recorded here
+ * (§8) -- only an explicit consented leave counts as a forfeit loss.
  *
  * `winnerLeaderCardId`/`loserLeaderCardId` are denormalized rather than only
  * derived through `winnerDeck`/`loserDeck` because a saved deck's Leader can
@@ -62,7 +65,7 @@ export class MatchResult {
   winnerWentFirst!: boolean;
 
   @Column({ type: 'varchar' })
-  endReason!: 'life' | 'deckOut';
+  endReason!: DuelEndReason;
 
   @Column({ type: 'timestamptz' })
   startedAt!: Date;

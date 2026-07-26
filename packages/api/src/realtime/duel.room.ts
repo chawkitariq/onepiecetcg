@@ -285,6 +285,7 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(`${player.displayName} est deconnecte.`);
 
     if (consented) {
+      this.declareForfeitIfMatchInProgress(player);
       this.removePlayer(client.sessionId);
       return;
     }
@@ -1460,9 +1461,43 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   /**
-   * Persists a `MatchResult` for a clean structural game-end only (life-to-
-   * zero or deck-out, docs/spec.md §8) -- never called from `onLeave`'s
-   * forfeit path, so a disconnection timeout leaves no stats trace.
+   * A player who consents to leave mid-match (the "Retourner au lobby"
+   * button, or any other clean `room.leave()`) forfeits: the opponent is
+   * declared the winner exactly as for a life-to-zero/deck-out ending. This
+   * only fires once the match has actually started (`matchStartedAt` set)
+   * and while an opponent is still present -- leaving during setup/mulligan,
+   * or when already alone in the room, ends the room without a recorded
+   * result. A disconnection-timeout forfeit (`onLeave`'s `consented: false`
+   * branch) is handled separately and is NOT covered by this method --
+   * see docs/spec.md §8, which explicitly excludes that case from stats.
+   */
+  private declareForfeitIfMatchInProgress(quittingPlayer: DuelPlayer) {
+    if (
+      this.state.phase === 'finished' ||
+      this.state.phase === 'setup' ||
+      this.state.phase === 'mulligan' ||
+      !this.matchStartedAt
+    ) {
+      return;
+    }
+
+    const winnerSessionId = this.getOpponentSessionId(quittingPlayer.sessionId);
+
+    if (!winnerSessionId) {
+      return;
+    }
+
+    this.state.phase = 'finished';
+    this.state.endReason = 'forfeit';
+    this.state.winnerSessionId = winnerSessionId;
+    this.addLog(`${quittingPlayer.displayName} abandonne la partie.`);
+    this.recordMatchResult();
+  }
+
+  /**
+   * Persists a `MatchResult` for a clean structural game-end (life-to-zero,
+   * deck-out, or forfeit, docs/spec.md §8) -- never called from `onLeave`'s
+   * disconnection-timeout forfeit path, so that path leaves no stats trace.
    */
   private recordMatchResult() {
     if (this.matchResultRecorded || !this.matchStartedAt) {
@@ -1487,7 +1522,9 @@ export class DuelRoom extends Room<DuelState> {
       !loser ||
       !winnerAuthUserId ||
       !loserAuthUserId ||
-      (endReason !== 'life' && endReason !== 'deckOut')
+      (endReason !== 'life' &&
+        endReason !== 'deckOut' &&
+        endReason !== 'forfeit')
     ) {
       return;
     }

@@ -378,9 +378,9 @@ Objectif : conserver un résultat par partie terminée proprement et exposer des
 
 ### Backend
 
-- Ajouter à `DuelState` (schéma partagé) les champs de fin de partie manquants : `winnerSessionId` et un motif de fin (`life`/`deckOut`), renseignés aux deux endroits de `duel.room.ts` qui passent actuellement en `phase: 'finished'` sans exposer structurellement le vainqueur.
+- Ajouter à `DuelState` (schéma partagé) les champs de fin de partie manquants : `winnerSessionId` et un motif de fin (`life`/`deckOut`/`forfeit`), renseignés à chaque endroit de `duel.room.ts` qui passe en `phase: 'finished'` sans exposer structurellement le vainqueur — y compris `onLeave` lorsqu'un joueur quitte volontairement la partie (`consented: true`, ex: bouton "Retourner au lobby"), à condition que la partie ait déjà démarré (hors mise en place/mulligan).
 - Créer un module `stats/` avec une entité TypeORM `MatchResult` : comptes vainqueur/perdant, decks utilisés (référence nullable, un deck supprimé ne doit pas faire disparaître le résultat), Leader utilisé par chaque joueur (conservé indépendamment du deck), joueur ayant commencé, motif de fin, durée de partie.
-- Enregistrer un `MatchResult` uniquement quand `DuelRoom` atteint `phase === 'finished'` avec un vainqueur déterminé par une fin de partie propre (Vie à zéro, deck-out) — jamais sur un abandon par déconnexion après le délai de reconnexion.
+- Enregistrer un `MatchResult` uniquement quand `DuelRoom` atteint `phase === 'finished'` avec un vainqueur déterminé par une fin de partie propre (Vie à zéro, deck-out, ou abandon explicite en cours de partie) — jamais sur un abandon par déconnexion après le délai de reconnexion, qui reste sans trace persistée.
 - Exposer un endpoint `GET /stats/me` (protégé par session) calculant à la lecture : total de parties, victoires/défaites, taux de victoire, série en cours, détail par deck sauvegardé, détail par Leader utilisé, durée moyenne de partie, taux de victoire premier/second joueur.
 
 ### Frontend
@@ -391,6 +391,8 @@ Objectif : conserver un résultat par partie terminée proprement et exposer des
 ### Validation
 
 - Une partie terminée par Vie à zéro ou par deck-out crée exactement un `MatchResult` cohérent avec les deux comptes concernés.
+- Un joueur qui quitte volontairement une partie déjà démarrée (ex: "Retourner au lobby") crée un `MatchResult` où il est déclaré perdant et l'adversaire restant gagnant, compté comme n'importe quelle autre défaite dans toutes les statistiques (globales, par deck, par Leader, série en cours).
+- Quitter la partie pendant la mise en place ou le mulligan (avant le premier tour) ne crée aucun `MatchResult`.
 - Un abandon par déconnexion après le délai de reconnexion ne crée aucun `MatchResult`.
 - La suppression d'un deck utilisé dans une partie passée ne supprime pas le résultat historique correspondant.
 - Les statistiques par Leader restent correctes même si le deck d'origine a changé de Leader ou a été supprimé depuis.

@@ -223,7 +223,7 @@ export class DuelState extends Schema {
   @type(DuelCombat)
   combat = new DuelCombat();
 
-  /** Set alongside `phase: 'finished'` by a clean game-end (life-to-zero or deck-out); empty otherwise. */
+  /** Set alongside `phase: 'finished'` by a clean game-end (life-to-zero, deck-out, or forfeit); empty otherwise. */
   @type('string')
   winnerSessionId = '';
 
@@ -232,7 +232,7 @@ export class DuelState extends Schema {
   endReason: DuelEndReason | '' = '';
 }
 
-export type DuelEndReason = 'life' | 'deckOut';
+export type DuelEndReason = 'life' | 'deckOut' | 'forfeit';
 
 export function createDuelCard(
   card: Card,
