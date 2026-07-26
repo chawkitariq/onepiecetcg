@@ -123,6 +123,29 @@ const donDeckGhosts = computed(() => transitionGhosts.value?.filter(ghost => gho
 const untappedCostCards = computed(() => props.player.cost.filter(card => !card.rested))
 const restedCostCards = computed(() => props.player.cost.filter(card => card.rested))
 const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && restedCostCards.value.length > 0)
+const costCardEntries = computed(() => {
+  let untappedIndex = 0
+  let restedIndex = 0
+
+  return props.player.cost.map((card) => {
+    const isRested = card.rested
+    const index = isRested ? restedIndex : untappedIndex
+    const count = isRested ? restedCostCards.value.length : untappedCostCards.value.length
+
+    if (isRested) {
+      restedIndex += 1
+    } else {
+      untappedIndex += 1
+    }
+
+    return {
+      card,
+      index,
+      count,
+      state: isRested ? 'rested' as const : 'untapped' as const
+    }
+  })
+})
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
 const isStageZoneDraggedOver = ref(false)
@@ -171,9 +194,7 @@ function useMeasuredStackSize(templateRefName: string) {
 
 function costStackAreaSize() {
   const size: StackContainerSize = {
-    width: isCostStackSplit.value
-      ? Math.max((costStackSize.width || FALLBACK_COST_STACK_WIDTH_PX) / 2, 0)
-      : (costStackSize.width || FALLBACK_COST_STACK_WIDTH_PX),
+    width: costStackSize.width || FALLBACK_COST_STACK_WIDTH_PX,
     height: costStackSize.height || FALLBACK_COST_STACK_HEIGHT_PX
   }
 
@@ -188,20 +209,32 @@ function costStackStartOffset(cardCount: number, size: StackContainerSize, cardW
   return (size.width - stackWidth) / 2
 }
 
-function costStackStyle(
-  index: number,
-  cardCount: number,
-  direction: 'left' | 'right',
-  cardWidthRatio?: number
-) {
+function costCardTranslateX(index: number, cardCount: number, rested: boolean) {
   const size = costStackAreaSize()
-  const startOffset = costStackStartOffset(cardCount, size, cardWidthRatio)
-  const offset = size.width > 0
-    ? ((startOffset + index * COST_STACK_PEEK_PX) / size.width) * 100
-    : 0
+  const isSplit = isCostStackSplit.value
+  const cardWidthRatio = rested ? 1 : undefined
+  const ratio = cardWidthRatio ?? 5 / 7
+  const cardWidth = (size.height || FALLBACK_COST_STACK_HEIGHT_PX) * ratio || FALLBACK_COST_CARD_WIDTH_PX
+  const stackWidth = cardWidth + Math.max(cardCount - 1, 0) * COST_STACK_PEEK_PX
 
+  if (!isSplit) {
+    const startOffset = costStackStartOffset(cardCount, size, cardWidthRatio)
+
+    return startOffset + index * COST_STACK_PEEK_PX
+  }
+
+  if (!rested) {
+    return index * COST_STACK_PEEK_PX
+  }
+
+  const stackStart = Math.max(size.width - stackWidth, 0)
+
+  return stackStart + index * COST_STACK_PEEK_PX
+}
+
+function costCardStyle(index: number, cardCount: number, rested: boolean) {
   return {
-    [direction]: `${offset}%`,
+    transform: `translateX(${costCardTranslateX(index, cardCount, rested)}px)`,
     zIndex: index + 1
   }
 }
@@ -1042,73 +1075,55 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             data-cost-stack="untapped"
             class="absolute inset-y-0 left-0"
             :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
-          >
-            <button
-              v-for="(don, index) in untappedCostCards"
-              :key="don.instanceId"
-              type="button"
-              draggable="true"
-              :data-instance-id="don.instanceId"
-              :data-layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
-              :data-zone-side="side"
-              :data-don-selected="String(isDonCardSelected(don.instanceId))"
-              data-cost-state="untapped"
-              class="duel-layout-card absolute top-0 h-full"
-              :class="[
-                isCostCardDeferred(don.instanceId) ? 'pointer-events-none invisible' : '',
-                isDonCardSelected(don.instanceId) ? 'ring-4 ring-info/70 rounded-lg' : '',
-                isDonCardDraggable(don.instanceId) ? 'cursor-grab active:cursor-grabbing' : ''
-              ]"
-              :style="costStackStyle(index, untappedCostCards.length, 'left')"
-              @mousedown="onDonCardSelectionStart(don.instanceId, $event)"
-              @mouseenter="onDonCardSelectionHover(don.instanceId, $event)"
-              @dragstart="onDonCardDragStart(don.instanceId, $event)"
-              @dragend="emit('donCardDragEnd')"
-            >
-              <DuelCard
-                :src="donFront"
-                alt="DON!!"
-              />
-              <div
-                v-if="shouldShowSelectedDonCount(don.instanceId)"
-                data-selected-don-count
-                class="pointer-events-none absolute -right-2 -top-2 z-10 flex h-7 min-w-7 items-center justify-center rounded-full bg-info px-2 text-xs font-bold text-info-foreground shadow-sm"
-                :title="`${selectedDonCount} DON!! selectionnes`"
-                :aria-label="`${selectedDonCount} DON!! selectionnes`"
-              >
-                {{ selectedDonCount }}
-              </div>
-              <span
-                v-if="draggedDonCardInstanceId === don.instanceId && (draggedDonCardCount ?? 0) > 1"
-                class="pointer-events-none absolute -right-2 -top-2 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground"
-              >
-                x{{ draggedDonCardCount }}
-              </span>
-            </button>
-          </div>
+          />
           <div
             data-cost-stack="rested"
             class="absolute inset-y-0 right-0"
             :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
+          />
+          <button
+            v-for="entry in costCardEntries"
+            :key="entry.card.instanceId"
+            type="button"
+            :draggable="entry.state === 'untapped'"
+            :data-instance-id="entry.card.instanceId"
+            :data-layout-id="visibleLayoutId(entry.card.instanceId, isCostCardDeferred(entry.card.instanceId))"
+            :data-zone-side="side"
+            :data-don-selected="String(isDonCardSelected(entry.card.instanceId))"
+            :data-cost-state="entry.state"
+            class="duel-layout-card absolute top-0 h-full"
+            :class="[
+              isCostCardDeferred(entry.card.instanceId) ? 'pointer-events-none invisible' : '',
+              isDonCardSelected(entry.card.instanceId) ? 'ring-4 ring-info/70 rounded-lg' : '',
+              isDonCardDraggable(entry.card.instanceId) ? 'cursor-grab active:cursor-grabbing' : ''
+            ]"
+            :style="costCardStyle(entry.index, entry.count, entry.state === 'rested')"
+            @mousedown="entry.state === 'untapped' ? onDonCardSelectionStart(entry.card.instanceId, $event) : undefined"
+            @mouseenter="entry.state === 'untapped' ? onDonCardSelectionHover(entry.card.instanceId, $event) : undefined"
+            @dragstart="entry.state === 'untapped' ? onDonCardDragStart(entry.card.instanceId, $event) : undefined"
+            @dragend="emit('donCardDragEnd')"
           >
+            <DuelCard
+              :src="donFront"
+              alt="DON!!"
+              :rotated="entry.state === 'rested'"
+            />
             <div
-              v-for="(don, index) in restedCostCards"
-              :key="don.instanceId"
-              :data-instance-id="don.instanceId"
-              :data-layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
-              :data-zone-side="side"
-              data-cost-state="rested"
-              class="duel-layout-card absolute top-0 h-full"
-              :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none invisible' : ''"
-              :style="costStackStyle(index, restedCostCards.length, 'right', 1)"
+              v-if="entry.state === 'untapped' && shouldShowSelectedDonCount(entry.card.instanceId)"
+              data-selected-don-count
+              class="pointer-events-none absolute -right-2 -top-2 z-10 flex h-7 min-w-7 items-center justify-center rounded-full bg-info px-2 text-xs font-bold text-info-foreground shadow-sm"
+              :title="`${selectedDonCount} DON!! selectionnes`"
+              :aria-label="`${selectedDonCount} DON!! selectionnes`"
             >
-              <DuelCard
-                :src="donFront"
-                alt="DON!!"
-                :rotated="true"
-              />
+              {{ selectedDonCount }}
             </div>
-          </div>
+            <span
+              v-if="entry.state === 'untapped' && draggedDonCardInstanceId === entry.card.instanceId && (draggedDonCardCount ?? 0) > 1"
+              class="pointer-events-none absolute -right-2 -top-2 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground"
+            >
+              x{{ draggedDonCardCount }}
+            </span>
+          </button>
         </div>
       </DuelZoneSlot>
       <DuelZoneSlot

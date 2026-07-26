@@ -85,8 +85,8 @@ function createPrivateCard(instanceId: string): PrivateCard {
   }
 }
 
-function extractDirectionalOffset(style: string, direction: 'left' | 'right') {
-  const match = style.match(new RegExp(`${direction}:\\s*(-?[0-9.]+)%`))
+function extractTranslateX(style: string) {
+  const match = style.match(/translateX\((-?[0-9.]+)px\)/)
 
   return match ? Number.parseFloat(match[1] ?? '0') : null
 }
@@ -384,10 +384,10 @@ describe('PlayZone transitions', () => {
     expect(wrapper.find('[data-cost-stack="rested"]').exists()).toBe(true)
     expect(untappedCards).toHaveLength(2)
     expect(restedCards).toHaveLength(2)
-    const untappedFirstOffset = extractDirectionalOffset(untappedCards[0]?.attributes('style') ?? '', 'left')
-    const untappedSecondOffset = extractDirectionalOffset(untappedCards[1]?.attributes('style') ?? '', 'left')
-    const restedFirstOffset = extractDirectionalOffset(restedCards[0]?.attributes('style') ?? '', 'right')
-    const restedSecondOffset = extractDirectionalOffset(restedCards[1]?.attributes('style') ?? '', 'right')
+    const untappedFirstOffset = extractTranslateX(untappedCards[0]?.attributes('style') ?? '')
+    const untappedSecondOffset = extractTranslateX(untappedCards[1]?.attributes('style') ?? '')
+    const restedFirstOffset = extractTranslateX(restedCards[0]?.attributes('style') ?? '')
+    const restedSecondOffset = extractTranslateX(restedCards[1]?.attributes('style') ?? '')
 
     expect(untappedFirstOffset).not.toBeNull()
     expect(untappedSecondOffset).not.toBeNull()
@@ -396,7 +396,42 @@ describe('PlayZone transitions', () => {
     expect(untappedFirstOffset).not.toBe(untappedSecondOffset)
     expect(restedFirstOffset).not.toBe(restedSecondOffset)
     expect(untappedSecondOffset).toBeGreaterThan(untappedFirstOffset ?? 0)
-    expect(restedSecondOffset).toBeGreaterThan(restedFirstOffset ?? 0)
+    expect(restedFirstOffset).toBeGreaterThan(untappedSecondOffset ?? 0)
+    expect(restedSecondOffset).toBeGreaterThan(untappedSecondOffset ?? 0)
+  })
+
+  it('keeps the same DON!! cost card node when Refresh flips it from rested to untapped so CSS can animate the move', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-refresh', { type: 'DON!!', cost: null, power: null, counter: null, rested: true }),
+            createPublicCard('don-ready', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const beforeElement = wrapper.get('[data-instance-id="don-refresh"]').element
+    expect(wrapper.get('[data-instance-id="don-refresh"]').attributes('data-cost-state')).toBe('rested')
+
+    await wrapper.setProps({
+      player: createPlayer({
+        cost: [
+          createPublicCard('don-refresh', { type: 'DON!!', cost: null, power: null, counter: null }),
+          createPublicCard('don-ready', { type: 'DON!!', cost: null, power: null, counter: null })
+        ]
+      })
+    })
+
+    const afterCard = wrapper.get('[data-instance-id="don-refresh"]')
+
+    expect(afterCard.element).toBe(beforeElement)
+    expect(afterCard.attributes('data-cost-state')).toBe('untapped')
   })
 
   it('renders attached DON!! cards below a character and the leader', () => {
