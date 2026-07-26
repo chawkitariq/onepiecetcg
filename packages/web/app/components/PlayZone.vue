@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
-import type { ComponentPublicInstance } from 'vue'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
@@ -16,20 +15,6 @@ const FALLBACK_COST_STACK_WIDTH_PX = 240
 const FALLBACK_COST_STACK_HEIGHT_PX = 112
 const FALLBACK_COST_CARD_WIDTH_PX = 80
 const ATTACHED_DON_PEEK_PX = 14
-
-type CharacterActionPopoverItem = {
-  label: string
-  icon?: string
-  disabled?: boolean
-  onSelect: () => void
-}
-
-type LeaderActionPopoverItem = {
-  label: string
-  icon?: string
-  disabled?: boolean
-  onSelect: () => void
-}
 
 type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
   & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
@@ -48,8 +33,6 @@ const props = defineProps<{
   attackableCharacterIds?: string[]
   selectableLeader?: boolean
   selectableCharacterIds?: string[]
-  leaderActionPopoverItems?: LeaderActionPopoverItem[]
-  characterActionPopoverItems?: Record<string, CharacterActionPopoverItem[]>
   invalidLeaderPulse?: boolean
   invalidCharacterIds?: string[]
   selectedDonCardIds?: string[]
@@ -158,9 +141,6 @@ const isLeaderDonDraggedOver = ref(false)
 const leaderDonDragDepth = ref(0)
 const characterDonDragDepth = reactive<Record<string, number>>({})
 const donDraggedOverCharacterIds = ref<string[]>([])
-const openActionPopoverKey = ref<string | null>(null)
-const leaderActionReference = ref<HTMLElement | null>(null)
-const characterActionReferences = reactive<Record<string, HTMLElement | null>>({})
 const suppressedCharacterClicks = new Set<string>()
 let suppressLeaderClick = false
 
@@ -279,8 +259,6 @@ function onCharacterClick(instanceId: string) {
   if (suppressedCharacterClicks.delete(instanceId)) {
     return
   }
-
-  onCharacterActionTriggerClick(instanceId)
   emit('characterClick', side.value, instanceId)
 }
 
@@ -298,8 +276,6 @@ function onLeaderClick() {
     suppressLeaderClick = false
     return
   }
-
-  onLeaderActionTriggerClick()
   emit('leaderClick', side.value)
 }
 
@@ -399,90 +375,6 @@ function visibleLayoutId(instanceId: string | null | undefined, deferred: boolea
   return instanceId
 }
 
-function getLeaderActionPopoverItems(): LeaderActionPopoverItem[] {
-  return props.leaderActionPopoverItems ?? []
-}
-
-function hasLeaderActionPopover(): boolean {
-  return getLeaderActionPopoverItems().length > 0
-}
-
-function getCharacterActionPopoverItems(instanceId: string): CharacterActionPopoverItem[] {
-  return props.characterActionPopoverItems?.[instanceId] ?? []
-}
-
-function hasCharacterActionPopover(instanceId: string): boolean {
-  return getCharacterActionPopoverItems(instanceId).length > 0
-}
-
-function isLeaderActionPopoverOpen(): boolean {
-  return openActionPopoverKey.value === 'leader'
-}
-
-function isCharacterActionPopoverOpen(instanceId: string): boolean {
-  return openActionPopoverKey.value === `character:${instanceId}`
-}
-
-function onLeaderActionPopoverOpenChange(open: boolean) {
-  openActionPopoverKey.value = open ? 'leader' : (openActionPopoverKey.value === 'leader' ? null : openActionPopoverKey.value)
-}
-
-function onCharacterActionPopoverOpenChange(instanceId: string, open: boolean) {
-  const key = `character:${instanceId}`
-  openActionPopoverKey.value = open
-    ? key
-    : (openActionPopoverKey.value === key ? null : openActionPopoverKey.value)
-}
-
-function onLeaderActionTriggerClick() {
-  if (!hasLeaderActionPopover()) {
-    return
-  }
-
-  openActionPopoverKey.value = openActionPopoverKey.value === 'leader' ? null : 'leader'
-}
-
-function onCharacterActionTriggerClick(instanceId: string) {
-  if (!hasCharacterActionPopover(instanceId)) {
-    return
-  }
-
-  const key = `character:${instanceId}`
-  openActionPopoverKey.value = openActionPopoverKey.value === key ? null : key
-}
-
-function resolvePopoverReference(
-  value: Element | ComponentPublicInstance | null
-): HTMLElement | null {
-  if (!value) {
-    return null
-  }
-
-  if ('$el' in value) {
-    return value.$el instanceof HTMLElement ? value.$el : null
-  }
-
-  return value instanceof HTMLElement ? value : null
-}
-
-function setLeaderActionReference(value: Element | ComponentPublicInstance | null) {
-  leaderActionReference.value = resolvePopoverReference(value)
-}
-
-function setCharacterActionReference(
-  instanceId: string,
-  value: Element | ComponentPublicInstance | null
-) {
-  const reference = resolvePopoverReference(value)
-
-  if (reference) {
-    characterActionReferences[instanceId] = reference
-    return
-  }
-
-  characterActionReferences[instanceId] = null
-}
-
 const isCharacterZoneDropTargetActive = computed(() =>
   Boolean(
     canDropOnCharacterZone.value
@@ -531,28 +423,6 @@ watch(draggedDonCardInstanceId, (nextDraggedCard) => {
     characterDonDragDepth[instanceId] = 0
   }
 })
-
-watch(() => props.characterActionPopoverItems, (nextItems) => {
-  if (!openActionPopoverKey.value?.startsWith('character:')) {
-    return
-  }
-
-  const instanceId = openActionPopoverKey.value.replace('character:', '')
-
-  if (!nextItems?.[instanceId]?.length) {
-    openActionPopoverKey.value = null
-  }
-}, { deep: true })
-
-watch(() => props.leaderActionPopoverItems, (nextItems) => {
-  if (openActionPopoverKey.value !== 'leader') {
-    return
-  }
-
-  if (!nextItems?.length) {
-    openActionPopoverKey.value = null
-  }
-}, { deep: true })
 
 function onCharacterZoneDragEnter() {
   if (!canDropOnCharacterZone.value || !draggedHandCardInstanceId.value) {
@@ -817,7 +687,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             :key="character.instanceId"
           >
             <button
-              :ref="(value: Element | ComponentPublicInstance | null) => setCharacterActionReference(character.instanceId, value)"
               type="button"
               :data-instance-id="character.instanceId"
               :data-zone-side="side"
@@ -873,41 +742,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
                 :mirrored="isAdversary"
               />
             </button>
-
-            <UPopover
-              v-if="hasCharacterActionPopover(character.instanceId)"
-              :open="isCharacterActionPopoverOpen(character.instanceId)"
-              :reference="characterActionReferences[character.instanceId] ?? undefined"
-              :content="{ side: 'right', align: 'center', sideOffset: 10 }"
-              :ui="{ content: 'w-52 p-2' }"
-              @update:open="onCharacterActionPopoverOpenChange(character.instanceId, $event)"
-            >
-              <template #content>
-                <div
-                  class="flex flex-col gap-1"
-                  data-don-selection-keepalive="true"
-                >
-                  <UButton
-                    v-for="action in getCharacterActionPopoverItems(character.instanceId)"
-                    :key="action.label"
-                    size="sm"
-                    color="neutral"
-                    variant="ghost"
-                    block
-                    :disabled="action.disabled"
-                    @click="action.onSelect()"
-                  >
-                    <template
-                      v-if="action.icon"
-                      #leading
-                    >
-                      <UIcon :name="action.icon" />
-                    </template>
-                    {{ action.label }}
-                  </UButton>
-                </div>
-              </template>
-            </UPopover>
           </template>
         </div>
       </DuelZoneSlot>
@@ -921,7 +755,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         allow-overflow
       >
         <button
-          :ref="setLeaderActionReference"
           type="button"
           :data-instance-id="player.leader?.instanceId"
           :data-zone-side="side"
@@ -976,41 +809,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             :mirrored="isAdversary"
           />
         </button>
-
-        <UPopover
-          v-if="hasLeaderActionPopover()"
-          :open="isLeaderActionPopoverOpen()"
-          :reference="leaderActionReference ?? undefined"
-          :content="{ side: 'right', align: 'center', sideOffset: 10 }"
-          :ui="{ content: 'w-52 p-2' }"
-          @update:open="onLeaderActionPopoverOpenChange($event)"
-        >
-          <template #content>
-            <div
-              class="flex flex-col gap-1"
-              data-don-selection-keepalive="true"
-            >
-              <UButton
-                v-for="action in getLeaderActionPopoverItems()"
-                :key="action.label"
-                size="sm"
-                color="neutral"
-                variant="ghost"
-                block
-                :disabled="action.disabled"
-                @click="action.onSelect()"
-              >
-                <template
-                  v-if="action.icon"
-                  #leading
-                >
-                  <UIcon :name="action.icon" />
-                </template>
-                {{ action.label }}
-              </UButton>
-            </div>
-          </template>
-        </UPopover>
       </DuelZoneSlot>
       <DuelZoneSlot
         label="Stage"

@@ -145,8 +145,6 @@ const playZoneStub = defineComponent({
   props: {
     side: { type: Number, required: true },
     player: { type: Object, required: true },
-    leaderActionPopoverItems: { type: Array, default: () => [] },
-    characterActionPopoverItems: { type: Object, default: () => ({}) },
     attackableLeader: { type: Boolean, default: false },
     attackableCharacterIds: { type: Array, default: () => [] },
     selectedDonCardIds: { type: Array, default: () => [] },
@@ -168,17 +166,11 @@ const playZoneStub = defineComponent({
     'donCardDropOnLeader',
     'donCardDropOnCharacter',
     'leaderAttackStart',
-    'characterAttackStart'
+    'characterAttackStart',
+    'leaderClick',
+    'characterClick'
   ],
   setup(props, { emit }) {
-    function getLeaderPopoverItems() {
-      return props.leaderActionPopoverItems as Array<{ label: string, onSelect: () => void }>
-    }
-
-    function getCharacterPopoverItems(instanceId: string) {
-      return (props.characterActionPopoverItems as Record<string, Array<{ label: string, onSelect: () => void }>>)[instanceId] ?? []
-    }
-
     return () => h('div', {
       'data-play-zone': props.side,
       'data-player-hand': JSON.stringify((props.player as DuelPlayerView).hand.map(card => card.instanceId)),
@@ -188,8 +180,6 @@ const playZoneStub = defineComponent({
       'data-deferred-trash-card-ids': JSON.stringify(props.deferredTrashCardIds),
       'data-selected-don-card-ids': JSON.stringify(props.selectedDonCardIds),
       'data-dragged-don-card-count': String(props.draggedDonCardCount),
-      'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
-      'data-character-popover-character-a': JSON.stringify(getCharacterPopoverItems('character-a').map(item => item.label)),
       'data-attacker-id': props.attackerId,
       'data-is-targetable': String(props.isTargetable ?? false)
     }, [
@@ -206,7 +196,8 @@ const playZoneStub = defineComponent({
           if ((props.attackableCharacterIds as string[]).includes(character.instanceId)) {
             emit('characterAttackStart', props.side, character.instanceId)
           }
-        }
+        },
+        'onClick': () => emit('characterClick', props.side, character.instanceId)
       }, [
         character.attachedDon > 0
           ? h('div', { 'data-attached-don-anchor': character.instanceId }, Array.from({ length: character.attachedDon }, (_, index) =>
@@ -225,7 +216,8 @@ const playZoneStub = defineComponent({
               if (props.attackableLeader) {
                 emit('leaderAttackStart', props.side)
               }
-            }
+            },
+            'onClick': () => emit('leaderClick', props.side)
           }, [
             ((props.player as DuelPlayerView).leader?.attachedDon ?? 0) > 0
               ? h('div', { 'data-attached-don-anchor': (props.player as DuelPlayerView).leader?.instanceId }, Array.from({ length: (props.player as DuelPlayerView).leader?.attachedDon ?? 0 }, (_, index) =>
@@ -296,22 +288,6 @@ const playZoneStub = defineComponent({
       h('button', {
         'data-test': `drop-stage-${props.side}`,
         'onClick': () => emit('handCardDropOnStage', props.side)
-      }),
-      h('button', {
-        'data-test': `character-popover-attach-${props.side}`,
-        'onClick': () => getCharacterPopoverItems('character-a')[0]?.onSelect?.()
-      }),
-      h('button', {
-        'data-test': `character-popover-attack-${props.side}`,
-        'onClick': () => getCharacterPopoverItems('character-a')[1]?.onSelect?.()
-      }),
-      h('button', {
-        'data-test': `leader-popover-attach-${props.side}`,
-        'onClick': () => getLeaderPopoverItems()[0]?.onSelect?.()
-      }),
-      h('button', {
-        'data-test': `leader-popover-attack-${props.side}`,
-        'onClick': () => getLeaderPopoverItems()[1]?.onSelect?.()
       })
     ])
   }
@@ -711,33 +687,17 @@ describe('DuelBoard drag and drop', () => {
     expect(playCard).toHaveBeenCalledWith('hand-stage')
   })
 
-  it('exposes character popover actions on the self board during the main phase', () => {
-    canDeclareAttack.value = true
-
-    const wrapper = mountBoard()
-    const selfZone = wrapper.get('[data-play-zone="0"]')
-
-    expect(selfZone.attributes('data-leader-popover')).toBe(JSON.stringify([
-      'Attacher un DON!!',
-      'Attaquer avec'
-    ]))
-    expect(selfZone.attributes('data-character-popover-character-a')).toBe(JSON.stringify([
-      'Attacher un DON!!',
-      'Attaquer avec'
-    ]))
-  })
-
-  it('lets the attach DON action be triggered multiple times from the character popover', async () => {
+  it('attaches DON!! directly when the self character is clicked', async () => {
     const wrapper = mountBoard()
 
-    await wrapper.get('[data-test="character-popover-attach-0"]').trigger('click')
-    await wrapper.get('[data-test="character-popover-attach-0"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('click')
 
     expect(attachDon).toHaveBeenNthCalledWith(1, 'character', 'character-a', 1)
     expect(attachDon).toHaveBeenNthCalledWith(2, 'character', 'character-a', 1)
   })
 
-  it('uses the selected DON!! batch count for the attach action label and popover attach call', async () => {
+  it('uses the selected DON!! batch count when the self leader is clicked', async () => {
     const wrapper = mountBoard()
 
     await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
@@ -750,9 +710,8 @@ describe('DuelBoard drag and drop', () => {
       'self-don-2',
       'self-don-3'
     ]))
-    expect(selfZone.attributes('data-leader-popover')).toContain('Attacher 3 DON!!')
 
-    await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="self-leader"]').trigger('click')
 
     expect(attachDon).toHaveBeenCalledWith('leader', undefined, 3)
     expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
@@ -911,18 +870,14 @@ describe('DuelBoard drag and drop', () => {
     expect(declareAttack).not.toHaveBeenCalled()
   })
 
-  it('lets the leader popover trigger repeated DON attachment and attack targeting', async () => {
-    canDeclareAttack.value = true
-
+  it('attaches DON!! directly when the self leader is clicked', async () => {
     const wrapper = mountBoard()
 
-    await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
-    await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
-    await wrapper.get('[data-test="leader-popover-attack-0"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="self-leader"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="self-leader"]').trigger('click')
 
     expect(attachDon).toHaveBeenNthCalledWith(1, 'leader', undefined, 1)
     expect(attachDon).toHaveBeenNthCalledWith(2, 'leader', undefined, 1)
-    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBeUndefined()
   })
 
   it('renders journal entries in chronological order', () => {

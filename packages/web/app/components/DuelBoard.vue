@@ -9,20 +9,6 @@ import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
 
-type CharacterActionPopoverItem = {
-  label: string
-  icon?: string
-  disabled?: boolean
-  onSelect: () => void
-}
-
-type LeaderActionPopoverItem = {
-  label: string
-  icon?: string
-  disabled?: boolean
-  onSelect: () => void
-}
-
 type BoardTravelOverlay = {
   key: string
   instanceId: string
@@ -131,7 +117,6 @@ const isJournalOpen = ref(false)
 const seenLogCount = ref(0)
 const unseenLogCount = computed(() => Math.max(logs.value.length - seenLogCount.value, 0))
 const pendingCharacterInstanceId = ref<string | null>(null)
-const isSelectingAttacker = ref(false)
 const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
@@ -155,7 +140,6 @@ function beginAttackDrag(instanceId: string) {
   }
 
   pendingAttackerInstanceId.value = instanceId
-  isSelectingAttacker.value = false
   declaredAttackTargetInstanceId.value = null
 }
 
@@ -251,7 +235,6 @@ const selectableDonCardIds = computed(() =>
     .filter(card => !card.rested)
     .map(card => card.instanceId) ?? []
 )
-const selectedAttachDonCount = computed(() => selectedDonCardIds.value.length > 0 ? selectedDonCardIds.value.length : 1)
 const draggedHandCardCount = computed(() => {
   if (!draggedHandCardInstanceId.value) {
     return 0
@@ -287,12 +270,6 @@ const selectableSelfCharacterIds = computed(() => {
     return self.value.characters.map(character => character.instanceId)
   }
 
-  if (isSelectingAttacker.value) {
-    return self.value.characters
-      .filter(character => !character.rested && !character.playedThisTurn)
-      .map(character => character.instanceId)
-  }
-
   if (isBlockingStep.value && isSelfDefender.value) {
     return self.value.characters
       .filter(character => !character.rested)
@@ -301,9 +278,6 @@ const selectableSelfCharacterIds = computed(() => {
 
   return []
 })
-const selectableSelfLeader = computed(() =>
-  Boolean(self.value?.leader && isSelectingAttacker.value && !self.value.leader.rested)
-)
 const invalidSelfLeaderPulse = ref(false)
 const invalidOpponentLeaderPulse = ref(false)
 const invalidSelfCharacterIds = ref<string[]>([])
@@ -1690,60 +1664,7 @@ function syncPendingHandPlayQueue(current: DuelPlayerView | null) {
 
 function cancelTargetSelection() {
   pendingAttackerInstanceId.value = null
-  isSelectingAttacker.value = false
   declaredAttackTargetInstanceId.value = null
-}
-
-function onSelfLeaderAttackerClick() {
-  if (!isSelectingAttacker.value || !self.value?.leader) {
-    return
-  }
-
-  if (self.value.leader.rested) {
-    pulseLeader(invalidSelfLeaderPulse)
-    return
-  }
-
-  pendingAttackerInstanceId.value = self.value.leader.instanceId
-  isSelectingAttacker.value = false
-}
-
-function onSelfCharacterAttackerClick(instanceId: string) {
-  if (!isSelectingAttacker.value) {
-    return
-  }
-
-  const character = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
-
-  if (!character || character.rested || character.playedThisTurn) {
-    pulseCharacter(invalidSelfCharacterIds, instanceId)
-    return
-  }
-
-  pendingAttackerInstanceId.value = instanceId
-  isSelectingAttacker.value = false
-}
-
-function startAttackWithCharacter(instanceId: string) {
-  if (!canDeclareAttack.value) {
-    pulseCharacter(invalidSelfCharacterIds, instanceId)
-    return
-  }
-
-  beginAttackDrag(instanceId)
-}
-
-function startAttackWithLeader() {
-  if (!canDeclareAttack.value) {
-    pulseLeader(invalidSelfLeaderPulse)
-    return
-  }
-
-  if (!self.value?.leader?.instanceId) {
-    return
-  }
-
-  beginAttackDrag(self.value.leader.instanceId)
 }
 
 function attachDonToTarget(target: 'leader' | 'character', targetInstanceId?: string, preferredDonInstanceId?: string) {
@@ -1772,14 +1693,6 @@ function attachDonToTarget(target: 'leader' | 'character', targetInstanceId?: st
   cacheAttachedDonTravelSources(sourceIds)
   clearDraggedDonCard()
   attachDon(target, targetInstanceId, count)
-}
-
-function attachDonToLeaderFromPopover() {
-  attachDonToTarget('leader')
-}
-
-function attachDonToCharacterFromPopover(instanceId: string) {
-  attachDonToTarget('character', instanceId)
 }
 
 function onOpponentLeaderTargetClick() {
@@ -1879,8 +1792,8 @@ function onSelfHandCardClick(instanceId: string, options: { ctrlKey: boolean }) 
 }
 
 function onSelfLeaderClick(_side: 0 | 1) {
-  if (isSelectingAttacker.value) {
-    onSelfLeaderAttackerClick()
+  if (canAttachDon.value) {
+    attachDonToTarget('leader')
   }
 }
 
@@ -1897,14 +1810,13 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     return
   }
 
-  if (isSelectingAttacker.value) {
-    onSelfCharacterAttackerClick(instanceId)
-    return
-  }
-
   if (isBlockingStep.value && isSelfDefender.value) {
     onBlockerCharacterClick(instanceId)
     return
+  }
+
+  if (canAttachDon.value) {
+    attachDonToTarget('character', instanceId)
   }
 }
 
@@ -2118,83 +2030,8 @@ function onSelfCharacterDonDrop(_side: 0 | 1, instanceId: string) {
   attachDonToTarget('character', instanceId, draggedDonCardInstanceId.value)
 }
 
-const selfCharacterActionPopoverItems = computed<Record<string, CharacterActionPopoverItem[]>>(() => {
-  if (
-    !self.value
-    || !isMainPhase.value
-    || !isSelfTurn.value
-    || isCombatInProgress.value
-    || isChoosingCharacterToDiscard.value
-    || isSelectingAttacker.value
-    || isChoosingTarget.value
-    || isBlockingStep.value
-    || isCounteringStep.value
-    || isAwaitingTriggerDecision.value
-  ) {
-    return {}
-  }
-
-  return Object.fromEntries(self.value.characters.map((character) => {
-    const canCharacterAttack = canDeclareAttack.value && !character.rested && !character.playedThisTurn
-
-    return [
-      character.instanceId,
-      [
-        {
-          label: selectedDonCardIds.value.length > 0
-            ? `Attacher ${selectedAttachDonCount.value} DON!!`
-            : 'Attacher un DON!!',
-          icon: 'i-lucide-plus',
-          disabled: !canAttachDon.value,
-          onSelect: () => attachDonToCharacterFromPopover(character.instanceId)
-        },
-        {
-          label: 'Attaquer avec',
-          icon: 'i-lucide-swords',
-          disabled: !canCharacterAttack,
-          onSelect: () => startAttackWithCharacter(character.instanceId)
-        }
-      ]
-    ]
-  }))
-})
-
-const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
-  if (
-    !self.value?.leader
-    || !isMainPhase.value
-    || !isSelfTurn.value
-    || isCombatInProgress.value
-    || isChoosingCharacterToDiscard.value
-    || isSelectingAttacker.value
-    || isChoosingTarget.value
-    || isBlockingStep.value
-    || isCounteringStep.value
-    || isAwaitingTriggerDecision.value
-  ) {
-    return []
-  }
-
-  return [
-    {
-      label: selectedDonCardIds.value.length > 0
-        ? `Attacher ${selectedAttachDonCount.value} DON!!`
-        : 'Attacher un DON!!',
-      icon: 'i-lucide-plus',
-      disabled: !canAttachDon.value,
-      onSelect: attachDonToLeaderFromPopover
-    },
-    {
-      label: 'Attaquer avec',
-      icon: 'i-lucide-swords',
-      disabled: !canDeclareAttack.value || self.value.leader.rested,
-      onSelect: startAttackWithLeader
-    }
-  ]
-})
-
 const isInstructionModeActive = computed(() =>
-  isChoosingCharacterToDiscard.value || isSelectingAttacker.value || isChoosingTarget.value
+  isChoosingCharacterToDiscard.value || isChoosingTarget.value
 )
 
 function cancelInstructionMode() {
@@ -2203,7 +2040,7 @@ function cancelInstructionMode() {
     return
   }
 
-  if (isSelectingAttacker.value || isChoosingTarget.value) {
+  if (isChoosingTarget.value) {
     cancelTargetSelection()
   }
 }
@@ -2667,13 +2504,10 @@ defineShortcuts({
                 :can-drop-don-on-character="canAttachDon"
                 :transition-ghosts="selfTransitionGhosts"
                 :attacker-id="combat && isSelfAttacker ? combat.attackerInstanceId : null"
-                :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
-                :leader-action-popover-items="selfLeaderActionPopoverItems"
+                :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
                 :attackable-leader="Boolean(self.leader && canDeclareAttack && !isCombatInProgress && isMainPhase && isSelfTurn && !self.leader.rested)"
                 :attackable-character-ids="self.characters.filter(character => canDeclareAttack && isMainPhase && isSelfTurn && !isCombatInProgress && !character.rested && !character.playedThisTurn).map(character => character.instanceId)"
-                :selectable-leader="selectableSelfLeader"
                 :selectable-character-ids="selectableSelfCharacterIds"
-                :character-action-popover-items="selfCharacterActionPopoverItems"
                 :invalid-leader-pulse="invalidSelfLeaderPulse"
                 :invalid-character-ids="invalidSelfCharacterIds"
                 :deferred-board-card-ids="selfDeferredBoardCardIds"

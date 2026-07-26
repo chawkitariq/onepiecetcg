@@ -1,7 +1,7 @@
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import { mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import PlayZone from './PlayZone.vue'
 
@@ -12,46 +12,9 @@ const tooltipStub = defineComponent({
     return () => h('div', { 'data-tooltip-stub': 'true' }, slots.default?.())
   }
 })
-const popoverStub = defineComponent({
-  name: 'UPopover',
-  props: {
-    open: { type: Boolean, default: false },
-    reference: { type: null, default: null }
-  },
-  setup(props, { slots }) {
-    return () => h('div', {
-      'data-popover-stub': 'true',
-      'data-open': String(props.open),
-      'data-has-reference': String(Boolean(props.reference))
-    }, [
-      h('div', { 'data-popover-content': String(props.open) }, slots.content?.({ close: () => undefined }))
-    ])
-  }
-})
-
-function popoverTestStubs() {
+function zoneTestStubs() {
   return {
-    UTooltip: tooltipStub,
-    UPopover: popoverStub,
-    UButton: defineComponent({
-      name: 'UButton',
-      inheritAttrs: false,
-      props: {
-        disabled: { type: Boolean, default: false }
-      },
-      setup(props, { slots, attrs }) {
-        return () => h('button', { ...attrs, disabled: props.disabled }, slots.default?.())
-      }
-    }),
-    UIcon: defineComponent({
-      name: 'UIcon',
-      props: {
-        name: { type: String, required: true }
-      },
-      setup(props) {
-        return () => h('span', { 'data-icon-name': props.name })
-      }
-    })
+    UTooltip: tooltipStub
   }
 }
 
@@ -142,7 +105,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -159,7 +122,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -176,7 +139,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -195,7 +158,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -215,7 +178,7 @@ describe('PlayZone transitions', () => {
         ]
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -235,35 +198,13 @@ describe('PlayZone transitions', () => {
         transitionGhosts: [{ instanceId: 'deck-ghost', source: 'deck' }]
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
     expect(wrapper.find('[data-layout-id="deck-ghost"]').classes()).toContain('duel-zone-ghost')
     expect(wrapper.find('[data-layout-id="character-a"]').classes()).toContain('duel-layout-card')
     expect(wrapper.find('[data-layout-id="stage-a"]').classes()).toContain('duel-layout-card')
-  })
-
-  it('anchors character action popovers to the animated character card node', async () => {
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer({
-          characters: [createPublicCard('character-a')]
-        }),
-        side: 0,
-        characterActionPopoverItems: {
-          'character-a': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }]
-        }
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    await nextTick()
-
-    expect(wrapper.find('[data-layout-id="character-a"]').exists()).toBe(true)
-    expect(wrapper.get('[data-popover-stub="true"]').attributes('data-has-reference')).toBe('true')
   })
 
   it('keeps deferred board cards hidden and out of shared-layout travel until the overlay completes', () => {
@@ -277,7 +218,7 @@ describe('PlayZone transitions', () => {
         deferredBoardCardIds: ['character-a', 'stage-a']
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -303,7 +244,7 @@ describe('PlayZone transitions', () => {
         deferredCostCardIds: ['don-ready-2']
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -326,7 +267,7 @@ describe('PlayZone transitions', () => {
         deferredCostCardIds: ['don-ready-2']
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -346,7 +287,7 @@ describe('PlayZone transitions', () => {
         deferredTrashCardIds: ['trash-top']
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -370,7 +311,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -412,7 +353,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -446,7 +387,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -468,7 +409,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -490,7 +431,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -510,7 +451,7 @@ describe('PlayZone transitions', () => {
         canDropOnCharacterZone: true
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -536,7 +477,7 @@ describe('PlayZone transitions', () => {
         canDropOnStageZone: true
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -560,7 +501,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -583,7 +524,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -605,7 +546,7 @@ describe('PlayZone transitions', () => {
         side: 0
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -632,7 +573,7 @@ describe('PlayZone transitions', () => {
         canDropDonOnLeader: true
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -662,7 +603,7 @@ describe('PlayZone transitions', () => {
         selectedDonCardIds: ['don-ready-1', 'don-ready-2', 'don-ready-3']
       },
       global: {
-        stubs: popoverTestStubs()
+        stubs: zoneTestStubs()
       }
     })
 
@@ -670,61 +611,5 @@ describe('PlayZone transitions', () => {
 
     expect(badge.text()).toBe('3')
     expect(badge.attributes('title')).toContain('3 DON!!')
-  })
-
-  it('switches the open popover to another character on the first click', async () => {
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer({
-          characters: [
-            createPublicCard('character-a'),
-            createPublicCard('character-b')
-          ]
-        }),
-        side: 0,
-        characterActionPopoverItems: {
-          'character-a': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }],
-          'character-b': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }]
-        }
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    const characterButtons = wrapper.findAll('[data-instance-id="character-a"], [data-instance-id="character-b"]')
-
-    await characterButtons[0]!.trigger('click')
-    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
-
-    await characterButtons[1]!.trigger('click')
-    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['false', 'true'])
-  })
-
-  it('switches the open popover from the leader to a character on the first click', async () => {
-    const wrapper = mount(PlayZone, {
-      props: {
-        player: createPlayer({
-          characters: [createPublicCard('character-a')]
-        }),
-        side: 0,
-        leaderActionPopoverItems: [{ label: 'Attaquer avec', onSelect: vi.fn() }],
-        characterActionPopoverItems: {
-          'character-a': [{ label: 'Attacher un DON!!', onSelect: vi.fn() }]
-        }
-      },
-      global: {
-        stubs: popoverTestStubs()
-      }
-    })
-
-    const leaderButton = wrapper.get('[data-instance-id="leader-a"]')
-    const characterButton = wrapper.get('[data-instance-id="character-a"]')
-
-    await leaderButton.trigger('click')
-    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['false', 'true'])
-
-    await characterButton.trigger('click')
-    expect(wrapper.findAll('[data-popover-stub="true"]').map(node => node.attributes('data-open'))).toEqual(['true', 'false'])
   })
 })
