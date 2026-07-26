@@ -2,7 +2,6 @@
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import type { ComponentPublicInstance } from 'vue'
-import { animate } from 'animejs'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
@@ -124,7 +123,6 @@ const donDeckGhosts = computed(() => transitionGhosts.value?.filter(ghost => gho
 const untappedCostCards = computed(() => props.player.cost.filter(card => !card.rested))
 const restedCostCards = computed(() => props.player.cost.filter(card => card.rested))
 const isCostStackSplit = computed(() => untappedCostCards.value.length > 0 && restedCostCards.value.length > 0)
-const reducedMotion = usePreferredReducedMotion()
 const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
 const isStageZoneDraggedOver = ref(false)
@@ -136,7 +134,6 @@ const donDraggedOverCharacterIds = ref<string[]>([])
 const openActionPopoverKey = ref<string | null>(null)
 const leaderActionReference = ref<HTMLElement | null>(null)
 const characterActionReferences = reactive<Record<string, HTMLElement | null>>({})
-const ghostElements = new Map<string, HTMLElement>()
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -333,52 +330,6 @@ function hasLeaderActionPopover(): boolean {
 function getCharacterActionPopoverItems(instanceId: string): CharacterActionPopoverItem[] {
   return props.characterActionPopoverItems?.[instanceId] ?? []
 }
-
-function setGhostElement(key: string, value: Element | null) {
-  if (value instanceof HTMLElement) {
-    ghostElements.set(key, value)
-    return
-  }
-
-  ghostElements.delete(key)
-}
-
-function animateGhost(key: string) {
-  if (reducedMotion.value === 'reduce') {
-    return
-  }
-
-  const element = ghostElements.get(key)
-
-  if (!element) {
-    return
-  }
-
-  animate(element, {
-    opacity: [1, 0],
-    duration: 520,
-    ease: 'outQuad'
-  })
-}
-
-watch(
-  () => transitionGhosts.value?.map(ghost => `${ghost.source}:${ghost.instanceId}`) ?? [],
-  (current, previous) => {
-    const previousKeys = new Set(previous ?? [])
-    const freshKeys = current.filter(key => !previousKeys.has(key))
-
-    if (freshKeys.length === 0) {
-      return
-    }
-
-    nextTick(() => {
-      for (const key of freshKeys) {
-        animateGhost(key)
-      }
-    })
-  },
-  { immediate: true }
-)
 
 function hasCharacterActionPopover(instanceId: string): boolean {
   return getCharacterActionPopoverItems(instanceId).length > 0
@@ -746,7 +697,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           <div
             v-for="ghost in lifeGhosts"
             :key="`${ghost.source}-${ghost.instanceId}`"
-            :ref="(value: Element | null) => setGhostElement(`${ghost.source}:${ghost.instanceId}`, value)"
             :data-layout-id="ghost.instanceId"
             class="duel-zone-ghost absolute left-0 top-0 z-[60] h-full"
           >
@@ -1025,7 +975,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           <div
             v-for="ghost in deckGhosts"
             :key="`${ghost.source}-${ghost.instanceId}`"
-            :ref="(value: Element | null) => setGhostElement(`${ghost.source}:${ghost.instanceId}`, value)"
             :data-layout-id="ghost.instanceId"
             class="duel-zone-ghost absolute left-0 top-0 z-[60] h-full"
           >
@@ -1060,7 +1009,6 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           <div
             v-for="ghost in donDeckGhosts"
             :key="`${ghost.source}-${ghost.instanceId}`"
-            :ref="(value: Element | null) => setGhostElement(`${ghost.source}:${ghost.instanceId}`, value)"
             :data-layout-id="ghost.instanceId"
             class="duel-zone-ghost absolute left-0 top-0 z-[60] h-full"
           >
@@ -1103,7 +1051,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               data-cost-state="untapped"
               class="duel-layout-card absolute top-0 h-full"
               :class="[
-                isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : '',
+                isCostCardDeferred(don.instanceId) ? 'pointer-events-none invisible' : '',
                 isDonCardSelected(don.instanceId) ? 'ring-4 ring-info/70 rounded-lg' : '',
                 isDonCardDraggable(don.instanceId) ? 'cursor-grab active:cursor-grabbing' : ''
               ]"
@@ -1147,7 +1095,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               :data-zone-side="side"
               data-cost-state="rested"
               class="duel-layout-card absolute top-0 h-full"
-              :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : ''"
+              :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none invisible' : ''"
               :style="costStackStyle(index, restedCostCards.length, 'right', 1)"
             >
               <DuelCard
@@ -1204,12 +1152,27 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
 }
 
 .duel-zone-ghost {
+  animation: duel-zone-ghost-fade 520ms ease-out forwards;
   will-change: opacity;
+}
+
+@keyframes duel-zone-ghost-fade {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .duel-layout-card {
     transition-duration: 0ms !important;
+  }
+
+  .duel-zone-ghost {
+    animation: none;
   }
 }
 </style>

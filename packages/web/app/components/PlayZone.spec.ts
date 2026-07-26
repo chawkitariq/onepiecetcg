@@ -309,7 +309,7 @@ describe('PlayZone transitions', () => {
 
     const deferredCostCard = wrapper.get('[data-instance-id="don-ready-2"]')
 
-    expect(deferredCostCard.classes()).toContain('opacity-0')
+    expect(deferredCostCard.classes()).toContain('invisible')
     expect(deferredCostCard.attributes('data-layout-id')).toBeUndefined()
   })
 

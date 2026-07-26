@@ -942,10 +942,14 @@ function removeBoardTravelOverlay(key: string, target: Ref<string[]>, instanceId
 
 function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
   return {
-    'left': `${overlay.sourceRect.left}px`,
-    'top': `${overlay.sourceRect.top}px`,
-    'width': `${overlay.sourceRect.width}px`,
-    'height': `${overlay.sourceRect.height}px`
+    left: `${overlay.sourceRect.left}px`,
+    top: `${overlay.sourceRect.top}px`,
+    width: `${overlay.sourceRect.width}px`,
+    height: `${overlay.sourceRect.height}px`,
+    transform: overlay.settled
+      ? `translate(${overlay.translateX}px, ${overlay.translateY}px) scale(${overlay.scaleX}, ${overlay.scaleY})`
+      : 'translate(0px, 0px) scale(1, 1)',
+    transitionDuration: `${BOARD_TRAVEL_MS}ms`
   }
 }
 
@@ -1019,18 +1023,27 @@ function createTravelOverlayFromRect(
         return
       }
 
-      animate(element, {
-        translateX: [0, translateX],
-        translateY: [0, translateY],
-        scaleX: [1, scaleX],
-        scaleY: [1, scaleY],
-        duration: BOARD_TRAVEL_MS,
-        ease: 'inOutQuad',
-        onComplete: () => {
-          removeBoardTravelOverlay(key, target, instanceId)
-          onComplete?.()
-        }
+      const scheduleOverlayStart = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 16)
+
+      scheduleOverlayStart(() => {
+        boardTravelOverlays.value = boardTravelOverlays.value.map((overlay) => {
+          if (overlay.key !== key) {
+            return overlay
+          }
+
+          return {
+            ...overlay,
+            settled: true
+          }
+        })
       })
+
+      window.setTimeout(() => {
+        removeBoardTravelOverlay(key, target, instanceId)
+        onComplete?.()
+      }, BOARD_TRAVEL_MS)
     })
   }, delayMs)
 }
@@ -2400,166 +2413,167 @@ defineShortcuts({
 
     <div class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,0.25fr)] gap-4 overflow-hidden p-4">
       <div class="min-h-0 min-w-0">
-          <div class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(220px,0.42fr)_minmax(0,1fr)] gap-4">
-            <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
-              <div class="w-full max-w-[26rem] shrink-0">
-                <DuelHand
-                  v-if="shouldShowOpponentHandLane && opponent"
-                  hidden
-                  :hand-count="opponent.handCount"
-                  align="start"
-                />
-              </div>
-
-              <div class="w-full max-w-[26rem] shrink-0">
-                <DuelHand
-                  v-if="shouldShowSelfHandLane && self"
-                  :hand="self.hand"
-                  align="start"
-                  :draggable-hand-card-ids="draggableHandCardIds"
-                  :selected-hand-card-ids="selectedHandCardIds"
-                  :dragged-hand-card-count="draggedHandCardCount"
-                  :invalid-hand-card-ids="invalidHandCardIds"
-                  :revealed-hand-card-ids="selfRevealedHandCardIds"
-                  :deferred-hand-card-ids="selfDeferredHandCardIds"
-                  @card-hover="hoveredCard = $event"
-                  @card-click="onSelfHandCardOrCounterClick"
-                  @card-drag-start="onSelfHandCardDragStart"
-                  @card-drag-end="onSelfHandCardDragEnd"
-                  @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
-                />
-              </div>
+        <div class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(220px,0.42fr)_minmax(0,1fr)] gap-4">
+          <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
+            <div class="w-full max-w-[26rem] shrink-0">
+              <DuelHand
+                v-if="shouldShowOpponentHandLane && opponent"
+                hidden
+                :hand-count="opponent.handCount"
+                align="start"
+              />
             </div>
 
-            <div
-              class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden"
-            >
-              <div
-                ref="board-container"
-                class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
-                @pointermove="onBoardPointerMove"
-              >
-                <div class="pointer-events-none fixed inset-0 z-[130]">
-                  <div
-                    v-for="overlay in boardTravelOverlays"
-                    :key="overlay.key"
-                    :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
-                    :data-board-travel-instance-id="overlay.instanceId"
-                    class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
-                    :style="boardTravelOverlayStyle(overlay)"
-                  >
-                    <DuelCard
-                      :src="overlay.imageUrl"
-                      :rotated="overlay.rotated"
-                    />
-                  </div>
-                </div>
-                <div class="pointer-events-none fixed inset-0 z-[135]">
-                  <div
-                    v-for="entry in cardFeedbacks"
-                    :key="entry.key"
-                    :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
-                    :data-test="`card-feedback-${entry.label}`"
-                    class="duel-card-feedback absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
-                    :class="cardFeedbackToneClass(entry.tone)"
-                    :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
-                  >
-                    {{ entry.label }}
-                  </div>
-                </div>
-                <div class="pointer-events-none fixed inset-x-0 top-18 z-[136] flex flex-col items-center gap-2 px-4">
-                  <div
-                    v-for="entry in bannerFeedbacks"
-                    :key="entry.key"
-                    :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
-                    :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
-                    class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
-                    :class="bannerFeedbackToneClass(entry.tone)"
-                  >
-                    {{ entry.message }}
-                  </div>
-                </div>
-                <DuelAttackArrow
-                  :from-instance-id="attackArrowFromInstanceId"
-                  :to-instance-id="attackArrowToInstanceId"
-                  :to-point="attackArrowToPoint"
-                />
-                <DuelFloatingNumber
-                  v-for="entry in floatingNumbers"
-                  :key="entry.key"
-                  :value="entry.value"
-                  :x="entry.x"
-                  :y="entry.y"
-                  :tone="entry.tone"
-                  @done="removeFloatingNumber(entry.key)"
-                />
-                <DuelSetupOverlay v-if="phase === 'mulligan'" />
-                <PlayZone
-                  v-if="opponent || self"
-                  class="flex-1 min-h-0"
-                  :player="opponent ?? emptyOpponentPreview"
-                  :side="1"
-                  :is-owner-turn="!isSelfTurn"
-                  :is-adversary="Boolean(opponent)"
-                  :transition-ghosts="opponent ? opponentTransitionGhosts : []"
-                  :deferred-trash-card-ids="opponentDeferredTrashCardIds"
-                  :is-targetable="Boolean(opponent) && isChoosingTarget"
-                  :targetable-leader="Boolean(opponent) && isChoosingTarget"
-                  :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
-                  :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
-                  :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
-                  @card-hover="hoveredCard = $event"
-                  @leader-click="onOpponentLeaderClick"
-                  @character-click="onOpponentCharacterClick"
-                />
-                <div
-                  v-else
-                  class="flex flex-1 min-h-0 items-center justify-center text-sm text-muted"
-                >
-                  En attente d'un adversaire...
-                </div>
-                <USeparator class="shrink-0" />
-                <PlayZone
-                  v-if="self"
-                  class="flex-1 min-h-0"
-                  :player="self"
-                  :side="0"
-                  :is-owner-turn="isSelfTurn"
-                  :selected-don-card-ids="selectedDonCardIds"
-                  :dragged-hand-card-instance-id="draggedHandCardInstanceId"
-                  :dragged-don-card-instance-id="draggedDonCardInstanceId"
-                  :dragged-don-card-count="draggedDonCardCount"
-                  :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Character'"
-                  :can-drop-on-stage-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Stage'"
-                  :can-drop-don-on-leader="canAttachDon"
-                  :can-drop-don-on-character="canAttachDon"
-                  :transition-ghosts="selfTransitionGhosts"
-                  :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
-                  :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
-                  :leader-action-popover-items="selfLeaderActionPopoverItems"
-                  :selectable-leader="selectableSelfLeader"
-                  :selectable-character-ids="selectableSelfCharacterIds"
-                  :character-action-popover-items="selfCharacterActionPopoverItems"
-                  :invalid-leader-pulse="invalidSelfLeaderPulse"
-                  :invalid-character-ids="invalidSelfCharacterIds"
-                  :deferred-board-card-ids="selfDeferredBoardCardIds"
-                  :deferred-cost-card-ids="selfDeferredCostCardIds"
-                  :deferred-trash-card-ids="selfDeferredTrashCardIds"
-                  @card-hover="hoveredCard = $event"
-                  @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
-                  @hand-card-drop-on-stage="onSelfStageZoneDrop"
-                  @don-card-selection-start="onSelfDonCardSelectionStart"
-                  @don-card-selection-hover="onSelfDonCardSelectionHover"
-                  @don-card-drag-start="onSelfDonCardDragStart"
-                  @don-card-drag-end="onSelfDonCardDragEnd"
-                  @don-card-drop-on-leader="onSelfLeaderDonDrop"
-                  @don-card-drop-on-character="onSelfCharacterDonDrop"
-                  @leader-click="onSelfLeaderClick"
-                  @character-click="onSelfCharacterClick"
-                />
-              </div>
+            <div class="w-full max-w-[26rem] shrink-0">
+              <DuelHand
+                v-if="shouldShowSelfHandLane && self"
+                :hand="self.hand"
+                align="start"
+                :draggable-hand-card-ids="draggableHandCardIds"
+                :selected-hand-card-ids="selectedHandCardIds"
+                :dragged-hand-card-count="draggedHandCardCount"
+                :invalid-hand-card-ids="invalidHandCardIds"
+                :revealed-hand-card-ids="selfRevealedHandCardIds"
+                :deferred-hand-card-ids="selfDeferredHandCardIds"
+                @card-hover="hoveredCard = $event"
+                @card-click="onSelfHandCardOrCounterClick"
+                @card-drag-start="onSelfHandCardDragStart"
+                @card-drag-end="onSelfHandCardDragEnd"
+                @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
+              />
             </div>
           </div>
+
+          <div
+            class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden"
+          >
+            <div
+              ref="board-container"
+              class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
+              @pointermove="onBoardPointerMove"
+            >
+              <div class="pointer-events-none fixed inset-0 z-[130]">
+                <div
+                  v-for="overlay in boardTravelOverlays"
+                  :key="overlay.key"
+                  :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
+                  :data-board-travel-instance-id="overlay.instanceId"
+                  :data-board-travel-settled="String(overlay.settled)"
+                  class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
+                  :style="boardTravelOverlayStyle(overlay)"
+                >
+                  <DuelCard
+                    :src="overlay.imageUrl"
+                    :rotated="overlay.rotated"
+                  />
+                </div>
+              </div>
+              <div class="pointer-events-none fixed inset-0 z-[135]">
+                <div
+                  v-for="entry in cardFeedbacks"
+                  :key="entry.key"
+                  :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
+                  :data-test="`card-feedback-${entry.label}`"
+                  class="duel-card-feedback absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
+                  :class="cardFeedbackToneClass(entry.tone)"
+                  :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
+                >
+                  {{ entry.label }}
+                </div>
+              </div>
+              <div class="pointer-events-none fixed inset-x-0 top-18 z-[136] flex flex-col items-center gap-2 px-4">
+                <div
+                  v-for="entry in bannerFeedbacks"
+                  :key="entry.key"
+                  :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
+                  :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
+                  class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
+                  :class="bannerFeedbackToneClass(entry.tone)"
+                >
+                  {{ entry.message }}
+                </div>
+              </div>
+              <DuelAttackArrow
+                :from-instance-id="attackArrowFromInstanceId"
+                :to-instance-id="attackArrowToInstanceId"
+                :to-point="attackArrowToPoint"
+              />
+              <DuelFloatingNumber
+                v-for="entry in floatingNumbers"
+                :key="entry.key"
+                :value="entry.value"
+                :x="entry.x"
+                :y="entry.y"
+                :tone="entry.tone"
+                @done="removeFloatingNumber(entry.key)"
+              />
+              <DuelSetupOverlay v-if="phase === 'mulligan'" />
+              <PlayZone
+                v-if="opponent || self"
+                class="flex-1 min-h-0"
+                :player="opponent ?? emptyOpponentPreview"
+                :side="1"
+                :is-owner-turn="!isSelfTurn"
+                :is-adversary="Boolean(opponent)"
+                :transition-ghosts="opponent ? opponentTransitionGhosts : []"
+                :deferred-trash-card-ids="opponentDeferredTrashCardIds"
+                :is-targetable="Boolean(opponent) && isChoosingTarget"
+                :targetable-leader="Boolean(opponent) && isChoosingTarget"
+                :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+                :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
+                :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
+                @card-hover="hoveredCard = $event"
+                @leader-click="onOpponentLeaderClick"
+                @character-click="onOpponentCharacterClick"
+              />
+              <div
+                v-else
+                class="flex flex-1 min-h-0 items-center justify-center text-sm text-muted"
+              >
+                En attente d'un adversaire...
+              </div>
+              <USeparator class="shrink-0" />
+              <PlayZone
+                v-if="self"
+                class="flex-1 min-h-0"
+                :player="self"
+                :side="0"
+                :is-owner-turn="isSelfTurn"
+                :selected-don-card-ids="selectedDonCardIds"
+                :dragged-hand-card-instance-id="draggedHandCardInstanceId"
+                :dragged-don-card-instance-id="draggedDonCardInstanceId"
+                :dragged-don-card-count="draggedDonCardCount"
+                :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Character'"
+                :can-drop-on-stage-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Stage'"
+                :can-drop-don-on-leader="canAttachDon"
+                :can-drop-don-on-character="canAttachDon"
+                :transition-ghosts="selfTransitionGhosts"
+                :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
+                :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+                :leader-action-popover-items="selfLeaderActionPopoverItems"
+                :selectable-leader="selectableSelfLeader"
+                :selectable-character-ids="selectableSelfCharacterIds"
+                :character-action-popover-items="selfCharacterActionPopoverItems"
+                :invalid-leader-pulse="invalidSelfLeaderPulse"
+                :invalid-character-ids="invalidSelfCharacterIds"
+                :deferred-board-card-ids="selfDeferredBoardCardIds"
+                :deferred-cost-card-ids="selfDeferredCostCardIds"
+                :deferred-trash-card-ids="selfDeferredTrashCardIds"
+                @card-hover="hoveredCard = $event"
+                @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
+                @hand-card-drop-on-stage="onSelfStageZoneDrop"
+                @don-card-selection-start="onSelfDonCardSelectionStart"
+                @don-card-selection-hover="onSelfDonCardSelectionHover"
+                @don-card-drag-start="onSelfDonCardDragStart"
+                @don-card-drag-end="onSelfDonCardDragEnd"
+                @don-card-drop-on-leader="onSelfLeaderDonDrop"
+                @don-card-drop-on-character="onSelfCharacterDonDrop"
+                @leader-click="onSelfLeaderClick"
+                @character-click="onSelfCharacterClick"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <UCard
@@ -2656,6 +2670,8 @@ defineShortcuts({
 <style scoped>
 .duel-board-travel-overlay {
   transform-origin: top left;
+  transition-property: transform;
+  transition-timing-function: ease-in-out;
   will-change: transform;
 }
 
