@@ -96,8 +96,10 @@ function createPlayer(sessionId: string, overrides: Partial<DuelPlayerView> = {}
 
 const leave = vi.fn()
 const confirm = vi.fn()
+const room = ref({ roomId: 'room-1' })
 
 mockNuxtImport('useColyseus', () => () => ({
+  room,
   status: ref('connected'),
   leave
 }))

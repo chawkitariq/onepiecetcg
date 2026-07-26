@@ -75,21 +75,24 @@ const {
   resolveTrigger,
   isOpponentDisconnected
 } = useDuelRoom()
-const { status, leave } = useColyseus()
+const { room, status, leave } = useColyseus()
 const { confirm } = useConfirmDialog()
+const shouldConfirmLeave = computed(() =>
+  Boolean(room.value) && status.value === 'connected' && phase.value !== 'finished'
+)
+const { leaveWithConfirmation } = useDuelLeaveGuard({
+  enabled: shouldConfirmLeave,
+  confirm,
+  leave
+})
 
 async function confirmLeaveToLobby() {
-  const confirmed = await confirm({
-    title: 'Retourner au lobby ?',
-    description: 'Vous quitterez la partie en cours.',
-    confirmLabel: 'Retourner au lobby'
-  })
+  const confirmed = await leaveWithConfirmation()
 
   if (!confirmed) {
     return
   }
 
-  await leave()
   await navigateTo('/lobby')
 }
 
@@ -244,7 +247,7 @@ watch(
     () => self.value?.leader?.instanceId,
     () => opponent.value?.leader?.instanceId
   ],
-  ([step, attackerInstanceId], [previousStep, previousAttackerInstanceId]) => {
+  ([step, attackerInstanceId], [_previousStep, _previousAttackerInstanceId]) => {
     if (combat.value && attackerInstanceId && hasResolvedCombatAttackerAndTarget()) {
       const targetInstanceId = resolveCombatTargetInstanceId()
       const signature = resolveConfirmedAttackArrowSignature()
