@@ -218,6 +218,12 @@ const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
 const canAttachDon = computed(() =>
   isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0 && !isCombatInProgress.value
 )
+const shouldShowSelfHandLane = computed(() =>
+  Boolean(self.value) && phase.value !== 'setup'
+)
+const shouldShowOpponentHandLane = computed(() =>
+  Boolean(opponent.value) && phase.value !== 'setup' && phase.value !== 'mulligan'
+)
 const selectableHandCardIds = computed(() => {
   if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
     return []
@@ -2274,7 +2280,7 @@ defineShortcuts({
             <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
               <div class="w-full max-w-[26rem] shrink-0">
                 <DuelOpponentHand
-                  v-if="opponent"
+                  v-if="shouldShowOpponentHandLane && opponent"
                   :hand-count="opponent.handCount"
                   align="start"
                 />
@@ -2282,7 +2288,7 @@ defineShortcuts({
 
               <div class="w-full max-w-[26rem] shrink-0">
                 <DuelHand
-                  v-if="self"
+                  v-if="shouldShowSelfHandLane && self"
                   :hand="self.hand"
                   align="start"
                   :draggable-hand-card-ids="draggableHandCardIds"

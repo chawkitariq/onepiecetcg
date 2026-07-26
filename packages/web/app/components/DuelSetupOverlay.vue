@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
-
 const {
   self,
   opponent,
@@ -10,8 +8,6 @@ const {
   chooseFirstOrSecond,
   mulligan
 } = useDuelRoom()
-
-const reducedMotion = usePreferredReducedMotion()
 
 const waitingLabel = computed(() => {
   if (!firstPlayerSessionId.value) {
@@ -65,19 +61,6 @@ const waitingLabel = computed(() => {
         <p class="max-w-md text-sm text-muted">
           Vous pouvez renvoyer cette main, la remelanger dans le deck et en piocher une nouvelle. Ce choix est unique.
         </p>
-      </div>
-
-      <div class="flex items-end justify-center gap-3 px-4">
-        <motion.div
-          v-for="(card, index) in self?.hand ?? []"
-          :key="card.instanceId"
-          class="w-28 sm:w-36"
-          :initial="reducedMotion === 'reduce' ? false : { opacity: 0, y: 24, scale: 0.9 }"
-          :animate="{ opacity: 1, y: 0, scale: 1 }"
-          :transition="{ duration: 0.28, ease: 'easeOut', delay: reducedMotion === 'reduce' ? 0 : index * 0.06 }"
-        >
-          <DuelCard :src="card.imageUrl" />
-        </motion.div>
       </div>
 
       <div class="flex gap-2">

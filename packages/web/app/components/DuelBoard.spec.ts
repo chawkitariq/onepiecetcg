@@ -498,6 +498,24 @@ describe('DuelBoard drag and drop', () => {
     expect(Number(progress.attributes('data-model-value'))).toBe(3)
   })
 
+  it('uses only the owner hand lane during mulligan while keeping both hand lanes hidden in setup', () => {
+    phase.value = 'setup'
+
+    const setupWrapper = mountBoard()
+
+    expect(setupWrapper.find('[data-duel-hand]').exists()).toBe(false)
+    expect(setupWrapper.find('[data-opponent-hand]').exists()).toBe(false)
+
+    setupWrapper.unmount()
+
+    phase.value = 'mulligan'
+
+    const mulliganWrapper = mountBoard()
+
+    expect(mulliganWrapper.find('[data-duel-hand]').exists()).toBe(true)
+    expect(mulliganWrapper.find('[data-opponent-hand]').exists()).toBe(false)
+  })
+
   it('exposes only affordable character cards as draggable from the self hand', () => {
     const wrapper = mountBoard()
     const hand = wrapper.get('[data-duel-hand]')
