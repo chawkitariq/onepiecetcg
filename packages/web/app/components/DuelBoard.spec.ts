@@ -182,7 +182,20 @@ const playZoneStub = defineComponent({
       ...((props.player as DuelPlayerView).characters.map(character => h('div', {
         'data-instance-id': character.instanceId,
         'data-board-card-deferred': String((props.deferredBoardCardIds as string[]).includes(character.instanceId))
-      }))),
+      }, [
+        character.attachedDon > 0
+          ? h('div', { 'data-attached-don-anchor': character.instanceId })
+          : null
+      ]))),
+      (props.player as DuelPlayerView).leader
+        ? h('div', {
+            'data-instance-id': (props.player as DuelPlayerView).leader?.instanceId
+          }, [
+            ((props.player as DuelPlayerView).leader?.attachedDon ?? 0) > 0
+              ? h('div', { 'data-attached-don-anchor': (props.player as DuelPlayerView).leader?.instanceId })
+              : null
+          ])
+        : null,
       (props.player as DuelPlayerView).stage
         ? h('div', {
             'data-instance-id': (props.player as DuelPlayerView).stage?.instanceId,
@@ -192,6 +205,7 @@ const playZoneStub = defineComponent({
       ...((props.player as DuelPlayerView).cost.map(card => h('div', {
         'data-instance-id': card.instanceId,
         'data-zone-side': props.side,
+        'data-cost-state': card.rested ? 'rested' : 'untapped',
         'data-cost-card-deferred': String((props.deferredCostCardIds as string[]).includes(card.instanceId))
       }))),
       h('button', {

@@ -418,6 +418,50 @@ describe('PlayZone transitions', () => {
     expect(restedSecondOffset).toBeGreaterThan(restedFirstOffset ?? 0)
   })
 
+  it('renders attached DON!! cards below a character and the leader', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          leader: createPublicCard('leader-a', { type: 'Leader', power: 5000, attachedDon: 1 }),
+          characters: [
+            createPublicCard('character-a', { attachedDon: 2 })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const characterAnchor = wrapper.get('[data-attached-don-anchor="character-a"]')
+    const leaderAnchor = wrapper.get('[data-attached-don-anchor="leader-a"]')
+
+    expect(characterAnchor.findAll('img[alt="DON!! attache"]')).toHaveLength(2)
+    expect(leaderAnchor.findAll('img[alt="DON!! attache"]')).toHaveLength(1)
+  })
+
+  it('widens the attached DON!! anchor as the stack grows so later cards keep the same size', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [
+            createPublicCard('character-a', { attachedDon: 5 })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const characterAnchor = wrapper.get('[data-attached-don-anchor="character-a"]')
+
+    expect(characterAnchor.attributes('style')).toContain('calc(58% + 56px)')
+    expect(characterAnchor.findAll('img[alt="DON!! attache"]')).toHaveLength(5)
+  })
+
   it('emits a drop event when a dragged hand card is released over the character zone', async () => {
     const wrapper = mount(PlayZone, {
       props: {

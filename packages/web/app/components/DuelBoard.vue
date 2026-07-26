@@ -4,6 +4,7 @@ import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransiti
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { LayoutGroup } from 'motion-v'
 import cardFrontDon from '~/assets/don.png'
+import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
 import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
@@ -239,6 +240,9 @@ const selfDeferredBoardCardIds = ref<string[]>([])
 const selfDeferredCostCardIds = ref<string[]>([])
 const boardTravelOverlays = ref<BoardTravelOverlay[]>([])
 const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
+const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect }> = []
+const attachedDonOverlayTarget = ref<string[]>([])
+let attachedDonTravelKey = 0
 
 const actionModalState = computed<DuelActionModalState | null>(() => {
   if (isBlockingStep.value && isSelfDefender.value) {
@@ -468,6 +472,7 @@ watch(self, (current, previous) => {
   if (current) {
     queuePendingBoardTravelOverlays(current, previous)
     queueDonDeckToCostTravelOverlays(diff)
+    queueAttachedDonTravelOverlays(current, previous)
   }
 })
 
@@ -550,6 +555,16 @@ function querySelfDonDeckElement(): HTMLElement | null {
 
 function querySelfCostCardElement(instanceId: string): HTMLElement | null {
   return document.querySelector(`[data-zone-side="0"][data-instance-id="${CSS.escape(instanceId)}"]`)
+}
+
+function querySelfUntappedCostCardElement(): HTMLElement | null {
+  const matches = Array.from(document.querySelectorAll<HTMLElement>('[data-zone-side="0"][data-cost-state="untapped"]'))
+
+  return matches.at(-1) ?? null
+}
+
+function queryAttachedDonAnchorElement(instanceId: string): HTMLElement | null {
+  return document.querySelector(`[data-attached-don-anchor="${CSS.escape(instanceId)}"]`)
 }
 
 function revealDeferredVisibleCard(target: Ref<string[]>, instanceId: string) {
@@ -743,6 +758,61 @@ function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
   })
 }
 
+function cacheAttachedDonTravelSource() {
+  if (reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const sourceElement = querySelfUntappedCostCardElement()
+
+  if (!sourceElement) {
+    return
+  }
+
+  pendingAttachedDonTravelSources.push({
+    sourceRect: sourceElement.getBoundingClientRect()
+  })
+}
+
+function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
+  if (reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    pendingAttachedDonTravelSources.length = 0
+    return
+  }
+
+  const targetIds = deriveAttachedDonTravelTargetIds(previous, current)
+
+  if (targetIds.length === 0) {
+    return
+  }
+
+  nextTick(() => {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, BOARD_TRAVEL_STAGGER_MS)) {
+      const destinationElement = queryAttachedDonAnchorElement(instanceId)
+      const pendingSource = pendingAttachedDonTravelSources.shift()
+      const fallbackSource = querySelfUntappedCostCardElement()
+      const sourceRect = pendingSource?.sourceRect ?? fallbackSource?.getBoundingClientRect()
+
+      if (!destinationElement || !sourceRect) {
+        continue
+      }
+
+      attachedDonTravelKey += 1
+
+      createTravelOverlay(
+        `attached-don:${attachedDonTravelKey}`,
+        `attached-don:${instanceId}:${attachedDonTravelKey}`,
+        cardFrontDon,
+        sourceRect,
+        destinationElement,
+        attachedDonOverlayTarget,
+        false,
+        delayMs
+      )
+    }
+  })
+}
+
 const draggableHandCardIds = computed(() => {
   if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
     return []
@@ -854,6 +924,7 @@ function attachDonToLeaderFromPopover() {
     return
   }
 
+  cacheAttachedDonTravelSource()
   attachDon('leader')
 }
 
@@ -863,6 +934,7 @@ function attachDonToCharacterFromPopover(instanceId: string) {
     return
   }
 
+  cacheAttachedDonTravelSource()
   attachDon('character', instanceId)
 }
 

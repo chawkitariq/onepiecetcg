@@ -16,6 +16,7 @@ const COST_STACK_PEEK_PX = 18
 const FALLBACK_COST_STACK_WIDTH_PX = 240
 const FALLBACK_COST_STACK_HEIGHT_PX = 112
 const FALLBACK_COST_CARD_WIDTH_PX = 80
+const ATTACHED_DON_PEEK_PX = 14
 
 type CharacterActionPopoverItem = {
   label: string
@@ -189,6 +190,23 @@ function costStackStyle(
 
   return {
     [direction]: `${offset}%`,
+    zIndex: index + 1
+  }
+}
+
+function attachedDonIndices(attachedDonCount: number) {
+  return Array.from({ length: attachedDonCount }, (_, index) => index)
+}
+
+function attachedDonAnchorStyle(attachedDonCount: number) {
+  return {
+    width: `calc(58% + ${Math.max(attachedDonCount - 1, 0) * ATTACHED_DON_PEEK_PX}px)`
+  }
+}
+
+function attachedDonStackStyle(index: number) {
+  return {
+    left: `${index * ATTACHED_DON_PEEK_PX}px`,
     zIndex: index + 1
   }
 }
@@ -531,7 +549,7 @@ function onStageZoneDrop(event: DragEvent) {
               :data-instance-id="character.instanceId"
               :initial="false"
               :transition="sharedCardTravelTransition"
-              class="duel-card-shell relative h-full shrink-0 rounded-lg"
+              class="duel-card-shell relative h-full shrink-0 overflow-visible rounded-lg"
               :class="[
                 attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
                 isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
@@ -549,6 +567,24 @@ function onStageZoneDrop(event: DragEvent) {
                 :src="character.imageUrl"
                 :rotated="character.rested"
               />
+              <div
+                v-if="character.attachedDon > 0"
+                :data-attached-don-anchor="character.instanceId"
+                class="pointer-events-none absolute left-1/2 top-[calc(100%-0.45rem)] z-20 h-[28%] w-[58%] -translate-x-1/2 overflow-visible"
+                :style="attachedDonAnchorStyle(character.attachedDon)"
+              >
+                <div
+                  v-for="index in attachedDonIndices(character.attachedDon)"
+                  :key="`${character.instanceId}:attached-don:${index}`"
+                  class="absolute inset-y-0 aspect-5/7"
+                  :style="attachedDonStackStyle(index)"
+                >
+                  <DuelCard
+                    :src="donFront"
+                    alt="DON!! attache"
+                  />
+                </div>
+              </div>
               <AnimatedPowerBadge
                 :value="cardPower(character)"
                 :mirrored="isAdversary"
@@ -606,7 +642,7 @@ function onStageZoneDrop(event: DragEvent) {
           :data-instance-id="player.leader?.instanceId"
           :initial="false"
           :transition="sharedCardTravelTransition"
-          class="duel-card-shell relative h-full w-full rounded-lg"
+          class="duel-card-shell relative h-full w-full overflow-visible rounded-lg"
           :class="[
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
             targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
@@ -622,6 +658,24 @@ function onStageZoneDrop(event: DragEvent) {
             :src="player.leader.imageUrl"
             :rotated="player.leader.rested"
           />
+          <div
+            v-if="player.leader && player.leader.attachedDon > 0"
+            :data-attached-don-anchor="player.leader.instanceId"
+            class="pointer-events-none absolute left-1/2 top-[calc(100%-0.45rem)] z-20 h-[28%] w-[58%] -translate-x-1/2 overflow-visible"
+            :style="attachedDonAnchorStyle(player.leader.attachedDon)"
+          >
+            <div
+              v-for="index in attachedDonIndices(player.leader.attachedDon)"
+              :key="`${player.leader.instanceId}:attached-don:${index}`"
+              class="absolute inset-y-0 aspect-5/7"
+              :style="attachedDonStackStyle(index)"
+            >
+              <DuelCard
+                :src="donFront"
+                alt="DON!! attache"
+              />
+            </div>
+          </div>
           <AnimatedPowerBadge
             v-if="player.leader"
             :value="cardPower(player.leader)"
