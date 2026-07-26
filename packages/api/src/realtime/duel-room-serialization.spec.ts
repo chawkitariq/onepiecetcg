@@ -379,6 +379,136 @@ describe('DuelRoom per-viewpoint serialization', () => {
     await bob.leave();
   });
 
+  /**
+   * Regression test for a production crash: "Cannot add a detached instance
+   * to the StateView" thrown from `broadcastCardView()` when a defender
+   * discarded a Counter card. `ArraySchema#unshift()` (unlike `push()`) never
+   * re-parents the inserted item's `ChangeTree`, and `Root`'s parent-chain
+   * bookkeeping this depends on only runs during real encode/patch cycles --
+   * so this only reproduces over an actual Colyseus room + client round trip
+   * (a plain in-memory unit test calling the room's message handlers
+   * directly never triggers it).
+   */
+  it('lets the defender discard a Counter card over the wire without crashing the room (regression)', async () => {
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    await waitUntil(() => alice.state.phase === 'mulligan');
+    await waitUntil(() => bob.state.phase === 'mulligan');
+
+    const startingSessionId = alice.state.startingPlayerSessionId;
+    const startingClient = startingSessionId === alice.sessionId ? alice : bob;
+    const otherClient = startingSessionId === alice.sessionId ? bob : alice;
+
+    startingClient.send('chooseFirstOrSecond', { choice: 'first' });
+    await waitUntil(() => !!alice.state.firstPlayerSessionId);
+    startingClient.send('mulligan', { mulligan: false });
+    otherClient.send('mulligan', { mulligan: false });
+
+    await waitUntil(() => alice.state.phase === 'refresh');
+
+    const attackerClient =
+      alice.state.activePlayerSessionId === alice.sessionId ? alice : bob;
+    const defenderClient = attackerClient === alice ? bob : alice;
+
+    // First turn cannot attack -- burn it, then take a second full turn cycle.
+    attackerClient.send('endPhase', {}); // draw
+    attackerClient.send('endPhase', {}); // don
+    attackerClient.send('endPhase', {}); // main
+    await waitUntil(() => attackerClient.state.phase === 'main');
+    attackerClient.send('endPhase', {}); // end
+    attackerClient.send('endPhase', {}); // ends turn -> defender becomes active
+
+    await waitUntil(
+      () =>
+        defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
+    );
+    defenderClient.send('endPhase', {}); // draw
+    defenderClient.send('endPhase', {}); // don
+    defenderClient.send('endPhase', {}); // main
+    await waitUntil(() => defenderClient.state.phase === 'main');
+    defenderClient.send('endPhase', {}); // end
+    defenderClient.send('endPhase', {}); // ends turn -> attacker active again, its second turn
+
+    await waitUntil(
+      () =>
+        attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
+    );
+    attackerClient.send('endPhase', {}); // draw
+    attackerClient.send('endPhase', {}); // don
+    attackerClient.send('endPhase', {}); // main
+    await waitUntil(() => attackerClient.state.phase === 'main');
+
+    const attackerLeaderInstanceId = attackerClient.state.players.get(
+      attackerClient.sessionId,
+    )?.zones.leader.instanceId;
+    expect(attackerLeaderInstanceId).toBeTruthy();
+
+    attackerClient.send('declareAttack', {
+      attackerInstanceId: attackerLeaderInstanceId,
+      targetType: 'leader',
+    });
+
+    await waitUntil(() => attackerClient.state.combat.step === 'blocked');
+    await waitUntil(() => defenderClient.state.combat.step === 'blocked');
+
+    defenderClient.send('declareBlock', { blockerInstanceId: null });
+    await waitUntil(() => attackerClient.state.combat.step === 'countering');
+
+    const counterCardInstanceId = defenderClient.state.players.get(
+      defenderClient.sessionId,
+    )?.zones.hand[0]?.instanceId;
+    expect(counterCardInstanceId).toBeTruthy();
+
+    defenderClient.send('declareCounter', {
+      discardInstanceId: counterCardInstanceId,
+      counterPowerBonus: 1000,
+    });
+
+    await waitUntil(
+      () => attackerClient.state.combat.counterPowerBonus === 1000,
+    );
+    await waitUntil(
+      () =>
+        (defenderClient.state.players.get(defenderClient.sessionId)?.zones.trash
+          .length ?? 0) > 0,
+    );
+
+    // the discarded card is visible to its own owner in the (open) trash zone...
+    const defenderOwnTrash = defenderClient.state.players.get(
+      defenderClient.sessionId,
+    )?.zones.trash;
+    expect(defenderOwnTrash?.[0]?.instanceId).toBe(counterCardInstanceId);
+    expect(defenderOwnTrash?.[0]?.name).toBeTruthy();
+
+    // ...and the trash zone is open, so the attacker must see it too.
+    const attackerViewOfDefenderTrash = attackerClient.state.players.get(
+      defenderClient.sessionId,
+    )?.zones.trash;
+    expect(attackerViewOfDefenderTrash?.[0]?.instanceId).toBe(
+      counterCardInstanceId,
+    );
+    expect(attackerViewOfDefenderTrash?.[0]?.name).toBeTruthy();
+
+    defenderClient.send('finishCounterStep', {});
+    await waitUntil(
+      () => attackerClient.state.combat.attackerInstanceId === '',
+    );
+
+    await alice.leave();
+    await bob.leave();
+  });
+
   it('reveals leader and DON!! cost-zone cards to both viewpoints as soon as they join (open zones)', async () => {
     colyseus.sdk.auth.token = 'token-alice';
     const alice = await colyseus.sdk.joinOrCreate(
