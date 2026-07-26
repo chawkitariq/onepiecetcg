@@ -313,6 +313,29 @@ describe('PlayZone transitions', () => {
     expect(deferredCostCard.attributes('data-layout-id')).toBeUndefined()
   })
 
+  it('keeps deferred DON!! arrivals out of opacity-based reveal classes to avoid a flash at handoff', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-2', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0,
+        deferredCostCardIds: ['don-ready-2']
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const deferredCostCard = wrapper.get('[data-instance-id="don-ready-2"]')
+
+    expect(deferredCostCard.classes()).toContain('invisible')
+    expect(deferredCostCard.classes()).not.toContain('opacity-0')
+  })
+
   it('keeps a deferred trash arrival hidden and out of shared-layout travel until the trash overlay completes', () => {
     const wrapper = mount(PlayZone, {
       props: {
@@ -418,6 +441,29 @@ describe('PlayZone transitions', () => {
 
     expect(characterAnchor.attributes('style')).toContain('calc(58% + 56px)')
     expect(characterAnchor.findAll('img[alt="DON!! attache"]')).toHaveLength(5)
+  })
+
+  it('marks each attached DON!! slot so travel overlays can land on a single-card target', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          leader: createPublicCard('leader-a', { type: 'Leader', power: 5000, attachedDon: 2 }),
+          characters: [
+            createPublicCard('character-a', { attachedDon: 3 })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const characterSlots = wrapper.findAll('[data-attached-don-owner="character-a"]')
+    const leaderSlots = wrapper.findAll('[data-attached-don-owner="leader-a"]')
+
+    expect(characterSlots.map(node => node.attributes('data-attached-don-slot'))).toEqual(['0', '1', '2'])
+    expect(leaderSlots.map(node => node.attributes('data-attached-don-slot'))).toEqual(['0', '1'])
   })
 
   it('emits a drop event when a dragged hand card is released over the character zone', async () => {

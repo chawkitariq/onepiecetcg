@@ -199,7 +199,12 @@ const playZoneStub = defineComponent({
         'data-board-card-deferred': String((props.deferredBoardCardIds as string[]).includes(character.instanceId))
       }, [
         character.attachedDon > 0
-          ? h('div', { 'data-attached-don-anchor': character.instanceId })
+          ? h('div', { 'data-attached-don-anchor': character.instanceId }, Array.from({ length: character.attachedDon }, (_, index) =>
+              h('div', {
+                'data-attached-don-owner': character.instanceId,
+                'data-attached-don-slot': String(index)
+              })
+            ))
           : null
       ]))),
       (props.player as DuelPlayerView).leader
@@ -207,7 +212,12 @@ const playZoneStub = defineComponent({
             'data-instance-id': (props.player as DuelPlayerView).leader?.instanceId
           }, [
             ((props.player as DuelPlayerView).leader?.attachedDon ?? 0) > 0
-              ? h('div', { 'data-attached-don-anchor': (props.player as DuelPlayerView).leader?.instanceId })
+              ? h('div', { 'data-attached-don-anchor': (props.player as DuelPlayerView).leader?.instanceId }, Array.from({ length: (props.player as DuelPlayerView).leader?.attachedDon ?? 0 }, (_, index) =>
+                  h('div', {
+                    'data-attached-don-owner': (props.player as DuelPlayerView).leader?.instanceId,
+                    'data-attached-don-slot': String(index)
+                  })
+                ))
               : null
           ])
         : null,
@@ -564,6 +574,25 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-board-travel-instance-id="hand-character"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when DON!! attaches to a character slot', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a', { attachedDon: 2 })],
+      cost: [
+        createPublicCard('self-don-1', { type: 'DON!!', cost: null, power: null, counter: null, rested: true }),
+        createPublicCard('self-don-2', { type: 'DON!!', cost: null, power: null, counter: null }),
+        createPublicCard('self-don-3', { type: 'DON!!', cost: null, power: null, counter: null })
+      ]
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(40)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id^="attached-don:character-a:"]').exists()).toBe(true)
   })
 
   it('plays the dragged character when it is dropped onto the self character zone', async () => {
