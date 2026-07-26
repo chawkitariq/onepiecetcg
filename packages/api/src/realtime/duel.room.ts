@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
-import { StateView } from '@colyseus/schema';
+import { ArraySchema, StateView } from '@colyseus/schema';
 import type { DecksService, ValidatedGameDeck } from '../decks/decks.service';
 import type { StatsService } from '../stats/stats.service';
 import {
@@ -349,6 +349,22 @@ export class DuelRoom extends Room<DuelState> {
     for (const otherClient of this.clients) {
       otherClient.view?.add(card);
     }
+  }
+
+  /**
+   * Inserts `card` at the front of `zone` (most-recent-on-top ordering,
+   * e.g. the trash). `ArraySchema#unshift()` never re-parents the inserted
+   * item's `ChangeTree` (unlike `push()`), leaving it "detached" and making
+   * `StateView#add()` throw -- so we `push()` (which does re-parent) then
+   * rotate it to the front via the supported `move()` swap API instead.
+   */
+  private unshiftIntoZone(zone: ArraySchema<DuelCard>, card: DuelCard) {
+    zone.push(card);
+    zone.move(() => {
+      for (let index = zone.length - 1; index > 0; index -= 1) {
+        [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
+      }
+    });
   }
 
   private syncZoneCounts(player: DuelPlayer) {
@@ -1041,7 +1057,7 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     defender.zones.hand.splice(found.index, 1);
-    defender.zones.trash.unshift(found.card);
+    this.unshiftIntoZone(defender.zones.trash, found.card);
     this.broadcastCardView(found.card);
     combat.counterPowerBonus += bonus;
 
@@ -1132,7 +1148,7 @@ export class DuelRoom extends Room<DuelState> {
     const attachedDon = card.attachedDon;
     card.attachedDon = 0;
     card.rested = false;
-    owner.zones.trash.unshift(card);
+    this.unshiftIntoZone(owner.zones.trash, card);
     this.returnDonToCost(owner, owner.sessionId, attachedDon);
     this.addLog(`${card.name} est mis KO et rejoint la Defausse.`);
   }
@@ -1203,7 +1219,7 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     if (message.activate) {
-      defender.zones.trash.unshift(card);
+      this.unshiftIntoZone(defender.zones.trash, card);
       this.broadcastCardView(card);
       this.addLog(
         `${defender.displayName} active le Declenchement de ${card.name} et l'ecarte (effet a appliquer manuellement).`,
@@ -1313,7 +1329,7 @@ export class DuelRoom extends Room<DuelState> {
         if (discarded) {
           const attachedDon = discarded.attachedDon;
           discarded.attachedDon = 0;
-          player.zones.trash.unshift(discarded);
+          this.unshiftIntoZone(player.zones.trash, discarded);
           this.returnDonToCost(player, client.sessionId, attachedDon);
           this.addLog(
             `${player.displayName} defausse ${discarded.name} pour liberer la zone Personnage.`,
@@ -1333,7 +1349,7 @@ export class DuelRoom extends Room<DuelState> {
         const discardedStage = player.zones.stage;
         const attachedDon = discardedStage.attachedDon;
         discardedStage.attachedDon = 0;
-        player.zones.trash.unshift(discardedStage);
+        this.unshiftIntoZone(player.zones.trash, discardedStage);
         this.returnDonToCost(player, client.sessionId, attachedDon);
       }
 
@@ -1342,7 +1358,7 @@ export class DuelRoom extends Room<DuelState> {
       this.broadcastCardView(card);
       this.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
     } else {
-      player.zones.trash.unshift(card);
+      this.unshiftIntoZone(player.zones.trash, card);
       this.broadcastCardView(card);
       this.addLog(
         `${player.displayName} active ${card.name} (effet a appliquer manuellement) puis la defausse.`,
