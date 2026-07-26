@@ -922,8 +922,10 @@ function querySelfUntappedCostCardElement(): HTMLElement | null {
   return matches.at(-1) ?? null
 }
 
-function queryAttachedDonAnchorElement(instanceId: string): HTMLElement | null {
-  return document.querySelector(`[data-attached-don-anchor="${CSS.escape(instanceId)}"]`)
+function queryAttachedDonSlotElement(instanceId: string, slotIndex: number): HTMLElement | null {
+  return document.querySelector(
+    `[data-attached-don-owner="${CSS.escape(instanceId)}"][data-attached-don-slot="${String(slotIndex)}"]`
+  )
 }
 
 function queryTrashCardElement(side: 0 | 1, instanceId: string): HTMLElement | null {
@@ -1510,14 +1512,41 @@ function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelP
     return
   }
 
+  const previousAttachedCounts = new Map<string, number>()
+
+  if (previous?.leader) {
+    previousAttachedCounts.set(previous.leader.instanceId, previous.leader.attachedDon)
+  }
+
+  for (const character of previous?.characters ?? []) {
+    previousAttachedCounts.set(character.instanceId, character.attachedDon)
+  }
+
+  const currentAttachedCounts = new Map<string, number>()
+
+  if (current.leader) {
+    currentAttachedCounts.set(current.leader.instanceId, current.leader.attachedDon)
+  }
+
+  for (const character of current.characters) {
+    currentAttachedCounts.set(character.instanceId, character.attachedDon)
+  }
+
+  const consumedTargetCounts = new Map<string, number>()
+
   nextTick(() => {
     for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, BOARD_TRAVEL_STAGGER_MS)) {
-      const destinationElement = queryAttachedDonAnchorElement(instanceId)
+      const previousAttachedCount = previousAttachedCounts.get(instanceId) ?? 0
+      const consumedCount = consumedTargetCounts.get(instanceId) ?? 0
+      const destinationSlotIndex = previousAttachedCount + consumedCount
+      const destinationElement = queryAttachedDonSlotElement(instanceId, destinationSlotIndex)
       const pendingSource = pendingAttachedDonTravelSources.shift()
       const fallbackSource = querySelfUntappedCostCardElement()
       const sourceRect = pendingSource?.sourceRect ?? fallbackSource?.getBoundingClientRect()
 
-      if (!destinationElement || !sourceRect) {
+      consumedTargetCounts.set(instanceId, consumedCount + 1)
+
+      if (!destinationElement || !sourceRect || !currentAttachedCounts.has(instanceId)) {
         continue
       }
 

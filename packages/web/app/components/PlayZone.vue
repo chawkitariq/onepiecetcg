@@ -775,6 +775,8 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
                   v-for="index in attachedDonIndices(character.attachedDon)"
                   :key="`${character.instanceId}:attached-don:${index}`"
                   class="absolute inset-y-0 aspect-5/7"
+                  :data-attached-don-owner="character.instanceId"
+                  :data-attached-don-slot="index"
                   :style="attachedDonStackStyle(index)"
                 >
                   <DuelCard
@@ -872,6 +874,8 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               v-for="index in attachedDonIndices(player.leader.attachedDon)"
               :key="`${player.leader.instanceId}:attached-don:${index}`"
               class="absolute inset-y-0 aspect-5/7"
+              :data-attached-don-owner="player.leader.instanceId"
+              :data-attached-don-slot="index"
               :style="attachedDonStackStyle(index)"
             >
               <DuelCard
