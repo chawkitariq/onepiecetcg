@@ -512,7 +512,7 @@ describe('PlayZone transitions', () => {
     expect(wrapper.emitted('donCardSelectionStart')).toEqual([['don-ready-1']])
   })
 
-  it('extends DON!! selection on shift-hover', async () => {
+  it('extends DON!! selection while shift and the left button stay held', async () => {
     const wrapper = mount(PlayZone, {
       props: {
         player: createPlayer({
@@ -529,18 +529,20 @@ describe('PlayZone transitions', () => {
     })
 
     await wrapper.findAll('[data-cost-state="untapped"]')[1]!.trigger('mouseenter', {
-      shiftKey: true
+      shiftKey: true,
+      buttons: 1
     })
 
     expect(wrapper.emitted('donCardSelectionHover')).toEqual([['don-ready-2']])
   })
 
-  it('does not start DON!! selection on ctrl-click anymore', async () => {
+  it('does not extend DON!! selection when shift is held without the left button', async () => {
     const wrapper = mount(PlayZone, {
       props: {
         player: createPlayer({
           cost: [
-            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null })
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-2', { type: 'DON!!', cost: null, power: null, counter: null })
           ]
         }),
         side: 0
@@ -550,12 +552,36 @@ describe('PlayZone transitions', () => {
       }
     })
 
-    await wrapper.get('[data-cost-state="untapped"]').trigger('click', {
-      ctrlKey: true
+    await wrapper.findAll('[data-cost-state="untapped"]')[1]!.trigger('mouseenter', {
+      shiftKey: true,
+      buttons: 0
     })
 
-    expect(wrapper.emitted('donCardSelectionStart')).toBeUndefined()
     expect(wrapper.emitted('donCardSelectionHover')).toBeUndefined()
+  })
+
+  it('does not start an attack drag when a DON!! stack is already selected on an attackable character', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        attackableCharacterIds: ['character-a'],
+        selectedDonCardIds: ['don-ready-1', 'don-ready-2']
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    await characterButton.trigger('pointerdown', { button: 0 })
+    await characterButton.trigger('click')
+
+    expect(wrapper.emitted('characterAttackStart')).toBeUndefined()
+    expect(wrapper.emitted('characterClick')).toEqual([[0, 'character-a']])
   })
 
   it('marks selected untapped DON!! cards and emits a drag drop attach on the leader', async () => {

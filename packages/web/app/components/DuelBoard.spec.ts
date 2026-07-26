@@ -687,14 +687,13 @@ describe('DuelBoard drag and drop', () => {
     expect(playCard).toHaveBeenCalledWith('hand-stage')
   })
 
-  it('attaches DON!! directly when the self character is clicked', async () => {
+  it('does not attach DON!! on target click when no stack is selected', async () => {
     const wrapper = mountBoard()
 
     await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('click')
     await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('click')
 
-    expect(attachDon).toHaveBeenNthCalledWith(1, 'character', 'character-a', 1)
-    expect(attachDon).toHaveBeenNthCalledWith(2, 'character', 'character-a', 1)
+    expect(attachDon).not.toHaveBeenCalled()
   })
 
   it('uses the selected DON!! batch count when the self leader is clicked', async () => {
@@ -870,14 +869,13 @@ describe('DuelBoard drag and drop', () => {
     expect(declareAttack).not.toHaveBeenCalled()
   })
 
-  it('attaches DON!! directly when the self leader is clicked', async () => {
+  it('does not attach DON!! on leader click when no stack is selected', async () => {
     const wrapper = mountBoard()
 
     await wrapper.get('[data-play-zone="0"] [data-instance-id="self-leader"]').trigger('click')
     await wrapper.get('[data-play-zone="0"] [data-instance-id="self-leader"]').trigger('click')
 
-    expect(attachDon).toHaveBeenNthCalledWith(1, 'leader', undefined, 1)
-    expect(attachDon).toHaveBeenNthCalledWith(2, 'leader', undefined, 1)
+    expect(attachDon).not.toHaveBeenCalled()
   })
 
   it('renders journal entries in chronological order', () => {

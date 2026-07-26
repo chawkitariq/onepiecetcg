@@ -1792,7 +1792,7 @@ function onSelfHandCardClick(instanceId: string, options: { ctrlKey: boolean }) 
 }
 
 function onSelfLeaderClick(_side: 0 | 1) {
-  if (canAttachDon.value) {
+  if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
     attachDonToTarget('leader')
   }
 }
@@ -1815,7 +1815,7 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     return
   }
 
-  if (canAttachDon.value) {
+  if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
     attachDonToTarget('character', instanceId)
   }
 }

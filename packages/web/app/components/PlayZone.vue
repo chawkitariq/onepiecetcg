@@ -246,8 +246,12 @@ function isCharacterAttackable(instanceId: string) {
   return props.attackableCharacterIds?.includes(instanceId) ?? false
 }
 
+function shouldPrioritizeSelectedDonAttach() {
+  return selectedDonCount.value > 0
+}
+
 function onCharacterPointerDown(instanceId: string, event: PointerEvent) {
-  if (event.button !== 0 || !isCharacterAttackable(instanceId)) {
+  if (event.button !== 0 || shouldPrioritizeSelectedDonAttach() || !isCharacterAttackable(instanceId)) {
     return
   }
 
@@ -263,7 +267,7 @@ function onCharacterClick(instanceId: string) {
 }
 
 function onLeaderPointerDown(event: PointerEvent) {
-  if (event.button !== 0 || !props.attackableLeader) {
+  if (event.button !== 0 || shouldPrioritizeSelectedDonAttach() || !props.attackableLeader) {
     return
   }
 
@@ -507,11 +511,15 @@ function onStageZoneDrop(event: DragEvent) {
 }
 
 function onDonCardSelectionStart(instanceId: string, event: MouseEvent) {
-  if (!event.shiftKey) {
+  if (isAdversary.value || isCostCardDeferred(instanceId)) {
     return
   }
 
-  if (isAdversary.value || isCostCardDeferred(instanceId)) {
+  if (event.button !== 0) {
+    return
+  }
+
+  if (!event.shiftKey) {
     return
   }
 
@@ -520,7 +528,7 @@ function onDonCardSelectionStart(instanceId: string, event: MouseEvent) {
 }
 
 function onDonCardSelectionHover(instanceId: string, event: MouseEvent) {
-  if (!event.shiftKey) {
+  if (!event.shiftKey || (event.buttons & 1) !== 1) {
     return
   }
 
