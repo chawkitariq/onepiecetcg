@@ -7,8 +7,21 @@ import DuelBoard from './DuelBoard.vue'
 
 vi.mock('motion-v', async () => {
   const { defineComponent, h } = await import('vue')
+  const motionComponent = defineComponent({
+    name: 'MockMotion',
+    inheritAttrs: false,
+    setup(_, { attrs, slots }) {
+      return () => h('div', attrs, slots.default?.())
+    }
+  })
 
   return {
+    AnimatePresence: defineComponent({
+      name: 'MockAnimatePresence',
+      setup(_, { slots }) {
+        return () => h('div', slots.default?.())
+      }
+    }),
     LayoutGroup: defineComponent({
       name: 'MockLayoutGroup',
       props: {
@@ -16,6 +29,11 @@ vi.mock('motion-v', async () => {
       },
       setup(props, { slots }) {
         return () => h('div', { 'data-layout-group': props.id }, slots.default?.())
+      }
+    }),
+    motion: new Proxy({}, {
+      get() {
+        return motionComponent
       }
     })
   }
@@ -39,6 +57,18 @@ const reducedMotion = ref<'reduce' | 'no-preference'>('no-preference')
 const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
 const logs = ref<Array<{ id: string, message: string, createdAt: string }>>([])
+const errorMessage = ref<string | null>(null)
+const combat = ref<{
+  attackerSessionId: string
+  attackerInstanceId: string
+  defenderSessionId: string
+  targetType: 'leader' | 'character'
+  targetInstanceId?: string
+  blockerInstanceId?: string
+  step: 'declared' | 'blocked' | 'countering' | 'resolving' | 'resolved'
+  counterPowerBonus: number
+  awaitingTriggerDecision: boolean
+} | null>(null)
 
 function createPublicCard(instanceId: string, overrides: Partial<PublicCard> = {}): PublicCard {
   return {
@@ -123,12 +153,12 @@ mockNuxtImport('useDuelRoom', () => () => ({
   selfUntappedDonCount: computed(() => self.value?.cost.filter(card => !card.rested).length ?? 0),
   isSelfCharacterZoneFull: computed(() => (self.value?.characters.length ?? 0) >= 5),
   logs,
-  errorMessage: ref<string | null>(null),
+  errorMessage,
   endPhase,
   playCard,
   attachDon,
   clearError,
-  combat: ref(null),
+  combat,
   isCombatInProgress: computed(() => isCombatInProgress.value),
   isSelfAttacker: computed(() => false),
   isSelfDefender: computed(() => false),
@@ -383,6 +413,8 @@ describe('DuelBoard drag and drop', () => {
       characters: [createPublicCard('opponent-character-a', { rested: true })]
     })
     logs.value = []
+    errorMessage.value = null
+    combat.value = null
     playCard.mockReset()
     endPhase.mockReset()
     attachDon.mockReset()
@@ -407,8 +439,9 @@ describe('DuelBoard drag and drop', () => {
     vi.useRealTimers()
   })
 
-  function mountBoard() {
+  function mountBoard(options: { attachToBody?: boolean } = {}) {
     return mount(DuelBoard, {
+      attachTo: options.attachToBody ? document.body : undefined,
       global: {
         stubs: {
           UHeader: defaultStub,
@@ -775,6 +808,100 @@ describe('DuelBoard drag and drop', () => {
 
     expect(html.indexOf('self commence la partie.')).toBeLessThan(html.indexOf('DON!! insuffisant pour jouer Zoro.'))
   })
+
+  it('shows a global animated feedback line for attack logs', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    logs.value = [
+      {
+        id: 'log-attack',
+        message: 'self attaque avec Luffy vers Nami.',
+        createdAt: '2026-07-26T10:00:00.000Z'
+      }
+    ]
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-test="global-feedback"]').text()).toContain('Luffy attaque Nami')
+  })
+
+  it('shows an animated error feedback line when an action error arrives', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    errorMessage.value = 'Pas assez de DON!!'
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-test="error-feedback"]').text()).toContain('Pas assez de DON!!')
+  })
+
+  it('shows a card feedback chip when DON!! attachment increases a card power', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a', { attachedDon: 1 })],
+      cost: [
+        createPublicCard('self-don-1', { type: 'DON!!', cost: null, power: null, counter: null, rested: true }),
+        createPublicCard('self-don-2', { type: 'DON!!', cost: null, power: null, counter: null }),
+        createPublicCard('self-don-3', { type: 'DON!!', cost: null, power: null, counter: null })
+      ]
+    })
+    await wrapper.vm.$nextTick()
+    logs.value = [
+      {
+        id: 'log-don-gain',
+        message: 'self donne 1 DON!! a character-a (+1000 de puissance).',
+        createdAt: '2026-07-26T10:00:00.000Z'
+      }
+    ]
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-test="card-feedback-+1000"]').text()).toContain('+1000')
+  })
+
+  it('shows a blocker feedback chip on the declared blocker card', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')]
+    })
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      blockerInstanceId: 'character-a',
+      step: 'countering',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+    logs.value = [
+      {
+        id: 'log-blocker',
+        message: 'self declare character-a comme Bloqueur.',
+        createdAt: '2026-07-26T10:01:00.000Z'
+      }
+    ]
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-test="card-feedback-Blocker"]').text()).toContain('Blocker')
+  })
+
+  it('shows a KO feedback chip when a character leaves the board', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: []
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-test="card-feedback-KO"]').text()).toContain('KO')
+  })
 })
 
 describe('DuelBoard leave to lobby', () => {
@@ -818,8 +945,9 @@ describe('DuelBoard leave to lobby', () => {
     }
   })
 
-  function mountBoard() {
+  function mountBoard(options: { attachToBody?: boolean } = {}) {
     return mount(DuelBoard, {
+      attachTo: options.attachToBody ? document.body : undefined,
       global: {
         stubs: {
           UHeader: headerStub,

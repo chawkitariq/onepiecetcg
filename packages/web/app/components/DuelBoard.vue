@@ -2,7 +2,7 @@
 import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
 import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
-import { LayoutGroup } from 'motion-v'
+import { AnimatePresence, LayoutGroup, motion } from 'motion-v'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
 import { getCardColorStyle } from '~/utils/cardColors'
@@ -35,6 +35,24 @@ type BoardTravelOverlay = {
   scaleY: number
   settled: boolean
   rotated?: boolean
+}
+
+type CardFeedbackTone = 'power' | 'warning' | 'danger'
+
+type CardFeedbackInstance = {
+  key: number
+  label: string
+  x: number
+  y: number
+  tone: CardFeedbackTone
+}
+
+type BannerFeedbackTone = 'action' | 'error'
+
+type BannerFeedbackInstance = {
+  key: number
+  message: string
+  tone: BannerFeedbackTone
 }
 
 const BOARD_TRAVEL_MS = 520
@@ -443,7 +461,11 @@ type FloatingNumberInstance = {
 }
 
 const floatingNumbers = ref<FloatingNumberInstance[]>([])
+const cardFeedbacks = ref<CardFeedbackInstance[]>([])
+const bannerFeedbacks = ref<BannerFeedbackInstance[]>([])
 let floatingNumberKey = 0
+let cardFeedbackKey = 0
+let bannerFeedbackKey = 0
 
 function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeLoss: number) {
   if (!leaderInstanceId || lifeLoss <= 0) {
@@ -469,6 +491,232 @@ function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeL
 
 function removeFloatingNumber(key: number) {
   floatingNumbers.value = floatingNumbers.value.filter(entry => entry.key !== key)
+}
+
+function spawnCardFeedbackAtPosition(
+  x: number,
+  y: number,
+  label: string,
+  tone: CardFeedbackTone
+) {
+  const key = cardFeedbackKey++
+
+  cardFeedbacks.value = [...cardFeedbacks.value, {
+    key,
+    label,
+    x,
+    y,
+    tone
+  }]
+}
+
+function spawnCardFeedback(instanceId: string | undefined, label: string, tone: CardFeedbackTone) {
+  const element = instanceId ? queryCardElement(instanceId) : null
+
+  if (element) {
+    const rect = element.getBoundingClientRect()
+
+    spawnCardFeedbackAtPosition(
+      rect.left + rect.width / 2,
+      rect.top + Math.min(rect.height * 0.3, 44),
+      label,
+      tone
+    )
+    return
+  }
+
+  const containerRect = boardContainer.value?.getBoundingClientRect()
+
+  if (!containerRect) {
+    return
+  }
+
+  spawnCardFeedbackAtPosition(
+    containerRect.left + containerRect.width / 2,
+    containerRect.top + Math.min(containerRect.height * 0.32, 180),
+    label,
+    tone
+  )
+}
+
+function removeCardFeedback(key: number) {
+  cardFeedbacks.value = cardFeedbacks.value.filter(entry => entry.key !== key)
+}
+
+function spawnBannerFeedback(message: string, tone: BannerFeedbackTone) {
+  const key = bannerFeedbackKey++
+
+  bannerFeedbacks.value = [...bannerFeedbacks.value, {
+    key,
+    message,
+    tone
+  }]
+}
+
+function removeBannerFeedback(key: number) {
+  bannerFeedbacks.value = bannerFeedbacks.value.filter(entry => entry.key !== key)
+}
+
+function cardFeedbackToneClass(tone: CardFeedbackTone) {
+  return {
+    'power': 'border-primary/40 bg-primary/15 text-primary',
+    'warning': 'border-warning/40 bg-warning/15 text-warning',
+    'danger': 'border-error/40 bg-error/15 text-error'
+  }[tone]
+}
+
+function bannerFeedbackToneClass(tone: BannerFeedbackTone) {
+  return tone === 'error'
+    ? 'border-error/50 bg-error/16 text-error'
+    : 'border-primary/40 bg-default/90 text-highlighted'
+}
+
+function findPlayerByDisplayName(displayName: string) {
+  if (self.value?.displayName === displayName) {
+    return self.value
+  }
+
+  if (opponent.value?.displayName === displayName) {
+    return opponent.value
+  }
+
+  return null
+}
+
+function findVisibleCardInstanceIdByName(name: string) {
+  for (const player of [self.value, opponent.value]) {
+    if (!player) {
+      continue
+    }
+
+    if (player.leader?.name === name) {
+      return player.leader.instanceId
+    }
+
+    if (player.stage?.name === name) {
+      return player.stage.instanceId
+    }
+
+    const character = player.characters.find(card => card.name === name)
+
+    if (character) {
+      return character.instanceId
+    }
+  }
+
+  return null
+}
+
+function resolveGlobalActionMessage(message: string) {
+  const attackMatch = message.match(/^(?<attacker>.+?) attaque avec (?<source>.+?) vers (?<target>.+)\.$/u)
+
+  if (attackMatch?.groups) {
+    const source = attackMatch.groups.source.trim()
+    const rawTarget = attackMatch.groups.target.trim()
+    const leaderMatch = rawTarget.match(/^le Leader de (?<defender>.+)$/u)
+    const target = leaderMatch?.groups?.defender
+      ? findPlayerByDisplayName(leaderMatch.groups.defender)?.leader?.name ?? 'le Leader'
+      : rawTarget
+
+    return `${source} attaque ${target}`
+  }
+
+  return null
+}
+
+function cardMapFromPlayer(player: DuelPlayerView | null) {
+  const map = new Map<string, PublicCard>()
+
+  if (!player) {
+    return map
+  }
+
+  if (player.leader) {
+    map.set(player.leader.instanceId, player.leader)
+  }
+
+  if (player.stage) {
+    map.set(player.stage.instanceId, player.stage)
+  }
+
+  for (const card of player.characters) {
+    map.set(card.instanceId, card)
+  }
+
+  return map
+}
+
+function queueAttachedDonFeedback(current: DuelPlayerView | null, previous: DuelPlayerView | null) {
+  const currentCards = cardMapFromPlayer(current)
+  const previousCards = cardMapFromPlayer(previous)
+
+  for (const [instanceId, card] of currentCards) {
+    const previousAttachedDon = previousCards.get(instanceId)?.attachedDon ?? 0
+    const attachedDonGain = card.attachedDon - previousAttachedDon
+
+    if (attachedDonGain <= 0) {
+      continue
+    }
+
+    nextTick(() => spawnCardFeedback(instanceId, `+${attachedDonGain * 1000}`, 'power'))
+  }
+}
+
+function queueKoFeedback(current: DuelPlayerView | null, previous: DuelPlayerView | null) {
+  if (!previous) {
+    return
+  }
+
+  const currentCharacterIds = new Set(current?.characters.map(card => card.instanceId) ?? [])
+
+  for (const previousCharacter of previous.characters) {
+    if (currentCharacterIds.has(previousCharacter.instanceId)) {
+      continue
+    }
+
+    const element = queryCardElement(previousCharacter.instanceId)
+
+    if (!element) {
+      continue
+    }
+
+    const rect = element.getBoundingClientRect()
+    spawnCardFeedbackAtPosition(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+      'KO',
+      'danger'
+    )
+  }
+}
+
+function handleNewLogFeedback(message: string) {
+  const globalActionMessage = resolveGlobalActionMessage(message)
+
+  if (globalActionMessage) {
+    spawnBannerFeedback(globalActionMessage, 'action')
+  }
+
+  const blockerMatch = message.match(/^(?<player>.+?) declare (?<card>.+?) comme Bloqueur\.$/u)
+
+  if (blockerMatch?.groups?.card) {
+    nextTick(() => spawnCardFeedback(
+      findVisibleCardInstanceIdByName(blockerMatch.groups.card) ?? combat.value?.blockerInstanceId,
+      'Blocker',
+      'warning'
+    ))
+  }
+
+  const donGainMatch = message.match(/^(?<player>.+?) donne \d+ DON!! a (?<target>.+?) \(\+(?<power>\d+) de puissance\)\.$/u)
+
+  if (donGainMatch?.groups?.power && donGainMatch.groups.target) {
+    const player = findPlayerByDisplayName(donGainMatch.groups.player)
+    const targetInstanceId = donGainMatch.groups.target === 'son Leader'
+      ? player?.leader?.instanceId ?? null
+      : findVisibleCardInstanceIdByName(donGainMatch.groups.target)
+
+    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainMatch.groups.power}`, 'power'))
+  }
 }
 
 function syncPlayerTransitions(
@@ -509,6 +757,7 @@ function syncPlayerTransitions(
 }
 
 watch(self, (current, previous) => {
+  queueKoFeedback(current, previous)
   const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck'])
 
   if (current) {
@@ -517,11 +766,14 @@ watch(self, (current, previous) => {
     queueAttachedDonTravelOverlays(current, previous)
   }
 
+  queueAttachedDonFeedback(current, previous)
   syncPendingHandPlayQueue(current)
 })
 
 watch(opponent, (current, previous) => {
+  queueKoFeedback(current, previous)
   syncPlayerTransitions(current, previous, opponentTransitionGhosts)
+  queueAttachedDonFeedback(current, previous)
 })
 
 function formatLogTime(createdAt: string): string {
@@ -540,6 +792,12 @@ function formatLogTime(createdAt: string): string {
 watch(() => logs.value.length, async (newLength, previousLength) => {
   if (newLength <= previousLength) {
     return
+  }
+
+  const newEntries = logs.value.slice(previousLength, newLength)
+
+  for (const entry of newEntries) {
+    handleNewLogFeedback(entry.message)
   }
 
   if (isJournalOpen.value) {
@@ -571,6 +829,7 @@ watch(errorMessage, (message) => {
   }
 
   clearPendingHandPlayQueue()
+  spawnBannerFeedback(message, 'error')
 })
 
 function pulseLeader(target: Ref<boolean>) {
@@ -1889,6 +2148,43 @@ defineShortcuts({
                       :rotated="overlay.rotated"
                     />
                   </div>
+                </div>
+                <div class="pointer-events-none fixed inset-0 z-[135]">
+                  <AnimatePresence>
+                    <motion.div
+                      v-for="entry in cardFeedbacks"
+                      :key="entry.key"
+                      :data-test="`card-feedback-${entry.label}`"
+                      class="absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
+                      :class="cardFeedbackToneClass(entry.tone)"
+                      :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
+                      :initial="reducedMotion === 'reduce' ? { opacity: 1 } : { opacity: 0, y: 6, scale: 0.9 }"
+                      :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: -28, scale: [0.9, 1, 1] }"
+                      :exit="{ opacity: 0 }"
+                      :transition="{ duration: reducedMotion === 'reduce' ? 0.7 : 1, ease: 'easeOut' }"
+                      @animation-complete="removeCardFeedback(entry.key)"
+                    >
+                      {{ entry.label }}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+                <div class="pointer-events-none fixed inset-x-0 top-18 z-[136] flex flex-col items-center gap-2 px-4">
+                  <AnimatePresence>
+                    <motion.div
+                      v-for="entry in bannerFeedbacks"
+                      :key="entry.key"
+                      :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
+                      class="max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
+                      :class="bannerFeedbackToneClass(entry.tone)"
+                      :initial="reducedMotion === 'reduce' ? { opacity: 1 } : { opacity: 0, y: -10, scale: 0.96 }"
+                      :animate="reducedMotion === 'reduce' ? { opacity: [1, 1, 0] } : { opacity: [0, 1, 1, 0], y: [ -10, 0, 0, -6 ], scale: [0.96, 1, 1, 0.99] }"
+                      :exit="{ opacity: 0 }"
+                      :transition="{ duration: reducedMotion === 'reduce' ? 0.9 : 1.4, ease: 'easeOut' }"
+                      @animation-complete="removeBannerFeedback(entry.key)"
+                    >
+                      {{ entry.message }}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
                 <DuelAttackArrow
                   :from-instance-id="attackArrowFromInstanceId"
