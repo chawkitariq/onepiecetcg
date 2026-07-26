@@ -147,6 +147,8 @@ const playZoneStub = defineComponent({
     player: { type: Object, required: true },
     leaderActionPopoverItems: { type: Array, default: () => [] },
     characterActionPopoverItems: { type: Object, default: () => ({}) },
+    attackableLeader: { type: Boolean, default: false },
+    attackableCharacterIds: { type: Array, default: () => [] },
     selectedDonCardIds: { type: Array, default: () => [] },
     draggedDonCardCount: { type: Number, default: 0 },
     attackerId: { type: String, default: undefined },
@@ -164,7 +166,9 @@ const playZoneStub = defineComponent({
     'donCardDragStart',
     'donCardDragEnd',
     'donCardDropOnLeader',
-    'donCardDropOnCharacter'
+    'donCardDropOnCharacter',
+    'leaderAttackStart',
+    'characterAttackStart'
   ],
   setup(props, { emit }) {
     function getLeaderPopoverItems() {
@@ -196,7 +200,13 @@ const playZoneStub = defineComponent({
       h('div', { 'data-don-deck-side': props.side }),
       ...((props.player as DuelPlayerView).characters.map(character => h('div', {
         'data-instance-id': character.instanceId,
-        'data-board-card-deferred': String((props.deferredBoardCardIds as string[]).includes(character.instanceId))
+        'data-zone-side': props.side,
+        'data-board-card-deferred': String((props.deferredBoardCardIds as string[]).includes(character.instanceId)),
+        'onPointerdown': () => {
+          if ((props.attackableCharacterIds as string[]).includes(character.instanceId)) {
+            emit('characterAttackStart', props.side, character.instanceId)
+          }
+        }
       }, [
         character.attachedDon > 0
           ? h('div', { 'data-attached-don-anchor': character.instanceId }, Array.from({ length: character.attachedDon }, (_, index) =>
@@ -209,7 +219,13 @@ const playZoneStub = defineComponent({
       ]))),
       (props.player as DuelPlayerView).leader
         ? h('div', {
-            'data-instance-id': (props.player as DuelPlayerView).leader?.instanceId
+            'data-instance-id': (props.player as DuelPlayerView).leader?.instanceId,
+            'data-zone-side': props.side,
+            'onPointerdown': () => {
+              if (props.attackableLeader) {
+                emit('leaderAttackStart', props.side)
+              }
+            }
           }, [
             ((props.player as DuelPlayerView).leader?.attachedDon ?? 0) > 0
               ? h('div', { 'data-attached-don-anchor': (props.player as DuelPlayerView).leader?.instanceId }, Array.from({ length: (props.player as DuelPlayerView).leader?.attachedDon ?? 0 }, (_, index) =>
@@ -818,24 +834,42 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.get('[data-duel-hand]').attributes('data-dragged-hand-card-count')).toBe('0')
   })
 
-  it('starts target selection from the character popover attack action', async () => {
+  it('starts target selection from a pointer hold on a ready character', async () => {
     canDeclareAttack.value = true
 
-    const wrapper = mountBoard()
+    const wrapper = mountBoard({ attachToBody: true })
 
-    await wrapper.get('[data-test="character-popover-attack-0"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('pointerdown', { button: 0 })
 
-    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('character-a')
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBeUndefined()
     expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
     expect(declareAttack).not.toHaveBeenCalled()
+  })
+
+  it('declares the attack when the pointer is released over a valid enemy target', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const targetElement = wrapper.get('[data-play-zone="1"] [data-instance-id="opponent-character-a"]').element as HTMLElement
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(targetElement)
+
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('pointerdown', { button: 0 })
+
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 100, clientY: 100, button: 0 }))
+    await wrapper.vm.$nextTick()
+
+    expect(declareAttack).toHaveBeenCalledWith('character-a', 'character', 'opponent-character-a')
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
+
+    elementFromPoint.mockRestore()
   })
 
   it('cancels target selection when Escape is pressed', async () => {
     canDeclareAttack.value = true
 
-    const wrapper = mountBoard()
+    const wrapper = mountBoard({ attachToBody: true })
 
-    await wrapper.get('[data-test="character-popover-attack-0"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('pointerdown', { button: 0 })
     expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
@@ -844,19 +878,37 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
   })
 
-  it('cancels target selection on a click outside the board', async () => {
+  it('cancels target selection on an empty-board pointer release', async () => {
     canDeclareAttack.value = true
 
-    const wrapper = mountBoard()
+    const wrapper = mountBoard({ attachToBody: true })
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(document.body)
 
-    await wrapper.get('[data-test="character-popover-attack-0"]').trigger('click')
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('pointerdown', { button: 0 })
     expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
 
-    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
-    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 5, clientY: 5, button: 0 }))
     await wrapper.vm.$nextTick()
 
     expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
+    expect(declareAttack).not.toHaveBeenCalled()
+
+    elementFromPoint.mockRestore()
+  })
+
+  it('cancels target selection on right-click while dragging', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('pointerdown', { button: 0 })
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
+
+    document.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2, cancelable: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
+    expect(declareAttack).not.toHaveBeenCalled()
   })
 
   it('lets the leader popover trigger repeated DON attachment and attack targeting', async () => {
@@ -870,7 +922,7 @@ describe('DuelBoard drag and drop', () => {
 
     expect(attachDon).toHaveBeenNthCalledWith(1, 'leader', undefined, 1)
     expect(attachDon).toHaveBeenNthCalledWith(2, 'leader', undefined, 1)
-    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('self-leader')
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBeUndefined()
   })
 
   it('renders journal entries in chronological order', () => {

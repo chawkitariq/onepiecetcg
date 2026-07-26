@@ -149,6 +149,16 @@ function onBoardPointerMove(event: PointerEvent) {
   pointerPosition.value = { x: event.clientX, y: event.clientY }
 }
 
+function beginAttackDrag(instanceId: string) {
+  if (!canDeclareAttack.value) {
+    return
+  }
+
+  pendingAttackerInstanceId.value = instanceId
+  isSelectingAttacker.value = false
+  declaredAttackTargetInstanceId.value = null
+}
+
 const attackArrowFromInstanceId = computed(() => {
   if (pendingAttackerInstanceId.value) {
     return pendingAttackerInstanceId.value
@@ -1681,6 +1691,7 @@ function syncPendingHandPlayQueue(current: DuelPlayerView | null) {
 function cancelTargetSelection() {
   pendingAttackerInstanceId.value = null
   isSelectingAttacker.value = false
+  declaredAttackTargetInstanceId.value = null
 }
 
 function onSelfLeaderAttackerClick() {
@@ -1719,8 +1730,7 @@ function startAttackWithCharacter(instanceId: string) {
     return
   }
 
-  isSelectingAttacker.value = true
-  onSelfCharacterAttackerClick(instanceId)
+  beginAttackDrag(instanceId)
 }
 
 function startAttackWithLeader() {
@@ -1729,8 +1739,11 @@ function startAttackWithLeader() {
     return
   }
 
-  isSelectingAttacker.value = true
-  onSelfLeaderAttackerClick()
+  if (!self.value?.leader?.instanceId) {
+    return
+  }
+
+  beginAttackDrag(self.value.leader.instanceId)
 }
 
 function attachDonToTarget(target: 'leader' | 'character', targetInstanceId?: string, preferredDonInstanceId?: string) {
@@ -1901,6 +1914,69 @@ function onOpponentLeaderClick() {
 
 function onOpponentCharacterClick(_side: 0 | 1, instanceId: string) {
   onOpponentCharacterTargetClick(instanceId)
+}
+
+function onSelfLeaderAttackStart() {
+  if (!self.value?.leader || self.value.leader.rested || !canDeclareAttack.value) {
+    pulseLeader(invalidSelfLeaderPulse)
+    return
+  }
+
+  beginAttackDrag(self.value.leader.instanceId)
+}
+
+function onSelfCharacterAttackStart(_side: 0 | 1, instanceId: string) {
+  const character = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
+
+  if (!character || character.rested || character.playedThisTurn || !canDeclareAttack.value) {
+    pulseCharacter(invalidSelfCharacterIds, instanceId)
+    return
+  }
+
+  beginAttackDrag(instanceId)
+}
+
+function resolveAttackDropTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return null
+  }
+
+  const cardElement = target.closest<HTMLElement>('[data-instance-id][data-zone-side]')
+
+  if (!cardElement) {
+    return null
+  }
+
+  return {
+    instanceId: cardElement.dataset.instanceId ?? null,
+    side: Number(cardElement.dataset.zoneSide)
+  }
+}
+
+function finishAttackDrag(event: PointerEvent) {
+  if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
+    return
+  }
+
+  if (event.button === 2) {
+    cancelTargetSelection()
+    return
+  }
+
+  const pointerTarget = document.elementFromPoint(event.clientX, event.clientY) ?? event.target
+  const dropTarget = resolveAttackDropTarget(pointerTarget)
+
+  if (!dropTarget || dropTarget.side !== 1 || !dropTarget.instanceId) {
+    cancelTargetSelection()
+    return
+  }
+
+  if (dropTarget.instanceId === opponent.value?.leader?.instanceId) {
+    onOpponentLeaderTargetClick()
+    return
+  }
+
+  onOpponentCharacterTargetClick(dropTarget.instanceId)
 }
 
 function onSelfHandCardOrCounterClick(instanceId: string, options: { ctrlKey: boolean }) {
@@ -2208,6 +2284,19 @@ useEventListener(document, 'pointerdown', (event) => {
   if (hasSelectedDonCards) {
     clearSelectedDonCards()
   }
+})
+
+useEventListener(document, 'pointerup', (event) => {
+  finishAttackDrag(event)
+})
+
+useEventListener(document, 'contextmenu', (event) => {
+  if (!isChoosingTarget.value) {
+    return
+  }
+
+  event.preventDefault()
+  cancelTargetSelection()
 })
 
 defineShortcuts({
@@ -2577,9 +2666,11 @@ defineShortcuts({
                 :can-drop-don-on-leader="canAttachDon"
                 :can-drop-don-on-character="canAttachDon"
                 :transition-ghosts="selfTransitionGhosts"
-                :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
+                :attacker-id="combat && isSelfAttacker ? combat.attackerInstanceId : null"
                 :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
                 :leader-action-popover-items="selfLeaderActionPopoverItems"
+                :attackable-leader="Boolean(self.leader && canDeclareAttack && !isCombatInProgress && isMainPhase && isSelfTurn && !self.leader.rested)"
+                :attackable-character-ids="self.characters.filter(character => canDeclareAttack && isMainPhase && isSelfTurn && !isCombatInProgress && !character.rested && !character.playedThisTurn).map(character => character.instanceId)"
                 :selectable-leader="selectableSelfLeader"
                 :selectable-character-ids="selectableSelfCharacterIds"
                 :character-action-popover-items="selfCharacterActionPopoverItems"
@@ -2597,6 +2688,8 @@ defineShortcuts({
                 @don-card-drag-end="onSelfDonCardDragEnd"
                 @don-card-drop-on-leader="onSelfLeaderDonDrop"
                 @don-card-drop-on-character="onSelfCharacterDonDrop"
+                @leader-attack-start="onSelfLeaderAttackStart"
+                @character-attack-start="onSelfCharacterAttackStart"
                 @leader-click="onSelfLeaderClick"
                 @character-click="onSelfCharacterClick"
               />

@@ -44,6 +44,8 @@ const props = defineProps<{
   isSelectable?: boolean
   targetableLeader?: boolean
   targetableCharacterIds?: string[]
+  attackableLeader?: boolean
+  attackableCharacterIds?: string[]
   selectableLeader?: boolean
   selectableCharacterIds?: string[]
   leaderActionPopoverItems?: LeaderActionPopoverItem[]
@@ -102,6 +104,8 @@ function cardPower(card: { power: number | null, attachedDon: number }): number 
 const emit = defineEmits<{
   leaderClick: [side: 0 | 1]
   characterClick: [side: 0 | 1, instanceId: string]
+  leaderAttackStart: [side: 0 | 1]
+  characterAttackStart: [side: 0 | 1, instanceId: string]
   stageClick: [side: 0 | 1]
   handCardDropOnCharacters: [side: 0 | 1]
   handCardDropOnStage: [side: 0 | 1]
@@ -157,6 +161,8 @@ const donDraggedOverCharacterIds = ref<string[]>([])
 const openActionPopoverKey = ref<string | null>(null)
 const leaderActionReference = ref<HTMLElement | null>(null)
 const characterActionReferences = reactive<Record<string, HTMLElement | null>>({})
+const suppressedCharacterClicks = new Set<string>()
+let suppressLeaderClick = false
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -254,6 +260,47 @@ function attachedDonStackStyle(index: number) {
     left: `${index * ATTACHED_DON_PEEK_PX}px`,
     zIndex: index + 1
   }
+}
+
+function isCharacterAttackable(instanceId: string) {
+  return props.attackableCharacterIds?.includes(instanceId) ?? false
+}
+
+function onCharacterPointerDown(instanceId: string, event: PointerEvent) {
+  if (event.button !== 0 || !isCharacterAttackable(instanceId)) {
+    return
+  }
+
+  suppressedCharacterClicks.add(instanceId)
+  emit('characterAttackStart', side.value, instanceId)
+}
+
+function onCharacterClick(instanceId: string) {
+  if (suppressedCharacterClicks.delete(instanceId)) {
+    return
+  }
+
+  onCharacterActionTriggerClick(instanceId)
+  emit('characterClick', side.value, instanceId)
+}
+
+function onLeaderPointerDown(event: PointerEvent) {
+  if (event.button !== 0 || !props.attackableLeader) {
+    return
+  }
+
+  suppressLeaderClick = true
+  emit('leaderAttackStart', side.value)
+}
+
+function onLeaderClick() {
+  if (suppressLeaderClick) {
+    suppressLeaderClick = false
+    return
+  }
+
+  onLeaderActionTriggerClick()
+  emit('leaderClick', side.value)
 }
 
 function onCardHover(card: PublicCard | PrivateCard | null | undefined) {
@@ -773,6 +820,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               :ref="(value: Element | ComponentPublicInstance | null) => setCharacterActionReference(character.instanceId, value)"
               type="button"
               :data-instance-id="character.instanceId"
+              :data-zone-side="side"
               :data-layout-id="visibleLayoutId(character.instanceId, isBoardCardDeferred(character.instanceId))"
               data-don-attach-target="true"
               class="duel-card-shell duel-layout-card relative h-full shrink-0 overflow-visible rounded-lg"
@@ -784,9 +832,11 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
                 isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
                 isBoardCardDeferred(character.instanceId) ? 'pointer-events-none opacity-0' : '',
                 isTargetable && character.rested ? 'cursor-crosshair' : '',
+                isCharacterAttackable(character.instanceId) ? 'cursor-crosshair' : '',
                 isSelectable ? 'cursor-pointer' : ''
               ]"
-              @click="onCharacterActionTriggerClick(character.instanceId); emit('characterClick', side, character.instanceId)"
+              @pointerdown="onCharacterPointerDown(character.instanceId, $event)"
+              @click="onCharacterClick(character.instanceId)"
               @dragenter="onCharacterDonDragEnter(character.instanceId)"
               @dragleave="onCharacterDonDragLeave(character.instanceId)"
               @dragover="onCharacterDonDragOver(character.instanceId, $event)"
@@ -874,17 +924,20 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           :ref="setLeaderActionReference"
           type="button"
           :data-instance-id="player.leader?.instanceId"
+          :data-zone-side="side"
           :data-layout-id="visibleLayoutId(player.leader?.instanceId, false)"
           data-don-attach-target="true"
           class="duel-card-shell duel-layout-card relative h-full w-full overflow-visible rounded-lg"
           :class="[
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
             targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
+            attackableLeader ? 'cursor-crosshair' : '',
             selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
             isLeaderDonDropTargetActive ? 'bg-success/5 ring-4 ring-success/70' : '',
             invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
           ]"
-          @click="onLeaderActionTriggerClick(); emit('leaderClick', side)"
+          @pointerdown="onLeaderPointerDown"
+          @click="onLeaderClick"
           @dragenter="onLeaderDonDragEnter"
           @dragleave="onLeaderDonDragLeave"
           @dragover="onLeaderDonDragOver"
