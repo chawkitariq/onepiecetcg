@@ -1888,6 +1888,12 @@ function finishAttackDrag(event: PointerEvent) {
     return
   }
 
+  if (!targetableOpponentCharacterIds.value.includes(dropTarget.instanceId)) {
+    pulseCharacter(invalidOpponentCharacterIds, dropTarget.instanceId)
+    cancelTargetSelection()
+    return
+  }
+
   onOpponentCharacterTargetClick(dropTarget.instanceId)
 }
 

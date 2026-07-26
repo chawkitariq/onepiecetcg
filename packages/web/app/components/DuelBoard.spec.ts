@@ -854,6 +854,25 @@ describe('DuelBoard drag and drop', () => {
     elementFromPoint.mockRestore()
   })
 
+  it('cancels target selection when the pointer is released over an invalid enemy card', async () => {
+    canDeclareAttack.value = true
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const invalidTargetElement = wrapper.get('[data-play-zone="0"] [data-instance-id="self-leader"]').element as HTMLElement
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(invalidTargetElement)
+
+    await wrapper.get('[data-play-zone="0"] [data-instance-id="character-a"]').trigger('pointerdown', { button: 0 })
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('true')
+
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 5, clientY: 5, button: 0 }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-play-zone="1"]').attributes('data-is-targetable')).toBe('false')
+    expect(declareAttack).not.toHaveBeenCalled()
+
+    elementFromPoint.mockRestore()
+  })
+
   it('cancels target selection on right-click while dragging', async () => {
     canDeclareAttack.value = true
 
