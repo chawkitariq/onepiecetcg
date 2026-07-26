@@ -17,6 +17,15 @@ const tooltipStub = defineComponent({
     return () => h('div', { 'data-tooltip-stub': 'true' }, slots.default?.())
   }
 })
+const chipStub = defineComponent({
+  name: 'UChip',
+  props: {
+    text: { type: String, default: '' }
+  },
+  setup(props) {
+    return () => h('div', { 'data-chip-text': props.text })
+  }
+})
 
 mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
 
@@ -93,7 +102,7 @@ describe('DuelHand', () => {
         revealedHandCardIds: ['revealed-hand']
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -116,7 +125,7 @@ describe('DuelHand', () => {
         revealedHandCardIds: ['revealed-hand']
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -133,7 +142,7 @@ describe('DuelHand', () => {
         draggableHandCardIds: ['hand-a']
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -158,7 +167,7 @@ describe('DuelHand', () => {
         hand: [createPrivateCard('hand-a')]
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -181,7 +190,7 @@ describe('DuelHand', () => {
         hand: [createPrivateCard('hand-a')]
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -190,7 +199,39 @@ describe('DuelHand', () => {
 
     await handCard?.trigger('click')
 
-    expect(wrapper.emitted('cardClick')).toEqual([['hand-a']])
+    expect(wrapper.emitted('cardClick')).toEqual([['hand-a', { ctrlKey: false }]])
+  })
+
+  it('emits ctrl-click intent so the board can toggle hand stack selection', async () => {
+    const wrapper = mount(DuelHand, {
+      props: {
+        hand: [createPrivateCard('hand-a')]
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
+      }
+    })
+
+    const handCard = wrapper.findAll('button')
+      .find(node => node.attributes('data-layout-id') === 'hand-a')
+
+    await handCard?.trigger('click', { ctrlKey: true })
+
+    expect(wrapper.emitted('cardClick')).toEqual([['hand-a', { ctrlKey: true }]])
+  })
+
+  it('renders the selected hand stack count on the last selected card', () => {
+    const wrapper = mount(DuelHand, {
+      props: {
+        hand: [createPrivateCard('hand-a'), createPrivateCard('hand-b'), createPrivateCard('hand-c')],
+        selectedHandCardIds: ['hand-a', 'hand-c']
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
+      }
+    })
+
+    expect(wrapper.findAll('[data-chip-text="2"]')).toHaveLength(1)
   })
 
   it('left-aligns the hand stack when requested by the board layout', () => {
@@ -200,7 +241,7 @@ describe('DuelHand', () => {
         align: 'start'
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -219,7 +260,7 @@ describe('DuelHand', () => {
         deferredHandCardIds: ['deferred-hand']
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 
@@ -235,7 +276,7 @@ describe('DuelHand', () => {
         hand: [createPrivateCard('hand-a')]
       },
       global: {
-        stubs: { UTooltip: tooltipStub }
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
       }
     })
 

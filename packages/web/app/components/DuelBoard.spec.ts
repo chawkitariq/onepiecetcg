@@ -285,34 +285,52 @@ const duelHandStub = defineComponent({
   name: 'DuelHand',
   props: {
     hand: { type: Array, default: () => [] },
-    draggableHandCardIds: { type: Array, default: () => [] }
+    draggableHandCardIds: { type: Array, default: () => [] },
+    selectedHandCardIds: { type: Array, default: () => [] },
+    draggedHandCardCount: { type: Number, default: 0 }
   },
-  emits: ['cardDragStart', 'cardClick'],
+  emits: ['cardDragStart', 'cardDragEnd', 'cardClick'],
   setup(props, { emit }) {
+    function clickTestId(instanceId: string) {
+      return `hand-click-${instanceId}`
+    }
+
+    function ctrlClickTestId(instanceId: string) {
+      return `hand-ctrl-click-${instanceId}`
+    }
+
+    function dragStartTestId(instanceId: string) {
+      return `drag-start-${instanceId}`
+    }
+
     return () => h('div', {
       'data-duel-hand': 'true',
       'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>).map(card => card.instanceId)),
-      'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds)
+      'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
+      'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
+      'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
       ...((props.hand as Array<PrivateCard>).map(card => h('div', {
         'data-instance-id': card.instanceId
       }))),
       h('button', {
-        'data-test': 'drag-start-0',
-        'onClick': () => emit('cardDragStart', 'hand-character')
+        'data-test': 'drag-end-0',
+        'onClick': () => emit('cardDragEnd', 'hand-character')
       }),
-      h('button', {
-        'data-test': 'drag-start-stage',
-        'onClick': () => emit('cardDragStart', 'hand-stage')
-      }),
-      h('button', {
-        'data-test': 'hand-click-0',
-        'onClick': () => emit('cardClick', 'hand-character')
-      }),
-      h('button', {
-        'data-test': 'hand-click-stage',
-        'onClick': () => emit('cardClick', 'hand-stage')
-      })
+      ...((props.hand as Array<PrivateCard>).flatMap(card => [
+        h('button', {
+          'data-test': dragStartTestId(card.instanceId),
+          'onClick': () => emit('cardDragStart', card.instanceId)
+        }),
+        h('button', {
+          'data-test': clickTestId(card.instanceId),
+          'onClick': () => emit('cardClick', card.instanceId, { ctrlKey: false })
+        }),
+        h('button', {
+          'data-test': ctrlClickTestId(card.instanceId),
+          'onClick': () => emit('cardClick', card.instanceId, { ctrlKey: true })
+        })
+      ]))
     ])
   }
 })
@@ -471,7 +489,7 @@ describe('DuelBoard drag and drop', () => {
   it('plays the dragged character when it is dropped onto the self character zone', async () => {
     const wrapper = mountBoard()
 
-    await wrapper.get('[data-test="drag-start-0"]').trigger('click')
+    await wrapper.get('[data-test="drag-start-hand-character"]').trigger('click')
     await wrapper.get('[data-test="drop-0"]').trigger('click')
 
     expect(playCard).toHaveBeenCalledWith('hand-character')
@@ -482,7 +500,7 @@ describe('DuelBoard drag and drop', () => {
 
     const wrapper = mountBoard()
 
-    await wrapper.get('[data-test="drag-start-0"]').trigger('click')
+    await wrapper.get('[data-test="drag-start-hand-character"]').trigger('click')
     await wrapper.get('[data-test="drop-0"]').trigger('click')
 
     expect(playCard).not.toHaveBeenCalled()
@@ -491,15 +509,78 @@ describe('DuelBoard drag and drop', () => {
   it('plays a stage card from hand on click so it can travel into the stage block', async () => {
     const wrapper = mountBoard()
 
-    await wrapper.get('[data-test="hand-click-stage"]').trigger('click')
+    await wrapper.get('[data-test="hand-click-hand-stage"]').trigger('click')
 
     expect(playCard).toHaveBeenCalledWith('hand-stage')
+  })
+
+  it('toggles hand stack selection on ctrl-click without playing the card', async () => {
+    const wrapper = mountBoard()
+    const hand = wrapper.get('[data-duel-hand]')
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    expect(hand.attributes('data-selected-hand-card-ids')).toBe(JSON.stringify(['hand-character']))
+    expect(playCard).not.toHaveBeenCalled()
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-stage"]').trigger('click')
+    expect(hand.attributes('data-selected-hand-card-ids')).toBe(JSON.stringify(['hand-character', 'hand-stage']))
+    expect(playCard).not.toHaveBeenCalled()
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    expect(hand.attributes('data-selected-hand-card-ids')).toBe(JSON.stringify(['hand-stage']))
+  })
+
+  it('exposes the selected hand stack count while dragging a selected hand card', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    await wrapper.get('[data-test="hand-ctrl-click-hand-stage"]').trigger('click')
+    await wrapper.get('[data-test="drag-start-hand-stage"]').trigger('click')
+
+    expect(wrapper.get('[data-duel-hand]').attributes('data-dragged-hand-card-count')).toBe('2')
+  })
+
+  it('plays the selected hand stack one card at a time when dropped on the character zone', async () => {
+    playCard.mockImplementation((instanceId: string) => {
+      if (!self.value) {
+        return
+      }
+
+      const nextHand = self.value.hand.filter(card => card.instanceId !== instanceId)
+
+      self.value = {
+        ...self.value,
+        hand: nextHand,
+        handCount: nextHand.length
+      }
+    })
+
+    const wrapper = mountBoard()
+
+    self.value = {
+      ...self.value!,
+      hand: [
+        createPrivateCard('hand-character-b', { type: 'Character', cost: 1 }),
+        ...self.value!.hand
+      ],
+      handCount: 4
+    }
+    await wrapper.vm.$nextTick()
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character-b"]').trigger('click')
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    await wrapper.get('[data-test="drag-start-hand-character"]').trigger('click')
+    await wrapper.get('[data-test="drop-0"]').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(playCard.mock.calls.map(call => call[0])).toEqual(['hand-character-b', 'hand-character'])
   })
 
   it('plays the dragged stage card when it is dropped onto the self stage zone', async () => {
     const wrapper = mountBoard()
 
-    await wrapper.get('[data-test="drag-start-stage"]').trigger('click')
+    await wrapper.get('[data-test="drag-start-hand-stage"]').trigger('click')
     await wrapper.get('[data-test="drop-stage-0"]').trigger('click')
 
     expect(playCard).toHaveBeenCalledWith('hand-stage')
@@ -602,6 +683,30 @@ describe('DuelBoard drag and drop', () => {
 
     expect(wrapper.get('[data-play-zone="0"]').attributes('data-dragged-don-card-count')).toBe('0')
     expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
+  })
+
+  it('clears selected hand cards on Escape, outside clicks, and drag release', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    await wrapper.get('[data-test="hand-ctrl-click-hand-stage"]').trigger('click')
+    expect(wrapper.get('[data-duel-hand]').attributes('data-selected-hand-card-ids')).toBe(JSON.stringify(['hand-character', 'hand-stage']))
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-duel-hand]').attributes('data-selected-hand-card-ids')).toBe(JSON.stringify([]))
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-duel-hand]').attributes('data-selected-hand-card-ids')).toBe(JSON.stringify([]))
+
+    await wrapper.get('[data-test="hand-ctrl-click-hand-character"]').trigger('click')
+    await wrapper.get('[data-test="drag-start-hand-character"]').trigger('click')
+    await wrapper.get('[data-test="drag-end-0"]').trigger('click')
+    expect(wrapper.get('[data-duel-hand]').attributes('data-selected-hand-card-ids')).toBe(JSON.stringify([]))
+    expect(wrapper.get('[data-duel-hand]').attributes('data-dragged-hand-card-count')).toBe('0')
   })
 
   it('starts target selection from the character popover attack action', async () => {

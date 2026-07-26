@@ -118,6 +118,9 @@ const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
 const draggedHandCardInstanceId = ref<string | null>(null)
+const selectedHandCardIds = ref<string[]>([])
+const pendingQueuedHandCardIds = ref<string[]>([])
+const queuedHandCardInstanceId = ref<string | null>(null)
 const selectedDonCardIds = ref<string[]>([])
 const selectedDonAnchorInstanceId = ref<string | null>(null)
 const draggedDonCardInstanceId = ref<string | null>(null)
@@ -197,12 +200,33 @@ const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
 const canAttachDon = computed(() =>
   isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0 && !isCombatInProgress.value
 )
+const selectableHandCardIds = computed(() => {
+  if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
+    return []
+  }
+
+  return self.value.hand
+    .filter(card =>
+      ['Character', 'Stage'].includes(card.type)
+      && (card.cost ?? Number.POSITIVE_INFINITY) <= selfUntappedDonCount.value
+    )
+    .map(card => card.instanceId)
+})
 const selectableDonCardIds = computed(() =>
   self.value?.cost
     .filter(card => !card.rested)
     .map(card => card.instanceId) ?? []
 )
 const selectedAttachDonCount = computed(() => selectedDonCardIds.value.length > 0 ? selectedDonCardIds.value.length : 1)
+const draggedHandCardCount = computed(() => {
+  if (!draggedHandCardInstanceId.value) {
+    return 0
+  }
+
+  return selectedHandCardIds.value.includes(draggedHandCardInstanceId.value)
+    ? Math.max(selectedHandCardIds.value.length, 1)
+    : 1
+})
 const draggedDonCardCount = computed(() => {
   if (!draggedDonCardInstanceId.value) {
     return 0
@@ -492,6 +516,8 @@ watch(self, (current, previous) => {
     queueDonDeckToCostTravelOverlays(diff)
     queueAttachedDonTravelOverlays(current, previous)
   }
+
+  syncPendingHandPlayQueue(current)
 })
 
 watch(opponent, (current, previous) => {
@@ -537,6 +563,14 @@ watch(isJournalOpen, (open) => {
   if (open) {
     seenLogCount.value = logs.value.length
   }
+})
+
+watch(errorMessage, (message) => {
+  if (!message) {
+    return
+  }
+
+  clearPendingHandPlayQueue()
 })
 
 function pulseLeader(target: Ref<boolean>) {
@@ -799,9 +833,30 @@ function clearSelectedDonCards() {
   selectedDonAnchorInstanceId.value = null
 }
 
+function clearSelectedHandCards() {
+  selectedHandCardIds.value = []
+}
+
+function clearPendingHandPlayQueue() {
+  pendingQueuedHandCardIds.value = []
+  queuedHandCardInstanceId.value = null
+}
+
 function clearDraggedDonCard() {
   draggedDonCardInstanceId.value = null
 }
+
+function syncSelectedHandCardsWithHand() {
+  const selectableIds = new Set(selectableHandCardIds.value)
+
+  selectedHandCardIds.value = selectedHandCardIds.value.filter(id => selectableIds.has(id))
+
+  if (draggedHandCardInstanceId.value && !selectableIds.has(draggedHandCardInstanceId.value)) {
+    resetDraggedHandCard()
+  }
+}
+
+watch(selectableHandCardIds, syncSelectedHandCardsWithHand, { immediate: true })
 
 function syncSelectedDonCardsWithCost() {
   const selectableIds = new Set(selectableDonCardIds.value)
@@ -906,16 +961,7 @@ function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelP
 }
 
 const draggableHandCardIds = computed(() => {
-  if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
-    return []
-  }
-
-  return self.value.hand
-    .filter(card =>
-      ['Character', 'Stage'].includes(card.type)
-      && (card.cost ?? Number.POSITIVE_INFINITY) <= selfUntappedDonCount.value
-    )
-    .map(card => card.instanceId)
+  return selectableHandCardIds.value
 })
 
 const draggedHandCard = computed(() =>
@@ -929,7 +975,7 @@ function resetDraggedHandCard() {
 function requestPlayFromHand(instanceId: string) {
   if (!isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
     pulseHandCard(instanceId)
-    return
+    return false
   }
 
   const card = self.value?.hand.find(candidate => candidate.instanceId === instanceId)
@@ -940,19 +986,90 @@ function requestPlayFromHand(instanceId: string) {
     || (card.cost ?? Number.POSITIVE_INFINITY) > selfUntappedDonCount.value
   ) {
     pulseHandCard(instanceId)
-    return
+    return false
   }
 
   if (card.type === 'Character' && isSelfCharacterZoneFull.value) {
+    clearSelectedHandCards()
     pendingCharacterInstanceId.value = instanceId
-    return
+    return true
   }
 
   if (card.type === 'Character' || card.type === 'Stage') {
     cacheBoardTravelSource(card)
   }
 
+  clearSelectedHandCards()
   playCard(instanceId)
+  return true
+}
+
+function resolveSelectedHandPlayIds(targetType: 'Character' | 'Stage', preferredInstanceId: string) {
+  const orderedIds = self.value?.hand
+    .filter(card => card.type === targetType)
+    .map(card => card.instanceId) ?? []
+
+  if (selectedHandCardIds.value.length > 0 && selectedHandCardIds.value.includes(preferredInstanceId)) {
+    return orderedIds.filter(id => selectedHandCardIds.value.includes(id))
+  }
+
+  return orderedIds.includes(preferredInstanceId) ? [preferredInstanceId] : []
+}
+
+function playQueuedHandCards(instanceIds: string[]) {
+  const remainingIds = [...instanceIds]
+
+  while (remainingIds.length > 0) {
+    const nextInstanceId = remainingIds.shift()
+
+    if (!nextInstanceId) {
+      continue
+    }
+
+    const isQueued = remainingIds.length > 0
+    queuedHandCardInstanceId.value = nextInstanceId
+    pendingQueuedHandCardIds.value = remainingIds
+
+    const accepted = requestPlayFromHand(nextInstanceId)
+
+    if (!accepted) {
+      clearPendingHandPlayQueue()
+      return
+    }
+
+    if (!isQueued && !pendingCharacterInstanceId.value) {
+      clearPendingHandPlayQueue()
+    }
+
+    return
+  }
+
+  clearPendingHandPlayQueue()
+}
+
+function syncPendingHandPlayQueue(current: DuelPlayerView | null) {
+  if (!queuedHandCardInstanceId.value) {
+    return
+  }
+
+  if (pendingCharacterInstanceId.value === queuedHandCardInstanceId.value) {
+    return
+  }
+
+  const queuedCardStillInHand = current?.hand.some(card => card.instanceId === queuedHandCardInstanceId.value) ?? false
+
+  if (queuedCardStillInHand) {
+    return
+  }
+
+  queuedHandCardInstanceId.value = null
+
+  if (pendingQueuedHandCardIds.value.length === 0) {
+    clearPendingHandPlayQueue()
+    return
+  }
+
+  playQueuedHandCards(pendingQueuedHandCardIds.value)
 }
 
 function cancelTargetSelection() {
@@ -1118,7 +1235,27 @@ function cancelCounterSelection() {
   pendingCounterCardInstanceId.value = null
 }
 
-function onSelfHandCardClick(instanceId: string) {
+function toggleSelectedHandCard(instanceId: string) {
+  if (!selectableHandCardIds.value.includes(instanceId)) {
+    pulseHandCard(instanceId)
+    return
+  }
+
+  if (selectedHandCardIds.value.includes(instanceId)) {
+    selectedHandCardIds.value = selectedHandCardIds.value.filter(id => id !== instanceId)
+    return
+  }
+
+  selectedHandCardIds.value = [...selectedHandCardIds.value, instanceId]
+}
+
+function onSelfHandCardClick(instanceId: string, options: { ctrlKey: boolean }) {
+  if (options.ctrlKey) {
+    toggleSelectedHandCard(instanceId)
+    return
+  }
+
+  clearSelectedHandCards()
   requestPlayFromHand(instanceId)
 }
 
@@ -1160,13 +1297,17 @@ function onOpponentCharacterClick(_side: 0 | 1, instanceId: string) {
   onOpponentCharacterTargetClick(instanceId)
 }
 
-function onSelfHandCardOrCounterClick(instanceId: string) {
+function onSelfHandCardOrCounterClick(instanceId: string, options: { ctrlKey: boolean }) {
   if (isCounteringStep.value && isSelfDefender.value) {
+    if (!options.ctrlKey) {
+      clearSelectedHandCards()
+    }
+
     onCounterHandCardClick(instanceId)
     return
   }
 
-  onSelfHandCardClick(instanceId)
+  onSelfHandCardClick(instanceId, options)
 }
 
 function selectDonRangeTo(instanceId: string) {
@@ -1225,14 +1366,20 @@ function onSelfHandCardDragStart(instanceId: string) {
     return
   }
 
+  if (!selectedHandCardIds.value.includes(instanceId)) {
+    clearSelectedHandCards()
+  }
+
   draggedHandCardInstanceId.value = instanceId
 }
 
 function onSelfHandCardDragEnd() {
+  clearSelectedHandCards()
   resetDraggedHandCard()
 }
 
 function onInvalidHandCardDragAttempt(instanceId: string) {
+  clearSelectedHandCards()
   resetDraggedHandCard()
   pulseHandCard(instanceId)
 }
@@ -1255,8 +1402,10 @@ function onSelfCharacterZoneDrop() {
   }
 
   const instanceId = draggedHandCardInstanceId.value
+  const handPlayIds = resolveSelectedHandPlayIds('Character', instanceId)
   resetDraggedHandCard()
-  requestPlayFromHand(instanceId)
+  clearSelectedHandCards()
+  playQueuedHandCards(handPlayIds)
 }
 
 function onSelfStageZoneDrop() {
@@ -1265,8 +1414,10 @@ function onSelfStageZoneDrop() {
   }
 
   const instanceId = draggedHandCardInstanceId.value
+  const handPlayIds = resolveSelectedHandPlayIds('Stage', instanceId)
   resetDraggedHandCard()
-  requestPlayFromHand(instanceId)
+  clearSelectedHandCards()
+  playQueuedHandCards(handPlayIds)
 }
 
 function onSelfLeaderDonDrop() {
@@ -1376,8 +1527,21 @@ function cancelInstructionMode() {
 }
 
 function clearTransientBoardSelections() {
+  clearSelectedHandCards()
   clearSelectedDonCards()
   clearDraggedDonCard()
+}
+
+function isWithinSelectedHandCard(target: EventTarget | null): boolean {
+  if (!(target instanceof Node) || selectedHandCardIds.value.length === 0) {
+    return false
+  }
+
+  return selectedHandCardIds.value.some((instanceId) => {
+    const element = document.querySelector(`[data-duel-hand="true"] [data-instance-id="${CSS.escape(instanceId)}"]`)
+
+    return element?.contains(target) ?? false
+  })
 }
 
 function isWithinSelectedDonCard(target: EventTarget | null): boolean {
@@ -1412,15 +1576,32 @@ onClickOutside(boardContainer, () => {
 })
 
 useEventListener(document, 'pointerdown', (event) => {
-  if (selectedDonCardIds.value.length === 0) {
+  const hasSelectedHandCards = selectedHandCardIds.value.length > 0
+  const hasSelectedDonCards = selectedDonCardIds.value.length > 0
+
+  if (!hasSelectedHandCards && !hasSelectedDonCards) {
     return
   }
 
-  if (isWithinSelectedDonCard(event.target) || isWithinDonSelectionKeepAliveArea(event.target)) {
+  if (hasSelectedHandCards) {
+    const handElement = document.querySelector('[data-duel-hand="true"]')
+
+    if (isWithinSelectedHandCard(event.target) || (event.ctrlKey && handElement?.contains(event.target as Node))) {
+      return
+    }
+  }
+
+  if (hasSelectedDonCards && (isWithinSelectedDonCard(event.target) || isWithinDonSelectionKeepAliveArea(event.target))) {
     return
   }
 
-  clearSelectedDonCards()
+  if (hasSelectedHandCards) {
+    clearSelectedHandCards()
+  }
+
+  if (hasSelectedDonCards) {
+    clearSelectedDonCards()
+  }
 })
 
 defineShortcuts({
@@ -1672,6 +1853,8 @@ defineShortcuts({
                   :hand="self.hand"
                   align="start"
                   :draggable-hand-card-ids="draggableHandCardIds"
+                  :selected-hand-card-ids="selectedHandCardIds"
+                  :dragged-hand-card-count="draggedHandCardCount"
                   :invalid-hand-card-ids="invalidHandCardIds"
                   :revealed-hand-card-ids="selfRevealedHandCardIds"
                   :deferred-hand-card-ids="selfDeferredHandCardIds"
