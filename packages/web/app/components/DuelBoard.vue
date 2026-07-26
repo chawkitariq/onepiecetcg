@@ -118,6 +118,9 @@ const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
 const draggedHandCardInstanceId = ref<string | null>(null)
+const selectedDonCardIds = ref<string[]>([])
+const selectedDonAnchorInstanceId = ref<string | null>(null)
+const draggedDonCardInstanceId = ref<string | null>(null)
 const pointerPosition = ref<{ x: number, y: number } | null>(null)
 const declaredAttackTargetInstanceId = ref<string | null>(null)
 
@@ -194,6 +197,21 @@ const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
 const canAttachDon = computed(() =>
   isMainPhase.value && isSelfTurn.value && selfUntappedDonCount.value > 0 && !isCombatInProgress.value
 )
+const selectableDonCardIds = computed(() =>
+  self.value?.cost
+    .filter(card => !card.rested)
+    .map(card => card.instanceId) ?? []
+)
+const selectedAttachDonCount = computed(() => selectedDonCardIds.value.length > 0 ? selectedDonCardIds.value.length : 1)
+const draggedDonCardCount = computed(() => {
+  if (!draggedDonCardInstanceId.value) {
+    return 0
+  }
+
+  return selectedDonCardIds.value.includes(draggedDonCardInstanceId.value)
+    ? Math.max(selectedDonCardIds.value.length, 1)
+    : 1
+})
 const isChoosingCharacterToDiscard = computed(() => pendingCharacterInstanceId.value !== null)
 const isChoosingTarget = computed(() => pendingAttackerInstanceId.value !== null)
 const isChoosingCounterCard = computed(() => pendingCounterCardInstanceId.value !== null)
@@ -758,20 +776,94 @@ function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
   })
 }
 
-function cacheAttachedDonTravelSource() {
+function cacheAttachedDonTravelSources(instanceIds: string[]) {
   if (reducedMotion.value === 'reduce' || typeof window === 'undefined') {
     return
   }
 
-  const sourceElement = querySelfUntappedCostCardElement()
+  for (const instanceId of instanceIds) {
+    const sourceElement = querySelfCostCardElement(instanceId)
 
-  if (!sourceElement) {
+    if (!sourceElement) {
+      continue
+    }
+
+    pendingAttachedDonTravelSources.push({
+      sourceRect: sourceElement.getBoundingClientRect()
+    })
+  }
+}
+
+function clearSelectedDonCards() {
+  selectedDonCardIds.value = []
+  selectedDonAnchorInstanceId.value = null
+}
+
+function clearDraggedDonCard() {
+  draggedDonCardInstanceId.value = null
+}
+
+function syncSelectedDonCardsWithCost() {
+  const selectableIds = new Set(selectableDonCardIds.value)
+
+  if (!canAttachDon.value) {
+    clearSelectedDonCards()
+    clearDraggedDonCard()
     return
   }
 
-  pendingAttachedDonTravelSources.push({
-    sourceRect: sourceElement.getBoundingClientRect()
-  })
+  selectedDonCardIds.value = selectedDonCardIds.value.filter(id => selectableIds.has(id))
+
+  if (!selectedDonAnchorInstanceId.value || !selectableIds.has(selectedDonAnchorInstanceId.value)) {
+    selectedDonAnchorInstanceId.value = selectedDonCardIds.value.at(-1) ?? null
+  }
+
+  if (draggedDonCardInstanceId.value && !selectableIds.has(draggedDonCardInstanceId.value)) {
+    clearDraggedDonCard()
+  }
+}
+
+watch([selectableDonCardIds, canAttachDon], syncSelectedDonCardsWithCost, { immediate: true })
+
+function resolveAttachDonSourceIds(preferredInstanceId?: string) {
+  const orderedIds = selectableDonCardIds.value
+
+  if (
+    preferredInstanceId
+    && selectedDonCardIds.value.length > 0
+    && selectedDonCardIds.value.includes(preferredInstanceId)
+  ) {
+    return orderedIds.filter(id => selectedDonCardIds.value.includes(id))
+  }
+
+  if (!preferredInstanceId && selectedDonCardIds.value.length > 0) {
+    return orderedIds.filter(id => selectedDonCardIds.value.includes(id))
+  }
+
+  if (preferredInstanceId) {
+    return orderedIds.includes(preferredInstanceId) ? [preferredInstanceId] : []
+  }
+
+  const fallbackId = orderedIds.at(-1)
+
+  return fallbackId ? [fallbackId] : []
+}
+
+function consumeAttachDonCount(preferredInstanceId?: string) {
+  if (
+    selectedDonCardIds.value.length > 0
+    && (
+      !preferredInstanceId
+      || selectedDonCardIds.value.includes(preferredInstanceId)
+    )
+  ) {
+    const count = selectedDonCardIds.value.length
+    clearSelectedDonCards()
+
+    return count
+  }
+
+  return 1
 }
 
 function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
@@ -918,24 +1010,40 @@ function startAttackWithLeader() {
   onSelfLeaderAttackerClick()
 }
 
-function attachDonToLeaderFromPopover() {
+function attachDonToTarget(target: 'leader' | 'character', targetInstanceId?: string, preferredDonInstanceId?: string) {
   if (!canAttachDon.value) {
-    pulseLeader(invalidSelfLeaderPulse)
+    if (target === 'leader') {
+      pulseLeader(invalidSelfLeaderPulse)
+    } else if (targetInstanceId) {
+      pulseCharacter(invalidSelfCharacterIds, targetInstanceId)
+    }
     return
   }
 
-  cacheAttachedDonTravelSource()
-  attachDon('leader')
+  const sourceIds = resolveAttachDonSourceIds(preferredDonInstanceId)
+
+  if (sourceIds.length === 0) {
+    if (target === 'leader') {
+      pulseLeader(invalidSelfLeaderPulse)
+    } else if (targetInstanceId) {
+      pulseCharacter(invalidSelfCharacterIds, targetInstanceId)
+    }
+    return
+  }
+
+  const count = consumeAttachDonCount(preferredDonInstanceId)
+
+  cacheAttachedDonTravelSources(sourceIds)
+  clearDraggedDonCard()
+  attachDon(target, targetInstanceId, count)
+}
+
+function attachDonToLeaderFromPopover() {
+  attachDonToTarget('leader')
 }
 
 function attachDonToCharacterFromPopover(instanceId: string) {
-  if (!canAttachDon.value) {
-    pulseCharacter(invalidSelfCharacterIds, instanceId)
-    return
-  }
-
-  cacheAttachedDonTravelSource()
-  attachDon('character', instanceId)
+  attachDonToTarget('character', instanceId)
 }
 
 function onOpponentLeaderTargetClick() {
@@ -1061,6 +1169,52 @@ function onSelfHandCardOrCounterClick(instanceId: string) {
   onSelfHandCardClick(instanceId)
 }
 
+function selectDonRangeTo(instanceId: string) {
+  if (!canAttachDon.value || !selectableDonCardIds.value.includes(instanceId)) {
+    return
+  }
+
+  const anchorId = selectedDonAnchorInstanceId.value
+
+  if (!anchorId || !selectableDonCardIds.value.includes(anchorId)) {
+    selectedDonCardIds.value = [instanceId]
+    selectedDonAnchorInstanceId.value = instanceId
+    return
+  }
+
+  const anchorIndex = selectableDonCardIds.value.indexOf(anchorId)
+  const targetIndex = selectableDonCardIds.value.indexOf(instanceId)
+
+  if (anchorIndex === -1 || targetIndex === -1) {
+    selectedDonCardIds.value = [instanceId]
+    selectedDonAnchorInstanceId.value = instanceId
+    return
+  }
+
+  const [start, end] = anchorIndex < targetIndex
+    ? [anchorIndex, targetIndex]
+    : [targetIndex, anchorIndex]
+
+  selectedDonCardIds.value = selectableDonCardIds.value.slice(start, end + 1)
+}
+
+function onSelfDonCardSelectionStart(instanceId: string) {
+  if (!canAttachDon.value || !selectableDonCardIds.value.includes(instanceId)) {
+    return
+  }
+
+  selectedDonAnchorInstanceId.value = instanceId
+  selectedDonCardIds.value = [instanceId]
+}
+
+function onSelfDonCardSelectionHover(instanceId: string) {
+  if (!selectedDonAnchorInstanceId.value) {
+    return
+  }
+
+  selectDonRangeTo(instanceId)
+}
+
 function cancelDiscardSelection() {
   pendingCharacterInstanceId.value = null
 }
@@ -1083,6 +1237,18 @@ function onInvalidHandCardDragAttempt(instanceId: string) {
   pulseHandCard(instanceId)
 }
 
+function onSelfDonCardDragStart(instanceId: string) {
+  if (!canAttachDon.value || !selectableDonCardIds.value.includes(instanceId)) {
+    return
+  }
+
+  draggedDonCardInstanceId.value = instanceId
+}
+
+function onSelfDonCardDragEnd() {
+  clearTransientBoardSelections()
+}
+
 function onSelfCharacterZoneDrop() {
   if (!draggedHandCardInstanceId.value) {
     return
@@ -1101,6 +1267,22 @@ function onSelfStageZoneDrop() {
   const instanceId = draggedHandCardInstanceId.value
   resetDraggedHandCard()
   requestPlayFromHand(instanceId)
+}
+
+function onSelfLeaderDonDrop() {
+  if (!draggedDonCardInstanceId.value) {
+    return
+  }
+
+  attachDonToTarget('leader', undefined, draggedDonCardInstanceId.value)
+}
+
+function onSelfCharacterDonDrop(_side: 0 | 1, instanceId: string) {
+  if (!draggedDonCardInstanceId.value) {
+    return
+  }
+
+  attachDonToTarget('character', instanceId, draggedDonCardInstanceId.value)
 }
 
 const selfCharacterActionPopoverItems = computed<Record<string, CharacterActionPopoverItem[]>>(() => {
@@ -1126,7 +1308,9 @@ const selfCharacterActionPopoverItems = computed<Record<string, CharacterActionP
       character.instanceId,
       [
         {
-          label: 'Attacher un DON!!',
+          label: selectedDonCardIds.value.length > 0
+            ? `Attacher ${selectedAttachDonCount.value} DON!!`
+            : 'Attacher un DON!!',
           icon: 'i-lucide-plus',
           disabled: !canAttachDon.value,
           onSelect: () => attachDonToCharacterFromPopover(character.instanceId)
@@ -1160,7 +1344,9 @@ const selfLeaderActionPopoverItems = computed<LeaderActionPopoverItem[]>(() => {
 
   return [
     {
-      label: 'Attacher un DON!!',
+      label: selectedDonCardIds.value.length > 0
+        ? `Attacher ${selectedAttachDonCount.value} DON!!`
+        : 'Attacher un DON!!',
       icon: 'i-lucide-plus',
       disabled: !canAttachDon.value,
       onSelect: attachDonToLeaderFromPopover
@@ -1189,6 +1375,34 @@ function cancelInstructionMode() {
   }
 }
 
+function clearTransientBoardSelections() {
+  clearSelectedDonCards()
+  clearDraggedDonCard()
+}
+
+function isWithinSelectedDonCard(target: EventTarget | null): boolean {
+  if (!(target instanceof Node) || selectedDonCardIds.value.length === 0) {
+    return false
+  }
+
+  return selectedDonCardIds.value.some((instanceId) => {
+    const element = querySelfCostCardElement(instanceId)
+
+    return element?.contains(target) ?? false
+  })
+}
+
+function isWithinDonSelectionKeepAliveArea(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  return Boolean(
+    target.closest('[data-don-attach-target="true"]')
+    || target.closest('[data-don-selection-keepalive="true"]')
+  )
+}
+
 const boardContainer = useTemplateRef<HTMLElement>('board-container')
 
 onClickOutside(boardContainer, () => {
@@ -1197,9 +1411,27 @@ onClickOutside(boardContainer, () => {
   }
 })
 
-onKeyStroke('Escape', () => {
-  if (isInstructionModeActive.value) {
-    cancelInstructionMode()
+useEventListener(document, 'pointerdown', (event) => {
+  if (selectedDonCardIds.value.length === 0) {
+    return
+  }
+
+  if (isWithinSelectedDonCard(event.target) || isWithinDonSelectionKeepAliveArea(event.target)) {
+    return
+  }
+
+  clearSelectedDonCards()
+})
+
+defineShortcuts({
+  escape: {
+    handler: () => {
+      if (isInstructionModeActive.value) {
+        cancelInstructionMode()
+      }
+
+      clearTransientBoardSelections()
+    }
   }
 })
 </script>
@@ -1520,9 +1752,14 @@ onKeyStroke('Escape', () => {
                   :player="self"
                   :side="0"
                   :is-owner-turn="isSelfTurn"
+                  :selected-don-card-ids="selectedDonCardIds"
                   :dragged-hand-card-instance-id="draggedHandCardInstanceId"
+                  :dragged-don-card-instance-id="draggedDonCardInstanceId"
+                  :dragged-don-card-count="draggedDonCardCount"
                   :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Character'"
                   :can-drop-on-stage-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Stage'"
+                  :can-drop-don-on-leader="canAttachDon"
+                  :can-drop-don-on-character="canAttachDon"
                   :transition-ghosts="selfTransitionGhosts"
                   :attacker-id="pendingAttackerInstanceId ?? (combat && isSelfAttacker ? combat.attackerInstanceId : null)"
                   :is-selectable="isChoosingCharacterToDiscard || isSelectingAttacker || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
@@ -1537,6 +1774,12 @@ onKeyStroke('Escape', () => {
                   @card-hover="hoveredCard = $event"
                   @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
                   @hand-card-drop-on-stage="onSelfStageZoneDrop"
+                  @don-card-selection-start="onSelfDonCardSelectionStart"
+                  @don-card-selection-hover="onSelfDonCardSelectionHover"
+                  @don-card-drag-start="onSelfDonCardDragStart"
+                  @don-card-drag-end="onSelfDonCardDragEnd"
+                  @don-card-drop-on-leader="onSelfLeaderDonDrop"
+                  @don-card-drop-on-character="onSelfCharacterDonDrop"
                   @leader-click="onSelfLeaderClick"
                   @character-click="onSelfCharacterClick"
                 />

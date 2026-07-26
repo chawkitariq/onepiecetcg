@@ -76,6 +76,7 @@ type PlayCardMessage = {
 type AttachDonMessage = {
   target: 'leader' | 'character';
   targetInstanceId?: string;
+  count?: number;
 };
 
 type DuelSessionResolver = (
@@ -1343,34 +1344,43 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    const donCards = this.takeUntappedDonCards(player, 1);
+    const count = Number.isInteger(message.count) ? (message.count ?? 1) : 1;
+
+    if (count < 1) {
+      this.sendError(client, 'Quantite de DON!! invalide.');
+      return;
+    }
+
+    const donCards = this.takeUntappedDonCards(player, count);
 
     if (!donCards) {
       this.sendError(
         client,
-        'Aucun DON!! redresse disponible en zone de Cout.',
+        'Pas assez de DON!! redresses disponibles en zone de Cout.',
       );
       return;
     }
 
-    const [donCard] = donCards;
-
-    if (!donCard) {
-      return;
-    }
-
     if (message.target === 'leader') {
-      const removed = player.zones.cost.splice(
-        player.zones.cost.indexOf(donCard),
-        1,
-      )[0];
+      let attachedCount = 0;
 
-      if (removed) {
-        player.zones.leader.attachedDon += 1;
+      for (const donCard of donCards) {
+        const removed = player.zones.cost.splice(
+          player.zones.cost.indexOf(donCard),
+          1,
+        )[0];
+
+        if (removed) {
+          attachedCount += 1;
+        }
+      }
+
+      if (attachedCount > 0) {
+        player.zones.leader.attachedDon += attachedCount;
       }
 
       this.addLog(
-        `${player.displayName} donne 1 DON!! a son Leader (+1000 de puissance).`,
+        `${player.displayName} donne ${attachedCount} DON!! a son Leader (+${attachedCount * 1000} de puissance).`,
       );
       return;
     }
@@ -1380,15 +1390,29 @@ export class DuelRoom extends Room<DuelState> {
       : null;
 
     if (!found) {
-      donCard.rested = false;
+      for (const donCard of donCards) {
+        donCard.rested = false;
+      }
       this.sendError(client, 'Cible invalide pour attacher un DON!!.');
       return;
     }
 
-    player.zones.cost.splice(player.zones.cost.indexOf(donCard), 1);
-    found.card.attachedDon += 1;
+    let attachedCount = 0;
+
+    for (const donCard of donCards) {
+      const removed = player.zones.cost.splice(
+        player.zones.cost.indexOf(donCard),
+        1,
+      )[0];
+
+      if (removed) {
+        attachedCount += 1;
+      }
+    }
+
+    found.card.attachedDon += attachedCount;
     this.addLog(
-      `${player.displayName} donne 1 DON!! a ${found.card.name} (+1000 de puissance).`,
+      `${player.displayName} donne ${attachedCount} DON!! a ${found.card.name} (+${attachedCount * 1000} de puissance).`,
     );
   }
 

@@ -151,13 +151,24 @@ const playZoneStub = defineComponent({
     player: { type: Object, required: true },
     leaderActionPopoverItems: { type: Array, default: () => [] },
     characterActionPopoverItems: { type: Object, default: () => ({}) },
+    selectedDonCardIds: { type: Array, default: () => [] },
+    draggedDonCardCount: { type: Number, default: 0 },
     attackerId: { type: String, default: undefined },
     isTargetable: { type: Boolean, default: false },
     transitionGhosts: { type: Array, default: () => [] },
     deferredBoardCardIds: { type: Array, default: () => [] },
     deferredCostCardIds: { type: Array, default: () => [] }
   },
-  emits: ['handCardDropOnCharacters', 'handCardDropOnStage'],
+  emits: [
+    'handCardDropOnCharacters',
+    'handCardDropOnStage',
+    'donCardSelectionStart',
+    'donCardSelectionHover',
+    'donCardDragStart',
+    'donCardDragEnd',
+    'donCardDropOnLeader',
+    'donCardDropOnCharacter'
+  ],
   setup(props, { emit }) {
     function getLeaderPopoverItems() {
       return props.leaderActionPopoverItems as Array<{ label: string, onSelect: () => void }>
@@ -173,6 +184,8 @@ const playZoneStub = defineComponent({
       'data-transition-ghosts': JSON.stringify((props.transitionGhosts as Array<{ instanceId: string, source: string }>)),
       'data-deferred-board-card-ids': JSON.stringify(props.deferredBoardCardIds),
       'data-deferred-cost-card-ids': JSON.stringify(props.deferredCostCardIds),
+      'data-selected-don-card-ids': JSON.stringify(props.selectedDonCardIds),
+      'data-dragged-don-card-count': String(props.draggedDonCardCount),
       'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
       'data-character-popover-character-a': JSON.stringify(getCharacterPopoverItems('character-a').map(item => item.label)),
       'data-attacker-id': props.attackerId,
@@ -208,6 +221,38 @@ const playZoneStub = defineComponent({
         'data-cost-state': card.rested ? 'rested' : 'untapped',
         'data-cost-card-deferred': String((props.deferredCostCardIds as string[]).includes(card.instanceId))
       }))),
+      h('button', {
+        'data-test': `don-select-start-${props.side}`,
+        'onClick': () => emit('donCardSelectionStart', 'self-don-1')
+      }),
+      h('button', {
+        'data-test': `don-select-hover-${props.side}`,
+        'onClick': () => emit('donCardSelectionHover', 'self-don-3')
+      }),
+      h('button', {
+        'data-test': `don-attach-target-${props.side}`,
+        'data-don-attach-target': 'true'
+      }),
+      h('button', {
+        'data-test': `don-keepalive-${props.side}`,
+        'data-don-selection-keepalive': 'true'
+      }),
+      h('button', {
+        'data-test': `don-drag-start-${props.side}`,
+        'onClick': () => emit('donCardDragStart', 'self-don-1')
+      }),
+      h('button', {
+        'data-test': `don-drag-end-${props.side}`,
+        'onClick': () => emit('donCardDragEnd')
+      }),
+      h('button', {
+        'data-test': `don-drop-leader-${props.side}`,
+        'onClick': () => emit('donCardDropOnLeader', props.side)
+      }),
+      h('button', {
+        'data-test': `don-drop-character-${props.side}`,
+        'onClick': () => emit('donCardDropOnCharacter', props.side, 'character-a')
+      }),
       h('button', {
         'data-test': `drop-${props.side}`,
         'onClick': () => emit('handCardDropOnCharacters', props.side)
@@ -309,7 +354,12 @@ describe('DuelBoard drag and drop', () => {
     canDeclareAttack.value = false
     reducedMotion.value = 'no-preference'
     self.value = createPlayer('self', {
-      characters: [createPublicCard('character-a')]
+      characters: [createPublicCard('character-a')],
+      cost: [
+        createPublicCard('self-don-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+        createPublicCard('self-don-2', { type: 'DON!!', cost: null, power: null, counter: null }),
+        createPublicCard('self-don-3', { type: 'DON!!', cost: null, power: null, counter: null })
+      ]
     })
     opponent.value = createPlayer('opponent', {
       characters: [createPublicCard('opponent-character-a', { rested: true })]
@@ -477,8 +527,81 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.get('[data-test="character-popover-attach-0"]').trigger('click')
     await wrapper.get('[data-test="character-popover-attach-0"]').trigger('click')
 
-    expect(attachDon).toHaveBeenNthCalledWith(1, 'character', 'character-a')
-    expect(attachDon).toHaveBeenNthCalledWith(2, 'character', 'character-a')
+    expect(attachDon).toHaveBeenNthCalledWith(1, 'character', 'character-a', 1)
+    expect(attachDon).toHaveBeenNthCalledWith(2, 'character', 'character-a', 1)
+  })
+
+  it('uses the selected DON!! batch count for the attach action label and popover attach call', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
+    await wrapper.get('[data-test="don-select-hover-0"]').trigger('click')
+
+    const selfZone = wrapper.get('[data-play-zone="0"]')
+
+    expect(selfZone.attributes('data-selected-don-card-ids')).toBe(JSON.stringify([
+      'self-don-1',
+      'self-don-2',
+      'self-don-3'
+    ]))
+    expect(selfZone.attributes('data-leader-popover')).toContain('Attacher 3 DON!!')
+
+    await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
+
+    expect(attachDon).toHaveBeenCalledWith('leader', undefined, 3)
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
+  })
+
+  it('attaches the dragged selected DON!! batch when dropped on a character', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
+    await wrapper.get('[data-test="don-select-hover-0"]').trigger('click')
+    await wrapper.get('[data-test="don-drag-start-0"]').trigger('click')
+
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-dragged-don-card-count')).toBe('3')
+
+    await wrapper.get('[data-test="don-drop-character-0"]').trigger('click')
+
+    expect(attachDon).toHaveBeenCalledWith('character', 'character-a', 3)
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
+  })
+
+  it('allows DON!! drag to start before a drop target is active', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
+    await wrapper.get('[data-test="don-drag-start-0"]').trigger('click')
+
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-dragged-don-card-count')).toBe('1')
+  })
+
+  it('clears selected DON!! cards on Escape, outside selected DON!! cards, and drag release', async () => {
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify(['self-don-1']))
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
+
+    await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
+    await wrapper.get('[data-test="don-attach-target-0"]').trigger('pointerdown')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify(['self-don-1']))
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
+
+    await wrapper.get('[data-test="don-select-start-0"]').trigger('click')
+    await wrapper.get('[data-test="don-drag-start-0"]').trigger('click')
+    await wrapper.get('[data-test="don-drag-end-0"]').trigger('click')
+
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-dragged-don-card-count')).toBe('0')
+    expect(wrapper.get('[data-play-zone="0"]').attributes('data-selected-don-card-ids')).toBe(JSON.stringify([]))
   })
 
   it('starts target selection from the character popover attack action', async () => {
@@ -531,8 +654,8 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.get('[data-test="leader-popover-attach-0"]').trigger('click')
     await wrapper.get('[data-test="leader-popover-attack-0"]').trigger('click')
 
-    expect(attachDon).toHaveBeenNthCalledWith(1, 'leader')
-    expect(attachDon).toHaveBeenNthCalledWith(2, 'leader')
+    expect(attachDon).toHaveBeenNthCalledWith(1, 'leader', undefined, 1)
+    expect(attachDon).toHaveBeenNthCalledWith(2, 'leader', undefined, 1)
     expect(wrapper.get('[data-play-zone="0"]').attributes('data-attacker-id')).toBe('self-leader')
   })
 

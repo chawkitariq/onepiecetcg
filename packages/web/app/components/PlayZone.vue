@@ -51,9 +51,14 @@ const props = defineProps<{
   characterActionPopoverItems?: Record<string, CharacterActionPopoverItem[]>
   invalidLeaderPulse?: boolean
   invalidCharacterIds?: string[]
+  selectedDonCardIds?: string[]
   draggedHandCardInstanceId?: string | null
+  draggedDonCardInstanceId?: string | null
+  draggedDonCardCount?: number
   canDropOnCharacterZone?: boolean
   canDropOnStageZone?: boolean
+  canDropDonOnLeader?: boolean
+  canDropDonOnCharacter?: boolean
   transitionGhosts?: TransitionGhost[]
   deferredBoardCardIds?: string[]
   deferredCostCardIds?: string[]
@@ -68,9 +73,14 @@ const {
   targetableLeader,
   selectableLeader,
   invalidLeaderPulse,
+  selectedDonCardIds,
   draggedHandCardInstanceId,
+  draggedDonCardInstanceId,
+  draggedDonCardCount,
   canDropOnCharacterZone,
   canDropOnStageZone,
+  canDropDonOnLeader,
+  canDropDonOnCharacter,
   transitionGhosts
 } = toRefs(props)
 
@@ -95,6 +105,12 @@ const emit = defineEmits<{
   stageClick: [side: 0 | 1]
   handCardDropOnCharacters: [side: 0 | 1]
   handCardDropOnStage: [side: 0 | 1]
+  donCardSelectionStart: [instanceId: string]
+  donCardSelectionHover: [instanceId: string]
+  donCardDragStart: [instanceId: string]
+  donCardDragEnd: []
+  donCardDropOnLeader: [side: 0 | 1]
+  donCardDropOnCharacter: [side: 0 | 1, instanceId: string]
   cardHover: [card: HoveredDuelCard | null]
 }>()
 
@@ -119,6 +135,10 @@ const isCharacterZoneDraggedOver = ref(false)
 const characterZoneDragDepth = ref(0)
 const isStageZoneDraggedOver = ref(false)
 const stageZoneDragDepth = ref(0)
+const isLeaderDonDraggedOver = ref(false)
+const leaderDonDragDepth = ref(0)
+const characterDonDragDepth = reactive<Record<string, number>>({})
+const donDraggedOverCharacterIds = ref<string[]>([])
 const openActionPopoverKey = ref<string | null>(null)
 const leaderActionReference = ref<HTMLElement | null>(null)
 const characterActionReferences = reactive<Record<string, HTMLElement | null>>({})
@@ -260,6 +280,37 @@ function isCostCardDeferred(instanceId: string | null | undefined): boolean {
   return props.deferredCostCardIds?.includes(instanceId) ?? false
 }
 
+function isDonCardSelected(instanceId: string): boolean {
+  return selectedDonCardIds.value?.includes(instanceId) ?? false
+}
+
+const selectedDonCount = computed(() => selectedDonCardIds.value?.length ?? 0)
+
+function shouldShowSelectedDonCount(instanceId: string): boolean {
+  if (selectedDonCount.value < 2) {
+    return false
+  }
+
+  return selectedDonCardIds.value?.at(-1) === instanceId
+}
+
+function isDonCardDraggable(instanceId: string): boolean {
+  return Boolean(
+    !isAdversary.value
+    && !isCostCardDeferred(instanceId)
+    && !props.player.cost.find(card => card.instanceId === instanceId)?.rested
+    && (canDropDonOnLeader.value || canDropDonOnCharacter.value)
+  )
+}
+
+function isCharacterDonDropTargetActive(instanceId: string): boolean {
+  return Boolean(
+    canDropDonOnCharacter.value
+    && draggedDonCardInstanceId.value
+    && donDraggedOverCharacterIds.value.includes(instanceId)
+  )
+}
+
 function visibleLayoutId(instanceId: string | null | undefined, deferred: boolean): string | undefined {
   if (!instanceId || deferred) {
     return undefined
@@ -368,6 +419,14 @@ const isStageZoneDropTargetActive = computed(() =>
   )
 )
 
+const isLeaderDonDropTargetActive = computed(() =>
+  Boolean(
+    canDropDonOnLeader.value
+    && draggedDonCardInstanceId.value
+    && isLeaderDonDraggedOver.value
+  )
+)
+
 watch(draggedHandCardInstanceId, (nextDraggedCard) => {
   if (nextDraggedCard) {
     return
@@ -377,6 +436,20 @@ watch(draggedHandCardInstanceId, (nextDraggedCard) => {
   characterZoneDragDepth.value = 0
   isStageZoneDraggedOver.value = false
   stageZoneDragDepth.value = 0
+})
+
+watch(draggedDonCardInstanceId, (nextDraggedCard) => {
+  if (nextDraggedCard) {
+    return
+  }
+
+  isLeaderDonDraggedOver.value = false
+  leaderDonDragDepth.value = 0
+  donDraggedOverCharacterIds.value = []
+
+  for (const instanceId of Object.keys(characterDonDragDepth)) {
+    characterDonDragDepth[instanceId] = 0
+  }
 })
 
 watch(() => props.characterActionPopoverItems, (nextItems) => {
@@ -482,6 +555,129 @@ function onStageZoneDrop(event: DragEvent) {
   isStageZoneDraggedOver.value = false
   emit('handCardDropOnStage', side.value)
 }
+
+function onDonCardSelectionStart(instanceId: string, event: MouseEvent) {
+  if (!event.shiftKey) {
+    return
+  }
+
+  if (isAdversary.value || isCostCardDeferred(instanceId)) {
+    return
+  }
+
+  event.preventDefault()
+  emit('donCardSelectionStart', instanceId)
+}
+
+function onDonCardSelectionHover(instanceId: string, event: MouseEvent) {
+  if (!event.shiftKey) {
+    return
+  }
+
+  if (isAdversary.value || isCostCardDeferred(instanceId)) {
+    return
+  }
+
+  emit('donCardSelectionHover', instanceId)
+}
+
+function onDonCardDragStart(instanceId: string, event: DragEvent) {
+  if (!isDonCardDraggable(instanceId)) {
+    event.preventDefault()
+    return
+  }
+
+  event.dataTransfer?.setData('text/plain', instanceId)
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
+  emit('donCardDragStart', instanceId)
+}
+
+function onLeaderDonDragEnter() {
+  if (!canDropDonOnLeader.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  leaderDonDragDepth.value += 1
+  isLeaderDonDraggedOver.value = true
+}
+
+function onLeaderDonDragLeave() {
+  if (!canDropDonOnLeader.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  leaderDonDragDepth.value = Math.max(0, leaderDonDragDepth.value - 1)
+  isLeaderDonDraggedOver.value = leaderDonDragDepth.value > 0
+}
+
+function onLeaderDonDragOver(event: DragEvent) {
+  if (!canDropDonOnLeader.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+  isLeaderDonDraggedOver.value = true
+}
+
+function onLeaderDonDrop(event: DragEvent) {
+  if (!canDropDonOnLeader.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  leaderDonDragDepth.value = 0
+  isLeaderDonDraggedOver.value = false
+  emit('donCardDropOnLeader', side.value)
+}
+
+function onCharacterDonDragEnter(instanceId: string) {
+  if (!canDropDonOnCharacter.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  characterDonDragDepth[instanceId] = (characterDonDragDepth[instanceId] ?? 0) + 1
+  donDraggedOverCharacterIds.value = Array.from(new Set([...donDraggedOverCharacterIds.value, instanceId]))
+}
+
+function onCharacterDonDragLeave(instanceId: string) {
+  if (!canDropDonOnCharacter.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  const nextDepth = Math.max(0, (characterDonDragDepth[instanceId] ?? 0) - 1)
+  characterDonDragDepth[instanceId] = nextDepth
+  donDraggedOverCharacterIds.value = nextDepth > 0
+    ? Array.from(new Set([...donDraggedOverCharacterIds.value, instanceId]))
+    : donDraggedOverCharacterIds.value.filter(id => id !== instanceId)
+}
+
+function onCharacterDonDragOver(instanceId: string, event: DragEvent) {
+  if (!canDropDonOnCharacter.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+  donDraggedOverCharacterIds.value = Array.from(new Set([...donDraggedOverCharacterIds.value, instanceId]))
+}
+
+function onCharacterDonDrop(instanceId: string, event: DragEvent) {
+  if (!canDropDonOnCharacter.value || !draggedDonCardInstanceId.value) {
+    return
+  }
+
+  event.preventDefault()
+  characterDonDragDepth[instanceId] = 0
+  donDraggedOverCharacterIds.value = donDraggedOverCharacterIds.value.filter(id => id !== instanceId)
+  emit('donCardDropOnCharacter', side.value, instanceId)
+}
 </script>
 
 <template>
@@ -547,6 +743,7 @@ function onStageZoneDrop(event: DragEvent) {
               layout
               :layout-id="visibleLayoutId(character.instanceId, isBoardCardDeferred(character.instanceId))"
               :data-instance-id="character.instanceId"
+              data-don-attach-target="true"
               :initial="false"
               :transition="sharedCardTravelTransition"
               class="duel-card-shell relative h-full shrink-0 overflow-visible rounded-lg"
@@ -554,12 +751,17 @@ function onStageZoneDrop(event: DragEvent) {
                 attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
                 isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
                 isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
+                isCharacterDonDropTargetActive(character.instanceId) ? 'bg-success/5 ring-4 ring-success/70' : '',
                 isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
                 isBoardCardDeferred(character.instanceId) ? 'pointer-events-none opacity-0' : '',
                 isTargetable && character.rested ? 'cursor-crosshair' : '',
                 isSelectable ? 'cursor-pointer' : ''
               ]"
               @click="onCharacterActionTriggerClick(character.instanceId); emit('characterClick', side, character.instanceId)"
+              @dragenter="onCharacterDonDragEnter(character.instanceId)"
+              @dragleave="onCharacterDonDragLeave(character.instanceId)"
+              @dragover="onCharacterDonDragOver(character.instanceId, $event)"
+              @drop="onCharacterDonDrop(character.instanceId, $event)"
               @mouseenter="onCardHover(character)"
               @mouseleave="onCardHover(null)"
             >
@@ -600,7 +802,10 @@ function onStageZoneDrop(event: DragEvent) {
               @update:open="onCharacterActionPopoverOpenChange(character.instanceId, $event)"
             >
               <template #content>
-                <div class="flex flex-col gap-1">
+                <div
+                  class="flex flex-col gap-1"
+                  data-don-selection-keepalive="true"
+                >
                   <UButton
                     v-for="action in getCharacterActionPopoverItems(character.instanceId)"
                     :key="action.label"
@@ -640,6 +845,7 @@ function onStageZoneDrop(event: DragEvent) {
           layout
           :layout-id="visibleLayoutId(player.leader?.instanceId, false)"
           :data-instance-id="player.leader?.instanceId"
+          data-don-attach-target="true"
           :initial="false"
           :transition="sharedCardTravelTransition"
           class="duel-card-shell relative h-full w-full overflow-visible rounded-lg"
@@ -647,9 +853,14 @@ function onStageZoneDrop(event: DragEvent) {
             attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
             targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
             selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
+            isLeaderDonDropTargetActive ? 'bg-success/5 ring-4 ring-success/70' : '',
             invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
           ]"
           @click="onLeaderActionTriggerClick(); emit('leaderClick', side)"
+          @dragenter="onLeaderDonDragEnter"
+          @dragleave="onLeaderDonDragLeave"
+          @dragover="onLeaderDonDragOver"
+          @drop="onLeaderDonDrop"
           @mouseenter="onCardHover(player.leader)"
           @mouseleave="onCardHover(null)"
         >
@@ -692,7 +903,10 @@ function onStageZoneDrop(event: DragEvent) {
           @update:open="onLeaderActionPopoverOpenChange($event)"
         >
           <template #content>
-            <div class="flex flex-col gap-1">
+            <div
+              class="flex flex-col gap-1"
+              data-don-selection-keepalive="true"
+            >
               <UButton
                 v-for="action in getLeaderActionPopoverItems()"
                 :key="action.label"
@@ -843,25 +1057,51 @@ function onStageZoneDrop(event: DragEvent) {
             class="absolute inset-y-0 left-0"
             :class="isCostStackSplit ? 'w-1/2' : 'w-full'"
           >
-            <motion.div
+            <motion.button
               v-for="(don, index) in untappedCostCards"
               :key="don.instanceId"
+              type="button"
+              draggable="true"
               layout
               :layout-id="visibleLayoutId(don.instanceId, isCostCardDeferred(don.instanceId))"
               :data-instance-id="don.instanceId"
               :data-zone-side="side"
+              :data-don-selected="String(isDonCardSelected(don.instanceId))"
               data-cost-state="untapped"
               class="absolute top-0 h-full"
-              :class="isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : ''"
+              :class="[
+                isCostCardDeferred(don.instanceId) ? 'pointer-events-none opacity-0' : '',
+                isDonCardSelected(don.instanceId) ? 'ring-4 ring-info/70 rounded-lg' : '',
+                isDonCardDraggable(don.instanceId) ? 'cursor-grab active:cursor-grabbing' : ''
+              ]"
               :style="costStackStyle(index, untappedCostCards.length, 'left')"
               :initial="false"
               :transition="sharedCardTravelTransition"
+              @mousedown="onDonCardSelectionStart(don.instanceId, $event)"
+              @mouseenter="onDonCardSelectionHover(don.instanceId, $event)"
+              @dragstart="onDonCardDragStart(don.instanceId, $event)"
+              @dragend="emit('donCardDragEnd')"
             >
               <DuelCard
                 :src="donFront"
                 alt="DON!!"
               />
-            </motion.div>
+              <div
+                v-if="shouldShowSelectedDonCount(don.instanceId)"
+                data-selected-don-count
+                class="pointer-events-none absolute -right-2 -top-2 z-10 flex h-7 min-w-7 items-center justify-center rounded-full bg-info px-2 text-xs font-bold text-info-foreground shadow-sm"
+                :title="`${selectedDonCount} DON!! selectionnes`"
+                :aria-label="`${selectedDonCount} DON!! selectionnes`"
+              >
+                {{ selectedDonCount }}
+              </div>
+              <span
+                v-if="draggedDonCardInstanceId === don.instanceId && (draggedDonCardCount ?? 0) > 1"
+                class="pointer-events-none absolute -right-2 -top-2 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground"
+              >
+                x{{ draggedDonCardCount }}
+              </span>
+            </motion.button>
           </div>
           <div
             data-cost-stack="rested"

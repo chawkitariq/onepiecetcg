@@ -279,9 +279,9 @@ export function useDuelRoom() {
 
   const isSelfCharacterZoneFull = computed(() => (self.value?.characters.length ?? 0) >= 5)
 
-  function attachDon(target: 'leader' | 'character', targetInstanceId?: string) {
+  function attachDon(target: 'leader' | 'character', targetInstanceId?: string, count?: number) {
     errorMessage.value = null
-    sendMessage('attachDon', { target, targetInstanceId })
+    sendMessage('attachDon', { target, targetInstanceId, count })
   }
 
   function clearError() {

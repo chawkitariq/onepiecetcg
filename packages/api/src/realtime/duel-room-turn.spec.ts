@@ -86,7 +86,11 @@ type PrivateRoomAccess = {
   ) => void;
   handleAttachDon: (
     client: { sessionId: string; send: jest.Mock },
-    message: { target: 'leader' | 'character'; targetInstanceId?: string },
+    message: {
+      target: 'leader' | 'character';
+      targetInstanceId?: string;
+      count?: number;
+    },
   ) => void;
 };
 
@@ -211,7 +215,7 @@ async function createRoomAtFirstTurn(): Promise<{
     remove: jest.fn(),
     metadata: {},
   };
-  room.onCreate();
+  await room.onCreate();
   jest.spyOn(room, 'lock').mockImplementation(() => undefined);
 
   await room.onJoin(
@@ -652,6 +656,44 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
 
     expect(player?.zones.leader.attachedDon).toBe(1);
     expect(player?.zones.cost.every((card) => card.rested)).toBe(true);
+
+    const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
+    await disposableRoom._dispose();
+  });
+
+  it('attaches multiple untapped DON!! to a Character when a batch count is requested', async () => {
+    const { room, firstSessionId } = await createRoomAtFirstTurn();
+    const player = room.state.players.get(firstSessionId);
+
+    placeUntappedDon(player, 3);
+    room.state.phase = 'main';
+
+    const characterInstanceId = ensureHandContains(player, 'Character');
+    asPrivateRoom(room).handlePlayCard(fakeClient(firstSessionId), {
+      instanceId: characterInstanceId,
+    });
+
+    if (player) {
+      player.zones.cost.forEach((card) => {
+        card.rested = false;
+      });
+    }
+
+    const playedCharacter = player?.zones.characters.find(
+      (card) => card.instanceId === characterInstanceId,
+    );
+
+    expect(playedCharacter).toBeDefined();
+
+    asPrivateRoom(room).handleAttachDon(fakeClient(firstSessionId), {
+      target: 'character',
+      targetInstanceId: characterInstanceId,
+      count: 2,
+    });
+
+    expect(playedCharacter?.attachedDon).toBe(2);
+    expect(player?.zones.cost.filter((card) => !card.rested)).toHaveLength(1);
+    expect(room.state.logs.at(-1)?.message).toContain('donne 2 DON!!');
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();

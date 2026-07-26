@@ -510,6 +510,129 @@ describe('PlayZone transitions', () => {
     expect(wrapper.emitted('handCardDropOnStage')).toEqual([[0]])
   })
 
+  it('starts DON!! selection on shift-mousedown', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    await wrapper.get('[data-cost-state="untapped"]').trigger('mousedown', {
+      shiftKey: true
+    })
+
+    expect(wrapper.emitted('donCardSelectionStart')).toEqual([['don-ready-1']])
+  })
+
+  it('extends DON!! selection on shift-hover', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-2', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    await wrapper.findAll('[data-cost-state="untapped"]')[1]!.trigger('mouseenter', {
+      shiftKey: true
+    })
+
+    expect(wrapper.emitted('donCardSelectionHover')).toEqual([['don-ready-2']])
+  })
+
+  it('does not start DON!! selection on ctrl-click anymore', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    await wrapper.get('[data-cost-state="untapped"]').trigger('click', {
+      ctrlKey: true
+    })
+
+    expect(wrapper.emitted('donCardSelectionStart')).toBeUndefined()
+    expect(wrapper.emitted('donCardSelectionHover')).toBeUndefined()
+  })
+
+  it('marks selected untapped DON!! cards and emits a drag drop attach on the leader', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0,
+        selectedDonCardIds: ['don-ready-1'],
+        draggedDonCardInstanceId: 'don-ready-1',
+        draggedDonCardCount: 2,
+        canDropDonOnLeader: true
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const donCard = wrapper.get('[data-cost-state="untapped"]')
+    const leaderButton = wrapper.get('[data-instance-id="leader-a"]')
+
+    expect(donCard.attributes('data-don-selected')).toBe('true')
+
+    await leaderButton.trigger('dragenter')
+    await leaderButton.trigger('dragover', { dataTransfer: { dropEffect: '' } })
+    await leaderButton.trigger('drop')
+
+    expect(wrapper.emitted('donCardDropOnLeader')).toEqual([[0]])
+  })
+
+  it('shows a count badge for multi-card DON!! selections', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          cost: [
+            createPublicCard('don-ready-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-2', { type: 'DON!!', cost: null, power: null, counter: null }),
+            createPublicCard('don-ready-3', { type: 'DON!!', cost: null, power: null, counter: null })
+          ]
+        }),
+        side: 0,
+        selectedDonCardIds: ['don-ready-1', 'don-ready-2', 'don-ready-3']
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const badge = wrapper.get('[data-selected-don-count]')
+
+    expect(badge.text()).toBe('3')
+    expect(badge.attributes('title')).toContain('3 DON!!')
+  })
+
   it('switches the open popover to another character on the first click', async () => {
     const wrapper = mount(PlayZone, {
       props: {
