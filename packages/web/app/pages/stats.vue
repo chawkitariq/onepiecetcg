@@ -9,7 +9,6 @@ definePageMeta({
 })
 
 const api = useApi()
-const isDev = import.meta.dev
 
 const stats = ref<PlayerStats | null>(null)
 const loading = ref(true)
@@ -51,29 +50,6 @@ function leaderColor(leaderCardId: string) {
   return leaderColorSequence[hash % leaderColorSequence.length]!.hex
 }
 
-function loadFakeStats() {
-  stats.value = {
-    played: 12,
-    wins: 8,
-    losses: 4,
-    winRate: 8 / 12,
-    currentStreak: { type: 'win', length: 3 },
-    averageDurationSeconds: 642,
-    wentFirst: { played: 7, wins: 5, losses: 2, winRate: 5 / 7 },
-    wentSecond: { played: 5, wins: 3, losses: 2, winRate: 3 / 5 },
-    byDeck: [
-      { deckId: 'fake-deck-1', deckName: 'Rouge Rush', played: 7, wins: 5, losses: 2, winRate: 5 / 7 },
-      { deckId: 'fake-deck-2', deckName: 'Bleu Control', played: 5, wins: 3, losses: 2, winRate: 3 / 5 },
-      { deckId: 'fake-deck-3', deckName: 'Deck rayé du registre', played: 0, wins: 0, losses: 0, winRate: 0 }
-    ],
-    byLeader: [
-      { leaderCardId: 'OP01-001', leaderName: 'Roronoa Zoro', leaderImageUrl: null, played: 7, wins: 5, losses: 2, winRate: 5 / 7 },
-      { leaderCardId: 'ST01-001', leaderName: 'Monkey.D.Luffy', leaderImageUrl: null, played: 5, wins: 3, losses: 2, winRate: 3 / 5 }
-    ]
-  }
-  errorMessage.value = ''
-}
-
 const leaderChartData = computed(() =>
   (stats.value?.byLeader ?? []).map(leader => ({
     leader: leaderLabel(leader),
@@ -101,15 +77,6 @@ const lifeMeterPips = computed(() => {
 
 <template>
   <div class="mx-auto max-w-5xl px-4 pb-16 pt-8">
-    <UButton
-      v-if="isDev"
-      color="neutral"
-      variant="subtle"
-      icon="i-lucide-flask-conical"
-      label="Charger des données de test (dev)"
-      @click="loadFakeStats"
-    />
-
     <UAlert
       v-if="errorMessage"
       class="mt-6"
