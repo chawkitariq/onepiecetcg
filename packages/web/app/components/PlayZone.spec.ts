@@ -375,6 +375,26 @@ describe('PlayZone transitions', () => {
     expect(deferredCostCard.attributes('data-layout-id')).toBeUndefined()
   })
 
+  it('keeps a deferred trash arrival hidden and out of shared-layout travel until the trash overlay completes', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          trash: [createPublicCard('trash-top')]
+        }),
+        side: 0,
+        deferredTrashCardIds: ['trash-top']
+      },
+      global: {
+        stubs: popoverTestStubs()
+      }
+    })
+
+    const deferredTrashCard = wrapper.get('[data-instance-id="trash-top"]')
+
+    expect(deferredTrashCard.classes()).toContain('opacity-0')
+    expect(deferredTrashCard.attributes('data-layout-id')).toBeUndefined()
+  })
+
   it('renders untapped and rested DON!! as two opposite cost stacks', () => {
     const wrapper = mount(PlayZone, {
       props: {

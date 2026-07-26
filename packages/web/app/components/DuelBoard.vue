@@ -298,6 +298,8 @@ const selfRevealedHandCardIds = ref<string[]>([])
 const selfDeferredHandCardIds = ref<string[]>([])
 const selfDeferredBoardCardIds = ref<string[]>([])
 const selfDeferredCostCardIds = ref<string[]>([])
+const selfDeferredTrashCardIds = ref<string[]>([])
+const opponentDeferredTrashCardIds = ref<string[]>([])
 const boardTravelOverlays = ref<BoardTravelOverlay[]>([])
 const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
 const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect }> = []
@@ -610,9 +612,11 @@ function findVisibleCardInstanceIdByName(name: string) {
 function resolveGlobalActionMessage(message: string) {
   const attackMatch = message.match(/^(?<attacker>.+?) attaque avec (?<source>.+?) vers (?<target>.+)\.$/u)
 
-  if (attackMatch?.groups) {
-    const source = attackMatch.groups.source.trim()
-    const rawTarget = attackMatch.groups.target.trim()
+  const attackGroups = attackMatch?.groups
+
+  if (attackGroups?.source && attackGroups.target) {
+    const source = attackGroups.source.trim()
+    const rawTarget = attackGroups.target.trim()
     const leaderMatch = rawTarget.match(/^le Leader de (?<defender>.+)$/u)
     const target = leaderMatch?.groups?.defender
       ? findPlayerByDisplayName(leaderMatch.groups.defender)?.leader?.name ?? 'le Leader'
@@ -698,24 +702,26 @@ function handleNewLogFeedback(message: string) {
   }
 
   const blockerMatch = message.match(/^(?<player>.+?) declare (?<card>.+?) comme Bloqueur\.$/u)
+  const blockerCardName = blockerMatch?.groups?.card
 
-  if (blockerMatch?.groups?.card) {
+  if (blockerCardName) {
     nextTick(() => spawnCardFeedback(
-      findVisibleCardInstanceIdByName(blockerMatch.groups.card) ?? combat.value?.blockerInstanceId,
+      findVisibleCardInstanceIdByName(blockerCardName) ?? combat.value?.blockerInstanceId ?? undefined,
       'Blocker',
       'warning'
     ))
   }
 
   const donGainMatch = message.match(/^(?<player>.+?) donne \d+ DON!! a (?<target>.+?) \(\+(?<power>\d+) de puissance\)\.$/u)
+  const donGainGroups = donGainMatch?.groups
 
-  if (donGainMatch?.groups?.power && donGainMatch.groups.target) {
-    const player = findPlayerByDisplayName(donGainMatch.groups.player)
-    const targetInstanceId = donGainMatch.groups.target === 'son Leader'
-      ? player?.leader?.instanceId ?? null
-      : findVisibleCardInstanceIdByName(donGainMatch.groups.target)
+  if (donGainGroups?.player && donGainGroups.target && donGainGroups.power) {
+    const player = findPlayerByDisplayName(donGainGroups.player)
+    const targetInstanceId = donGainGroups.target === 'son Leader'
+      ? player?.leader?.instanceId ?? undefined
+      : findVisibleCardInstanceIdByName(donGainGroups.target) ?? undefined
 
-    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainMatch.groups.power}`, 'power'))
+    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainGroups.power}`, 'power'))
   }
 }
 
@@ -740,12 +746,12 @@ function syncPlayerTransitions(
     mergeDeferredHandCards(
       selfDeferredHandCardIds,
       diff.ghosts
-        .filter(ghost => ghost.source === 'deck' || ghost.source === 'life')
+        .filter(ghost => ghost.source === 'deck')
         .map(ghost => ghost.instanceId)
     )
   }
 
-  if (revealedHandTarget) {
+  if (revealedHandTarget && !skippedGhostSources.includes('life')) {
     mergeRevealedHandCards(revealedHandTarget, diff.revealedHandCardIds)
   }
 
@@ -758,14 +764,16 @@ function syncPlayerTransitions(
 
 watch(self, (current, previous) => {
   queueKoFeedback(current, previous)
-  const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck'])
+  const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck', 'life'])
 
   if (current) {
+    queueLifeToHandTravelOverlays(diff, current)
     queuePendingBoardTravelOverlays(current, previous)
     queueDonDeckToCostTravelOverlays(diff)
     queueAttachedDonTravelOverlays(current, previous)
   }
 
+  queueTrashTravelOverlay(current, previous, 0, selfDeferredTrashCardIds)
   queueAttachedDonFeedback(current, previous)
   syncPendingHandPlayQueue(current)
 })
@@ -773,6 +781,7 @@ watch(self, (current, previous) => {
 watch(opponent, (current, previous) => {
   queueKoFeedback(current, previous)
   syncPlayerTransitions(current, previous, opponentTransitionGhosts)
+  queueTrashTravelOverlay(current, previous, 1, opponentDeferredTrashCardIds)
   queueAttachedDonFeedback(current, previous)
 })
 
@@ -864,6 +873,10 @@ function querySelfDonDeckElement(): HTMLElement | null {
   return document.querySelector('[data-don-deck-side="0"]')
 }
 
+function queryLifeStackElement(side: 0 | 1): HTMLElement | null {
+  return document.querySelector(`[data-life-side="${side}"] [data-life-top="true"]`)
+}
+
 function querySelfCostCardElement(instanceId: string): HTMLElement | null {
   return document.querySelector(`[data-zone-side="0"][data-instance-id="${CSS.escape(instanceId)}"]`)
 }
@@ -876,6 +889,10 @@ function querySelfUntappedCostCardElement(): HTMLElement | null {
 
 function queryAttachedDonAnchorElement(instanceId: string): HTMLElement | null {
   return document.querySelector(`[data-attached-don-anchor="${CSS.escape(instanceId)}"]`)
+}
+
+function queryTrashCardElement(side: 0 | 1, instanceId: string): HTMLElement | null {
+  return document.querySelector(`[data-trash-side="${side}"] [data-instance-id="${CSS.escape(instanceId)}"]`)
 }
 
 function revealDeferredVisibleCard(target: Ref<string[]>, instanceId: string) {
@@ -901,17 +918,17 @@ function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
   }
 }
 
-function createTravelOverlay(
+function createTravelOverlayFromRect(
   key: string,
   instanceId: string,
   imageUrl: string,
   sourceRect: DOMRect,
-  destinationElement: HTMLElement,
+  destinationRect: DOMRect,
   target: Ref<string[]>,
   rotated = false,
-  delayMs = 0
+  delayMs = 0,
+  onComplete?: () => void
 ) {
-  const destinationRect = destinationElement.getBoundingClientRect()
   const translateX = destinationRect.left - sourceRect.left
   const translateY = destinationRect.top - sourceRect.top
   const scaleX = sourceRect.width === 0 ? 1 : destinationRect.width / sourceRect.width
@@ -950,8 +967,165 @@ function createTravelOverlay(
       })
     })
 
-    window.setTimeout(() => removeBoardTravelOverlay(key, target, instanceId), BOARD_TRAVEL_MS)
+    window.setTimeout(() => {
+      removeBoardTravelOverlay(key, target, instanceId)
+      onComplete?.()
+    }, BOARD_TRAVEL_MS)
   }, delayMs)
+}
+
+function createTravelOverlay(
+  key: string,
+  instanceId: string,
+  imageUrl: string,
+  sourceRect: DOMRect,
+  destinationElement: HTMLElement,
+  target: Ref<string[]>,
+  rotated = false,
+  delayMs = 0,
+  onComplete?: () => void
+) {
+  createTravelOverlayFromRect(
+    key,
+    instanceId,
+    imageUrl,
+    sourceRect,
+    destinationElement.getBoundingClientRect(),
+    target,
+    rotated,
+    delayMs,
+    onComplete
+  )
+}
+
+function queueLifeToHandTravelOverlays(diff: PlayerTransitionDiff | null, current: DuelPlayerView) {
+  if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const revealedLifeCards = diff.ghosts
+    .filter(ghost => ghost.source === 'life')
+    .map((ghost) => {
+      const card = current.hand.find(candidate => candidate.instanceId === ghost.instanceId)
+
+      return card
+    })
+    .filter((card): card is PrivateCard & { imageUrl: string } => typeof card?.imageUrl === 'string' && card.imageUrl.length > 0)
+
+  if (revealedLifeCards.length === 0) {
+    return
+  }
+
+  const sourceElement = queryLifeStackElement(0)
+
+  if (!sourceElement) {
+    return
+  }
+
+  nextTick(() => {
+    const destinationRects = new Map<string, DOMRect>()
+
+    for (const card of revealedLifeCards) {
+      const destinationElement = queryCardElement(card.instanceId)
+
+      if (destinationElement) {
+        destinationRects.set(card.instanceId, destinationElement.getBoundingClientRect())
+      }
+    }
+
+    if (destinationRects.size === 0) {
+      return
+    }
+
+    const sourceRect = sourceElement.getBoundingClientRect()
+    mergeDeferredVisibleCards(
+      selfDeferredHandCardIds,
+      revealedLifeCards
+        .filter(card => destinationRects.has(card.instanceId))
+        .map(card => card.instanceId)
+    )
+
+    for (const { item: card, delayMs } of createStaggeredTravelPlan(revealedLifeCards, BOARD_TRAVEL_STAGGER_MS)) {
+      const destinationRect = destinationRects.get(card.instanceId)
+
+      if (!destinationRect) {
+        revealDeferredVisibleCard(selfDeferredHandCardIds, card.instanceId)
+        continue
+      }
+
+      createTravelOverlayFromRect(
+        `life-hand:${card.instanceId}`,
+        card.instanceId,
+        card.imageUrl,
+        sourceRect,
+        destinationRect,
+        selfDeferredHandCardIds,
+        false,
+        delayMs,
+        () => mergeRevealedHandCards(selfRevealedHandCardIds, [card.instanceId])
+      )
+    }
+  })
+}
+
+function queueTrashTravelOverlay(
+  current: DuelPlayerView | null,
+  previous: DuelPlayerView | null,
+  side: 0 | 1,
+  deferredTrashTarget: Ref<string[]>
+) {
+  if (!current || !previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const topTrash = current.trash[0]
+
+  if (
+    !topTrash
+    || typeof topTrash.imageUrl !== 'string'
+    || topTrash.imageUrl.length === 0
+    || previous.trash.some(card => card.instanceId === topTrash.instanceId)
+  ) {
+    return
+  }
+
+  const trashImageUrl = topTrash.imageUrl
+
+  const existedInVisibleZone = previous.characters.some(card => card.instanceId === topTrash.instanceId)
+    || previous.stage?.instanceId === topTrash.instanceId
+    || previous.cost.some(card => card.instanceId === topTrash.instanceId)
+    || (side === 0 && previous.hand.some(card => card.instanceId === topTrash.instanceId))
+
+  if (!existedInVisibleZone) {
+    return
+  }
+
+  const sourceElement = queryCardElement(topTrash.instanceId)
+
+  if (!sourceElement) {
+    return
+  }
+
+  const sourceRect = sourceElement.getBoundingClientRect()
+  mergeDeferredVisibleCards(deferredTrashTarget, [topTrash.instanceId])
+
+  nextTick(() => {
+    const destinationElement = queryTrashCardElement(side, topTrash.instanceId)
+
+    if (!destinationElement) {
+      revealDeferredVisibleCard(deferredTrashTarget, topTrash.instanceId)
+      return
+    }
+
+    createTravelOverlay(
+      `trash:${side}:${topTrash.instanceId}`,
+      topTrash.instanceId,
+      trashImageUrl,
+      sourceRect,
+      destinationElement,
+      deferredTrashTarget
+    )
+  })
 }
 
 function cacheBoardTravelSource(card: PrivateCard) {
@@ -2209,6 +2383,7 @@ defineShortcuts({
                   :is-owner-turn="!isSelfTurn"
                   :is-adversary="Boolean(opponent)"
                   :transition-ghosts="opponent ? opponentTransitionGhosts : []"
+                  :deferred-trash-card-ids="opponentDeferredTrashCardIds"
                   :is-targetable="Boolean(opponent) && isChoosingTarget"
                   :targetable-leader="Boolean(opponent) && isChoosingTarget"
                   :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
@@ -2250,6 +2425,7 @@ defineShortcuts({
                   :invalid-character-ids="invalidSelfCharacterIds"
                   :deferred-board-card-ids="selfDeferredBoardCardIds"
                   :deferred-cost-card-ids="selfDeferredCostCardIds"
+                  :deferred-trash-card-ids="selfDeferredTrashCardIds"
                   @card-hover="hoveredCard = $event"
                   @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
                   @hand-card-drop-on-stage="onSelfStageZoneDrop"

@@ -62,6 +62,7 @@ const props = defineProps<{
   transitionGhosts?: TransitionGhost[]
   deferredBoardCardIds?: string[]
   deferredCostCardIds?: string[]
+  deferredTrashCardIds?: string[]
 }>()
 const {
   player,
@@ -278,6 +279,14 @@ function isCostCardDeferred(instanceId: string | null | undefined): boolean {
   }
 
   return props.deferredCostCardIds?.includes(instanceId) ?? false
+}
+
+function isTrashCardDeferred(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return props.deferredTrashCardIds?.includes(instanceId) ?? false
 }
 
 function isDonCardSelected(instanceId: string): boolean {
@@ -690,7 +699,10 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         :count="player.lifeCount"
         allow-overflow
       >
-        <div class="relative h-full">
+        <div
+          :data-life-side="side"
+          class="relative h-full"
+        >
           <AnimatePresence>
             <motion.div
               v-for="ghost in lifeGhosts"
@@ -713,6 +725,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             :src="cardBackRegular"
             alt="Vie"
             class="absolute left-0 top-0"
+            :data-life-top="index === 0 ? 'true' : undefined"
             :class="index === 0 ? 'z-50' : ''"
             :style="{ top: `${index * 20}px`, zIndex: 50 - index }"
           />
@@ -1138,7 +1151,10 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         :count="player.trash.length"
         allow-overflow
       >
-        <div class="relative h-full">
+        <div
+          :data-trash-side="side"
+          class="relative h-full"
+        >
           <div
             v-if="topTrash"
             class="h-full"
@@ -1147,10 +1163,12 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           >
             <motion.div
               layout
-              :layout-id="topTrash.instanceId"
+              :layout-id="visibleLayoutId(topTrash.instanceId, isTrashCardDeferred(topTrash.instanceId))"
+              :data-instance-id="topTrash.instanceId"
               :initial="false"
               :transition="sharedCardTravelTransition"
               class="h-full"
+              :class="isTrashCardDeferred(topTrash.instanceId) ? 'pointer-events-none opacity-0' : ''"
             >
               <DuelCard :src="topTrash.imageUrl" />
             </motion.div>

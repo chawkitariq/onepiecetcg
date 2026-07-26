@@ -187,7 +187,8 @@ const playZoneStub = defineComponent({
     isTargetable: { type: Boolean, default: false },
     transitionGhosts: { type: Array, default: () => [] },
     deferredBoardCardIds: { type: Array, default: () => [] },
-    deferredCostCardIds: { type: Array, default: () => [] }
+    deferredCostCardIds: { type: Array, default: () => [] },
+    deferredTrashCardIds: { type: Array, default: () => [] }
   },
   emits: [
     'handCardDropOnCharacters',
@@ -214,6 +215,7 @@ const playZoneStub = defineComponent({
       'data-transition-ghosts': JSON.stringify((props.transitionGhosts as Array<{ instanceId: string, source: string }>)),
       'data-deferred-board-card-ids': JSON.stringify(props.deferredBoardCardIds),
       'data-deferred-cost-card-ids': JSON.stringify(props.deferredCostCardIds),
+      'data-deferred-trash-card-ids': JSON.stringify(props.deferredTrashCardIds),
       'data-selected-don-card-ids': JSON.stringify(props.selectedDonCardIds),
       'data-dragged-don-card-count': String(props.draggedDonCardCount),
       'data-leader-popover': JSON.stringify(getLeaderPopoverItems().map(item => item.label)),
@@ -221,6 +223,9 @@ const playZoneStub = defineComponent({
       'data-attacker-id': props.attackerId,
       'data-is-targetable': String(props.isTargetable ?? false)
     }, [
+      h('div', { 'data-life-side': props.side }, [
+        h('div', { 'data-life-top': 'true' })
+      ]),
       h('div', { 'data-don-deck-side': props.side }),
       ...((props.player as DuelPlayerView).characters.map(character => h('div', {
         'data-instance-id': character.instanceId,
@@ -251,6 +256,14 @@ const playZoneStub = defineComponent({
         'data-cost-state': card.rested ? 'rested' : 'untapped',
         'data-cost-card-deferred': String((props.deferredCostCardIds as string[]).includes(card.instanceId))
       }))),
+      h('div', { 'data-trash-side': props.side }, [
+        (props.player as DuelPlayerView).trash[0]
+          ? h('div', {
+              'data-instance-id': (props.player as DuelPlayerView).trash[0]?.instanceId,
+              'data-trash-card-deferred': String((props.deferredTrashCardIds as string[]).includes((props.player as DuelPlayerView).trash[0]?.instanceId ?? ''))
+            })
+          : null
+      ]),
       h('button', {
         'data-test': `don-select-start-${props.side}`,
         'onClick': () => emit('donCardSelectionStart', 'self-don-1')
@@ -316,6 +329,7 @@ const duelHandStub = defineComponent({
   props: {
     hand: { type: Array, default: () => [] },
     draggableHandCardIds: { type: Array, default: () => [] },
+    deferredHandCardIds: { type: Array, default: () => [] },
     selectedHandCardIds: { type: Array, default: () => [] },
     draggedHandCardCount: { type: Number, default: 0 }
   },
@@ -335,12 +349,16 @@ const duelHandStub = defineComponent({
 
     return () => h('div', {
       'data-duel-hand': 'true',
-      'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>).map(card => card.instanceId)),
+      'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>)
+        .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
+        .map(card => card.instanceId)),
       'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
       'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
       'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
-      ...((props.hand as Array<PrivateCard>).map(card => h('div', {
+      ...((props.hand as Array<PrivateCard>)
+        .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
+        .map(card => h('div', {
         'data-instance-id': card.instanceId
       }))),
       h('button', {
@@ -509,6 +527,8 @@ describe('DuelBoard drag and drop', () => {
     })
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(40)
+    await wrapper.vm.$nextTick()
 
     const selfZone = wrapper.get('[data-play-zone="0"]')
     const hand = wrapper.get('[data-duel-hand]')
@@ -517,6 +537,48 @@ describe('DuelBoard drag and drop', () => {
     expect(selfZone.attributes('data-transition-ghosts')).toContain('"source":"deck"')
     expect(hand.attributes('data-hand-ids')).toContain('drawn-card')
     expect(wrapper.find('[data-layout-group="duel-surface-self"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when a revealed life card travels into the self hand', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null }),
+        createPrivateCard('revealed-life', { type: 'Character', cost: 2 })
+      ],
+      handCount: 4,
+      lifeCount: 3
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="revealed-life"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when a visible self card moves into trash', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      hand: [
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2,
+      trash: [createPrivateCard('hand-character', { type: 'Character', cost: 1 })]
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="hand-character"]').exists()).toBe(true)
   })
 
   it('plays the dragged character when it is dropped onto the self character zone', async () => {
