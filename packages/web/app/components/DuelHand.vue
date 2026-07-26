@@ -23,6 +23,7 @@ const props = defineProps<{
   hand?: PrivateCard[]
   handCount?: number
   hidden?: boolean
+  deferredHiddenCount?: number
   draggableHandCardIds?: string[]
   invalidHandCardIds?: string[]
   revealedHandCardIds?: string[]
@@ -46,8 +47,28 @@ const handCardElements = new Map<string, HTMLElement>()
 const visibleHand = computed(() =>
   (props.hand ?? []).filter(card => !props.deferredHandCardIds?.includes(card.instanceId))
 )
-const renderedHandCount = computed(() => props.hidden ? (props.handCount ?? 0) : (props.hand?.length ?? 0))
+const renderedHandCount = computed(() => {
+  if (!props.hidden) {
+    return props.hand?.length ?? 0
+  }
+
+  return Math.max((props.handCount ?? 0) - (props.deferredHiddenCount ?? 0), 0)
+})
 const hiddenHand = computed(() => Array.from({ length: props.handCount ?? 0 }))
+
+function isDeferredHiddenCard(index: number): boolean {
+  if (!props.hidden) {
+    return false
+  }
+
+  const deferredCount = props.deferredHiddenCount ?? 0
+
+  if (deferredCount <= 0) {
+    return false
+  }
+
+  return index >= hiddenHand.value.length - deferredCount
+}
 
 function useMeasuredStackSize(templateRefName: string) {
   const element = useTemplateRef<HTMLElement>(templateRefName)
@@ -231,6 +252,9 @@ watch(
           :src="cardBackRegular"
           alt="Main adverse"
           class="absolute top-0"
+          :data-hidden-hand-card="true"
+          :data-hidden-hand-top="index === hiddenHand.length - 1 ? 'true' : undefined"
+          :class="isDeferredHiddenCard(index) ? 'pointer-events-none opacity-0' : ''"
           :style="stackedCardStyle(index, hiddenHand.length, handStackSize)"
         />
       </template>

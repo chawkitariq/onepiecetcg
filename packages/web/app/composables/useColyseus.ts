@@ -3,6 +3,8 @@ import { DuelState } from '@onepiecetcg/shared'
 
 const RECONNECTION_TOKEN_KEY = 'duel-reconnection-token'
 
+type ColyseusDevOverride = ReturnType<typeof createColyseusDevOverrideShape>
+
 type DuelJoinOptions = {
   displayName?: string
   deckId: string
@@ -45,7 +47,41 @@ const room = shallowRef<Room<DuelState> | null>(null)
 const status = ref<'idle' | 'connecting' | 'connected' | 'error'>('idle')
 const error = ref('')
 
+function createColyseusDevOverrideShape() {
+  return {
+    client,
+    room,
+    status,
+    error,
+    joinDuel: async () => null,
+    createPrivateRoom: async () => null,
+    joinPrivateRoom: async () => null,
+    reconnect: async () => null,
+    getStoredReconnectionToken: () => null,
+    leave: async () => {},
+    sendMessage: () => {}
+  }
+}
+
+function getColyseusDevOverride(): ColyseusDevOverride | null {
+  if (!import.meta.client || !import.meta.dev) {
+    return null
+  }
+
+  const override = (window as typeof window & {
+    __COLYSEUS_DEV_OVERRIDE__?: ColyseusDevOverride
+  }).__COLYSEUS_DEV_OVERRIDE__
+
+  return override ?? null
+}
+
 export function useColyseus() {
+  const devOverride = getColyseusDevOverride()
+
+  if (devOverride) {
+    return devOverride
+  }
+
   const config = useRuntimeConfig()
 
   function persistReconnectionToken() {

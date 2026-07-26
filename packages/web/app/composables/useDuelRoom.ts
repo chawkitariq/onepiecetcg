@@ -127,8 +127,68 @@ type ActionErrorMessage = {
   message: string
 }
 
+type DuelRoomDevOverride = ReturnType<typeof createDuelRoomDevOverrideShape>
+
+function createDuelRoomDevOverrideShape() {
+  return {
+    self: ref<DuelPlayerView | null>(null),
+    opponent: ref<DuelPlayerView | null>(null),
+    phase: ref('setup'),
+    isSelfTurn: computed(() => false),
+    isMainPhase: computed(() => false),
+    canEndPhase: computed(() => false),
+    selfUntappedDonCount: computed(() => 0),
+    isSelfCharacterZoneFull: computed(() => false),
+    logs: ref<DuelLogEntry[]>([]),
+    errorMessage: ref<string | null>(null),
+    endPhase: () => {},
+    playCard: () => {},
+    attachDon: () => {},
+    clearError: () => {},
+    combat: ref<WireDuelCombat | null>(null),
+    isCombatInProgress: computed(() => false),
+    isSelfAttacker: computed(() => false),
+    isSelfDefender: computed(() => false),
+    canDeclareAttack: computed(() => false),
+    isBlockingStep: computed(() => false),
+    isCounteringStep: computed(() => false),
+    isAwaitingTriggerDecision: computed(() => false),
+    declareAttack: () => {},
+    declareBlock: () => {},
+    declareCounter: () => {},
+    finishCounterStep: () => {},
+    resolveTrigger: () => {},
+    isOpponentDisconnected: computed(() => false),
+    chooseFirstOrSecond: () => {},
+    mulligan: () => {},
+    isSelfDesignatedToChoose: computed(() => false),
+    isSelfTurnToMulligan: computed(() => false),
+    startingPlayerSessionId: computed(() => null),
+    firstPlayerSessionId: computed(() => null),
+    activePlayerSessionId: computed(() => null)
+  }
+}
+
+function getDuelRoomDevOverride(): DuelRoomDevOverride | null {
+  if (!import.meta.client || !import.meta.dev) {
+    return null
+  }
+
+  const override = (window as typeof window & {
+    __DUEL_ROOM_DEV_OVERRIDE__?: DuelRoomDevOverride
+  }).__DUEL_ROOM_DEV_OVERRIDE__
+
+  return override ?? null
+}
+
 /** Maps the live Colyseus duel room into UI-friendly computed state and actions. */
 export function useDuelRoom() {
+  const devOverride = getDuelRoomDevOverride()
+
+  if (devOverride) {
+    return devOverride
+  }
+
   const { room, sendMessage } = useColyseus()
   const version = ref(0)
   const errorMessage = ref<string | null>(null)

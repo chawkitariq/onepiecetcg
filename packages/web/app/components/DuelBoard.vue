@@ -3,6 +3,7 @@ import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/share
 import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { animate } from 'animejs'
+import cardBackRegular from '~/assets/card-back-regular.png'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
 import { getCardColorStyle } from '~/utils/cardColors'
@@ -129,6 +130,10 @@ const selectedDonAnchorInstanceId = ref<string | null>(null)
 const draggedDonCardInstanceId = ref<string | null>(null)
 const pointerPosition = ref<{ x: number, y: number } | null>(null)
 const declaredAttackTargetInstanceId = ref<string | null>(null)
+const confirmedAttackArrow = ref<{ key: number, fromInstanceId: string, toInstanceId: string } | null>(null)
+const lastConfirmedAttackArrowSignature = ref<string | null>(null)
+let confirmedAttackArrowKey = 0
+let confirmedAttackArrowTimeoutId: number | null = null
 
 function onBoardPointerMove(event: PointerEvent) {
   pointerPosition.value = { x: event.clientX, y: event.clientY }
@@ -148,32 +153,133 @@ const attackArrowFromInstanceId = computed(() => {
     return pendingAttackerInstanceId.value
   }
 
-  if (combat.value && isSelfAttacker.value && combat.value.step === 'declared') {
-    return combat.value.attackerInstanceId
-  }
-
-  return null
+  return confirmedAttackArrow.value?.fromInstanceId ?? null
 })
 
-const attackArrowToInstanceId = computed(() => declaredAttackTargetInstanceId.value)
+const attackArrowToInstanceId = computed(() =>
+  pendingAttackerInstanceId.value
+    ? declaredAttackTargetInstanceId.value
+    : confirmedAttackArrow.value?.toInstanceId ?? null
+)
 
 const attackArrowToPoint = computed(() =>
   isChoosingTarget.value && !declaredAttackTargetInstanceId.value ? pointerPosition.value : null
 )
+const shouldRenderAttackArrow = computed(() =>
+  Boolean(
+    attackArrowFromInstanceId.value
+    && (attackArrowToInstanceId.value || attackArrowToPoint.value)
+  )
+)
 
-watch(() => combat.value?.step, (step, previousStep) => {
-  if (step === previousStep) {
-    return
+function resolveCombatTargetInstanceId() {
+  if (!combat.value) {
+    return null
   }
 
-  if (step === 'declared' && combat.value) {
-    declaredAttackTargetInstanceId.value = combat.value.targetType === 'leader'
-      ? (isSelfAttacker.value ? opponent.value?.leader?.instanceId : self.value?.leader?.instanceId) ?? null
-      : combat.value.targetInstanceId
+  if (combat.value.targetType === 'character') {
+    return combat.value.targetInstanceId
   }
 
-  if (!step) {
-    declaredAttackTargetInstanceId.value = null
+  return combat.value.defenderSessionId === self.value?.sessionId
+    ? self.value?.leader?.instanceId ?? null
+    : opponent.value?.leader?.instanceId ?? null
+}
+
+function hasResolvedCombatAttackerAndTarget() {
+  if (!combat.value) {
+    return false
+  }
+
+  return combat.value.attackerInstanceId.length > 0 && resolveCombatTargetInstanceId() !== null
+}
+
+function resolveConfirmedAttackArrowSignature() {
+  const targetInstanceId = resolveCombatTargetInstanceId()
+
+  if (!combat.value || !targetInstanceId || combat.value.attackerInstanceId.length === 0) {
+    return null
+  }
+
+  return [
+    combat.value.attackerSessionId,
+    combat.value.attackerInstanceId,
+    combat.value.defenderSessionId,
+    combat.value.targetType,
+    targetInstanceId
+  ].join(':')
+}
+
+function showConfirmedAttackArrow(fromInstanceId: string, toInstanceId: string) {
+  confirmedAttackArrow.value = {
+    key: ++confirmedAttackArrowKey,
+    fromInstanceId,
+    toInstanceId
+  }
+
+  if (confirmedAttackArrowTimeoutId !== null) {
+    window.clearTimeout(confirmedAttackArrowTimeoutId)
+  }
+
+  confirmedAttackArrowTimeoutId = window.setTimeout(() => {
+    if (
+      confirmedAttackArrow.value?.fromInstanceId === fromInstanceId
+      && confirmedAttackArrow.value?.toInstanceId === toInstanceId
+      && combat.value?.step !== 'declared'
+    ) {
+      confirmedAttackArrow.value = null
+    }
+
+    confirmedAttackArrowTimeoutId = null
+  }, 900)
+}
+
+watch(
+  [
+    () => combat.value?.step,
+    () => combat.value?.attackerInstanceId,
+    () => combat.value?.targetType,
+    () => combat.value?.targetInstanceId,
+    () => combat.value?.defenderSessionId,
+    () => self.value?.leader?.instanceId,
+    () => opponent.value?.leader?.instanceId
+  ],
+  ([step, attackerInstanceId], [previousStep, previousAttackerInstanceId]) => {
+    if (combat.value && attackerInstanceId && hasResolvedCombatAttackerAndTarget()) {
+      const targetInstanceId = resolveCombatTargetInstanceId()
+      const signature = resolveConfirmedAttackArrowSignature()
+
+      declaredAttackTargetInstanceId.value = targetInstanceId
+
+      if (
+        targetInstanceId
+        && signature
+        && signature !== lastConfirmedAttackArrowSignature.value
+      ) {
+        lastConfirmedAttackArrowSignature.value = signature
+        showConfirmedAttackArrow(attackerInstanceId, targetInstanceId)
+      }
+
+      return
+    }
+
+    if (!pendingAttackerInstanceId.value) {
+      declaredAttackTargetInstanceId.value = null
+    }
+
+    if (!attackerInstanceId) {
+      confirmedAttackArrow.value = null
+    }
+
+    if (!step || !attackerInstanceId) {
+      lastConfirmedAttackArrowSignature.value = null
+    }
+  },
+  { immediate: true }
+)
+onScopeDispose(() => {
+  if (confirmedAttackArrowTimeoutId !== null) {
+    window.clearTimeout(confirmedAttackArrowTimeoutId)
   }
 })
 const invalidHandCardIds = ref<string[]>([])
@@ -289,6 +395,9 @@ const selfDeferredHandCardIds = ref<string[]>([])
 const selfDeferredBoardCardIds = ref<string[]>([])
 const selfDeferredCostCardIds = ref<string[]>([])
 const selfDeferredTrashCardIds = ref<string[]>([])
+const opponentDeferredHandTravelIds = ref<string[]>([])
+const opponentDeferredBoardCardIds = ref<string[]>([])
+const opponentDeferredCostCardIds = ref<string[]>([])
 const opponentDeferredTrashCardIds = ref<string[]>([])
 const boardTravelOverlays = ref<BoardTravelOverlay[]>([])
 const boardTravelOverlayElements = new Map<string, HTMLElement>()
@@ -296,8 +405,14 @@ const cardFeedbackElements = new Map<number, HTMLElement>()
 const bannerFeedbackElements = new Map<number, HTMLElement>()
 const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
 const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect }> = []
+const pendingSelfHandTravelSources: Array<{ source: 'life' | 'deck', sourceRect: DOMRect, expiresAt: number }> = []
+const pendingOpponentHandTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
+const animatedSelfLifeToHandIds = new Set<string>()
+const animatedSelfDeckToHandIds = new Set<string>()
+const animatedOpponentBoardEntryIds = new Set<string>()
 const attachedDonOverlayTarget = ref<string[]>([])
 let attachedDonTravelKey = 0
+let opponentHiddenHandTravelKey = 0
 
 const actionModalState = computed<DuelActionModalState | null>(() => {
   if (isBlockingStep.value && isSelfDefender.value) {
@@ -425,6 +540,54 @@ function mergeDeferredVisibleCards(target: Ref<string[]>, ids: string[]) {
   }
 
   target.value = Array.from(new Set([...target.value, ...ids]))
+}
+
+function cacheOpponentHandTravelSources(count: number) {
+  if (count <= 0 || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const sourceElement = queryOpponentHandTopCardElement()
+
+  if (!sourceElement) {
+    return
+  }
+
+  const sourceRect = sourceElement.getBoundingClientRect()
+  const expiresAt = Date.now() + 3000
+
+  for (let index = 0; index < count; index += 1) {
+    pendingOpponentHandTravelSources.push({ sourceRect, expiresAt })
+  }
+}
+
+function cacheSelfHandTravelSources(source: 'life' | 'deck', count: number, sourceElement: HTMLElement | null) {
+  if (count <= 0 || reducedMotion.value === 'reduce' || typeof window === 'undefined' || !sourceElement) {
+    return
+  }
+
+  const sourceRect = sourceElement.getBoundingClientRect()
+  const expiresAt = Date.now() + 5000
+
+  for (let index = 0; index < count; index += 1) {
+    pendingSelfHandTravelSources.push({ source, sourceRect, expiresAt })
+  }
+}
+
+function pruneSelfHandTravelSources() {
+  const now = Date.now()
+
+  while (pendingSelfHandTravelSources[0] && pendingSelfHandTravelSources[0].expiresAt <= now) {
+    pendingSelfHandTravelSources.shift()
+  }
+}
+
+function pruneOpponentHandTravelSources() {
+  const now = Date.now()
+
+  while (pendingOpponentHandTravelSources[0] && pendingOpponentHandTravelSources[0].expiresAt <= now) {
+    pendingOpponentHandTravelSources.shift()
+  }
 }
 
 type FloatingNumberInstance = {
@@ -777,14 +940,33 @@ function syncPlayerTransitions(
 }
 
 watch(self, (current, previous) => {
+  const currentHandIds = new Set(current?.hand.map(card => card.instanceId) ?? [])
+
+  for (const instanceId of Array.from(animatedSelfLifeToHandIds)) {
+    if (!currentHandIds.has(instanceId)) {
+      animatedSelfLifeToHandIds.delete(instanceId)
+    }
+  }
+
+  for (const instanceId of Array.from(animatedSelfDeckToHandIds)) {
+    if (!currentHandIds.has(instanceId)) {
+      animatedSelfDeckToHandIds.delete(instanceId)
+    }
+  }
+
+  if (previous && current) {
+    pruneSelfHandTravelSources()
+    cacheSelfHandTravelSources('life', Math.max(previous.lifeCount - current.lifeCount, 0), queryLifeStackElement(0))
+    cacheSelfHandTravelSources('deck', Math.max(previous.deckCount - current.deckCount, 0), querySelfDeckElement())
+  }
+
   queueKoFeedback(current, previous)
   const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck', 'life'])
 
   if (current) {
-    queueDeckToHandTravelOverlays(diff, current)
-    queueLifeToHandTravelOverlays(diff, current)
+    queueSelfHandTravelOverlays(current, previous)
     queuePendingBoardTravelOverlays(current, previous)
-    queueDonDeckToCostTravelOverlays(diff)
+    queueDonDeckToCostTravelOverlays(diff, 0, selfDeferredCostCardIds)
     queueAttachedDonTravelOverlays(current, previous)
   }
 
@@ -794,8 +976,36 @@ watch(self, (current, previous) => {
 })
 
 watch(opponent, (current, previous) => {
+  const previousVisibleBoardIds = new Set([
+    ...(previous?.characters.map(card => card.instanceId) ?? []),
+    ...(previous?.stage ? [previous.stage.instanceId] : [])
+  ])
+  const currentVisibleBoardIds = new Set([
+    ...(current?.characters.map(card => card.instanceId) ?? []),
+    ...(current?.stage ? [current.stage.instanceId] : [])
+  ])
+
+  for (const instanceId of Array.from(animatedOpponentBoardEntryIds)) {
+    if (!currentVisibleBoardIds.has(instanceId) && !previousVisibleBoardIds.has(instanceId)) {
+      animatedOpponentBoardEntryIds.delete(instanceId)
+    }
+  }
+
   queueKoFeedback(current, previous)
-  syncPlayerTransitions(current, previous, opponentTransitionGhosts)
+  const diff = syncPlayerTransitions(current, previous, opponentTransitionGhosts)
+  const handLoss = previous && current ? Math.max(previous.handCount - current.handCount, 0) : 0
+
+  pruneOpponentHandTravelSources()
+  cacheOpponentHandTravelSources(handLoss)
+
+  if (current) {
+    queueOpponentLifeToHandTravelOverlays(previous, current)
+    queueOpponentDeckToHandTravelOverlays(previous, current)
+    queueOpponentHandToBoardTravelOverlays(current, previous)
+    queueDonDeckToCostTravelOverlays(diff, 1, opponentDeferredCostCardIds)
+    queueOpponentAttachedDonTravelOverlays(current, previous)
+  }
+
   queueTrashTravelOverlay(current, previous, 1, opponentDeferredTrashCardIds)
   queueAttachedDonFeedback(current, previous)
 })
@@ -888,8 +1098,24 @@ function querySelfDonDeckElement(): HTMLElement | null {
   return document.querySelector('[data-don-deck-side="0"]')
 }
 
+function queryOpponentDonDeckElement(): HTMLElement | null {
+  return document.querySelector('[data-don-deck-side="1"]')
+}
+
 function querySelfDeckElement(): HTMLElement | null {
   return document.querySelector('[data-deck-side="0"][data-deck-top="true"]')
+}
+
+function queryOpponentDeckElement(): HTMLElement | null {
+  return document.querySelector('[data-deck-side="1"][data-deck-top="true"]')
+}
+
+function queryOpponentHandElement(): HTMLElement | null {
+  return document.querySelector('[data-opponent-hand="true"]')
+}
+
+function queryOpponentHandTopCardElement(): HTMLElement | null {
+  return document.querySelector('[data-opponent-hand="true"] [data-hidden-hand-top="true"]')
 }
 
 function queryLifeStackElement(side: 0 | 1): HTMLElement | null {
@@ -900,8 +1126,18 @@ function querySelfCostCardElement(instanceId: string): HTMLElement | null {
   return document.querySelector(`[data-zone-side="0"][data-instance-id="${CSS.escape(instanceId)}"]`)
 }
 
+function queryOpponentCostCardElement(instanceId: string): HTMLElement | null {
+  return document.querySelector(`[data-zone-side="1"][data-instance-id="${CSS.escape(instanceId)}"]`)
+}
+
 function querySelfUntappedCostCardElement(): HTMLElement | null {
   const matches = Array.from(document.querySelectorAll<HTMLElement>('[data-zone-side="0"][data-cost-state="untapped"]'))
+
+  return matches.at(-1) ?? null
+}
+
+function queryOpponentUntappedCostCardElement(): HTMLElement | null {
+  const matches = Array.from(document.querySelectorAll<HTMLElement>('[data-zone-side="1"][data-cost-state="untapped"]'))
 
   return matches.at(-1) ?? null
 }
@@ -1058,34 +1294,51 @@ function createTravelOverlay(
   )
 }
 
-function queueLifeToHandTravelOverlays(diff: PlayerTransitionDiff | null, current: DuelPlayerView) {
-  if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+function queueSelfHandTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
+  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
     return
   }
 
-  const revealedLifeCards = diff.ghosts
-    .filter(ghost => ghost.source === 'life')
-    .map((ghost) => {
-      const card = current.hand.find(candidate => candidate.instanceId === ghost.instanceId)
+  pruneSelfHandTravelSources()
 
-      return card
+  const previousHandIds = new Set(previous.hand.map(card => card.instanceId))
+  const newHandCards = current.hand
+    .filter(card => !previousHandIds.has(card.instanceId))
+    .filter(card => !animatedSelfLifeToHandIds.has(card.instanceId) && !animatedSelfDeckToHandIds.has(card.instanceId))
+    .filter((card): card is PrivateCard & { imageUrl: string } => typeof card.imageUrl === 'string' && card.imageUrl.length > 0)
+
+  if (newHandCards.length === 0 || pendingSelfHandTravelSources.length === 0) {
+    return
+  }
+
+  const assignments: Array<{
+    card: PrivateCard & { imageUrl: string }
+    source: 'life' | 'deck'
+    sourceRect: DOMRect
+  }> = []
+
+  for (const card of newHandCards) {
+    const source = pendingSelfHandTravelSources.shift()
+
+    if (!source) {
+      break
+    }
+
+    assignments.push({
+      card,
+      source: source.source,
+      sourceRect: source.sourceRect
     })
-    .filter((card): card is PrivateCard & { imageUrl: string } => typeof card?.imageUrl === 'string' && card.imageUrl.length > 0)
-
-  if (revealedLifeCards.length === 0) {
-    return
   }
 
-  const sourceElement = queryLifeStackElement(0)
-
-  if (!sourceElement) {
+  if (assignments.length === 0) {
     return
   }
 
   nextTick(() => {
     const destinationRects = new Map<string, DOMRect>()
 
-    for (const card of revealedLifeCards) {
+    for (const { card } of assignments) {
       const destinationElement = queryCardElement(card.instanceId)
 
       if (destinationElement) {
@@ -1097,15 +1350,16 @@ function queueLifeToHandTravelOverlays(diff: PlayerTransitionDiff | null, curren
       return
     }
 
-    const sourceRect = sourceElement.getBoundingClientRect()
     mergeDeferredVisibleCards(
       selfDeferredHandCardIds,
-      revealedLifeCards
+      assignments
+        .map(({ card }) => card)
         .filter(card => destinationRects.has(card.instanceId))
         .map(card => card.instanceId)
     )
 
-    for (const { item: card, delayMs } of createStaggeredTravelPlan(revealedLifeCards, BOARD_TRAVEL_STAGGER_MS)) {
+    for (const { item: assignment, delayMs } of createStaggeredTravelPlan(assignments, BOARD_TRAVEL_STAGGER_MS)) {
+      const { card, source, sourceRect } = assignment
       const destinationRect = destinationRects.get(card.instanceId)
 
       if (!destinationRect) {
@@ -1113,8 +1367,14 @@ function queueLifeToHandTravelOverlays(diff: PlayerTransitionDiff | null, curren
         continue
       }
 
+      if (source === 'life') {
+        animatedSelfLifeToHandIds.add(card.instanceId)
+      } else {
+        animatedSelfDeckToHandIds.add(card.instanceId)
+      }
+
       createTravelOverlayFromRect(
-        `life-hand:${card.instanceId}`,
+        `${source}-hand:${card.instanceId}`,
         card.instanceId,
         card.imageUrl,
         sourceRect,
@@ -1122,80 +1382,79 @@ function queueLifeToHandTravelOverlays(diff: PlayerTransitionDiff | null, curren
         selfDeferredHandCardIds,
         false,
         delayMs,
-        () => mergeRevealedHandCards(selfRevealedHandCardIds, [card.instanceId])
+        source === 'life'
+          ? () => mergeRevealedHandCards(selfRevealedHandCardIds, [card.instanceId])
+          : undefined
       )
     }
   })
 }
 
-function queueDeckToHandTravelOverlays(diff: PlayerTransitionDiff | null, current: DuelPlayerView) {
-  if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  const drawnCards = diff.ghosts
-    .filter(ghost => ghost.source === 'deck')
-    .map((ghost) => {
-      const card = current.hand.find(candidate => candidate.instanceId === ghost.instanceId)
-
-      return card
-    })
-    .filter((card): card is PrivateCard & { imageUrl: string } => typeof card?.imageUrl === 'string' && card.imageUrl.length > 0)
-
-  if (drawnCards.length === 0) {
-    return
-  }
-
-  const sourceElement = querySelfDeckElement()
-
-  if (!sourceElement) {
+function queueOpponentHiddenHandTravelOverlays(
+  source: 'deck' | 'life',
+  count: number,
+  sourceElement: HTMLElement | null
+) {
+  if (count <= 0 || reducedMotion.value === 'reduce' || typeof window === 'undefined' || !sourceElement) {
     return
   }
 
   const sourceRect = sourceElement.getBoundingClientRect()
 
   nextTick(() => {
-    const destinationRects = new Map<string, DOMRect>()
+    const destinationElement = queryOpponentHandTopCardElement()
 
-    for (const card of drawnCards) {
-      const destinationElement = queryCardElement(card.instanceId)
-
-      if (destinationElement) {
-        destinationRects.set(card.instanceId, destinationElement.getBoundingClientRect())
-      }
-    }
-
-    if (destinationRects.size === 0) {
+    if (!destinationElement) {
       return
     }
 
-    mergeDeferredVisibleCards(
-      selfDeferredHandCardIds,
-      drawnCards
-        .filter(card => destinationRects.has(card.instanceId))
-        .map(card => card.instanceId)
-    )
+    const destinationRect = destinationElement.getBoundingClientRect()
 
-    for (const { item: card, delayMs } of createStaggeredTravelPlan(drawnCards, BOARD_TRAVEL_STAGGER_MS)) {
-      const destinationRect = destinationRects.get(card.instanceId)
+    for (const { item: index, delayMs } of createStaggeredTravelPlan(
+      Array.from({ length: count }, (_, itemIndex) => itemIndex),
+      BOARD_TRAVEL_STAGGER_MS
+    )) {
+      const overlayInstanceId = `opponent-hidden-hand:${source}:${++opponentHiddenHandTravelKey}:${index}`
 
-      if (!destinationRect) {
-        revealDeferredVisibleCard(selfDeferredHandCardIds, card.instanceId)
-        continue
-      }
+      mergeDeferredVisibleCards(opponentDeferredHandTravelIds, [overlayInstanceId])
 
       createTravelOverlayFromRect(
-        `deck-hand:${card.instanceId}`,
-        card.instanceId,
-        card.imageUrl,
+        overlayInstanceId,
+        overlayInstanceId,
+        cardBackRegular,
         sourceRect,
         destinationRect,
-        selfDeferredHandCardIds,
+        opponentDeferredHandTravelIds,
         false,
         delayMs
       )
     }
   })
+}
+
+function queueOpponentLifeToHandTravelOverlays(previous: DuelPlayerView | null, current: DuelPlayerView) {
+  if (!previous) {
+    return
+  }
+
+  const handGain = Math.max(current.handCount - previous.handCount, 0)
+  const lifeLoss = Math.max(previous.lifeCount - current.lifeCount, 0)
+  const lifeToHandCount = Math.min(handGain, lifeLoss)
+
+  queueOpponentHiddenHandTravelOverlays('life', lifeToHandCount, queryLifeStackElement(1))
+}
+
+function queueOpponentDeckToHandTravelOverlays(previous: DuelPlayerView | null, current: DuelPlayerView) {
+  if (!previous) {
+    return
+  }
+
+  const handGain = Math.max(current.handCount - previous.handCount, 0)
+  const lifeLoss = Math.max(previous.lifeCount - current.lifeCount, 0)
+  const deckLoss = Math.max(previous.deckCount - current.deckCount, 0)
+  const deckToHandCount = Math.min(Math.max(handGain - lifeLoss, 0), deckLoss)
+
+  queueOpponentHiddenHandTravelOverlays('deck', deckToHandCount, queryOpponentDeckElement())
 }
 
 function queueTrashTravelOverlay(
@@ -1280,17 +1539,16 @@ function queuePendingBoardTravelOverlays(current: DuelPlayerView, previous: Duel
     return
   }
 
-  const previousHandCards = new Map(previous.hand.map(card => [card.instanceId, card] as const))
   const boardArrivalIds = [
     ...current.characters
       .filter(character =>
-        previousHandCards.has(character.instanceId)
-        && !previous.characters.some(previousCharacter => previousCharacter.instanceId === character.instanceId)
+        !previous.characters.some(previousCharacter => previousCharacter.instanceId === character.instanceId)
+        && pendingBoardTravelSources.has(character.instanceId)
       )
       .map(character => character.instanceId),
     ...(current.stage
-      && previousHandCards.has(current.stage.instanceId)
       && previous.stage?.instanceId !== current.stage.instanceId
+      && pendingBoardTravelSources.has(current.stage.instanceId)
       ? [current.stage.instanceId]
       : [])
   ]
@@ -1328,7 +1586,73 @@ function queuePendingBoardTravelOverlays(current: DuelPlayerView, previous: Duel
   })
 }
 
-function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
+function queueOpponentHandToBoardTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
+  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  pruneOpponentHandTravelSources()
+
+  const sourceElement = queryOpponentHandElement()
+
+  if (!sourceElement) {
+    return
+  }
+
+  const boardArrivalIds = [
+    ...current.characters
+      .filter(character =>
+        !previous.characters.some(previousCharacter => previousCharacter.instanceId === character.instanceId)
+        && !animatedOpponentBoardEntryIds.has(character.instanceId)
+      )
+      .map(character => character.instanceId),
+    ...(current.stage && previous.stage?.instanceId !== current.stage.instanceId && !animatedOpponentBoardEntryIds.has(current.stage.instanceId)
+      ? [current.stage.instanceId]
+      : [])
+  ]
+
+  const travelCount = Math.min(boardArrivalIds.length, pendingOpponentHandTravelSources.length)
+
+  if (travelCount === 0) {
+    return
+  }
+
+  const travellingArrivalIds = boardArrivalIds.slice(0, travelCount)
+  travellingArrivalIds.forEach(instanceId => animatedOpponentBoardEntryIds.add(instanceId))
+  mergeDeferredVisibleCards(opponentDeferredBoardCardIds, travellingArrivalIds)
+
+  nextTick(() => {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(travellingArrivalIds, BOARD_TRAVEL_STAGGER_MS)) {
+      const destinationElement = queryCardElement(instanceId)
+      const card = current.characters.find(character => character.instanceId === instanceId)
+        ?? (current.stage?.instanceId === instanceId ? current.stage : null)
+      const sourceRect = pendingOpponentHandTravelSources.shift()?.sourceRect
+        ?? queryOpponentHandTopCardElement()?.getBoundingClientRect()
+
+      if (!destinationElement || !card?.imageUrl || !sourceRect) {
+        revealDeferredVisibleCard(opponentDeferredBoardCardIds, instanceId)
+        continue
+      }
+
+      createTravelOverlay(
+        `opponent-board:${instanceId}`,
+        instanceId,
+        card.imageUrl,
+        sourceRect,
+        destinationElement,
+        opponentDeferredBoardCardIds,
+        false,
+        delayMs
+      )
+    }
+  })
+}
+
+function queueDonDeckToCostTravelOverlays(
+  diff: PlayerTransitionDiff | null,
+  side: 0 | 1,
+  deferredCostTarget: Ref<string[]>
+) {
   if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
     return
   }
@@ -1341,31 +1665,35 @@ function queueDonDeckToCostTravelOverlays(diff: PlayerTransitionDiff | null) {
     return
   }
 
-  const sourceElement = querySelfDonDeckElement()
+  const sourceElement = side === 0
+    ? querySelfDonDeckElement()
+    : queryOpponentDonDeckElement()
 
   if (!sourceElement) {
     return
   }
 
   const sourceRect = sourceElement.getBoundingClientRect()
-  mergeDeferredVisibleCards(selfDeferredCostCardIds, donCostIds)
+  mergeDeferredVisibleCards(deferredCostTarget, donCostIds)
 
   nextTick(() => {
     for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(donCostIds, BOARD_TRAVEL_STAGGER_MS)) {
-      const destinationElement = querySelfCostCardElement(instanceId)
+      const destinationElement = side === 0
+        ? querySelfCostCardElement(instanceId)
+        : queryOpponentCostCardElement(instanceId)
 
       if (!destinationElement) {
-        revealDeferredVisibleCard(selfDeferredCostCardIds, instanceId)
+        revealDeferredVisibleCard(deferredCostTarget, instanceId)
         continue
       }
 
       createTravelOverlay(
-        `cost:${instanceId}`,
+        `cost:${side}:${instanceId}`,
         instanceId,
         cardFrontDon,
         sourceRect,
         destinationElement,
-        selfDeferredCostCardIds,
+        deferredCostTarget,
         false,
         delayMs
       )
@@ -1531,6 +1859,63 @@ function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelP
       consumedTargetCounts.set(instanceId, consumedCount + 1)
 
       if (!destinationElement || !sourceRect || !currentAttachedCounts.has(instanceId)) {
+        continue
+      }
+
+      attachedDonTravelKey += 1
+
+      createTravelOverlay(
+        `attached-don:${attachedDonTravelKey}`,
+        `attached-don:${instanceId}:${attachedDonTravelKey}`,
+        cardFrontDon,
+        sourceRect,
+        destinationElement,
+        attachedDonOverlayTarget,
+        false,
+        delayMs
+      )
+    }
+  })
+}
+
+function queueOpponentAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
+  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
+    return
+  }
+
+  const targetIds = deriveAttachedDonTravelTargetIds(previous, current)
+
+  if (targetIds.length === 0) {
+    return
+  }
+
+  const previousAttachedCounts = new Map<string, number>()
+
+  if (previous.leader) {
+    previousAttachedCounts.set(previous.leader.instanceId, previous.leader.attachedDon)
+  }
+
+  for (const character of previous.characters) {
+    previousAttachedCounts.set(character.instanceId, character.attachedDon)
+  }
+
+  const sourceRects = Array.from(
+    { length: targetIds.length },
+    () => queryOpponentUntappedCostCardElement()?.getBoundingClientRect()
+  ).filter((rect): rect is DOMRect => Boolean(rect))
+  const consumedTargetCounts = new Map<string, number>()
+
+  nextTick(() => {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, BOARD_TRAVEL_STAGGER_MS)) {
+      const previousAttachedCount = previousAttachedCounts.get(instanceId) ?? 0
+      const consumedCount = consumedTargetCounts.get(instanceId) ?? 0
+      const destinationSlotIndex = previousAttachedCount + consumedCount
+      const destinationElement = queryAttachedDonSlotElement(instanceId, destinationSlotIndex)
+      const sourceRect = sourceRects.shift()
+
+      consumedTargetCounts.set(instanceId, consumedCount + 1)
+
+      if (!destinationElement || !sourceRect) {
         continue
       }
 
@@ -2381,6 +2766,7 @@ defineShortcuts({
                 v-if="shouldShowOpponentHandLane && opponent"
                 hidden
                 :hand-count="opponent.handCount"
+                :deferred-hidden-count="opponentDeferredHandTravelIds.length"
                 align="start"
               />
             </div>
@@ -2455,9 +2841,12 @@ defineShortcuts({
                 </div>
               </div>
               <DuelAttackArrow
+                v-if="shouldRenderAttackArrow"
                 :from-instance-id="attackArrowFromInstanceId"
                 :to-instance-id="attackArrowToInstanceId"
                 :to-point="attackArrowToPoint"
+                :variant="pendingAttackerInstanceId ? 'drag' : 'confirmed'"
+                :animation-key="confirmedAttackArrow?.key ?? null"
               />
               <DuelFloatingNumber
                 v-for="entry in floatingNumbers"
@@ -2477,6 +2866,8 @@ defineShortcuts({
                 :is-owner-turn="!isSelfTurn"
                 :is-adversary="Boolean(opponent)"
                 :transition-ghosts="opponent ? opponentTransitionGhosts : []"
+                :deferred-board-card-ids="opponentDeferredBoardCardIds"
+                :deferred-cost-card-ids="opponentDeferredCostCardIds"
                 :deferred-trash-card-ids="opponentDeferredTrashCardIds"
                 :is-targetable="Boolean(opponent) && isChoosingTarget"
                 :targetable-leader="Boolean(opponent) && isChoosingTarget"

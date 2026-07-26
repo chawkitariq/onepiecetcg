@@ -299,6 +299,7 @@ const duelHandStub = defineComponent({
     hand: { type: Array, default: () => [] },
     handCount: { type: Number, default: 0 },
     hidden: { type: Boolean, default: false },
+    deferredHiddenCount: { type: Number, default: 0 },
     draggableHandCardIds: { type: Array, default: () => [] },
     deferredHandCardIds: { type: Array, default: () => [] },
     selectedHandCardIds: { type: Array, default: () => [] },
@@ -306,6 +307,12 @@ const duelHandStub = defineComponent({
   },
   emits: ['cardDragStart', 'cardDragEnd', 'cardClick'],
   setup(props, { emit }) {
+    const hiddenCards = Array.from({ length: props.handCount }, (_, index) => h('div', {
+      'data-hidden-hand-card': 'true',
+      'data-hidden-hand-top': index === props.handCount - 1 ? 'true' : undefined,
+      'data-hidden-hand-deferred': String(index >= props.handCount - props.deferredHiddenCount)
+    }))
+
     function clickTestId(instanceId: string) {
       return `hand-click-${instanceId}`
     }
@@ -321,7 +328,7 @@ const duelHandStub = defineComponent({
     return () => h('div', {
       'data-duel-hand': props.hidden ? undefined : 'true',
       'data-opponent-hand': props.hidden ? 'true' : undefined,
-      'data-opponent-hand-count': props.hidden ? String(props.handCount) : undefined,
+      'data-opponent-hand-count': props.hidden ? String(Math.max(props.handCount - props.deferredHiddenCount, 0)) : undefined,
       'data-hand-ids': JSON.stringify((props.hand as Array<PrivateCard>)
         .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
         .map(card => card.instanceId)),
@@ -329,6 +336,7 @@ const duelHandStub = defineComponent({
       'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
       'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
+      ...(props.hidden ? hiddenCards : []),
       ...((props.hidden ? [] : (props.hand as Array<PrivateCard>))
         .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
         .map(card => h('div', {
@@ -385,6 +393,27 @@ const progressStub = defineComponent({
       'data-test': 'phase-progress',
       'data-model-value': props.modelValue,
       'data-max': JSON.stringify(props.max)
+    })
+  }
+})
+
+const duelAttackArrowStub = defineComponent({
+  name: 'DuelAttackArrow',
+  props: {
+    fromInstanceId: { type: String, default: null },
+    toInstanceId: { type: String, default: null },
+    toPoint: { type: Object, default: null },
+    variant: { type: String, default: 'drag' },
+    animationKey: { type: [String, Number], default: null }
+  },
+  setup(props) {
+    return () => h('div', {
+      'data-test': 'attack-arrow',
+      'data-from-instance-id': props.fromInstanceId ?? '',
+      'data-to-instance-id': props.toInstanceId ?? '',
+      'data-has-point-target': String(Boolean(props.toPoint)),
+      'data-variant': props.variant,
+      'data-animation-key': props.animationKey == null ? '' : String(props.animationKey)
     })
   }
 })
@@ -451,6 +480,7 @@ describe('DuelBoard drag and drop', () => {
           UInputNumber: defaultStub,
           UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
+          DuelAttackArrow: duelAttackArrowStub,
           PlayZone: playZoneStub,
           DuelHand: duelHandStub
         }
@@ -568,6 +598,74 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.find('[data-board-travel-instance-id="hand-character"]').exists()).toBe(true)
   })
 
+  it('keeps the self hand-to-character travel when the hand loss and board arrival land on separate patches', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    await wrapper.get('[data-test="hand-click-hand-character"]').trigger('click')
+    expect(playCard).toHaveBeenCalledWith('hand-character')
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      hand: [
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      characters: [
+        createPublicCard('character-a'),
+        createPublicCard('hand-character')
+      ],
+      hand: [
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="hand-character"]').exists()).toBe(true)
+  })
+
+  it('keeps the self hand-to-stage travel when the hand loss and stage arrival land on separate patches', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    await wrapper.get('[data-test="hand-click-hand-stage"]').trigger('click')
+    expect(playCard).toHaveBeenCalledWith('hand-stage')
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      stage: createPublicCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="hand-stage"]').exists()).toBe(true)
+  })
+
   it('creates an explicit overlay when DON!! attaches to a character slot', async () => {
     const wrapper = mountBoard({ attachToBody: true })
 
@@ -585,6 +683,389 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-board-travel-instance-id^="attached-don:character-a:"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when the opponent plays a visible card from the hidden hand lane', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 2,
+      characters: [createPublicCard('opponent-character-a', { rested: true })]
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 1,
+      characters: [
+        createPublicCard('opponent-character-a', { rested: true }),
+        createPublicCard('opponent-character-b')
+      ]
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="opponent-character-b"]').exists()).toBe(true)
+  })
+
+  it('keeps the opponent hand-to-character travel when the hand loss and board arrival land on separate patches', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 2,
+      characters: [createPublicCard('opponent-character-a', { rested: true })]
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 1,
+      characters: [createPublicCard('opponent-character-a', { rested: true })]
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 1,
+      characters: [
+        createPublicCard('opponent-character-a', { rested: true }),
+        createPublicCard('opponent-character-b')
+      ]
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="opponent-character-b"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when the opponent draws from deck into the hidden hand lane', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 3,
+      deckCount: 30
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 4,
+      deckCount: 29
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    const hiddenHand = wrapper.get('[data-opponent-hand]')
+
+    expect(hiddenHand.attributes('data-opponent-hand-count')).toBe('3')
+    expect(wrapper.find('[data-board-travel-instance-id^="opponent-hidden-hand:deck:"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when the opponent takes life into the hidden hand lane', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 3,
+      lifeCount: 4
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      handCount: 4,
+      lifeCount: 3
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    const hiddenHand = wrapper.get('[data-opponent-hand]')
+
+    expect(hiddenHand.attributes('data-opponent-hand-count')).toBe('3')
+    expect(wrapper.find('[data-board-travel-instance-id^="opponent-hidden-hand:life:"]').exists()).toBe(true)
+  })
+
+  it('does not replay multiple life-to-hand overlays for the same self damage event across later patches', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      characters: [createPublicCard('character-a')],
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null }),
+        createPrivateCard('revealed-life', { type: 'Character', cost: 2 })
+      ],
+      handCount: 4,
+      lifeCount: 3
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('[data-board-travel-instance-id="revealed-life"]')).toHaveLength(1)
+
+    logs.value = [
+      {
+        id: 'later-log',
+        message: 'self attaque avec Luffy vers Nami.',
+        createdAt: '2026-07-26T10:03:00.000Z'
+      }
+    ]
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('[data-board-travel-instance-id="revealed-life"]')).toHaveLength(1)
+  })
+
+  it('keeps the self life-to-hand travel when life loss and hand gain land on separate patches', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      hand: [createPrivateCard('hand-character', { type: 'Character', cost: 1 })],
+      handCount: 1,
+      lifeCount: 4
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      hand: [createPrivateCard('hand-character', { type: 'Character', cost: 1 })],
+      handCount: 1,
+      lifeCount: 3
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('revealed-life', { type: 'Character', cost: 2 })
+      ],
+      handCount: 2,
+      lifeCount: 3
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="revealed-life"]').exists()).toBe(true)
+  })
+
+  it('keeps the self deck-to-hand travel when deck loss and hand gain land on separate patches', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      hand: [createPrivateCard('hand-character', { type: 'Character', cost: 1 })],
+      handCount: 1,
+      deckCount: 30
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      hand: [createPrivateCard('hand-character', { type: 'Character', cost: 1 })],
+      handCount: 1,
+      deckCount: 29
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('drawn-card', { type: 'Character', cost: 2 })
+      ],
+      handCount: 2,
+      deckCount: 29
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="drawn-card"]').exists()).toBe(true)
+  })
+
+  it('creates an explicit overlay when the opponent gains DON!! into cost', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    opponent.value = createPlayer('opponent', {
+      donDeckCount: 9,
+      cost: [createPublicCard('opponent-don-1', { type: 'DON!!', cost: null, power: null, counter: null })]
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      donDeckCount: 8,
+      cost: [
+        createPublicCard('opponent-don-1', { type: 'DON!!', cost: null, power: null, counter: null }),
+        createPublicCard('opponent-don-2', { type: 'DON!!', cost: null, power: null, counter: null })
+      ]
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="opponent-don-2"]').exists()).toBe(true)
+  })
+
+  it('shows the confirmed incoming attack arrow when the opponent declares an attack on the self leader', async () => {
+    const wrapper = mountBoard()
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      step: 'declared',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    const arrow = wrapper.get('[data-test="attack-arrow"]')
+
+    expect(arrow.attributes('data-from-instance-id')).toBe('opponent-character-a')
+    expect(arrow.attributes('data-to-instance-id')).toBe('self-leader')
+    expect(arrow.attributes('data-has-point-target')).toBe('false')
+    expect(arrow.attributes('data-variant')).toBe('confirmed')
+    expect(arrow.attributes('data-animation-key')).not.toBe('')
+  })
+
+  it('keeps the confirmed incoming attack arrow when the server snapshot is already at the blocking step', async () => {
+    const wrapper = mountBoard()
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      blockerInstanceId: '',
+      step: 'blocked',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    const arrow = wrapper.get('[data-test="attack-arrow"]')
+
+    expect(arrow.attributes('data-from-instance-id')).toBe('opponent-character-a')
+    expect(arrow.attributes('data-to-instance-id')).toBe('self-leader')
+    expect(arrow.attributes('data-variant')).toBe('confirmed')
+  })
+
+  it('does not restart the confirmed incoming attack arrow when the same combat advances to countering after a block declaration', async () => {
+    const wrapper = mountBoard()
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      step: 'blocked',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    const firstArrow = wrapper.get('[data-test="attack-arrow"]')
+    const firstAnimationKey = firstArrow.attributes('data-animation-key')
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      blockerInstanceId: 'self-character-a',
+      step: 'countering',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    const secondArrow = wrapper.get('[data-test="attack-arrow"]')
+
+    expect(secondArrow.attributes('data-animation-key')).toBe(firstAnimationKey)
+    expect(secondArrow.attributes('data-variant')).toBe('confirmed')
+  })
+
+  it('does not show a second confirmed arrow for the same attack after the first one times out', async () => {
+    const wrapper = mountBoard()
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      step: 'blocked',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(true)
+
+    vi.advanceTimersByTime(901)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(false)
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      blockerInstanceId: 'self-character-a',
+      step: 'countering',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(false)
+  })
+
+  it('clears the confirmed attack arrow once combat returns to the idle snapshot with no attacker', async () => {
+    const wrapper = mountBoard()
+
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-character-a',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      step: 'blocked',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(true)
+
+    vi.advanceTimersByTime(901)
+
+    combat.value = {
+      attackerSessionId: '',
+      attackerInstanceId: '',
+      defenderSessionId: '',
+      targetType: 'leader',
+      targetInstanceId: '',
+      blockerInstanceId: '',
+      step: 'declared',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(false)
   })
 
   it('plays the dragged character when it is dropped onto the self character zone', async () => {
