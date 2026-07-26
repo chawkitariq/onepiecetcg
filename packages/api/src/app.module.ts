@@ -17,6 +17,7 @@ import { ColyseusService } from './realtime/colyseus.service';
 import { LobbyController } from './realtime/lobby.controller';
 import { getApiConfig } from './runtime-config';
 import { SpikeModule } from './spike/spike.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { SpikeModule } from './spike/spike.module';
     DecksModule,
     DevFixturesModule,
     SpikeModule,
+    StatsModule,
   ],
   controllers: [AppController, LobbyController],
   providers: [AppService, ColyseusService],

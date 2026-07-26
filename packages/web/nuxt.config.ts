@@ -5,7 +5,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     'motion-v/nuxt',
     '@vueuse/nuxt',
-    '@nuxt/test-utils/module'
+    '@nuxt/test-utils/module',
+    'nuxt-charts'
   ],
 
   devtools: {

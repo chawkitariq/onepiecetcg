@@ -170,6 +170,16 @@ Le plateau temps réel doit guider l'attention du joueur quand l'état change, s
 - Détection de préférence de réduction d'animations : VueUse (`usePreferredReducedMotion`).
 - `@vueuse/motion` reste hors périmètre, redondant avec `motion-v`.
 
+## 8. Statistiques joueur
+
+Objectif : donner à chaque utilisateur un aperçu de ses performances passées, sans réintroduire un classement/MMR (toujours hors périmètre v1, voir ci-dessous) ni un historique détaillé de partie (pas de spectateur/replay).
+
+- **Déclenchement de l'enregistrement** : un résultat de partie n'est persisté que sur une fin de partie propre au sens du moteur structurel (§3) — Vie à zéro ou deck-out, `DuelState.phase === 'finished'` avec un vainqueur déterminé. Un abandon par déconnexion après le délai de reconnexion (§3, 2 minutes) ne génère **aucun** enregistrement de statistique — uniquement la défaite structurelle immédiate déjà prévue pour la room en cours, sans trace persistée au-delà.
+- **`DuelState` doit exposer explicitement le vainqueur** : aujourd'hui la room passe en `phase: 'finished'` avec uniquement un message de log ; il manque un champ structuré (`winnerSessionId`, motif de fin `life`/`deckOut`) exploitable par le serveur pour savoir qui a gagné sans reparser un log. C'est un prérequis technique à cette fonctionnalité, pas seulement une extension.
+- **Un résultat de partie enregistré** conserve : les deux comptes (vainqueur/perdant), les decks utilisés par chaque joueur (référence nullable — un deck supprimé ensuite ne doit pas faire disparaître le résultat), le **Leader utilisé par chaque joueur au moment de la partie** (conservé indépendamment du deck, pour rester exploitable même si le deck est modifié ou supprimé par la suite), qui jouait en premier, le motif de fin (`life`/`deckOut`) et la durée de la partie.
+- **Statistiques exposées à l'utilisateur connecté** (calculées à la lecture, pas de compteurs dénormalisés à maintenir) : total de parties, victoires/défaites, taux de victoire, série en cours ; le même détail décliné par deck sauvegardé et par Leader utilisé ; durée moyenne de partie ; taux de victoire en jouant en premier vs en second.
+- Ce qui reste explicitement hors périmètre malgré cette fonctionnalité : tout classement/MMR, tout historique de partie détaillé (log complet, replay), toute agrégation au-delà du compte de l'utilisateur courant (pas de classement global, pas de comparaison entre joueurs).
+
 ## Hors périmètre v1 (pivot multijoueur)
 
 - Résolution automatique du texte des effets de cartes, quel que soit le set — reste déclaratif indéfiniment dans cette version (pas de moteur de scripting prévu).
@@ -188,6 +198,7 @@ Le plateau temps réel doit guider l'attention du joueur quand l'état change, s
 4. Couche structurelle complète (§3) : phases, DON!!, zones, ciblage réel, combat structurel avec Blocage/Contre déclaratifs, fin de partie.
 5. Matchmaking (file d'attente + code de room) et lobby.
 6. Animations et transitions fonctionnelles du plateau (§7), en respectant `prefers-reduced-motion`.
+7. Statistiques joueur (§8) : champs de fin de partie sur `DuelState`, persistance des résultats de match, agrégation et exposition à l'utilisateur connecté.
 
 ## Critères d'acceptation
 

@@ -5,6 +5,7 @@ import { Encoder } from '@colyseus/schema';
 import type { Server as HttpServer } from 'node:http';
 import { createAuth } from '../auth';
 import { DecksService } from '../decks/decks.service';
+import { StatsService } from '../stats/stats.service';
 import {
   DuelRoom,
   configureDuelRoomAuth,
@@ -16,7 +17,10 @@ import { DuelSpikeRoom } from './duel-spike.room';
 export class ColyseusService implements OnModuleDestroy {
   private gameServer?: Server;
 
-  constructor(private readonly decksService: DecksService) {}
+  constructor(
+    private readonly decksService: DecksService,
+    private readonly statsService: StatsService,
+  ) {}
 
   attach(server: HttpServer): Server {
     if (this.gameServer) {
@@ -30,7 +34,10 @@ export class ColyseusService implements OnModuleDestroy {
 
     const auth = createAuth();
 
-    configureDuelRoomServices({ decksService: this.decksService });
+    configureDuelRoomServices({
+      decksService: this.decksService,
+      statsService: this.statsService,
+    });
     configureDuelRoomAuth(async (requestHeaders) => {
       const headers = new Headers();
 

@@ -222,7 +222,17 @@ export class DuelState extends Schema {
   /** `attackerInstanceId === ''` means no combat is currently in progress. */
   @type(DuelCombat)
   combat = new DuelCombat();
+
+  /** Set alongside `phase: 'finished'` by a clean game-end (life-to-zero or deck-out); empty otherwise. */
+  @type('string')
+  winnerSessionId = '';
+
+  /** Set alongside `winnerSessionId`; `''` while the game is still in progress. */
+  @type('string')
+  endReason: DuelEndReason | '' = '';
 }
+
+export type DuelEndReason = 'life' | 'deckOut';
 
 export function createDuelCard(
   card: Card,

@@ -10,12 +10,14 @@ packageExtensions:
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
+  maplibre-gl: true
   msgpackr-extract: true
   unrs-resolver: true
   vue-demi: true
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - esbuild
+  - maplibre-gl
   - msgpackr-extract
   - unrs-resolver
   - vue-demi

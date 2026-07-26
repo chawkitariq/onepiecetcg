@@ -11,6 +11,11 @@ const navigationItems = [
     label: 'Deck builder',
     icon: 'i-lucide-layers-3',
     to: '/decks'
+  },
+  {
+    label: 'Statistiques',
+    icon: 'i-lucide-bar-chart-3',
+    to: '/stats'
   }
 ]
 </script>

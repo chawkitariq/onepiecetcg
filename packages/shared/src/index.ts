@@ -112,6 +112,37 @@ export type DeckListResponse = {
   decks: Deck[];
 };
 
+/** Win/loss aggregate over a set of matches. */
+export type ResultBreakdown = {
+  played: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+};
+
+/** Result breakdown for one saved deck; `deckName` is null once the deck has been deleted. */
+export type DeckStats = ResultBreakdown & {
+  deckId: string;
+  deckName: string | null;
+};
+
+/** Result breakdown for one Leader card, independent of any saved deck. */
+export type LeaderStats = ResultBreakdown & {
+  leaderCardId: string;
+  leaderName: string | null;
+  leaderImageUrl: string | null;
+};
+
+/** REST contract for `GET /stats/me` (docs/plan.md Etape 13). */
+export type PlayerStats = ResultBreakdown & {
+  currentStreak: { type: 'win' | 'loss'; length: number } | null;
+  averageDurationSeconds: number | null;
+  wentFirst: ResultBreakdown;
+  wentSecond: ResultBreakdown;
+  byDeck: DeckStats[];
+  byLeader: LeaderStats[];
+};
+
 export type DescribedRoomSummary = {
   roomId: string;
   description: string;

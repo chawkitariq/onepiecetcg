@@ -372,12 +372,35 @@ Objectif : ajouter une interaction directe de glisser-déposer pour jouer un Per
 - Hors phase Principale, avec une carte non-Personnage, avec un coût insuffisant ou vers une mauvaise zone, le drag and drop n'introduit aucun état local incohérent et l'action n'est pas exécutée.
 - Le flux reste utilisable sur mobile et au clavier grâce au fallback existant sans drag and drop.
 
+## Étape 13 — Statistiques joueur
+
+Objectif : conserver un résultat par partie terminée proprement et exposer des statistiques agrégées à l'utilisateur connecté, sans introduire de classement/MMR ni d'historique détaillé (voir §8 de `docs/spec.md`).
+
+### Backend
+
+- Ajouter à `DuelState` (schéma partagé) les champs de fin de partie manquants : `winnerSessionId` et un motif de fin (`life`/`deckOut`), renseignés aux deux endroits de `duel.room.ts` qui passent actuellement en `phase: 'finished'` sans exposer structurellement le vainqueur.
+- Créer un module `stats/` avec une entité TypeORM `MatchResult` : comptes vainqueur/perdant, decks utilisés (référence nullable, un deck supprimé ne doit pas faire disparaître le résultat), Leader utilisé par chaque joueur (conservé indépendamment du deck), joueur ayant commencé, motif de fin, durée de partie.
+- Enregistrer un `MatchResult` uniquement quand `DuelRoom` atteint `phase === 'finished'` avec un vainqueur déterminé par une fin de partie propre (Vie à zéro, deck-out) — jamais sur un abandon par déconnexion après le délai de reconnexion.
+- Exposer un endpoint `GET /stats/me` (protégé par session) calculant à la lecture : total de parties, victoires/défaites, taux de victoire, série en cours, détail par deck sauvegardé, détail par Leader utilisé, durée moyenne de partie, taux de victoire premier/second joueur.
+
+### Frontend
+
+- Créer une page ou section de compte affichant les statistiques de l'utilisateur connecté à partir de `GET /stats/me`.
+- Afficher les répartitions par deck et par Leader avec les informations catalogue nécessaires (nom, image du Leader).
+
+### Validation
+
+- Une partie terminée par Vie à zéro ou par deck-out crée exactement un `MatchResult` cohérent avec les deux comptes concernés.
+- Un abandon par déconnexion après le délai de reconnexion ne crée aucun `MatchResult`.
+- La suppression d'un deck utilisé dans une partie passée ne supprime pas le résultat historique correspondant.
+- Les statistiques par Leader restent correctes même si le deck d'origine a changé de Leader ou a été supprimé depuis.
+
 ## Hors périmètre à ne pas implémenter en v1
 
 - Résolution automatique des textes d'effets.
 - Moteur de scripting par carte.
 - Classement, MMR ou saisons compétitives.
-- Spectateur, replay ou historique détaillé.
+- Spectateur, replay ou historique détaillé de partie (au-delà des résultats agrégés de l'Étape 13).
 - Chat en partie.
 - Mode tournoi ou bracket.
 - Achats, boutique ou monétisation.

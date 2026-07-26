@@ -21,6 +21,7 @@
     "colyseus.js": "0.16.22",
     "motion-v": "^2.3.0",
     "nuxt": "^4.4.8",
+    "nuxt-charts": "^2.2.0",
     "tailwindcss": "^4.3.2",
     "zod": "^4.4.3"
   },
