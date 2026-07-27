@@ -1514,6 +1514,45 @@ describe('DuelBoard drag and drop', () => {
     expect(document.querySelectorAll('[data-test="trash-modal-card"]')).toHaveLength(2)
   })
 
+  it('creates a trash travel overlay when a self hand card becomes the new top trash card', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('counter-card', { type: 'Character', counter: 1000 }),
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2,
+      trash: [
+        createPublicCard('old-trash', {
+          imageUrl: '/cards/old-trash.png'
+        })
+      ]
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null })
+      ],
+      handCount: 1,
+      trash: [
+        createPublicCard('counter-card', {
+          imageUrl: '/cards/counter-card.png'
+        }),
+        createPublicCard('old-trash', {
+          imageUrl: '/cards/old-trash.png'
+        })
+      ]
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id="counter-card"]').exists()).toBe(true)
+  })
+
   it('uses the shared waiting toast when the opponent is disconnected', async () => {
     const wrapper = mountBoard({ attachToBody: true })
 

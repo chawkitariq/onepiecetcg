@@ -429,6 +429,7 @@ const boardTravelOverlayElements = new Map<string, HTMLElement>()
 const cardFeedbackElements = new Map<number, HTMLElement>()
 const bannerFeedbackElements = new Map<number, HTMLElement>()
 const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
+const pendingTrashTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect, expiresAt: number }>()
 const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
 const pendingSelfHandTravelSources: Array<{ source: 'life' | 'deck', sourceRect: DOMRect, expiresAt: number }> = []
 const pendingOpponentHandTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
@@ -708,6 +709,16 @@ function pruneOpponentHandTravelSources() {
 
   while (pendingOpponentHandTravelSources[0] && pendingOpponentHandTravelSources[0].expiresAt <= now) {
     pendingOpponentHandTravelSources.shift()
+  }
+}
+
+function pruneTrashTravelSources() {
+  const now = Date.now()
+
+  for (const [instanceId, source] of pendingTrashTravelSources) {
+    if (source.expiresAt <= now) {
+      pendingTrashTravelSources.delete(instanceId)
+    }
   }
 }
 
@@ -1664,6 +1675,8 @@ function queueTrashTravelOverlay(
     return
   }
 
+  pruneTrashTravelSources()
+
   const topTrash = current.trash[0]
 
   if (
@@ -1686,13 +1699,14 @@ function queueTrashTravelOverlay(
     return
   }
 
-  const sourceElement = queryCardElement(topTrash.instanceId)
+  const pendingSource = pendingTrashTravelSources.get(topTrash.instanceId)
+  pendingTrashTravelSources.delete(topTrash.instanceId)
+  const sourceRect = pendingSource?.sourceRect ?? queryCardElement(topTrash.instanceId)?.getBoundingClientRect()
 
-  if (!sourceElement) {
+  if (!sourceRect) {
     return
   }
 
-  const sourceRect = sourceElement.getBoundingClientRect()
   mergeDeferredVisibleCards(deferredTrashTarget, [topTrash.instanceId])
 
   nextTick(() => {
@@ -1728,6 +1742,24 @@ function cacheBoardTravelSource(card: PrivateCard) {
   pendingBoardTravelSources.set(card.instanceId, {
     imageUrl: card.imageUrl,
     sourceRect: sourceElement.getBoundingClientRect()
+  })
+}
+
+function cacheTrashTravelSource(card: PrivateCard | PublicCard | null | undefined) {
+  if (reducedMotion.value === 'reduce' || typeof window === 'undefined' || !card?.imageUrl) {
+    return
+  }
+
+  const sourceElement = queryCardElement(card.instanceId)
+
+  if (!sourceElement) {
+    return
+  }
+
+  pendingTrashTravelSources.set(card.instanceId, {
+    imageUrl: card.imageUrl,
+    sourceRect: sourceElement.getBoundingClientRect(),
+    expiresAt: Date.now() + 3000
   })
 }
 
@@ -2359,6 +2391,8 @@ function confirmCounter() {
     return
   }
 
+  const counterCard = self.value?.hand.find(candidate => candidate.instanceId === pendingCounterCardInstanceId.value)
+  cacheTrashTravelSource(counterCard)
   declareCounter(pendingCounterCardInstanceId.value, counterPowerBonusInput.value)
   pendingCounterCardInstanceId.value = null
 }

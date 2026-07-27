@@ -297,6 +297,30 @@ describe('PlayZone transitions', () => {
     expect(deferredTrashCard.attributes('data-layout-id')).toBeUndefined()
   })
 
+  it('keeps showing the previous trash card while a new deferred top-trash arrival travels in', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          trash: [
+            createPublicCard('trash-top'),
+            createPublicCard('trash-previous')
+          ]
+        }),
+        side: 0,
+        deferredTrashCardIds: ['trash-top']
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const visibleTrashCard = wrapper.get('[data-trash-side="0"] [data-instance-id="trash-previous"]')
+    const deferredTrashCard = wrapper.get('[data-trash-side="0"] [data-instance-id="trash-top"]')
+
+    expect(visibleTrashCard.classes()).not.toContain('opacity-0')
+    expect(deferredTrashCard.classes()).toContain('opacity-0')
+  })
+
   it('renders untapped and rested DON!! as two opposite cost stacks', () => {
     const wrapper = mount(PlayZone, {
       props: {

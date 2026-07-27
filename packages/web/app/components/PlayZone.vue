@@ -104,6 +104,17 @@ const emit = defineEmits<{
 
 const life = computed(() => Array.from({ length: props.player.lifeCount }))
 const topTrash = computed(() => props.player.trash[0] ?? null)
+const visibleTrashCard = computed(() => {
+  if (!topTrash.value) {
+    return null
+  }
+
+  if (!isTrashCardDeferred(topTrash.value.instanceId)) {
+    return topTrash.value
+  }
+
+  return props.player.trash.find(card => !isTrashCardDeferred(card.instanceId)) ?? topTrash.value
+})
 const costStackSize = useMeasuredStackSize('costStack')
 const lifeGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'life') ?? [])
 const deckGhosts = computed(() => transitionGhosts.value?.filter(ghost => ghost.source === 'deck') ?? [])
@@ -1002,16 +1013,28 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           @click="topTrash ? emit('trashClick', side) : undefined"
         >
           <div
-            v-if="topTrash"
+            v-if="visibleTrashCard"
             class="h-full"
-            @mouseenter="onCardHover(topTrash)"
+            @mouseenter="onCardHover(visibleTrashCard)"
             @mouseleave="onCardHover(null)"
+          >
+            <div
+              :data-layout-id="visibleLayoutId(visibleTrashCard.instanceId, isTrashCardDeferred(visibleTrashCard.instanceId))"
+              :data-instance-id="visibleTrashCard.instanceId"
+              class="duel-layout-card h-full"
+              :class="isTrashCardDeferred(visibleTrashCard.instanceId) ? 'pointer-events-none opacity-0' : ''"
+            >
+              <DuelCard :src="visibleTrashCard.imageUrl" />
+            </div>
+          </div>
+          <div
+            v-if="topTrash && visibleTrashCard && topTrash.instanceId !== visibleTrashCard.instanceId"
+            class="pointer-events-none absolute inset-0"
           >
             <div
               :data-layout-id="visibleLayoutId(topTrash.instanceId, isTrashCardDeferred(topTrash.instanceId))"
               :data-instance-id="topTrash.instanceId"
-              class="duel-layout-card h-full"
-              :class="isTrashCardDeferred(topTrash.instanceId) ? 'pointer-events-none opacity-0' : ''"
+              class="duel-layout-card h-full opacity-0"
             >
               <DuelCard :src="topTrash.imageUrl" />
             </div>
