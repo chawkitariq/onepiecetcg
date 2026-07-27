@@ -11,6 +11,7 @@ type CardDetailsDisplayCard = {
   colors: CardColor[]
   imageUrl: string | null
   text?: string | null
+  trigger?: string | null
 }
 
 const {
@@ -91,6 +92,8 @@ const {
               </UBadge>
             </div>
           </div>
+
+          <CardEffectBadges :text="card.text" />
 
           <p
             v-if="card.text"
