@@ -345,7 +345,7 @@ export function useDuelRoom() {
   const isMainPhase = computed(() => phase.value === 'main')
 
   const canEndPhase = computed(() =>
-    isSelfTurn.value && phase.value !== 'setup' && phase.value !== 'mulligan' && phase.value !== 'finished'
+    isSelfTurn.value && phase.value === 'main'
   )
 
   const selfUntappedDonCount = computed(() =>

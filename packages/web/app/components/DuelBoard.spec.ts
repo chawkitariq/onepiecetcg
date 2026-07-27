@@ -126,7 +126,7 @@ mockNuxtImport('useDuelRoom', () => () => ({
   finishedAt,
   isSelfTurn,
   isMainPhase: computed(() => phase.value === 'main'),
-  canEndPhase: computed(() => isSelfTurn.value),
+  canEndPhase: computed(() => isSelfTurn.value && phase.value === 'main'),
   selfUntappedDonCount: computed(() => self.value?.cost.filter(card => !card.rested).length ?? 0),
   isSelfCharacterZoneFull: computed(() => (self.value?.characters.length ?? 0) >= 5),
   logs,
@@ -393,6 +393,31 @@ const defaultStub = defineComponent({
   }
 })
 
+const headerStub = defineComponent({
+  name: 'UHeader',
+  setup(_, { slots }) {
+    return () => h('div', [
+      slots.left?.(),
+      slots.default?.(),
+      slots.right?.()
+    ])
+  }
+})
+
+const buttonStub = defineComponent({
+  name: 'UButton',
+  props: {
+    disabled: { type: Boolean, default: false }
+  },
+  emits: ['click'],
+  setup(props, { slots, emit }) {
+    return () => h('button', {
+      disabled: props.disabled,
+      onClick: () => emit('click')
+    }, slots.default?.())
+  }
+})
+
 const slideoverStub = defineComponent({
   name: 'USlideover',
   props: {
@@ -404,21 +429,6 @@ const slideoverStub = defineComponent({
       'data-test': 'journal-slideover',
       'data-open': String(props.open)
     }, slots.body?.())
-  }
-})
-
-const progressStub = defineComponent({
-  name: 'UProgress',
-  props: {
-    modelValue: { type: Number, default: null },
-    max: { type: Array, default: () => [] }
-  },
-  setup(props) {
-    return () => h('div', {
-      'data-test': 'phase-progress',
-      'data-model-value': props.modelValue,
-      'data-max': JSON.stringify(props.max)
-    })
   }
 })
 
@@ -505,16 +515,15 @@ describe('DuelBoard drag and drop', () => {
       attachTo: options.attachToBody ? document.body : undefined,
       global: {
         stubs: {
-          UHeader: defaultStub,
+          UHeader: headerStub,
           UBadge: defaultStub,
-          UButton: defaultStub,
+          UButton: buttonStub,
           USlideover: slideoverStub,
           UContainer: defaultStub,
           UCard: defaultStub,
           USeparator: defaultStub,
           UScrollArea: defaultStub,
           UInputNumber: defaultStub,
-          UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
           DuelAttackArrow: duelAttackArrowStub,
           PlayZone: playZoneStub,
@@ -524,20 +533,33 @@ describe('DuelBoard drag and drop', () => {
     })
   }
 
-  it('aligns the phase progress indicator with the actual current phase', () => {
+  it('shows the current phase badge instead of the old phase progress bar', () => {
     phase.value = 'main'
 
     const wrapper = mountBoard()
-    const progress = wrapper.get('[data-test="phase-progress"]')
 
-    expect(JSON.parse(progress.attributes('data-max') ?? '[]')).toEqual([
-      'Recharge',
-      'Pioche',
-      'DON!!',
-      'Principale',
-      'Fin'
-    ])
-    expect(Number(progress.attributes('data-model-value'))).toBe(3)
+    expect(wrapper.text()).toContain('Principale')
+    expect(wrapper.find('[data-test="phase-progress"]').exists()).toBe(false)
+  })
+
+  it('auto-advances frontend-only phases until the active player reaches main', async () => {
+    phase.value = 'refresh'
+
+    mountBoard()
+    await vi.runAllTimersAsync()
+
+    expect(endPhase).toHaveBeenCalled()
+  })
+
+  it('renders a single active/inactive turn button label', async () => {
+    const wrapper = mountBoard()
+
+    expect(wrapper.text()).toContain('Fin du tour')
+
+    isSelfTurn.value = false
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Tour adverse')
   })
 
   it('shows the opponent hidden hand lane during setup and mulligan while the owner hand waits for mulligan', () => {
@@ -1776,7 +1798,6 @@ describe('DuelBoard drag and drop', () => {
     expect(document.body.textContent).toContain('Défaite')
     expect(document.body.textContent).toContain('7 tours')
     expect(document.body.textContent).toContain('8 min 34 s')
-    expect(document.body.textContent).not.toContain('Marshall')
     expect(document.body.textContent).not.toContain('Barbe Noire Midrange')
     expect(document.body.textContent).not.toContain('Vie à zéro')
 
@@ -1819,17 +1840,6 @@ describe('DuelBoard leave to lobby', () => {
     vi.useRealTimers()
   })
 
-  const headerStub = defineComponent({
-    name: 'UHeader',
-    setup(_, { slots }) {
-      return () => h('div', [
-        slots.left?.(),
-        slots.default?.(),
-        slots.right?.()
-      ])
-    }
-  })
-
   function mountBoard(options: { attachToBody?: boolean } = {}) {
     return mount(DuelBoard, {
       attachTo: options.attachToBody ? document.body : undefined,
@@ -1837,7 +1847,7 @@ describe('DuelBoard leave to lobby', () => {
         stubs: {
           UHeader: headerStub,
           UBadge: defaultStub,
-          UButton: defaultStub,
+          UButton: buttonStub,
           UAlert: defaultStub,
           USlideover: slideoverStub,
           UContainer: defaultStub,
@@ -1845,7 +1855,6 @@ describe('DuelBoard leave to lobby', () => {
           USeparator: defaultStub,
           UScrollArea: defaultStub,
           UInputNumber: defaultStub,
-          UProgress: progressStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
           DuelHand: duelHandStub

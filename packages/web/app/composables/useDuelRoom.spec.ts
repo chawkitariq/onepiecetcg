@@ -234,7 +234,7 @@ describe('useDuelRoom setup helpers', () => {
 })
 
 describe('useDuelRoom turn/phase helpers (stage 7)', () => {
-  it('only allows ending the phase during an active, in-progress turn', () => {
+  it('only allows ending the turn during your main phase', () => {
     const { room } = useColyseus()
     room.value = createFakeRoom({
       sessionId: 'session-a',
@@ -248,6 +248,22 @@ describe('useDuelRoom turn/phase helpers (stage 7)', () => {
     const { canEndPhase } = useDuelRoom()
 
     expect(canEndPhase.value).toBe(true)
+  })
+
+  it('does not allow ending the turn during auto-resolved phases', () => {
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'draw',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)]
+    }) as never
+
+    const { canEndPhase } = useDuelRoom()
+
+    expect(canEndPhase.value).toBe(false)
   })
 
   it('does not allow ending the phase on the opponent\'s turn', () => {

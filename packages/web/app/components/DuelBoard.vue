@@ -51,6 +51,7 @@ const BOARD_TRAVEL_STAGGER_MS = 90
 const ATTACHED_DON_TRAVEL_STAGGER_MS = 70
 const DEFAULT_TRAVEL_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'
 const ATTACHED_DON_TRAVEL_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
+const AUTO_ADVANCE_PHASES = new Set(['refresh', 'draw', 'don', 'end'])
 
 const {
   self,
@@ -288,13 +289,6 @@ watch(
 )
 const invalidHandCardIds = ref<string[]>([])
 
-const phaseSteps = ['refresh', 'draw', 'don', 'main', 'end'] as const
-const phaseStepLabels = phaseSteps.map(step => phaseLabels[step])
-const currentPhaseStepIndex = computed(() => {
-  const index = phaseSteps.indexOf(phase.value as typeof phaseSteps[number])
-
-  return index === -1 ? 0 : index
-})
 const emptyPublicCards: PublicCard[] = []
 const emptyPrivateCards: PrivateCard[] = []
 const emptyOpponentPreview = computed<DuelPlayerView>(() => ({
@@ -578,6 +572,18 @@ const waitingToastText = computed(() => {
   }
 
   return null
+})
+
+const turnButtonLabel = computed(() => {
+  if (!isSelfTurn.value) {
+    return 'Tour adverse'
+  }
+
+  if (canEndPhase.value) {
+    return 'Fin du tour'
+  }
+
+  return 'Votre tour'
 })
 
 const resolvedHoveredCard = computed(() =>
@@ -2056,6 +2062,49 @@ function syncSelectedHandCardsWithHand() {
 
 watch(selectableHandCardIds, syncSelectedHandCardsWithHand, { immediate: true })
 
+watch(
+  [phase, isSelfTurn],
+  ([currentPhase, selfTurn], [previousPhase, previousSelfTurn]) => {
+    if (
+      currentPhase === 'main'
+      && selfTurn
+      && (previousPhase !== 'main' || !previousSelfTurn)
+    ) {
+      clearSelectedHandCards()
+      clearPendingHandPlayQueue()
+      resetDraggedHandCard()
+      invalidHandCardIds.value = []
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  [phase, isSelfTurn, isCombatInProgress],
+  ([currentPhase, selfTurn, combatInProgress]) => {
+    if (
+      !selfTurn
+      || combatInProgress
+      || !AUTO_ADVANCE_PHASES.has(currentPhase)
+      || currentPhase === 'finished'
+    ) {
+      return
+    }
+
+    window.setTimeout(() => {
+      if (
+        isSelfTurn.value
+        && !isCombatInProgress.value
+        && phase.value === currentPhase
+        && AUTO_ADVANCE_PHASES.has(currentPhase)
+      ) {
+        endPhase()
+      }
+    }, 0)
+  },
+  { immediate: true }
+)
+
 function syncSelectedDonCardsWithCost() {
   const selectableIds = new Set(selectableDonCardIds.value)
 
@@ -2982,12 +3031,14 @@ defineShortcuts({
         </div>
       </template>
 
-      <div class="w-full max-w-xs px-2 sm:px-4">
-        <UProgress
-          :model-value="currentPhaseStepIndex"
-          :max="phaseStepLabels"
+      <div class="px-2 sm:px-4">
+        <UBadge
+          color="neutral"
+          variant="subtle"
           size="sm"
-        />
+        >
+          {{ phaseLabels[phase] ?? 'Phase inconnue' }}
+        </UBadge>
       </div>
 
       <template #right>
@@ -3015,7 +3066,7 @@ defineShortcuts({
             :disabled="!canEndPhase"
             @click="endPhase"
           >
-            {{ phase === 'end' ? 'Terminer le tour' : 'Phase suivante' }}
+            {{ turnButtonLabel }}
           </UButton>
           <UButton
             data-test="leave-to-lobby"
