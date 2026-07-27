@@ -44,7 +44,7 @@ const toneClasses: Record<DuelActionModalState['tone'], string> = {
     >
       <div
         v-if="state"
-        class="fixed inset-0 z-70 flex justify-center"
+        class="fixed inset-0 z-[150] flex justify-center"
         :class="state.allowBoardInteraction
           ? 'pointer-events-none items-end pb-24 sm:pb-8'
           : 'items-center bg-default/40 backdrop-blur-[2px]'"
