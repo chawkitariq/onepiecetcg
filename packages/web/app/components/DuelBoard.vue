@@ -432,6 +432,9 @@ const attachedDonOverlayTarget = ref<string[]>([])
 let attachedDonTravelKey = 0
 let opponentHiddenHandTravelKey = 0
 const transientErrorModalState = ref<DuelActionModalState | null>(null)
+const openedTrashSide = ref<0 | 1 | null>(null)
+const selectedTrashCardInstanceId = ref<string | null>(null)
+const trashModalCardSize = ref<{ width: number, height: number } | null>(null)
 
 function dismissTransientErrorModal() {
   transientErrorModalState.value = null
@@ -538,11 +541,44 @@ const resultDurationLabel = computed(() =>
   formatMatchDurationLabel(startedAt.value, finishedAt.value)
 )
 
+const activeTrashPlayer = computed(() => {
+  if (openedTrashSide.value === 0) {
+    return self.value
+  }
+
+  if (openedTrashSide.value === 1) {
+    return opponent.value
+  }
+
+  return null
+})
+
+const activeTrashCards = computed(() => activeTrashPlayer.value?.trash ?? [])
+const activeTrashTitle = computed(() => {
+  if (!activeTrashPlayer.value) {
+    return 'Défausse'
+  }
+
+  return `Défausse de ${activeTrashPlayer.value.displayName}`
+})
+
 watch(phase, (nextPhase, previousPhase) => {
   if (nextPhase === 'finished' && previousPhase !== 'finished') {
     isResultModalOpen.value = true
   }
 }, { immediate: true })
+
+watch(activeTrashCards, (cards) => {
+  if (cards.length === 0) {
+    openedTrashSide.value = null
+    selectedTrashCardInstanceId.value = null
+    return
+  }
+
+  if (!cards.some(card => card.instanceId === selectedTrashCardInstanceId.value)) {
+    selectedTrashCardInstanceId.value = cards[0]?.instanceId ?? null
+  }
+})
 
 const waitingToastText = computed(() => {
   if (isOpponentDisconnected.value) {
@@ -1244,6 +1280,10 @@ function queryAttachedDonSlotElement(instanceId: string, slotIndex: number): HTM
 
 function queryTrashCardElement(side: 0 | 1, instanceId: string): HTMLElement | null {
   return document.querySelector(`[data-trash-side="${side}"] [data-instance-id="${CSS.escape(instanceId)}"]`)
+}
+
+function queryCharacterZoneCardElement(side: 0 | 1): HTMLElement | null {
+  return document.querySelector(`[data-character-side="${side}"] [data-instance-id]`)
 }
 
 function revealDeferredVisibleCard(target: Ref<string[]>, instanceId: string) {
@@ -2475,6 +2515,47 @@ function onSelfDonCardDragEnd() {
   clearTransientBoardSelections()
 }
 
+function closeTrashModal() {
+  openedTrashSide.value = null
+  selectedTrashCardInstanceId.value = null
+  trashModalCardSize.value = null
+}
+
+function syncTrashModalCardSize(side: 0 | 1, instanceId: string) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const referenceElement = queryCharacterZoneCardElement(side) ?? queryTrashCardElement(side, instanceId)
+
+  if (!referenceElement) {
+    trashModalCardSize.value = null
+    return
+  }
+
+  const { width, height } = referenceElement.getBoundingClientRect()
+
+  if (width <= 0 || height <= 0) {
+    trashModalCardSize.value = null
+    return
+  }
+
+  trashModalCardSize.value = { width, height }
+}
+
+async function openTrashModal(side: 0 | 1) {
+  const player = side === 0 ? self.value : opponent.value
+  const firstCard = player?.trash[0]
+
+  if (!player || !firstCard) {
+    return
+  }
+
+  openedTrashSide.value = side
+  selectedTrashCardInstanceId.value = firstCard.instanceId
+  syncTrashModalCardSize(side, firstCard.instanceId)
+}
+
 function onSelfCharacterZoneDrop() {
   if (!draggedHandCardInstanceId.value) {
     return
@@ -2885,7 +2966,7 @@ defineShortcuts({
               @pointermove="onBoardPointerMove"
             >
               <div class="pointer-events-none fixed inset-0 z-[130]">
-                <div
+              <div
                   v-for="overlay in boardTravelOverlays"
                   :key="overlay.key"
                   :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
@@ -2943,6 +3024,54 @@ defineShortcuts({
                 @done="removeFloatingNumber(entry.key)"
               />
               <DuelSetupOverlay v-if="phase === 'mulligan'" />
+              <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+              >
+                <div
+                  v-if="openedTrashSide !== null && activeTrashPlayer"
+                  data-test="trash-modal"
+                  class="absolute inset-0 z-[145] flex items-center justify-center bg-default/90 p-6 backdrop-blur-sm"
+                  @click.self="closeTrashModal"
+                >
+                  <Transition
+                    appear
+                    enter-active-class="transition duration-250 ease-out"
+                    enter-from-class="opacity-0 translate-y-3 scale-95"
+                    enter-to-class="opacity-100 translate-y-0 scale-100"
+                  >
+                    <div class="w-full max-w-[min(100%,1500px)]">
+                      <div class="flex flex-wrap items-start justify-center gap-4">
+                        <button
+                          v-for="card in activeTrashCards"
+                          :key="card.instanceId"
+                          type="button"
+                          data-test="trash-modal-card"
+                          class="duel-trash-modal-card group aspect-5/7 text-left transition"
+                          :class="card.instanceId === selectedTrashCardInstanceId ? 'scale-[1.02]' : 'hover:scale-[1.01]'"
+                          :style="{
+                            ...(trashModalCardSize ? { width: `${trashModalCardSize.width}px`, height: `${trashModalCardSize.height}px` } : {}),
+                            '--trash-card-index': activeTrashCards.indexOf(card)
+                          }"
+                          @mouseenter="hoveredCard = card"
+                          @mouseleave="hoveredCard = null"
+                          @click="selectedTrashCardInstanceId = card.instanceId"
+                        >
+                          <DuelCard
+                            :src="card.imageUrl"
+                            :alt="card.name"
+                            class="overflow-hidden rounded-lg shadow-2xl group-hover:scale-[1.02]"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+              </Transition>
               <PlayZone
                 v-if="opponent || self"
                 class="flex-1 min-h-0"
@@ -2960,6 +3089,7 @@ defineShortcuts({
                 :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
                 :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
                 @card-hover="hoveredCard = $event"
+                @trash-click="openTrashModal"
                 @leader-click="onOpponentLeaderClick"
                 @character-click="onOpponentCharacterClick"
               />
@@ -2996,6 +3126,7 @@ defineShortcuts({
                 :deferred-cost-card-ids="selfDeferredCostCardIds"
                 :deferred-trash-card-ids="selfDeferredTrashCardIds"
                 @card-hover="hoveredCard = $event"
+                @trash-click="openTrashModal"
                 @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
                 @hand-card-drop-on-stage="onSelfStageZoneDrop"
                 @don-card-selection-start="onSelfDonCardSelectionStart"
@@ -3102,6 +3233,7 @@ defineShortcuts({
         </div>
       </UCard>
     </div>
+
   </div>
 </template>
 
@@ -3121,9 +3253,29 @@ defineShortcuts({
   will-change: transform, opacity;
 }
 
+.duel-trash-modal-card {
+  animation: duel-trash-modal-card-appear 220ms ease-out both;
+  animation-delay: calc(var(--trash-card-index, 0) * 35ms);
+  will-change: transform, opacity;
+}
+
+@keyframes duel-trash-modal-card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .duel-trash-modal-card,
   .duel-card-feedback,
   .duel-banner-feedback {
+    animation: none;
     will-change: auto;
   }
 }

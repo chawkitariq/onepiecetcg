@@ -98,6 +98,7 @@ const emit = defineEmits<{
   donCardDragEnd: []
   donCardDropOnLeader: [side: 0 | 1]
   donCardDropOnCharacter: [side: 0 | 1, instanceId: string]
+  trashClick: [side: 0 | 1]
   cardHover: [card: HoveredDuelCard | null]
 }>()
 
@@ -683,6 +684,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         :class="isCharacterZoneDropTargetActive ? 'border-success bg-success/5 ring-2 ring-success/70' : ''"
       >
         <div
+          :data-character-side="side"
           class="relative flex h-full items-center justify-center gap-4 transition-colors duration-150"
           data-drop-zone="character"
           @dragenter="onCharacterZoneDragEnter"
@@ -992,9 +994,12 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         :count="player.trash.length"
         allow-overflow
       >
-        <div
+        <button
+          type="button"
           :data-trash-side="side"
-          class="relative h-full"
+          class="relative h-full w-full text-left"
+          :disabled="!topTrash"
+          @click="topTrash ? emit('trashClick', side) : undefined"
         >
           <div
             v-if="topTrash"
@@ -1011,7 +1016,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               <DuelCard :src="topTrash.imageUrl" />
             </div>
           </div>
-        </div>
+        </button>
       </DuelZoneSlot>
     </div>
   </div>

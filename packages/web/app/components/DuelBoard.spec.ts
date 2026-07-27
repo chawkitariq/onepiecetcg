@@ -176,6 +176,7 @@ const playZoneStub = defineComponent({
     'donCardDragEnd',
     'donCardDropOnLeader',
     'donCardDropOnCharacter',
+    'trashClick',
     'leaderAttackStart',
     'characterAttackStart',
     'leaderClick',
@@ -260,6 +261,10 @@ const playZoneStub = defineComponent({
             })
           : null
       ]),
+      h('button', {
+        'data-test': `trash-click-${props.side}`,
+        'onClick': () => emit('trashClick', props.side)
+      }),
       h('button', {
         'data-test': `don-select-start-${props.side}`,
         'onClick': () => emit('donCardSelectionStart', 'self-don-1')
@@ -1431,6 +1436,33 @@ describe('DuelBoard drag and drop', () => {
     expect(document.body.textContent).toContain('Pas assez de DON!!')
     expect(document.body.textContent).toContain('Compris')
     expect(clearError.mock.calls.length).toBeGreaterThan(clearErrorCallCountBeforeError)
+  })
+
+  it('opens a trash modal and animates the top trash card into it', async () => {
+    self.value = createPlayer('self', {
+      trash: [
+        createPublicCard('trash-top', {
+          name: 'Koby',
+          number: 'OP02-098',
+          imageUrl: '/cards/trash-top.png'
+        }),
+        createPublicCard('trash-second', {
+          name: 'Helmeppo',
+          number: 'OP02-099',
+          imageUrl: '/cards/trash-second.png'
+        })
+      ]
+    })
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    await wrapper.get('[data-test="trash-click-0"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const trashModal = document.querySelector('[data-test="trash-modal"]')
+
+    expect(trashModal).not.toBeNull()
+    expect(document.querySelectorAll('[data-test="trash-modal-card"]')).toHaveLength(2)
   })
 
   it('uses the shared waiting toast when the opponent is disconnected', async () => {
