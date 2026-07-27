@@ -77,7 +77,8 @@ describe('DuelAttackArrow', () => {
   }
 
   it('starts the confirmed animation once when the attacker and target points become available', async () => {
-    mount(DuelAttackArrow, {
+    const wrapper = mount(DuelAttackArrow, {
+      attachTo: document.body,
       props: {
         fromInstanceId: 'attacker-a',
         toInstanceId: 'target-a',
@@ -131,5 +132,27 @@ describe('DuelAttackArrow', () => {
     await flushRaf(2)
 
     expect(animateMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders the arrow one layer above board cards', async () => {
+    createTrackedElement('attacker-a', { left: 20, top: 40, width: 80, height: 120 })
+    createTrackedElement('target-a', { left: 220, top: 120, width: 80, height: 120 })
+
+    const wrapper = mount(DuelAttackArrow, {
+      attachTo: document.body,
+      props: {
+        fromInstanceId: 'attacker-a',
+        toInstanceId: 'target-a',
+        variant: 'confirmed',
+        animationKey: 11
+      }
+    })
+
+    await nextTick()
+    await flushRaf(2)
+
+    const arrow = wrapper.find('svg')
+
+    expect(arrow.attributes('class')).toContain('z-[61]')
   })
 })

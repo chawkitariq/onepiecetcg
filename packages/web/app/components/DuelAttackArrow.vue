@@ -18,6 +18,7 @@ const props = defineProps<{
 
 const reducedMotion = usePreferredReducedMotion()
 
+const svgElement = useTemplateRef<SVGSVGElement>('svg-element')
 const fromPoint = ref<{ x: number, y: number } | null>(null)
 const resolvedToPoint = ref<{ x: number, y: number } | null>(null)
 const confirmedProgress = ref(1)
@@ -25,7 +26,22 @@ const lastAnimatedConfirmedId = ref<string | null>(null)
 const pendingConfirmedAnimationId = ref<string | null>(null)
 let confirmedAnimation: ReturnType<typeof animate> | null = null
 
-function centerOf(instanceId: string | null): { x: number, y: number } | null {
+function currentContainerRect(): DOMRect | null {
+  return svgElement.value?.getBoundingClientRect() ?? null
+}
+
+function pointWithinContainer(point: { x: number, y: number }, containerRect: DOMRect | null) {
+  if (!containerRect) {
+    return point
+  }
+
+  return {
+    x: point.x - containerRect.left,
+    y: point.y - containerRect.top
+  }
+}
+
+function centerOf(instanceId: string | null, containerRect: DOMRect | null): { x: number, y: number } | null {
   if (!instanceId) {
     return null
   }
@@ -38,14 +54,21 @@ function centerOf(instanceId: string | null): { x: number, y: number } | null {
 
   const rect = element.getBoundingClientRect()
 
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+  return pointWithinContainer(
+    { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+    containerRect
+  )
 }
 
 let frameId: number | null = null
 
 function trackPositions() {
-  fromPoint.value = centerOf(props.fromInstanceId)
-  resolvedToPoint.value = props.toPoint ?? centerOf(props.toInstanceId)
+  const containerRect = currentContainerRect()
+
+  fromPoint.value = centerOf(props.fromInstanceId, containerRect)
+  resolvedToPoint.value = props.toPoint
+    ? pointWithinContainer(props.toPoint, containerRect)
+    : centerOf(props.toInstanceId, containerRect)
   frameId = requestAnimationFrame(trackPositions)
 }
 
@@ -181,56 +204,46 @@ const arrowHeadStyle = computed(() => ({
   fill: 'var(--ui-error)'
 }))
 
-const svgViewport = computed(() => {
-  if (typeof window === 'undefined') {
-    return { width: 0, height: 0 }
-  }
-
-  return { width: window.innerWidth, height: window.innerHeight }
-})
 </script>
 
 <template>
-  <Teleport to="body">
-    <svg
-      v-if="isVisible && fromPoint && displayedToPoint"
-      class="pointer-events-none fixed inset-0 z-[140]"
-      :width="svgViewport.width"
-      :height="svgViewport.height"
-    >
-      <defs>
-        <marker
-          id="duel-attack-arrowhead"
-          markerWidth="10"
-          markerHeight="10"
-          refX="6"
-          refY="5"
-          orient="auto"
-        >
-          <path
-            d="M0,0 L10,5 L0,10 Z"
-            :style="arrowHeadStyle"
-          />
-        </marker>
-      </defs>
-      <line
-        :key="lineRenderKey"
-        :x1="fromPoint.x"
-        :y1="fromPoint.y"
-        :x2="displayedToPoint.x"
-        :y2="displayedToPoint.y"
-        stroke-width="4"
-        stroke-linecap="round"
-        marker-end="url(#duel-attack-arrowhead)"
-        :style="lineStyle"
-        :class="[
-          reducedMotion === 'reduce'
-            ? ''
-            : (variant === 'confirmed' ? 'duel-attack-arrow-confirmed' : 'duel-attack-arrow-drag')
-        ]"
-      />
-    </svg>
-  </Teleport>
+  <svg
+    v-if="isVisible && fromPoint && displayedToPoint"
+    ref="svg-element"
+    class="pointer-events-none absolute inset-0 z-[61] h-full w-full"
+  >
+    <defs>
+      <marker
+        id="duel-attack-arrowhead"
+        markerWidth="10"
+        markerHeight="10"
+        refX="6"
+        refY="5"
+        orient="auto"
+      >
+        <path
+          d="M0,0 L10,5 L0,10 Z"
+          :style="arrowHeadStyle"
+        />
+      </marker>
+    </defs>
+    <line
+      :key="lineRenderKey"
+      :x1="fromPoint.x"
+      :y1="fromPoint.y"
+      :x2="displayedToPoint.x"
+      :y2="displayedToPoint.y"
+      stroke-width="4"
+      stroke-linecap="round"
+      marker-end="url(#duel-attack-arrowhead)"
+      :style="lineStyle"
+      :class="[
+        reducedMotion === 'reduce'
+          ? ''
+          : (variant === 'confirmed' ? 'duel-attack-arrow-confirmed' : 'duel-attack-arrow-drag')
+      ]"
+    />
+  </svg>
 </template>
 
 <style scoped>

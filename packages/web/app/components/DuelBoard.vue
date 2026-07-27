@@ -3169,7 +3169,7 @@ defineShortcuts({
                 <div
                   v-if="openedTrashSide !== null && activeTrashPlayer"
                   data-test="trash-modal"
-                  class="absolute inset-0 z-[145] flex items-center justify-center bg-default/90 p-6 backdrop-blur-sm"
+                  class="absolute inset-0 z-[2145] flex items-center justify-center bg-default/90 p-6 backdrop-blur-sm"
                   @click.self="closeTrashModal"
                 >
                   <Transition
