@@ -1513,6 +1513,23 @@ describe('DuelBoard drag and drop', () => {
     expect(journalEntries[0]?.classes()).not.toContain('rounded-lg')
   })
 
+  it('applies the requested color coding to journal entries', () => {
+    logs.value = [
+      { id: 'log-positive', message: 'self joue Zoro.', createdAt: '2026-07-24T10:00:00.000Z' },
+      { id: 'log-negative', message: 'self attaque avec Luffy.', createdAt: '2026-07-24T10:01:00.000Z' },
+      { id: 'log-special', message: 'self révèle un Trigger.', createdAt: '2026-07-24T10:02:00.000Z' },
+      { id: 'log-neutral', message: 'self commence la partie.', createdAt: '2026-07-24T10:03:00.000Z' }
+    ]
+
+    const wrapper = mountBoard()
+    const journalEntries = wrapper.findAll('[data-test="journal-entry"]')
+
+    expect(journalEntries[0]?.find('p').classes()).toContain('text-success')
+    expect(journalEntries[1]?.find('p').classes()).toContain('text-error')
+    expect(journalEntries[2]?.find('p').classes()).toContain('text-warning')
+    expect(journalEntries[3]?.find('p').classes()).toContain('text-muted')
+  })
+
   it('scrolls the journal to the latest entry when the slideover opens', async () => {
     logs.value = [
       { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' },

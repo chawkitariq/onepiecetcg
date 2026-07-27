@@ -1198,6 +1198,31 @@ function formatLogTime(createdAt: string): string {
   })
 }
 
+const logToneClasses = {
+  positive: 'text-success',
+  negative: 'text-error',
+  special: 'text-warning',
+  neutral: 'text-muted'
+} as const
+
+type LogTone = keyof typeof logToneClasses
+
+function getLogTone(message: string): LogTone {
+  if (/(attaque|dégât|dégats|KO|perd|défausse|détruit|impossible|invalide|insuffisant|ne peut|deck-out|pleine|Aucun DON)/i.test(message)) {
+    return 'negative'
+  }
+
+  if (/(trigger|déclenche|déclenchement|révèle|active|rare|jalon|milestone)/i.test(message)) {
+    return 'special'
+  }
+
+  if (/(joue|soigne|gagne|récupère|renforce|boost|augmente|remporte)/i.test(message)) {
+    return 'positive'
+  }
+
+  return 'neutral'
+}
+
 async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
   await nextTick()
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
@@ -3059,11 +3084,15 @@ defineShortcuts({
                     <div class="flex items-start gap-3">
                       <time
                         :datetime="entry.createdAt"
-                        class="shrink-0 tabular-nums text-[11px] opacity-80"
+                        class="shrink-0 tabular-nums text-[11px]"
+                        :class="logToneClasses[getLogTone(entry.message)]"
                       >
                         {{ formatLogTime(entry.createdAt) }}
                       </time>
-                      <p class="min-w-0 flex-1 leading-relaxed">
+                      <p
+                        class="min-w-0 flex-1 leading-relaxed"
+                        :class="logToneClasses[getLogTone(entry.message)]"
+                      >
                         {{ entry.message }}
                       </p>
                     </div>

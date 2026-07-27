@@ -43,29 +43,17 @@ const turnNumber = computed(() => turnsTaken.value[0] + turnsTaken.value[1])
 const isViewerTurn = computed(() => activePlayerIndex.value === viewingPlayerIndex.value)
 
 const logToneClasses = {
-  combat: {
+  negative: {
+    marker: 'bg-warning',
+    text: 'text-error'
+  },
+  special: {
     marker: 'bg-warning',
     text: 'text-warning'
   },
-  error: {
-    marker: 'bg-error',
-    text: 'text-error'
-  },
-  resource: {
-    marker: 'bg-info',
-    text: 'text-info'
-  },
-  success: {
+  positive: {
     marker: 'bg-success',
     text: 'text-success'
-  },
-  turn: {
-    marker: 'bg-primary',
-    text: 'text-primary'
-  },
-  card: {
-    marker: 'bg-secondary',
-    text: 'text-secondary'
   },
   neutral: {
     marker: 'bg-muted',
@@ -89,28 +77,16 @@ function formatLogTime(createdAt: string): string {
 }
 
 function getLogTone(message: string): LogTone {
-  if (/(impossible|invalide|insuffisant|ne peut|deck-out|pleine|Aucun DON)/i.test(message)) {
-    return 'error'
+  if (/(attaque|dégât|dégats|KO|perd|défausse|détruit|impossible|invalide|insuffisant|ne peut|deck-out|pleine|Aucun DON)/i.test(message)) {
+    return 'negative'
   }
 
-  if (/(remporte|abandonne)/i.test(message)) {
-    return 'success'
+  if (/(trigger|déclenche|déclenchement|révèle|active|rare|jalon|milestone)/i.test(message)) {
+    return 'special'
   }
 
-  if (/(attaque|KO|Puissance|repoussée|Vie)/i.test(message)) {
-    return 'combat'
-  }
-
-  if (/(DON!!|pioche)/i.test(message)) {
-    return 'resource'
-  }
-
-  if (/(joue|active|révèle)/i.test(message)) {
-    return 'card'
-  }
-
-  if (/(commence|termine)/i.test(message)) {
-    return 'turn'
+  if (/(joue|soigne|gagne|récupère|renforce|boost|augmente|remporte)/i.test(message)) {
+    return 'positive'
   }
 
   return 'neutral'
