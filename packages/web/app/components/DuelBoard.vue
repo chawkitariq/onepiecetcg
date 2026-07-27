@@ -1305,7 +1305,9 @@ function removeBoardTravelOverlay(key: string, target: Ref<string[]>, instanceId
 }
 
 function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
-  const settledOpacity = overlay.variant === 'attachedDon' ? 0.18 : 1
+  const settledOpacity = overlay.variant === 'attachedDon'
+    ? 0.18
+    : 1
 
   return {
     left: `${overlay.sourceRect.left}px`,
@@ -1368,7 +1370,9 @@ function createTravelOverlayFromRect(
   const durationMs = variant === 'attachedDon'
     ? Math.min(580, Math.max(340, 320 + distance * 0.18))
     : Math.min(BOARD_TRAVEL_MS, Math.max(220, 200 + distance * 0.16))
-  const easing = variant === 'attachedDon' ? ATTACHED_DON_TRAVEL_EASING : DEFAULT_TRAVEL_EASING
+  const easing = variant === 'attachedDon'
+    ? ATTACHED_DON_TRAVEL_EASING
+    : DEFAULT_TRAVEL_EASING
   const opacity = variant === 'attachedDon' ? 0.98 : 1
 
   window.setTimeout(() => {

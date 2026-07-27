@@ -873,6 +873,32 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.find('[data-board-travel-instance-id="revealed-life"]').exists()).toBe(true)
   })
 
+  it('uses the standard travel variant for revealed life cards', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    self.value = createPlayer('self', {
+      hand: [createPrivateCard('hand-character', { type: 'Character', cost: 1 })],
+      handCount: 1,
+      lifeCount: 4
+    })
+    await wrapper.vm.$nextTick()
+
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('revealed-life', { type: 'Character', cost: 2 })
+      ],
+      handCount: 2,
+      lifeCount: 3
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('[data-board-travel-instance-id="revealed-life"]').attributes('data-board-travel-variant')).toBe('default')
+  })
+
   it('keeps the self deck-to-hand travel when deck loss and hand gain land on separate patches', async () => {
     const wrapper = mountBoard({ attachToBody: true })
 
