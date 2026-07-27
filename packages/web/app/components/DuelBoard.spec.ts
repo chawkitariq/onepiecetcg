@@ -407,12 +407,16 @@ const headerStub = defineComponent({
 const buttonStub = defineComponent({
   name: 'UButton',
   props: {
-    disabled: { type: Boolean, default: false }
+    disabled: { type: Boolean, default: false },
+    color: { type: String, default: undefined },
+    variant: { type: String, default: undefined }
   },
   emits: ['click'],
   setup(props, { slots, emit }) {
     return () => h('button', {
       disabled: props.disabled,
+      'data-color': props.color,
+      'data-variant': props.variant,
       onClick: () => emit('click')
     }, slots.default?.())
   }
@@ -533,12 +537,12 @@ describe('DuelBoard drag and drop', () => {
     })
   }
 
-  it('shows the current phase badge instead of the old phase progress bar', () => {
+  it('shows the player-vs-player badge instead of the old phase progress bar', () => {
     phase.value = 'main'
 
     const wrapper = mountBoard()
 
-    expect(wrapper.text()).toContain('Principale')
+    expect(wrapper.text()).toContain('self vs opponent')
     expect(wrapper.find('[data-test="phase-progress"]').exists()).toBe(false)
   })
 
@@ -553,13 +557,17 @@ describe('DuelBoard drag and drop', () => {
 
   it('renders a single active/inactive turn button label', async () => {
     const wrapper = mountBoard()
+    const findTurnButton = () => wrapper.get('[data-test="turn-toggle"]')
 
     expect(wrapper.text()).toContain('Fin du tour')
+    expect(wrapper.text()).not.toContain('Votre tour')
+    expect(findTurnButton().text()).toContain('Fin du tour')
 
     isSelfTurn.value = false
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Tour adverse')
+    expect(findTurnButton().text()).toContain('Tour adverse')
   })
 
   it('shows the opponent hidden hand lane during setup and mulligan while the owner hand waits for mulligan', () => {

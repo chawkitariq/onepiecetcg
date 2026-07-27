@@ -574,6 +574,13 @@ const waitingToastText = computed(() => {
   return null
 })
 
+const matchupLabel = computed(() => {
+  const selfName = self.value?.displayName ?? 'Vous'
+  const opponentName = opponent.value?.displayName ?? 'Adversaire'
+
+  return `${selfName} vs ${opponentName}`
+})
+
 const turnButtonLabel = computed(() => {
   if (!isSelfTurn.value) {
     return 'Tour adverse'
@@ -585,6 +592,9 @@ const turnButtonLabel = computed(() => {
 
   return 'Votre tour'
 })
+
+const turnButtonColor = computed(() => (isSelfTurn.value ? 'primary' : 'neutral'))
+const turnButtonVariant = computed(() => (isSelfTurn.value ? 'solid' : 'solid'))
 
 const resolvedHoveredCard = computed(() =>
   mergeHoveredDuelCardDetails(
@@ -2986,13 +2996,6 @@ defineShortcuts({
             v-if="opponent"
             class="flex items-center gap-2 min-w-0"
           >
-            <span
-              class="h-2.5 w-2.5 rounded-full shrink-0"
-              :class="opponent.connected ? 'bg-success' : 'duel-connection-waiting bg-warning'"
-            />
-            <span class="text-sm font-medium truncate">
-              {{ opponent.displayName }}
-            </span>
             <UBadge
               color="neutral"
               variant="subtle"
@@ -3032,13 +3035,7 @@ defineShortcuts({
       </template>
 
       <div class="px-2 sm:px-4">
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-        >
-          {{ phaseLabels[phase] ?? 'Phase inconnue' }}
-        </UBadge>
+        {{ matchupLabel }}
       </div>
 
       <template #right>
@@ -3053,16 +3050,11 @@ defineShortcuts({
             />
             <span class="text-sm font-semibold tabular-nums">{{ selfUntappedDonCount }}</span>
           </div>
-          <UBadge
-            :color="isSelfTurn ? 'primary' : 'neutral'"
-            :variant="isSelfTurn ? 'solid' : 'subtle'"
-            size="sm"
-          >
-            {{ isSelfTurn ? 'Votre tour' : "Tour de l'adversaire" }}
-          </UBadge>
           <UButton
+            data-test="turn-toggle"
             size="sm"
-            color="primary"
+            :color="turnButtonColor"
+            :variant="turnButtonVariant"
             :disabled="!canEndPhase"
             @click="endPhase"
           >
