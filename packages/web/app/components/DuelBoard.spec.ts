@@ -1063,7 +1063,7 @@ describe('DuelBoard drag and drop', () => {
     expect(secondArrow.attributes('data-variant')).toBe('confirmed')
   })
 
-  it('does not show a second confirmed arrow for the same attack after the first one times out', async () => {
+  it('keeps the same confirmed arrow visible while the same attack continues through later combat steps', async () => {
     const wrapper = mountBoard()
 
     combat.value = {
@@ -1078,12 +1078,8 @@ describe('DuelBoard drag and drop', () => {
     }
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(true)
-
-    vi.advanceTimersByTime(901)
-    await wrapper.vm.$nextTick()
-
-    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(false)
+    const firstArrow = wrapper.get('[data-test="attack-arrow"]')
+    const firstAnimationKey = firstArrow.attributes('data-animation-key')
 
     combat.value = {
       attackerSessionId: 'opponent',
@@ -1098,7 +1094,10 @@ describe('DuelBoard drag and drop', () => {
     }
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(false)
+    const continuedArrow = wrapper.get('[data-test="attack-arrow"]')
+
+    expect(continuedArrow.attributes('data-animation-key')).toBe(firstAnimationKey)
+    expect(continuedArrow.attributes('data-variant')).toBe('confirmed')
   })
 
   it('clears the confirmed attack arrow once combat returns to the idle snapshot with no attacker', async () => {
@@ -1117,8 +1116,6 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-test="attack-arrow"]').exists()).toBe(true)
-
-    vi.advanceTimersByTime(901)
 
     combat.value = {
       attackerSessionId: '',

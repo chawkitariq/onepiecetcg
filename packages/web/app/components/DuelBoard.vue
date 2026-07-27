@@ -158,7 +158,6 @@ const declaredAttackTargetInstanceId = ref<string | null>(null)
 const confirmedAttackArrow = ref<{ key: number, fromInstanceId: string, toInstanceId: string } | null>(null)
 const lastConfirmedAttackArrowSignature = ref<string | null>(null)
 let confirmedAttackArrowKey = 0
-let confirmedAttackArrowTimeoutId: number | null = null
 
 function onBoardPointerMove(event: PointerEvent) {
   pointerPosition.value = { x: event.clientX, y: event.clientY }
@@ -241,22 +240,6 @@ function showConfirmedAttackArrow(fromInstanceId: string, toInstanceId: string) 
     fromInstanceId,
     toInstanceId
   }
-
-  if (confirmedAttackArrowTimeoutId !== null) {
-    window.clearTimeout(confirmedAttackArrowTimeoutId)
-  }
-
-  confirmedAttackArrowTimeoutId = window.setTimeout(() => {
-    if (
-      confirmedAttackArrow.value?.fromInstanceId === fromInstanceId
-      && confirmedAttackArrow.value?.toInstanceId === toInstanceId
-      && combat.value?.step !== 'declared'
-    ) {
-      confirmedAttackArrow.value = null
-    }
-
-    confirmedAttackArrowTimeoutId = null
-  }, 900)
 }
 
 watch(
@@ -302,11 +285,6 @@ watch(
   },
   { immediate: true }
 )
-onScopeDispose(() => {
-  if (confirmedAttackArrowTimeoutId !== null) {
-    window.clearTimeout(confirmedAttackArrowTimeoutId)
-  }
-})
 const invalidHandCardIds = ref<string[]>([])
 
 const phaseSteps = ['refresh', 'draw', 'don', 'main', 'end'] as const
