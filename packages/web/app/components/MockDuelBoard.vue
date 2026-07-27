@@ -191,7 +191,7 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
       class="static shrink-0"
       :ui="{
         center: 'flex min-w-0 justify-center',
-        container: 'max-w-none px-4'
+        container: 'mx-auto w-full max-w-[2000px] px-4'
       }"
     >
       <template #left>

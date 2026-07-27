@@ -2618,7 +2618,7 @@ defineShortcuts({
       class="static shrink-0"
       :ui="{
         center: 'flex min-w-0 justify-center',
-        container: 'max-w-none px-4 lg:px-6'
+        container: 'mx-auto w-full max-w-[2000px] px-4 lg:px-6'
       }"
     >
       <template #left>

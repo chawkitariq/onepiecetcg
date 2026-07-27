@@ -6,9 +6,8 @@ import onePieceTcgLogo from '~/assets/onepiecetcg.png'
   <div class="flex min-h-dvh flex-col">
     <UHeader
       :ui="{
-        container: 'mx-auto flex h-full w-full max-w-[2000px] items-center justify-between gap-3 px-4',
-        header: 'mx-auto flex h-(--ui-header-height) w-full max-w-[2000px] items-center justify-between gap-3 px-4',
-        body: 'mx-auto w-full max-w-[2000px] px-4 py-4 overflow-y-auto'
+        header: 'flex h-(--ui-header-height) w-full items-center justify-between gap-3',
+        body: 'py-4 overflow-y-auto'
       }"
     >
       <template #left>
