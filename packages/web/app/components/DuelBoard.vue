@@ -21,6 +21,10 @@ type BoardTravelOverlay = {
   scaleX: number
   scaleY: number
   settled: boolean
+  durationMs: number
+  easing: string
+  variant: 'default' | 'attachedDon'
+  opacity: number
   rotated?: boolean
 }
 
@@ -44,6 +48,9 @@ type BannerFeedbackInstance = {
 
 const BOARD_TRAVEL_MS = 520
 const BOARD_TRAVEL_STAGGER_MS = 90
+const ATTACHED_DON_TRAVEL_STAGGER_MS = 70
+const DEFAULT_TRAVEL_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'
+const ATTACHED_DON_TRAVEL_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 
 const {
   self,
@@ -422,7 +429,7 @@ const boardTravelOverlayElements = new Map<string, HTMLElement>()
 const cardFeedbackElements = new Map<number, HTMLElement>()
 const bannerFeedbackElements = new Map<number, HTMLElement>()
 const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
-const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect }> = []
+const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
 const pendingSelfHandTravelSources: Array<{ source: 'life' | 'deck', sourceRect: DOMRect, expiresAt: number }> = []
 const pendingOpponentHandTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
 const animatedSelfLifeToHandIds = new Set<string>()
@@ -554,13 +561,6 @@ const activeTrashPlayer = computed(() => {
 })
 
 const activeTrashCards = computed(() => activeTrashPlayer.value?.trash ?? [])
-const activeTrashTitle = computed(() => {
-  if (!activeTrashPlayer.value) {
-    return 'Défausse'
-  }
-
-  return `Défausse de ${activeTrashPlayer.value.displayName}`
-})
 
 watch(phase, (nextPhase, previousPhase) => {
   if (nextPhase === 'finished' && previousPhase !== 'finished') {
@@ -708,6 +708,14 @@ function pruneOpponentHandTravelSources() {
 
   while (pendingOpponentHandTravelSources[0] && pendingOpponentHandTravelSources[0].expiresAt <= now) {
     pendingOpponentHandTravelSources.shift()
+  }
+}
+
+function pruneAttachedDonTravelSources() {
+  const now = Date.now()
+
+  while (pendingAttachedDonTravelSources[0] && pendingAttachedDonTravelSources[0].expiresAt <= now) {
+    pendingAttachedDonTravelSources.shift()
   }
 }
 
@@ -1297,6 +1305,8 @@ function removeBoardTravelOverlay(key: string, target: Ref<string[]>, instanceId
 }
 
 function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
+  const settledOpacity = overlay.variant === 'attachedDon' ? 0.18 : 1
+
   return {
     left: `${overlay.sourceRect.left}px`,
     top: `${overlay.sourceRect.top}px`,
@@ -1305,7 +1315,9 @@ function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
     transform: overlay.settled
       ? `translate(${overlay.translateX}px, ${overlay.translateY}px) scale(${overlay.scaleX}, ${overlay.scaleY})`
       : 'translate(0px, 0px) scale(1, 1)',
-    transitionDuration: `${BOARD_TRAVEL_MS}ms`
+    opacity: overlay.settled ? settledOpacity : overlay.opacity,
+    transitionDuration: `${overlay.durationMs}ms`,
+    transitionTimingFunction: overlay.easing
   }
 }
 
@@ -1345,12 +1357,19 @@ function createTravelOverlayFromRect(
   target: Ref<string[]>,
   rotated = false,
   delayMs = 0,
+  variant: BoardTravelOverlay['variant'] = 'default',
   onComplete?: () => void
 ) {
   const translateX = destinationRect.left - sourceRect.left
   const translateY = destinationRect.top - sourceRect.top
   const scaleX = sourceRect.width === 0 ? 1 : destinationRect.width / sourceRect.width
   const scaleY = sourceRect.height === 0 ? 1 : destinationRect.height / sourceRect.height
+  const distance = Math.hypot(translateX, translateY)
+  const durationMs = variant === 'attachedDon'
+    ? Math.min(580, Math.max(340, 320 + distance * 0.18))
+    : Math.min(BOARD_TRAVEL_MS, Math.max(220, 200 + distance * 0.16))
+  const easing = variant === 'attachedDon' ? ATTACHED_DON_TRAVEL_EASING : DEFAULT_TRAVEL_EASING
+  const opacity = variant === 'attachedDon' ? 0.98 : 1
 
   window.setTimeout(() => {
     boardTravelOverlays.value = [
@@ -1366,6 +1385,10 @@ function createTravelOverlayFromRect(
         scaleX,
         scaleY,
         settled: false,
+        durationMs,
+        easing,
+        variant,
+        opacity,
         rotated
       }
     ]
@@ -1399,7 +1422,7 @@ function createTravelOverlayFromRect(
       window.setTimeout(() => {
         removeBoardTravelOverlay(key, target, instanceId)
         onComplete?.()
-      }, BOARD_TRAVEL_MS)
+      }, durationMs)
     })
   }, delayMs)
 }
@@ -1413,6 +1436,7 @@ function createTravelOverlay(
   target: Ref<string[]>,
   rotated = false,
   delayMs = 0,
+  variant: BoardTravelOverlay['variant'] = 'default',
   onComplete?: () => void
 ) {
   createTravelOverlayFromRect(
@@ -1424,8 +1448,42 @@ function createTravelOverlay(
     target,
     rotated,
     delayMs,
+    variant,
     onComplete
   )
+}
+
+function createReadableAttachedDonDestinationRect(sourceRect: DOMRect, destinationElement: HTMLElement) {
+  const rect = destinationElement.getBoundingClientRect()
+  const width = Math.max(rect.width + 18, sourceRect.width * 0.62)
+  const height = Math.max(rect.height + 10, sourceRect.height * 0.62)
+  const left = rect.left + (rect.width - width) / 2
+  const top = rect.top + (rect.height - height) / 2 - 4
+
+  return new DOMRect(left, top, width, height)
+}
+
+function queryCostCardElement(side: 0 | 1, instanceId: string): HTMLElement | null {
+  return side === 0
+    ? querySelfCostCardElement(instanceId)
+    : queryOpponentCostCardElement(instanceId)
+}
+
+function deriveRemovedUntappedCostSourceRects(
+  previous: DuelPlayerView | null,
+  current: DuelPlayerView,
+  side: 0 | 1
+) {
+  if (!previous) {
+    return []
+  }
+
+  const currentCostIds = new Set(current.cost.map(card => card.instanceId))
+
+  return previous.cost
+    .filter(card => !card.rested && !currentCostIds.has(card.instanceId))
+    .map(card => queryCostCardElement(side, card.instanceId)?.getBoundingClientRect())
+    .filter((rect): rect is DOMRect => Boolean(rect))
 }
 
 function queueSelfHandTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
@@ -1516,6 +1574,7 @@ function queueSelfHandTravelOverlays(current: DuelPlayerView, previous: DuelPlay
         selfDeferredHandCardIds,
         false,
         delayMs,
+        'default',
         source === 'life'
           ? () => mergeRevealedHandCards(selfRevealedHandCardIds, [card.instanceId])
           : undefined
@@ -1840,6 +1899,8 @@ function cacheAttachedDonTravelSources(instanceIds: string[]) {
     return
   }
 
+  pruneAttachedDonTravelSources()
+
   for (const instanceId of instanceIds) {
     const sourceElement = querySelfCostCardElement(instanceId)
 
@@ -1848,7 +1909,8 @@ function cacheAttachedDonTravelSources(instanceIds: string[]) {
     }
 
     pendingAttachedDonTravelSources.push({
-      sourceRect: sourceElement.getBoundingClientRect()
+      sourceRect: sourceElement.getBoundingClientRect(),
+      expiresAt: Date.now() + 3000
     })
   }
 }
@@ -1958,6 +2020,8 @@ function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelP
     return
   }
 
+  pruneAttachedDonTravelSources()
+
   const previousAttachedCounts = new Map<string, number>()
 
   if (previous?.leader) {
@@ -1979,16 +2043,18 @@ function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelP
   }
 
   const consumedTargetCounts = new Map<string, number>()
+  const removedCostSourceRects = deriveRemovedUntappedCostSourceRects(previous, current, 0)
 
   nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, BOARD_TRAVEL_STAGGER_MS)) {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, ATTACHED_DON_TRAVEL_STAGGER_MS)) {
       const previousAttachedCount = previousAttachedCounts.get(instanceId) ?? 0
       const consumedCount = consumedTargetCounts.get(instanceId) ?? 0
       const destinationSlotIndex = previousAttachedCount + consumedCount
       const destinationElement = queryAttachedDonSlotElement(instanceId, destinationSlotIndex)
+      const immediateSourceRect = removedCostSourceRects.shift()
       const pendingSource = pendingAttachedDonTravelSources.shift()
       const fallbackSource = querySelfUntappedCostCardElement()
-      const sourceRect = pendingSource?.sourceRect ?? fallbackSource?.getBoundingClientRect()
+      const sourceRect = immediateSourceRect ?? pendingSource?.sourceRect ?? fallbackSource?.getBoundingClientRect()
 
       consumedTargetCounts.set(instanceId, consumedCount + 1)
 
@@ -1998,15 +2064,16 @@ function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelP
 
       attachedDonTravelKey += 1
 
-      createTravelOverlay(
+      createTravelOverlayFromRect(
         `attached-don:${attachedDonTravelKey}`,
         `attached-don:${instanceId}:${attachedDonTravelKey}`,
         cardFrontDon,
         sourceRect,
-        destinationElement,
+        createReadableAttachedDonDestinationRect(sourceRect, destinationElement),
         attachedDonOverlayTarget,
         false,
-        delayMs
+        delayMs,
+        'attachedDon'
       )
     }
   })
@@ -2034,13 +2101,22 @@ function queueOpponentAttachedDonTravelOverlays(current: DuelPlayerView, previou
   }
 
   const sourceRects = Array.from(
-    { length: targetIds.length },
-    () => queryOpponentUntappedCostCardElement()?.getBoundingClientRect()
-  ).filter((rect): rect is DOMRect => Boolean(rect))
+    deriveRemovedUntappedCostSourceRects(previous, current, 1)
+  )
+
+  while (sourceRects.length < targetIds.length) {
+    const fallbackRect = queryOpponentUntappedCostCardElement()?.getBoundingClientRect()
+
+    if (!fallbackRect) {
+      break
+    }
+
+    sourceRects.push(fallbackRect)
+  }
   const consumedTargetCounts = new Map<string, number>()
 
   nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, BOARD_TRAVEL_STAGGER_MS)) {
+    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, ATTACHED_DON_TRAVEL_STAGGER_MS)) {
       const previousAttachedCount = previousAttachedCounts.get(instanceId) ?? 0
       const consumedCount = consumedTargetCounts.get(instanceId) ?? 0
       const destinationSlotIndex = previousAttachedCount + consumedCount
@@ -2055,15 +2131,16 @@ function queueOpponentAttachedDonTravelOverlays(current: DuelPlayerView, previou
 
       attachedDonTravelKey += 1
 
-      createTravelOverlay(
+      createTravelOverlayFromRect(
         `attached-don:${attachedDonTravelKey}`,
         `attached-don:${instanceId}:${attachedDonTravelKey}`,
         cardFrontDon,
         sourceRect,
-        destinationElement,
+        createReadableAttachedDonDestinationRect(sourceRect, destinationElement),
         attachedDonOverlayTarget,
         false,
-        delayMs
+        delayMs,
+        'attachedDon'
       )
     }
   })
@@ -2966,12 +3043,13 @@ defineShortcuts({
               @pointermove="onBoardPointerMove"
             >
               <div class="pointer-events-none fixed inset-0 z-[130]">
-              <div
+                <div
                   v-for="overlay in boardTravelOverlays"
                   :key="overlay.key"
                   :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
                   :data-board-travel-instance-id="overlay.instanceId"
                   :data-board-travel-settled="String(overlay.settled)"
+                  :data-board-travel-variant="overlay.variant"
                   class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
                   :style="boardTravelOverlayStyle(overlay)"
                 >
@@ -3233,16 +3311,19 @@ defineShortcuts({
         </div>
       </UCard>
     </div>
-
   </div>
 </template>
 
 <style scoped>
 .duel-board-travel-overlay {
   transform-origin: top left;
-  transition-property: transform;
+  transition-property: transform, opacity;
   transition-timing-function: ease-in-out;
-  will-change: transform;
+  will-change: transform, opacity;
+}
+
+.duel-board-travel-overlay[data-board-travel-variant='attachedDon'] {
+  filter: drop-shadow(0 10px 18px rgb(15 23 42 / 0.22));
 }
 
 .duel-card-feedback {

@@ -930,6 +930,29 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.find('[data-board-travel-instance-id="opponent-don-2"]').exists()).toBe(true)
   })
 
+  it('keeps the opponent attached-DON overlay even when the last untapped cost card leaves the zone', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    opponent.value = createPlayer('opponent', {
+      leader: createPublicCard('opponent-leader', { type: 'Leader', power: 5000, attachedDon: 0 }),
+      cost: [
+        createPublicCard('opponent-don-last', { type: 'DON!!', cost: null, power: null, counter: null })
+      ]
+    })
+    await wrapper.vm.$nextTick()
+
+    opponent.value = createPlayer('opponent', {
+      leader: createPublicCard('opponent-leader', { type: 'Leader', power: 5000, attachedDon: 1 }),
+      cost: []
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-board-travel-instance-id^="attached-don:opponent-leader:"]').exists()).toBe(true)
+  })
+
   it('shows the confirmed incoming attack arrow when the opponent declares an attack on the self leader', async () => {
     const wrapper = mountBoard()
 
