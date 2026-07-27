@@ -395,8 +395,15 @@ const defaultStub = defineComponent({
 
 const slideoverStub = defineComponent({
   name: 'USlideover',
-  setup(_, { slots }) {
-    return () => h('div', slots.body?.())
+  props: {
+    open: { type: Boolean, default: false }
+  },
+  emits: ['update:open'],
+  setup(props, { slots }) {
+    return () => h('div', {
+      'data-test': 'journal-slideover',
+      'data-open': String(props.open)
+    }, slots.body?.())
   }
 })
 
@@ -437,6 +444,8 @@ const duelAttackArrowStub = defineComponent({
 })
 
 describe('DuelBoard drag and drop', () => {
+  let scrollToMock: ReturnType<typeof vi.fn>
+
   beforeEach(() => {
     phase.value = 'main'
     turn.value = 1
@@ -475,6 +484,12 @@ describe('DuelBoard drag and drop', () => {
     )
     vi.stubGlobal('cancelAnimationFrame', (handle: number) => {
       window.clearTimeout(handle)
+    })
+    scrollToMock = vi.fn()
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollToMock
     })
     vi.useFakeTimers()
   })
@@ -1490,8 +1505,60 @@ describe('DuelBoard drag and drop', () => {
 
     const wrapper = mountBoard()
     const html = wrapper.html()
+    const journalEntries = wrapper.findAll('[data-test="journal-entry"]')
 
     expect(html.indexOf('self commence la partie.')).toBeLessThan(html.indexOf('DON!! insuffisant pour jouer Zoro.'))
+    expect(journalEntries).toHaveLength(2)
+    expect(journalEntries[0]?.classes()).not.toContain('border')
+    expect(journalEntries[0]?.classes()).not.toContain('rounded-lg')
+  })
+
+  it('scrolls the journal to the latest entry when the slideover opens', async () => {
+    logs.value = [
+      { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' },
+      { id: 'log-2', message: 'self joue Zoro.', createdAt: '2026-07-24T10:01:00.000Z' }
+    ]
+
+    const wrapper = mountBoard()
+    const journalSlideover = wrapper.getComponent(slideoverStub)
+
+    journalSlideover.vm.$emit('update:open', true)
+    await wrapper.vm.$nextTick()
+    await vi.runAllTimersAsync()
+    await wrapper.vm.$nextTick()
+
+    expect(scrollToMock).toHaveBeenCalledWith({
+      top: expect.any(Number),
+      behavior: 'auto'
+    })
+  })
+
+  it('scrolls the journal to the latest entry when a new log arrives and the slideover is open', async () => {
+    logs.value = [
+      { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' }
+    ]
+
+    const wrapper = mountBoard()
+    const journalSlideover = wrapper.getComponent(slideoverStub)
+
+    journalSlideover.vm.$emit('update:open', true)
+    await wrapper.vm.$nextTick()
+    await vi.runAllTimersAsync()
+    await wrapper.vm.$nextTick()
+    scrollToMock.mockClear()
+
+    logs.value = [
+      ...logs.value,
+      { id: 'log-2', message: 'self joue Zoro.', createdAt: '2026-07-24T10:01:00.000Z' }
+    ]
+    await wrapper.vm.$nextTick()
+    await vi.runAllTimersAsync()
+    await wrapper.vm.$nextTick()
+
+    expect(scrollToMock).toHaveBeenCalledWith({
+      top: expect.any(Number),
+      behavior: 'smooth'
+    })
   })
 
   it('shows a global animated feedback line for attack logs', async () => {

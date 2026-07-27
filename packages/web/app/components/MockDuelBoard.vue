@@ -409,27 +409,40 @@ function onHandCardClick(side: 0 | 1, instanceId: string) {
               class="flex-1 min-h-0"
               :ui="{ viewport: 'pr-1' }"
             >
-              <ul class="flex flex-col gap-1 text-xs">
-                <li
-                  v-for="entry in logs"
+              <ul class="flex flex-col text-xs">
+                <template
+                  v-for="(entry, index) in logs"
                   :key="entry.id"
-                  class="grid grid-cols-[0.5rem_3.25rem_1fr] gap-2 border-b border-default pb-1"
                 >
-                  <span
-                    class="mt-1.5 size-1.5 rounded-full"
-                    :class="logToneClasses[getLogTone(entry.message)].marker"
-                  />
-                  <time
-                    :datetime="entry.createdAt"
-                    class="tabular-nums"
-                    :class="logToneClasses[getLogTone(entry.message)].text"
+                  <li
+                    class="py-1.5"
+                    data-test="journal-entry"
                   >
-                    {{ formatLogTime(entry.createdAt) }}
-                  </time>
-                  <span :class="logToneClasses[getLogTone(entry.message)].text">
-                    {{ entry.message }}
-                  </span>
-                </li>
+                    <div class="flex items-start gap-2">
+                      <span
+                        class="mt-1.5 size-1.5 shrink-0 rounded-full"
+                        :class="logToneClasses[getLogTone(entry.message)].marker"
+                      />
+                      <time
+                        :datetime="entry.createdAt"
+                        class="shrink-0 tabular-nums"
+                        :class="logToneClasses[getLogTone(entry.message)].text"
+                      >
+                        {{ formatLogTime(entry.createdAt) }}
+                      </time>
+                      <span
+                        class="min-w-0 flex-1"
+                        :class="logToneClasses[getLogTone(entry.message)].text"
+                      >
+                        {{ entry.message }}
+                      </span>
+                    </div>
+                  </li>
+                  <USeparator
+                    v-if="index < logs.length - 1"
+                    class="opacity-60"
+                  />
+                </template>
               </ul>
             </UScrollArea>
           </div>

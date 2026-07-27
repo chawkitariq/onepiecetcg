@@ -1198,6 +1198,22 @@ function formatLogTime(createdAt: string): string {
   })
 }
 
+async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
+  await nextTick()
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+  const element = journalScrollArea.value?.$el
+
+  if (!element) {
+    return
+  }
+
+  element.scrollTo({
+    top: element.scrollHeight,
+    behavior
+  })
+}
+
 watch(() => logs.value.length, async (newLength, previousLength) => {
   if (newLength <= previousLength) {
     return
@@ -1211,24 +1227,14 @@ watch(() => logs.value.length, async (newLength, previousLength) => {
 
   if (isJournalOpen.value) {
     seenLogCount.value = newLength
+    await scrollJournalToLatest('smooth')
   }
-
-  await nextTick()
-  const element = journalScrollArea.value?.$el
-
-  if (!element) {
-    return
-  }
-
-  element.scrollTo({
-    top: element.scrollHeight,
-    behavior: 'smooth'
-  })
 })
 
-watch(isJournalOpen, (open) => {
+watch(isJournalOpen, async (open) => {
   if (open) {
     seenLogCount.value = logs.value.length
+    await scrollJournalToLatest('auto')
   }
 })
 
@@ -3035,30 +3041,38 @@ defineShortcuts({
             :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
           >
             <div class="mt-auto flex flex-col">
-              <ul class="flex flex-col gap-2 text-xs">
+              <ul class="flex flex-col text-xs">
                 <li
                   v-if="logs.length === 0"
                   class="text-muted"
                 >
                   Aucun événement.
                 </li>
-                <li
-                  v-for="entry in logs"
+                <template
+                  v-for="(entry, index) in logs"
                   :key="entry.id"
-                  class="rounded-lg border border-default/70 bg-muted/20 px-3 py-2"
                 >
-                  <div class="flex items-center gap-2 text-[11px]">
-                    <time
-                      :datetime="entry.createdAt"
-                      class="tabular-nums opacity-80"
-                    >
-                      {{ formatLogTime(entry.createdAt) }}
-                    </time>
-                  </div>
-                  <p class="mt-1 leading-relaxed">
-                    {{ entry.message }}
-                  </p>
-                </li>
+                  <li
+                    class="py-2"
+                    data-test="journal-entry"
+                  >
+                    <div class="flex items-start gap-3">
+                      <time
+                        :datetime="entry.createdAt"
+                        class="shrink-0 tabular-nums text-[11px] opacity-80"
+                      >
+                        {{ formatLogTime(entry.createdAt) }}
+                      </time>
+                      <p class="min-w-0 flex-1 leading-relaxed">
+                        {{ entry.message }}
+                      </p>
+                    </div>
+                  </li>
+                  <USeparator
+                    v-if="index < logs.length - 1"
+                    class="opacity-60"
+                  />
+                </template>
               </ul>
             </div>
           </UScrollArea>
