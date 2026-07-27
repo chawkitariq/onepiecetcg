@@ -431,8 +431,13 @@ const animatedOpponentBoardEntryIds = new Set<string>()
 const attachedDonOverlayTarget = ref<string[]>([])
 let attachedDonTravelKey = 0
 let opponentHiddenHandTravelKey = 0
+const transientErrorModalState = ref<DuelActionModalState | null>(null)
 
-const actionModalState = computed<DuelActionModalState | null>(() => {
+function dismissTransientErrorModal() {
+  transientErrorModalState.value = null
+}
+
+const decisionActionModalState = computed<DuelActionModalState | null>(() => {
   if (isBlockingStep.value && isSelfDefender.value) {
     return {
       tone: 'decision',
@@ -480,6 +485,10 @@ const actionModalState = computed<DuelActionModalState | null>(() => {
 
   return null
 })
+
+const actionModalState = computed<DuelActionModalState | null>(() =>
+  decisionActionModalState.value ?? transientErrorModalState.value
+)
 
 const isFinished = computed(() => phase.value === 'finished')
 const isSelfWinner = computed(() =>
@@ -536,6 +545,10 @@ watch(phase, (nextPhase, previousPhase) => {
 }, { immediate: true })
 
 const waitingToastText = computed(() => {
+  if (isOpponentDisconnected.value) {
+    return 'Adversaire temporairement deconnecte. La partie reste en attente pendant la fenetre de reconnexion.'
+  }
+
   if (isBlockingStep.value && isSelfAttacker.value) {
     return 'En attente de la décision de blocage de l\'adversaire...'
   }
@@ -1136,6 +1149,15 @@ watch(errorMessage, (message) => {
 
   clearPendingHandPlayQueue()
   spawnBannerFeedback(message, 'error')
+  transientErrorModalState.value = {
+    tone: 'danger',
+    title: 'Action impossible',
+    description: message,
+    actions: [
+      { label: 'Compris', color: 'neutral', onSelect: dismissTransientErrorModal }
+    ]
+  }
+  clearError()
 })
 
 function pulseLeader(target: Ref<boolean>) {
@@ -2737,25 +2759,6 @@ defineShortcuts({
       </template>
     </UHeader>
 
-    <UAlert
-      v-if="errorMessage"
-      color="error"
-      variant="subtle"
-      :title="errorMessage"
-      class="shrink-0"
-      :close="{ color: 'neutral', variant: 'link' }"
-      @update:open="clearError"
-    />
-
-    <UAlert
-      v-if="isOpponentDisconnected"
-      color="warning"
-      variant="subtle"
-      title="Adversaire temporairement deconnecte"
-      description="La partie reste en attente pendant la fenetre de reconnexion. Le duel reprend automatiquement si la connexion revient."
-      class="shrink-0 duel-connection-banner"
-    />
-
     <DuelActionModal :state="actionModalState">
       <template
         v-if="actionModalState?.slot === 'counter-input'"
@@ -2774,6 +2777,7 @@ defineShortcuts({
     <DuelWaitingToast
       v-if="waitingToastText"
       :text="waitingToastText"
+      :tone="isOpponentDisconnected ? 'warning' : 'neutral'"
     />
 
     <DuelResultModal

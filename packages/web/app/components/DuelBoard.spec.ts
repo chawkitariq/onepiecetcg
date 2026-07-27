@@ -23,6 +23,7 @@ const finishedAt = ref<string | null>(null)
 const isSelfTurn = ref(true)
 const isCombatInProgress = ref(false)
 const canDeclareAttack = ref(false)
+const isOpponentDisconnected = ref(false)
 const reducedMotion = ref<'reduce' | 'no-preference'>('no-preference')
 const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
@@ -147,7 +148,7 @@ mockNuxtImport('useDuelRoom', () => () => ({
   declareCounter,
   finishCounterStep,
   resolveTrigger,
-  isOpponentDisconnected: computed(() => false)
+  isOpponentDisconnected: computed(() => isOpponentDisconnected.value)
 }))
 
 const playZoneStub = defineComponent({
@@ -485,7 +486,6 @@ describe('DuelBoard drag and drop', () => {
           UHeader: defaultStub,
           UBadge: defaultStub,
           UButton: defaultStub,
-          UAlert: defaultStub,
           USlideover: slideoverStub,
           UContainer: defaultStub,
           UCard: defaultStub,
@@ -1421,11 +1421,30 @@ describe('DuelBoard drag and drop', () => {
 
   it('shows an animated error feedback line when an action error arrives', async () => {
     const wrapper = mountBoard({ attachToBody: true })
+    const clearErrorCallCountBeforeError = clearError.mock.calls.length
 
     errorMessage.value = 'Pas assez de DON!!'
     await wrapper.vm.$nextTick()
 
     expect(wrapper.get('[data-test="error-feedback"]').text()).toContain('Pas assez de DON!!')
+    expect(document.body.textContent).toContain('Action impossible')
+    expect(document.body.textContent).toContain('Pas assez de DON!!')
+    expect(document.body.textContent).toContain('Compris')
+    expect(clearError.mock.calls.length).toBeGreaterThan(clearErrorCallCountBeforeError)
+  })
+
+  it('uses the shared waiting toast when the opponent is disconnected', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
+
+    isOpponentDisconnected.value = true
+    await wrapper.vm.$nextTick()
+
+    const waitingToast = wrapper.getComponent({ name: 'DuelWaitingToast' })
+
+    expect(waitingToast.text()).toContain('Adversaire temporairement deconnecte')
+    expect(waitingToast.props('tone')).toBe('warning')
+
+    wrapper.unmount()
   })
 
   it('shows a card feedback chip when DON!! attachment increases a card power', async () => {
@@ -1531,6 +1550,7 @@ describe('DuelBoard leave to lobby', () => {
     isSelfTurn.value = true
     isCombatInProgress.value = false
     canDeclareAttack.value = false
+    isOpponentDisconnected.value = false
     self.value = createPlayer('self', {
       characters: [createPublicCard('character-a')]
     })
