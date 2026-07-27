@@ -243,7 +243,7 @@ describe('DuelHand', () => {
     )
   })
 
-  it('defers newly mounted hand cards when the board marks them as hidden-zone arrivals', () => {
+  it('keeps deferred hand cards in the layout while hiding them visually', () => {
     const wrapper = mount(DuelHand, {
       props: {
         hand: [createPrivateCard('hand-a'), createPrivateCard('deferred-hand')],
@@ -256,8 +256,12 @@ describe('DuelHand', () => {
 
     const renderedIds = wrapper.findAll('button')
       .map(node => node.attributes('data-layout-id'))
+    const deferredHandCard = wrapper.findAll('button')
+      .find(node => node.attributes('data-layout-id') === 'deferred-hand')
 
-    expect(renderedIds).toEqual(['hand-a'])
+    expect(renderedIds).toEqual(['hand-a', 'deferred-hand'])
+    expect(deferredHandCard?.classes()).toContain('opacity-0')
+    expect(deferredHandCard?.classes()).toContain('pointer-events-none')
   })
 
   it('keeps custom position transitions on hand cards so stack movement stays visible', () => {

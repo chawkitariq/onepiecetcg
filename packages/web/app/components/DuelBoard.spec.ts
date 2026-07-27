@@ -558,7 +558,7 @@ describe('DuelBoard drag and drop', () => {
     expect(mulliganWrapper.find('[data-opponent-hand]').exists()).toBe(true)
   })
 
-  it('marks the current mulligan hand for reveal animation when mulligan starts and when the hand is redrawn', async () => {
+  it('marks the current mulligan hand for reveal animation when mulligan starts', async () => {
     phase.value = 'setup'
 
     const wrapper = mountBoard()
@@ -572,6 +572,12 @@ describe('DuelBoard drag and drop', () => {
       'hand-stage',
       'hand-event'
     ]))
+  })
+
+  it('uses the standard deck-to-hand travel overlay when a mulligan redraw arrives', async () => {
+    phase.value = 'mulligan'
+
+    const wrapper = mountBoard({ attachToBody: true })
 
     self.value = createPlayer('self', {
       hand: [
@@ -584,15 +590,12 @@ describe('DuelBoard drag and drop', () => {
       handCount: 5
     })
     await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1)
+    await wrapper.vm.$nextTick()
 
-    const redrawnHandRevealIds = JSON.parse(wrapper.get('[data-duel-hand]').attributes('data-revealed-hand-card-ids') ?? '[]')
-    expect(redrawnHandRevealIds).toEqual(expect.arrayContaining([
-      'mulligan-card-1',
-      'mulligan-card-2',
-      'mulligan-card-3',
-      'mulligan-card-4',
-      'mulligan-card-5'
-    ]))
+    expect(wrapper.find('[data-board-travel-instance-id="mulligan-card-1"]').exists()).toBe(true)
+    expect(wrapper.get('[data-board-travel-instance-id="mulligan-card-1"]').attributes('data-board-travel-variant')).toBe('default')
   })
 
   it('exposes only affordable character cards as draggable from the self hand', () => {
@@ -602,8 +605,8 @@ describe('DuelBoard drag and drop', () => {
     expect(hand.attributes('data-draggable-hand-card-ids')).toBe(JSON.stringify(['hand-character', 'hand-stage']))
   })
 
-  it('surfaces a deck ghost and queues the new hand card for custom deck-to-hand travel', async () => {
-    const wrapper = mountBoard()
+  it('surfaces a deck ghost and defers the new hand card while the standard deck-to-hand travel plays', async () => {
+    const wrapper = mountBoard({ attachToBody: true })
 
     self.value = createPlayer('self', {
       characters: [createPublicCard('character-a')],
@@ -626,7 +629,8 @@ describe('DuelBoard drag and drop', () => {
 
     expect(selfZone.attributes('data-transition-ghosts')).toContain('"instanceId":"drawn-card"')
     expect(selfZone.attributes('data-transition-ghosts')).toContain('"source":"deck"')
-    expect(hand.attributes('data-hand-ids')).toContain('drawn-card')
+    expect(wrapper.find('[data-board-travel-instance-id="drawn-card"]').exists()).toBe(true)
+    expect(hand.attributes('data-hand-ids')).not.toContain('drawn-card')
   })
 
   it('creates an explicit overlay when a revealed life card travels into the self hand', async () => {

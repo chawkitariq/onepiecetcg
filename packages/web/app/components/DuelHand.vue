@@ -43,9 +43,7 @@ const emit = defineEmits<{
 const reducedMotion = usePreferredReducedMotion()
 const handStackSize = useMeasuredStackSize('handStack')
 const handCardElements = new Map<string, HTMLElement>()
-const visibleHand = computed(() =>
-  (props.hand ?? []).filter(card => !props.deferredHandCardIds?.includes(card.instanceId))
-)
+const visibleHand = computed(() => props.hand ?? [])
 const renderedHandCount = computed(() => {
   if (!props.hidden) {
     return props.hand?.length ?? 0
@@ -128,6 +126,10 @@ function isRevealedHandCard(instanceId: string): boolean {
   return props.revealedHandCardIds?.includes(instanceId) ?? false
 }
 
+function isDeferredHandCard(instanceId: string): boolean {
+  return props.deferredHandCardIds?.includes(instanceId) ?? false
+}
+
 const selectedHandCount = computed(() => props.selectedHandCardIds?.length ?? 0)
 
 function shouldShowSelectedHandCount(instanceId: string): boolean {
@@ -165,7 +167,6 @@ function runHandRevealAnimation(instanceId: string) {
   animate(element, {
     rotateY: ['90deg', '0deg'],
     scale: [0.94, 1],
-    filter: ['brightness(1.16)', 'brightness(1)'],
     duration: 320,
     ease: 'outQuad'
   })
@@ -254,13 +255,14 @@ watch(
           type="button"
           draggable="true"
           :data-instance-id="card.instanceId"
-          :data-layout-id="card.instanceId"
-          class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
-          :class="[
-            'duel-hand-card',
-            isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
-            handRevealAnimation(card.instanceId) ? 'duel-hand-card--revealed' : '',
-            isHandCardSelected(card.instanceId) ? 'rounded-lg ring-4 ring-info/70' : '',
+        :data-layout-id="card.instanceId"
+        class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
+        :class="[
+          'duel-hand-card',
+          isDeferredHandCard(card.instanceId) ? 'pointer-events-none opacity-0' : '',
+          isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
+          handRevealAnimation(card.instanceId) ? 'duel-hand-card--revealed' : '',
+          isHandCardSelected(card.instanceId) ? 'rounded-lg ring-4 ring-info/70' : '',
             isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
           ]"
           :style="stackedCardStyle(index, visibleHand.length, handStackSize)"
@@ -305,7 +307,6 @@ watch(
     left 520ms ease-in-out,
     top 520ms ease-in-out,
     transform 180ms ease-out,
-    opacity 180ms ease-out,
     box-shadow 180ms ease-out;
 }
 

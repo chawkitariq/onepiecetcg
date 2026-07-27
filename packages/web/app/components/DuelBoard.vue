@@ -714,6 +714,23 @@ function cacheSelfHandTravelSources(source: 'life' | 'deck', count: number, sour
   }
 }
 
+function cacheMulliganDeckToHandTravelSources(current: DuelPlayerView, previous: DuelPlayerView | null) {
+  if (!previous || phase.value !== 'mulligan') {
+    return
+  }
+
+  const previousHandIds = new Set(previous.hand.map(card => card.instanceId))
+  const currentHandIds = new Set(current.hand.map(card => card.instanceId))
+  const newHandCount = current.hand.filter(card => !previousHandIds.has(card.instanceId)).length
+  const replacedHandCount = previous.hand.filter(card => !currentHandIds.has(card.instanceId)).length
+
+  if (newHandCount === 0 || replacedHandCount === 0) {
+    return
+  }
+
+  cacheSelfHandTravelSources('deck', newHandCount, querySelfDeckElement())
+}
+
 function pruneSelfHandTravelSources() {
   const now = Date.now()
 
@@ -1116,15 +1133,7 @@ watch(self, (current, previous) => {
     pruneSelfHandTravelSources()
     cacheSelfHandTravelSources('life', Math.max(previous.lifeCount - current.lifeCount, 0), queryLifeStackElement(0))
     cacheSelfHandTravelSources('deck', Math.max(previous.deckCount - current.deckCount, 0), querySelfDeckElement())
-  }
-
-  if (current && phase.value === 'mulligan') {
-    const previousHandIds = new Set(previous?.hand.map(card => card.instanceId) ?? [])
-    const mulliganRevealIds = current.hand
-      .filter(card => previousHandIds.size === 0 || !previousHandIds.has(card.instanceId))
-      .map(card => card.instanceId)
-
-    mergeRevealedHandCards(selfRevealedHandCardIds, mulliganRevealIds)
+    cacheMulliganDeckToHandTravelSources(current, previous)
   }
 
   queueKoFeedback(current, previous)
