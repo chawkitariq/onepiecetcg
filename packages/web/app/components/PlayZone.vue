@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
+import type { HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
+import { createHoveredDuelCard } from '~/utils/hoveredDuelCard'
 
 type StackContainerSize = {
   width: number
@@ -15,9 +17,6 @@ const FALLBACK_COST_STACK_WIDTH_PX = 240
 const FALLBACK_COST_STACK_HEIGHT_PX = 112
 const FALLBACK_COST_CARD_WIDTH_PX = 80
 const ATTACHED_DON_PEEK_PX = 14
-
-type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
-  & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
 
 const props = defineProps<{
   player: DuelPlayerView
@@ -301,19 +300,7 @@ function onCardHover(card: PublicCard | PrivateCard | null | undefined) {
     return
   }
 
-  emit('cardHover', {
-    number: card.number,
-    name: card.name,
-    type: card.type,
-    colors: card.colors,
-    cost: card.cost,
-    power: card.power,
-    life: card.life,
-    counter: card.counter,
-    imageUrl: card.imageUrl,
-    text: 'text' in card ? card.text : undefined,
-    trigger: 'trigger' in card ? card.trigger : undefined
-  })
+  emit('cardHover', createHoveredDuelCard(card))
 }
 
 function isCharacterTargetable(instanceId: string): boolean {

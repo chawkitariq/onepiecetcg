@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuelPlayerView, PublicCard, PrivateCard } from '@onepiecetcg/shared'
+import type { Card, DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { animate } from 'animejs'
@@ -8,6 +8,7 @@ import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
 import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
+import { mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
 
 type BoardTravelOverlay = {
@@ -133,10 +134,11 @@ type ScrollAreaInstance = {
   $el?: HTMLElement
 }
 
-type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
-  & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
-
+const api = useApi()
 const hoveredCard = ref<HoveredDuelCard | null>(null)
+const hoveredCardCatalogDetails = reactive<Record<string, Pick<Card, 'text' | 'trigger'> | undefined>>({})
+const pendingHoveredCardDetailIds = ref<string[]>([])
+const failedHoveredCardDetailIds = new Set<string>()
 const reducedMotion = usePreferredReducedMotion()
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 const isJournalOpen = ref(false)
@@ -579,22 +581,61 @@ const waitingToastText = computed(() => {
   return null
 })
 
+const resolvedHoveredCard = computed(() =>
+  mergeHoveredDuelCardDetails(
+    hoveredCard.value,
+    hoveredCard.value ? hoveredCardCatalogDetails[hoveredCard.value.cardId] : null
+  )
+)
+const isHoveredCardDetailPending = computed(() =>
+  Boolean(
+    hoveredCard.value
+    && pendingHoveredCardDetailIds.value.includes(hoveredCard.value.cardId)
+  )
+)
 const hoveredCardRows = computed(() => {
-  if (!hoveredCard.value) {
+  if (!resolvedHoveredCard.value) {
     return []
   }
 
   return [
-    ['Numero', hoveredCard.value.number],
-    ['Type', hoveredCard.value.type],
-    ['Couleur', hoveredCard.value.colors.join(', ') || 'Aucune'],
-    ['Cout', hoveredCard.value.cost ?? '-'],
-    ['Puissance', hoveredCard.value.power ?? '-'],
-    ['Contre', hoveredCard.value.counter ?? '-'],
-    ['Vie', hoveredCard.value.life ?? '-'],
-    ['Declenchement', hoveredCard.value.trigger ?? '-']
+    ['Numero', resolvedHoveredCard.value.number],
+    ['Type', resolvedHoveredCard.value.type],
+    ['Couleur', resolvedHoveredCard.value.colors.join(', ') || 'Aucune'],
+    ['Cout', resolvedHoveredCard.value.cost ?? '-'],
+    ['Puissance', resolvedHoveredCard.value.power ?? '-'],
+    ['Contre', resolvedHoveredCard.value.counter ?? '-'],
+    ['Vie', resolvedHoveredCard.value.life ?? '-'],
+    ['Declenchement', resolvedHoveredCard.value.trigger ?? '-']
   ]
 })
+
+watch(
+  () => hoveredCard.value?.cardId ?? null,
+  async (cardId) => {
+    if (!cardId || hoveredCardCatalogDetails[cardId] || failedHoveredCardDetailIds.has(cardId)) {
+      return
+    }
+
+    if (!pendingHoveredCardDetailIds.value.includes(cardId)) {
+      pendingHoveredCardDetailIds.value = [...pendingHoveredCardDetailIds.value, cardId]
+    }
+
+    try {
+      const card = await api<Card>(`/catalog/cards/${cardId}`)
+
+      hoveredCardCatalogDetails[cardId] = {
+        text: card.text,
+        trigger: card.trigger
+      }
+    } catch {
+      failedHoveredCardDetailIds.add(cardId)
+    } finally {
+      pendingHoveredCardDetailIds.value = pendingHoveredCardDetailIds.value.filter(id => id !== cardId)
+    }
+  },
+  { immediate: true }
+)
 
 function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) {
   if (ghosts.length === 0) {
@@ -3241,33 +3282,39 @@ defineShortcuts({
 
       <UCard
         class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex flex-col overflow-hidden', body: 'flex min-h-0 flex-1 flex-col overflow-hidden p-3' }"
+        :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
       >
         <template #header>
-          <div class="flex items-center justify-between gap-2">
-            <p class="text-xs font-medium text-muted">
-              {{ hoveredCard?.number ?? 'Details' }}
-            </p>
-            <UBadge
-              v-if="hoveredCard"
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            >
-              {{ hoveredCard.type }}
-            </UBadge>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-semibold text-highlighted">
+                  Details
+                </h2>
+                <p class="text-sm text-muted">
+                  {{ resolvedHoveredCard?.number ?? 'Aucune carte' }}
+                </p>
+              </div>
+              <UBadge
+                v-if="resolvedHoveredCard"
+                color="neutral"
+                variant="subtle"
+              >
+                {{ resolvedHoveredCard.type }}
+              </UBadge>
+            </div>
           </div>
         </template>
 
         <div
-          v-if="hoveredCard"
-          class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
+          v-if="resolvedHoveredCard"
+          class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
         >
           <div class="w-full aspect-[4/5]">
             <img
-              v-if="hoveredCard.imageUrl"
-              :src="hoveredCard.imageUrl"
-              :alt="hoveredCard.name"
+              v-if="resolvedHoveredCard.imageUrl"
+              :src="resolvedHoveredCard.imageUrl"
+              :alt="resolvedHoveredCard.name"
               class="w-full rounded-lg border border-muted object-cover"
             >
             <div
@@ -3281,49 +3328,84 @@ defineShortcuts({
             </div>
           </div>
 
-          <div class="min-w-0 space-y-2">
-            <h3 class="truncate text-sm font-semibold text-highlighted">
-              {{ hoveredCard.name }}
-            </h3>
-            <div class="flex flex-wrap gap-1">
-              <UBadge
-                v-for="color in hoveredCard.colors"
-                :key="color"
-                size="sm"
-                :style="getCardColorStyle(color)"
-              >
-                {{ color }}
-              </UBadge>
-            </div>
-          </div>
+          <div class="flex min-h-0 min-w-0 flex-col gap-4">
+            <div class="min-w-0 space-y-3">
+              <div>
+                <h3 class="text-base font-semibold text-highlighted">
+                  {{ resolvedHoveredCard.name }}
+                </h3>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <UBadge
+                    v-for="color in resolvedHoveredCard.colors"
+                    :key="color"
+                    :style="getCardColorStyle(color)"
+                  >
+                    {{ color }}
+                  </UBadge>
+                </div>
+              </div>
 
-          <dl class="grid gap-1 text-xs">
-            <div
-              v-for="[label, value] in hoveredCardRows"
-              :key="label"
-              class="grid grid-cols-[64px_minmax(0,1fr)] gap-2"
-            >
-              <dt class="text-muted">
-                {{ label }}
-              </dt>
-              <dd class="min-w-0 text-highlighted">
-                {{ value }}
-              </dd>
+              <p
+                v-if="resolvedHoveredCard.text"
+                class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
+              >
+                {{ resolvedHoveredCard.text }}
+              </p>
+              <p
+                v-else-if="isHoveredCardDetailPending"
+                class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
+              >
+                Chargement de la description...
+              </p>
+              <p
+                v-else
+                class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
+              >
+                Description indisponible.
+              </p>
             </div>
-          </dl>
+
+            <dl class="grid gap-2 text-sm">
+              <div
+                v-for="[label, value] in hoveredCardRows"
+                :key="label"
+                class="grid grid-cols-[76px_minmax(0,1fr)] gap-3"
+              >
+                <dt class="text-muted">
+                  {{ label }}
+                </dt>
+                <dd class="min-w-0 text-highlighted">
+                  {{ value }}
+                </dd>
+              </div>
+            </dl>
+          </div>
         </div>
 
         <div
           v-else
-          class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-4 text-center text-muted"
+          class="flex h-full min-h-0 flex-col gap-4"
         >
-          <UIcon
-            name="i-lucide-square-mouse-pointer"
-            class="size-8"
-          />
-          <p class="text-xs">
-            Survolez une carte du plateau.
-          </p>
+          <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+            <div class="flex min-h-full flex-col gap-4">
+              <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-elevated/50 p-6 text-center text-muted">
+                <div class="flex flex-col items-center gap-3">
+                  <UIcon
+                    name="i-lucide-square-mouse-pointer"
+                    class="size-10"
+                  />
+                  <div class="space-y-1">
+                    <p class="text-sm font-medium text-highlighted">
+                      Aucune carte
+                    </p>
+                    <p class="text-sm">
+                      Survolez une carte du plateau.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </UCard>
     </div>

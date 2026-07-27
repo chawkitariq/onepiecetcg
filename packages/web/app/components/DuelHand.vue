@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { PrivateCard, PublicCard } from '@onepiecetcg/shared'
+import type { PrivateCard } from '@onepiecetcg/shared'
+import type { HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
+import { createHoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { getStackedCardLayout } from '~/utils/cardStack'
 
 /**
@@ -10,9 +12,6 @@ import { getStackedCardLayout } from '~/utils/cardStack'
  * docs/optcg-rules.md, Main is one of the nine duel zones but is not part of "le terrain"
  * (Leader/Character/Stage/Cost), so it never belongs on the gridded, mirrored board itself.
  */
-
-type HoveredDuelCard = Pick<PublicCard, 'number' | 'name' | 'type' | 'colors' | 'cost' | 'power' | 'life' | 'counter' | 'imageUrl'>
-  & Partial<Pick<PrivateCard, 'text' | 'trigger'>>
 
 type StackContainerSize = {
   width: number
@@ -178,19 +177,7 @@ function onCardHover(card: PrivateCard | null) {
     return
   }
 
-  emit('cardHover', {
-    number: card.number,
-    name: card.name,
-    type: card.type,
-    colors: card.colors,
-    cost: card.cost,
-    power: card.power,
-    life: card.life,
-    counter: card.counter,
-    imageUrl: card.imageUrl,
-    text: card.text,
-    trigger: card.trigger
-  })
+  emit('cardHover', createHoveredDuelCard(card))
 }
 
 function onCardDragStart(instanceId: string, event: DragEvent) {
