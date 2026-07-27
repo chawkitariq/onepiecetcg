@@ -317,6 +317,7 @@ const duelHandStub = defineComponent({
     hidden: { type: Boolean, default: false },
     deferredHiddenCount: { type: Number, default: 0 },
     draggableHandCardIds: { type: Array, default: () => [] },
+    revealedHandCardIds: { type: Array, default: () => [] },
     deferredHandCardIds: { type: Array, default: () => [] },
     selectedHandCardIds: { type: Array, default: () => [] },
     draggedHandCardCount: { type: Number, default: 0 }
@@ -349,6 +350,7 @@ const duelHandStub = defineComponent({
         .filter(card => !(props.deferredHandCardIds as string[]).includes(card.instanceId))
         .map(card => card.instanceId)),
       'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
+      'data-revealed-hand-card-ids': JSON.stringify(props.revealedHandCardIds),
       'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
       'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
@@ -539,6 +541,43 @@ describe('DuelBoard drag and drop', () => {
 
     expect(mulliganWrapper.find('[data-duel-hand]').exists()).toBe(true)
     expect(mulliganWrapper.find('[data-opponent-hand]').exists()).toBe(true)
+  })
+
+  it('marks the current mulligan hand for reveal animation when mulligan starts and when the hand is redrawn', async () => {
+    phase.value = 'setup'
+
+    const wrapper = mountBoard()
+
+    phase.value = 'mulligan'
+    await wrapper.vm.$nextTick()
+
+    const initialHand = wrapper.get('[data-duel-hand]')
+    expect(initialHand.attributes('data-revealed-hand-card-ids')).toBe(JSON.stringify([
+      'hand-character',
+      'hand-stage',
+      'hand-event'
+    ]))
+
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('mulligan-card-1', { type: 'Character', cost: 1 }),
+        createPrivateCard('mulligan-card-2', { type: 'Character', cost: 2 }),
+        createPrivateCard('mulligan-card-3', { type: 'Stage', cost: 1, power: null, counter: null }),
+        createPrivateCard('mulligan-card-4', { type: 'Event', cost: 1, power: null, counter: null }),
+        createPrivateCard('mulligan-card-5', { type: 'Character', cost: 3 })
+      ],
+      handCount: 5
+    })
+    await wrapper.vm.$nextTick()
+
+    const redrawnHandRevealIds = JSON.parse(wrapper.get('[data-duel-hand]').attributes('data-revealed-hand-card-ids') ?? '[]')
+    expect(redrawnHandRevealIds).toEqual(expect.arrayContaining([
+      'mulligan-card-1',
+      'mulligan-card-2',
+      'mulligan-card-3',
+      'mulligan-card-4',
+      'mulligan-card-5'
+    ]))
   })
 
   it('exposes only affordable character cards as draggable from the self hand', () => {

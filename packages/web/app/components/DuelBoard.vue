@@ -1118,6 +1118,15 @@ watch(self, (current, previous) => {
     cacheSelfHandTravelSources('deck', Math.max(previous.deckCount - current.deckCount, 0), querySelfDeckElement())
   }
 
+  if (current && phase.value === 'mulligan') {
+    const previousHandIds = new Set(previous?.hand.map(card => card.instanceId) ?? [])
+    const mulliganRevealIds = current.hand
+      .filter(card => previousHandIds.size === 0 || !previousHandIds.has(card.instanceId))
+      .map(card => card.instanceId)
+
+    mergeRevealedHandCards(selfRevealedHandCardIds, mulliganRevealIds)
+  }
+
   queueKoFeedback(current, previous)
   const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck', 'life'])
 
@@ -1131,6 +1140,14 @@ watch(self, (current, previous) => {
   queueTrashTravelOverlay(current, previous, 0, selfDeferredTrashCardIds)
   queueAttachedDonFeedback(current, previous)
   syncPendingHandPlayQueue(current)
+})
+
+watch(phase, (currentPhase, previousPhase) => {
+  if (currentPhase !== 'mulligan' || previousPhase === 'mulligan' || !self.value) {
+    return
+  }
+
+  mergeRevealedHandCards(selfRevealedHandCardIds, self.value.hand.map(card => card.instanceId))
 })
 
 watch(opponent, (current, previous) => {
