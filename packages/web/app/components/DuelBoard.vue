@@ -6,7 +6,6 @@ import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
-import { getCardColorStyle } from '~/utils/cardColors'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 import { mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
@@ -593,7 +592,7 @@ const isHoveredCardDetailPending = computed(() =>
     && pendingHoveredCardDetailIds.value.includes(hoveredCard.value.cardId)
   )
 )
-const hoveredCardRows = computed(() => {
+const hoveredCardRows = computed<Array<[string, string | number]>>(() => {
   if (!resolvedHoveredCard.value) {
     return []
   }
@@ -3280,134 +3279,12 @@ defineShortcuts({
         </div>
       </div>
 
-      <UCard
-        class="min-h-0 min-w-0"
-        :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
-      >
-        <template #header>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h2 class="text-base font-semibold text-highlighted">
-                  Details
-                </h2>
-                <p class="text-sm text-muted">
-                  {{ resolvedHoveredCard?.number ?? 'Aucune carte' }}
-                </p>
-              </div>
-              <UBadge
-                v-if="resolvedHoveredCard"
-                color="neutral"
-                variant="subtle"
-              >
-                {{ resolvedHoveredCard.type }}
-              </UBadge>
-            </div>
-          </div>
-        </template>
-
-        <div
-          v-if="resolvedHoveredCard"
-          class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
-        >
-          <div class="w-full aspect-[4/5]">
-            <img
-              v-if="resolvedHoveredCard.imageUrl"
-              :src="resolvedHoveredCard.imageUrl"
-              :alt="resolvedHoveredCard.name"
-              class="w-full rounded-lg border border-muted object-cover"
-            >
-            <div
-              v-else
-              class="flex h-full w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
-            >
-              <UIcon
-                name="i-lucide-image-off"
-                class="size-8"
-              />
-            </div>
-          </div>
-
-          <div class="flex min-h-0 min-w-0 flex-col gap-4">
-            <div class="min-w-0 space-y-3">
-              <div>
-                <h3 class="text-base font-semibold text-highlighted">
-                  {{ resolvedHoveredCard.name }}
-                </h3>
-                <div class="mt-2 flex flex-wrap gap-1">
-                  <UBadge
-                    v-for="color in resolvedHoveredCard.colors"
-                    :key="color"
-                    :style="getCardColorStyle(color)"
-                  >
-                    {{ color }}
-                  </UBadge>
-                </div>
-              </div>
-
-              <p
-                v-if="resolvedHoveredCard.text"
-                class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
-              >
-                {{ resolvedHoveredCard.text }}
-              </p>
-              <p
-                v-else-if="isHoveredCardDetailPending"
-                class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
-              >
-                Chargement de la description...
-              </p>
-              <p
-                v-else
-                class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
-              >
-                Description indisponible.
-              </p>
-            </div>
-
-            <dl class="grid gap-2 text-sm">
-              <div
-                v-for="[label, value] in hoveredCardRows"
-                :key="label"
-                class="grid grid-cols-[76px_minmax(0,1fr)] gap-3"
-              >
-                <dt class="text-muted">
-                  {{ label }}
-                </dt>
-                <dd class="min-w-0 text-highlighted">
-                  {{ value }}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-
-        <div
-          v-else
-          class="flex h-full min-h-0 flex-col gap-4"
-        >
-          <div class="flex-1 min-h-0 overflow-y-auto pr-1">
-            <div class="flex min-h-full flex-col gap-4">
-              <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-elevated/50 p-6 text-center text-muted">
-                <div class="flex flex-col items-center gap-3">
-                  <UIcon
-                    name="i-lucide-square-mouse-pointer"
-                    class="size-10"
-                  />
-                  <div class="space-y-1">
-                    <p class="text-sm font-medium text-highlighted">
-                      Aucune carte
-                    </p>
-                    <p class="text-sm">
-                      Survolez une carte du plateau.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </UCard>
+      <CardDetailsPanel
+        :card="resolvedHoveredCard"
+        :rows="hoveredCardRows"
+        :loading-description="isHoveredCardDetailPending"
+        empty-message="Survolez une carte du plateau."
+      />
     </div>
   </div>
 </template>

@@ -347,7 +347,7 @@ const displayedValidationErrors = computed(() => {
   })
 })
 
-const selectedCardRows = computed(() => {
+const selectedCardRows = computed<Array<[string, string | number]>>(() => {
   if (!previewCard.value) {
     return []
   }
@@ -980,120 +980,12 @@ function extractErrorMessage(error: unknown): string {
         />
       </UCard>
 
-      <UCard
-        class="min-h-0 min-w-0"
+      <CardDetailsPanel
         :class="mobilePanel === 'details' ? 'flex' : 'hidden xl:flex'"
-        :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+        :card="previewCard"
+        :rows="selectedCardRows"
+        empty-message="Selectionne une carte du catalogue."
       >
-        <template #header>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h2 class="text-base font-semibold text-highlighted">
-                  Details
-                </h2>
-                <p class="text-sm text-muted">
-                  {{ previewCard?.number ?? 'Aucune carte' }}
-                </p>
-              </div>
-              <UBadge
-                v-if="previewCard"
-                color="neutral"
-                variant="subtle"
-              >
-                {{ previewCard.type }}
-              </UBadge>
-            </div>
-          </div>
-        </template>
-
-        <div
-          v-if="previewCard"
-          class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1"
-        >
-          <div class="w-full aspect-[4/5]">
-            <img
-              v-if="previewCard.imageUrl"
-              :src="previewCard.imageUrl"
-              :alt="previewCard.name"
-              class="w-full rounded-lg border border-muted object-cover"
-            >
-            <div
-              v-else
-              class="flex w-full items-center justify-center rounded-lg border border-muted bg-elevated text-muted"
-            >
-              <UIcon
-                name="i-lucide-image-off"
-                class="size-8"
-              />
-            </div>
-          </div>
-
-          <div class="flex min-h-0 min-w-0 flex-col gap-4">
-            <div class="min-w-0 space-y-3">
-              <div>
-                <h3 class="text-base font-semibold text-highlighted">
-                  {{ previewCard.name }}
-                </h3>
-                <div class="mt-2 flex flex-wrap gap-1">
-                  <UBadge
-                    v-for="color in previewCard.colors"
-                    :key="color"
-                    :style="getCardColorStyle(color)"
-                  >
-                    {{ color }}
-                  </UBadge>
-                </div>
-              </div>
-
-              <p class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted">
-                {{ previewCard.text || 'Pas de texte.' }}
-              </p>
-            </div>
-
-            <dl class="grid gap-2 text-sm">
-              <div
-                v-for="[label, value] in selectedCardRows"
-                :key="label"
-                class="grid grid-cols-[76px_minmax(0,1fr)] gap-3"
-              >
-                <dt class="text-muted">
-                  {{ label }}
-                </dt>
-                <dd class="min-w-0 text-highlighted">
-                  {{ value }}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-
-        <div
-          v-else
-          class="flex h-full min-h-0 flex-col gap-4"
-        >
-          <div class="flex-1 min-h-0 overflow-y-auto pr-1">
-            <div class="flex min-h-full flex-col gap-4">
-              <div class="flex aspect-[4/5] w-full items-center justify-center rounded-lg bg-elevated/50 p-6 text-center text-muted">
-                <div class="flex flex-col items-center gap-3">
-                  <UIcon
-                    name="i-lucide-square-mouse-pointer"
-                    class="size-10"
-                  />
-                  <div class="space-y-1">
-                    <p class="text-sm font-medium text-highlighted">
-                      Aucune carte
-                    </p>
-                    <p class="text-sm">
-                      Selectionne une carte du catalogue.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <template #footer>
           <div
             v-if="previewCard"
@@ -1128,7 +1020,7 @@ function extractErrorMessage(error: unknown): string {
             Ajouter au deck
           </UButton>
         </template>
-      </UCard>
+      </CardDetailsPanel>
 
       <UCard
         class="min-h-0 min-w-0"
