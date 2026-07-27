@@ -49,6 +49,10 @@ const {
   self,
   opponent,
   phase,
+  turn,
+  winnerSessionId,
+  startedAt,
+  finishedAt,
   isSelfTurn,
   isMainPhase,
   canEndPhase,
@@ -85,8 +89,19 @@ const { leaveWithConfirmation } = useDuelLeaveGuard({
   confirm,
   leave
 })
+const isResultModalOpen = ref(false)
 
 async function confirmLeaveToLobby() {
+  const confirmed = await leaveWithConfirmation()
+
+  if (!confirmed) {
+    return
+  }
+
+  await navigateTo('/lobby')
+}
+
+async function replayMatch() {
   const confirmed = await leaveWithConfirmation()
 
   if (!confirmed) {
@@ -465,6 +480,60 @@ const actionModalState = computed<DuelActionModalState | null>(() => {
 
   return null
 })
+
+const isFinished = computed(() => phase.value === 'finished')
+const isSelfWinner = computed(() =>
+  Boolean(self.value && winnerSessionId.value === self.value.sessionId)
+)
+const resultTurnLabel = computed(() => {
+  if (turn.value <= 0) {
+    return '—'
+  }
+
+  return `${turn.value} tour${turn.value > 1 ? 's' : ''}`
+})
+function parseIsoDate(value: string | null) {
+  if (!value) {
+    return null
+  }
+
+  const parsed = new Date(value)
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function formatMatchDurationLabel(startIso: string | null, endIso: string | null) {
+  const start = parseIsoDate(startIso)
+  const end = parseIsoDate(endIso)
+
+  if (!start || !end) {
+    return '—'
+  }
+
+  const totalSeconds = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes === 0) {
+    return `${seconds} s`
+  }
+
+  if (seconds === 0) {
+    return `${minutes} min`
+  }
+
+  return `${minutes} min ${seconds.toString().padStart(2, '0')} s`
+}
+
+const resultDurationLabel = computed(() =>
+  formatMatchDurationLabel(startedAt.value, finishedAt.value)
+)
+
+watch(phase, (nextPhase, previousPhase) => {
+  if (nextPhase === 'finished' && previousPhase !== 'finished') {
+    isResultModalOpen.value = true
+  }
+}, { immediate: true })
 
 const waitingToastText = computed(() => {
   if (isBlockingStep.value && isSelfAttacker.value) {
@@ -2705,6 +2774,15 @@ defineShortcuts({
     <DuelWaitingToast
       v-if="waitingToastText"
       :text="waitingToastText"
+    />
+
+    <DuelResultModal
+      :open="isFinished && isResultModalOpen"
+      :victory="isSelfWinner"
+      :turn-label="resultTurnLabel"
+      :duration-label="resultDurationLabel"
+      @replay="replayMatch"
+      @leave="confirmLeaveToLobby"
     />
 
     <USlideover

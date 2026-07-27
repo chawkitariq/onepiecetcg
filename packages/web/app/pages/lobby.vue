@@ -51,10 +51,6 @@ const loadingDescribedRooms = ref(false)
 const describedRoomsError = ref('')
 const joiningRoomId = ref('')
 
-await refresh()
-await loadDecks()
-await loadDescribedRooms()
-
 const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])))
 
 const deckSummaries = computed(() => decks.value.map((deck) => {
@@ -103,6 +99,10 @@ const accentStyle = computed(() => ({ '--accent': accentToken.value.hex }))
 const canPlay = computed(() => Boolean(profile.value && selectedDeckId.value && selectedDeckSummary.value?.isComplete))
 const isBusy = computed(() => status.value === 'connecting')
 const isInRoom = computed(() => Boolean(room.value))
+
+await refresh()
+await loadDecks()
+await loadDescribedRooms()
 
 function dotClass(leader: Card | null) {
   return (colorTokens[leader?.colors[0] ?? ''] ?? fallbackColorToken).dot

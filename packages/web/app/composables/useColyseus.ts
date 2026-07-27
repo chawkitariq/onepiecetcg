@@ -3,7 +3,7 @@ import { DuelState } from '@onepiecetcg/shared'
 
 const RECONNECTION_TOKEN_KEY = 'duel-reconnection-token'
 
-type ColyseusDevOverride = ReturnType<typeof createColyseusDevOverrideShape>
+type ColyseusDevOverride = ReturnType<typeof _createColyseusDevOverrideShape>
 
 type DuelJoinOptions = {
   displayName?: string
@@ -47,7 +47,7 @@ const room = shallowRef<Room<DuelState> | null>(null)
 const status = ref<'idle' | 'connecting' | 'connected' | 'error'>('idle')
 const error = ref('')
 
-function createColyseusDevOverrideShape() {
+function _createColyseusDevOverrideShape() {
   return {
     client,
     room,

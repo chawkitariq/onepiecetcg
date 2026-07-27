@@ -16,6 +16,10 @@ const finishCounterStep = vi.fn()
 const resolveTrigger = vi.fn()
 
 const phase = ref('main')
+const turn = ref(1)
+const winnerSessionId = ref<string | null>(null)
+const startedAt = ref<string | null>(null)
+const finishedAt = ref<string | null>(null)
 const isSelfTurn = ref(true)
 const isCombatInProgress = ref(false)
 const canDeclareAttack = ref(false)
@@ -115,6 +119,10 @@ mockNuxtImport('useDuelRoom', () => () => ({
   self,
   opponent,
   phase,
+  turn,
+  winnerSessionId,
+  startedAt,
+  finishedAt,
   isSelfTurn,
   isMainPhase: computed(() => phase.value === 'main'),
   canEndPhase: computed(() => isSelfTurn.value),
@@ -423,6 +431,10 @@ const duelAttackArrowStub = defineComponent({
 describe('DuelBoard drag and drop', () => {
   beforeEach(() => {
     phase.value = 'main'
+    turn.value = 1
+    winnerSessionId.value = null
+    startedAt.value = null
+    finishedAt.value = null
     isSelfTurn.value = true
     isCombatInProgress.value = false
     canDeclareAttack.value = false
@@ -1485,11 +1497,37 @@ describe('DuelBoard drag and drop', () => {
 
     expect(wrapper.get('[data-test="card-feedback-KO"]').text()).toContain('KO')
   })
+
+  it('renders the finished duel modal with opponent deck, turn count, and duration', () => {
+    phase.value = 'finished'
+    turn.value = 7
+    winnerSessionId.value = 'opponent'
+    startedAt.value = '2026-07-26T10:00:00.000Z'
+    finishedAt.value = '2026-07-26T10:08:34.000Z'
+    opponent.value = createPlayer('opponent', {
+      displayName: 'Marshall'
+    })
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    expect(document.body.textContent).toContain('Défaite')
+    expect(document.body.textContent).toContain('7 tours')
+    expect(document.body.textContent).toContain('8 min 34 s')
+    expect(document.body.textContent).not.toContain('Marshall')
+    expect(document.body.textContent).not.toContain('Barbe Noire Midrange')
+    expect(document.body.textContent).not.toContain('Vie à zéro')
+
+    wrapper.unmount()
+  })
 })
 
 describe('DuelBoard leave to lobby', () => {
   beforeEach(() => {
     phase.value = 'main'
+    turn.value = 1
+    winnerSessionId.value = null
+    startedAt.value = null
+    finishedAt.value = null
     isSelfTurn.value = true
     isCombatInProgress.value = false
     canDeclareAttack.value = false

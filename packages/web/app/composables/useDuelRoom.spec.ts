@@ -111,6 +111,11 @@ function createFakeRoom(options: {
     sessionId: options.sessionId,
     state: {
       phase: options.phase,
+      turn: 0,
+      winnerSessionId: '',
+      endReason: '',
+      startedAt: '',
+      finishedAt: '',
       startingPlayerSessionId: options.startingPlayerSessionId,
       firstPlayerSessionId: options.firstPlayerSessionId,
       activePlayerSessionId: options.activePlayerSessionId ?? '',

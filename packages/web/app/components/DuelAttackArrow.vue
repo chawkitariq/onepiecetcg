@@ -175,7 +175,7 @@ const lineRenderKey = computed(() =>
 )
 const lineStyle = computed(() => ({
   '--duel-attack-arrow-length': `${lineLength.value}px`,
-  stroke: 'var(--ui-error)'
+  'stroke': 'var(--ui-error)'
 }))
 const arrowHeadStyle = computed(() => ({
   fill: 'var(--ui-error)'
@@ -248,5 +248,4 @@ const svgViewport = computed(() => {
     stroke-dashoffset: -18;
   }
 }
-
 </style>

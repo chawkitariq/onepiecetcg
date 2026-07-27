@@ -102,7 +102,7 @@ describe('useDuelLeaveGuard', () => {
 
     mount(Harness)
 
-    const listener = addEventListenerSpy.mock.calls.find(([eventName]) => eventName === 'beforeunload')?.[1]
+    const listener = addEventListenerSpy.mock.calls.find(([eventName]) => String(eventName) === 'beforeunload')?.[1]
 
     expect(listener).toBeTypeOf('function')
 

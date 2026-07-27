@@ -127,13 +127,17 @@ type ActionErrorMessage = {
   message: string
 }
 
-type DuelRoomDevOverride = ReturnType<typeof createDuelRoomDevOverrideShape>
+type DuelRoomDevOverride = ReturnType<typeof _createDuelRoomDevOverrideShape>
 
-function createDuelRoomDevOverrideShape() {
+function _createDuelRoomDevOverrideShape() {
   return {
     self: ref<DuelPlayerView | null>(null),
     opponent: ref<DuelPlayerView | null>(null),
     phase: ref('setup'),
+    turn: ref(0),
+    winnerSessionId: ref<string | null>(null),
+    startedAt: ref<string | null>(null),
+    finishedAt: ref<string | null>(null),
     isSelfTurn: computed(() => false),
     isMainPhase: computed(() => false),
     canEndPhase: computed(() => false),
@@ -141,6 +145,7 @@ function createDuelRoomDevOverrideShape() {
     isSelfCharacterZoneFull: computed(() => false),
     logs: ref<DuelLogEntry[]>([]),
     errorMessage: ref<string | null>(null),
+    cardPower: () => 0,
     endPhase: () => {},
     playCard: () => {},
     attachDon: () => {},
@@ -225,6 +230,14 @@ export function useDuelRoom() {
     return room.value?.state.phase ?? 'setup'
   })
 
+  const turn = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { turn?: number } | undefined
+
+    return state?.turn ?? 0
+  })
+
   const activePlayerSessionId = computed(() => {
     void version.value
 
@@ -234,6 +247,30 @@ export function useDuelRoom() {
     const state = room.value?.state as unknown as { activePlayerSessionId?: string } | undefined
 
     return state?.activePlayerSessionId || null
+  })
+
+  const winnerSessionId = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { winnerSessionId?: string } | undefined
+
+    return state?.winnerSessionId || null
+  })
+
+  const startedAt = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { startedAt?: string } | undefined
+
+    return state?.startedAt || null
+  })
+
+  const finishedAt = computed(() => {
+    void version.value
+
+    const state = room.value?.state as unknown as { finishedAt?: string } | undefined
+
+    return state?.finishedAt || null
   })
 
   const players = computed(() => {
@@ -417,6 +454,10 @@ export function useDuelRoom() {
 
   return {
     phase,
+    turn,
+    winnerSessionId,
+    startedAt,
+    finishedAt,
     activePlayerSessionId,
     startingPlayerSessionId,
     firstPlayerSessionId,

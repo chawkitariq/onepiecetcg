@@ -154,6 +154,8 @@ export type DescribedRoomListResponse = {
   rooms: DescribedRoomSummary[];
 };
 
+export type DuelEndReason = 'life' | 'deckOut' | 'forfeit';
+
 export type GamePhase =
   | 'setup'
   | 'mulligan'

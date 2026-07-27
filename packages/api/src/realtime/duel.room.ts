@@ -10,6 +10,7 @@ import type { DecksService, ValidatedGameDeck } from '../decks/decks.service';
 import type { StatsService } from '../stats/stats.service';
 import {
   DuelCard,
+  type DuelEndReason,
   DuelLog,
   DuelPlayer,
   DuelState,
@@ -520,6 +521,8 @@ export class DuelRoom extends Room<DuelState> {
 
     this.matchStartedAt = new Date();
     this.state.turn = 1;
+    this.state.startedAt = this.matchStartedAt.toISOString();
+    this.state.finishedAt = '';
     this.state.activePlayerSessionId = this.state.firstPlayerSessionId;
     this.state.phase = 'refresh';
 
@@ -659,10 +662,10 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private declareDefeatByDeckOut(player: DuelPlayer) {
-    this.state.phase = 'finished';
-    this.state.endReason = 'deckOut';
-    this.state.winnerSessionId =
-      this.getOpponentSessionId(player.sessionId) ?? '';
+    this.finalizeMatch(
+      'deckOut',
+      this.getOpponentSessionId(player.sessionId) ?? '',
+    );
     this.addLog(
       `${player.displayName} ne peut plus piocher : deck-out, defaite.`,
     );
@@ -1156,10 +1159,10 @@ export class DuelRoom extends Room<DuelState> {
 
   private dealLeaderDamage(defender: DuelPlayer) {
     if (defender.zones.life.length === 0) {
-      this.state.phase = 'finished';
-      this.state.endReason = 'life';
-      this.state.winnerSessionId =
-        this.getOpponentSessionId(defender.sessionId) ?? '';
+      this.finalizeMatch(
+        'life',
+        this.getOpponentSessionId(defender.sessionId) ?? '',
+      );
       this.addLog(
         `${defender.displayName} subit un degat sur une Vie deja vide : defaite.`,
       );
@@ -1487,11 +1490,17 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    this.state.phase = 'finished';
-    this.state.endReason = 'forfeit';
-    this.state.winnerSessionId = winnerSessionId;
+    this.finalizeMatch('forfeit', winnerSessionId);
     this.addLog(`${quittingPlayer.displayName} abandonne la partie.`);
     this.recordMatchResult();
+  }
+
+  /** Marks the duel finished and stamps the replicated end metadata exactly once. */
+  private finalizeMatch(endReason: DuelEndReason, winnerSessionId: string) {
+    this.state.phase = 'finished';
+    this.state.endReason = endReason;
+    this.state.winnerSessionId = winnerSessionId;
+    this.state.finishedAt = new Date().toISOString();
   }
 
   /**

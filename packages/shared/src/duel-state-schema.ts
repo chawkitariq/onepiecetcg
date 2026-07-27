@@ -1,5 +1,5 @@
 import { ArraySchema, MapSchema, Schema, view, type } from '@colyseus/schema';
-import type { Card, CardColor, CardType, GamePhase } from './index.js';
+import type { Card, CardColor, CardType, DuelEndReason, GamePhase } from './index.js';
 
 /**
  * Colyseus room state for the `duel` room, shared between `packages/api`
@@ -205,6 +205,14 @@ export class DuelState extends Schema {
   @type('number')
   turn = 0;
 
+  /** ISO timestamp set when mulligans are over and the duel's first turn begins. */
+  @type('string')
+  startedAt = '';
+
+  /** ISO timestamp set once the duel reaches a structural finished state. */
+  @type('string')
+  finishedAt = '';
+
   /** Randomly designated player who chooses to play first or second (setup step 4). */
   @type('string')
   startingPlayerSessionId = '';
@@ -231,8 +239,6 @@ export class DuelState extends Schema {
   @type('string')
   endReason: DuelEndReason | '' = '';
 }
-
-export type DuelEndReason = 'life' | 'deckOut' | 'forfeit';
 
 export function createDuelCard(
   card: Card,
