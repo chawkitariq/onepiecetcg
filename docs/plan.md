@@ -6,7 +6,7 @@ Ce plan découpe `docs/spec.md` en étapes livrables. L'ordre privilégie les fo
 
 - Le backend NestJS reste la source de vérité pour l'authentification, les decks, les rooms Colyseus et la structure des parties.
 - Le frontend Nuxt reste un client pur : il affiche l'état autorisé, envoie des intentions utilisateur et ne décide jamais seul d'un état de partie faisant autorité.
-- Les effets de texte des cartes restent déclaratifs. Toute automatisation dépend uniquement des champs structurés des cartes.
+- Les effets de cartes résolus automatiquement restent définis localement par `cardId` dans le backend ; aucune logique exécutable ne vient directement de l'API externe.
 - Les données cachées ne doivent jamais être envoyées au mauvais client, même temporairement dans le state réseau brut.
 - Toute nouvelle dépendance doit être validée avec l'utilisateur avant installation.
 
@@ -258,6 +258,30 @@ Correctif notable : un test manuel à deux onglets navigateur (deux comptes rée
 - Créer les prompts de Blocage, Contre et Trigger pour le défenseur.
 - Afficher les logs d'action pour synchroniser les joueurs.
 - Garder les cartes révélées privées quand la règle l'exige.
+
+## Étape 8 bis — Moteur d'effets automatiques
+
+Objectif : résoudre automatiquement les effets de cartes côté serveur sans parser le texte libre au runtime.
+
+État : réalisé comme fondation extensible. Le backend expose désormais un moteur d'effets serveur avec DSL structurée, registre local par `cardId`, résolveur déterministe, décisions joueur sérialisables, résolution multi-étapes reprenable, effets continus, effets de remplacement et handlers spéciaux isolés (`packages/api/src/game/effects/`). Les schémas partagés embarquent les champs nécessaires au calcul dérivé (`basePower`, `attributes`, `families`) et les types de DSL/décision (`packages/shared/src/effects.ts`). La room Colyseus intègre le moteur pour `onPlay`, `activateMain`, `whenAttacking`, `onBlock`, `onKo`, `trigger`, `onTurnStart` et `onTurnEnd`, avec recalcul continu de puissance et blocage des autres actions quand une décision d'effet est en attente. La couverture locale reste incrémentale par carte, mais l'architecture et les primitives sont en place et testées.
+
+### Backend
+
+- Définir le DSL d'effets, les sélecteurs de cible, les actions, les conditions et les décisions sérialisables dans `packages/shared`.
+- Créer un registre local d'effets par `cardId`, distinct des métadonnées OPTCG API.
+- Implémenter un résolveur central à file d'actions et reprise après décision.
+- Ajouter un moteur d'effets continus et un moteur d'effets de remplacement.
+- Ajouter un registre de handlers spéciaux pour les cartes trop irrégulières pour la DSL standard.
+- Brancher le moteur dans la room Colyseus et fournir un service NestJS réutilisable côté backend.
+- Couvrir des cartes d'exemple réelles / réalistes, puis faire croître la bibliothèque carte par carte.
+
+### Validation
+
+- Les effets `onPlay`, `trigger`, `whenAttacking`, `onBlock`, `onKo`, `onTurnStart` et `onTurnEnd` peuvent être résolus côté serveur.
+- Une décision joueur suspend proprement la résolution puis la reprend sans divergence d'état.
+- Les effets continus recalculent les valeurs dérivées sans muter les valeurs imprimées.
+- Les effets de remplacement interceptent un événement avant application.
+- Les handlers spéciaux restent isolés du résolveur générique.
 
 ### Validation
 

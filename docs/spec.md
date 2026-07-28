@@ -1,15 +1,15 @@
-# Fonctionnalités MVP — Simulateur One Piece TCG (v6, multijoueur en ligne, effets déclaratifs)
+# Fonctionnalités MVP — Simulateur One Piece TCG (v7, multijoueur en ligne, effets automatiques)
 
 ## Objectif du MVP
 
-Simulateur One Piece TCG multijoueur en ligne, avec constitution de deck, comptes utilisateurs persistants, et parties jouées en temps réel contre un adversaire humain. Le serveur fait autorité sur la **structure** de la partie (zones, phases, tour, ciblage, limites, information cachée) mais **pas** sur la résolution du texte des cartes : les effets restent appliqués manuellement par les joueurs, comme dans un simulateur assisté (type Cockatrice/Tabletop Simulator pour Magic), pas comme un arbitre numérique complet.
+Simulateur One Piece TCG multijoueur en ligne, avec constitution de deck, comptes utilisateurs persistants, et parties jouées en temps réel contre un adversaire humain. Le serveur fait autorité sur la **structure** de la partie (zones, phases, tour, ciblage, limites, information cachée) **et** sur la résolution des effets de cartes pris en charge localement : les clients n'envoient que des intentions et des réponses de décision, tandis que le backend résout les effets automatiquement via un registre local par `cardId`.
 
 Ce document réutilise ce qui reste valable des versions précédentes : le schéma de données carte normalisé, la logique de deck builder (couleur, plafond de 4, 50 cartes), le séquencement de tour et ses exceptions (1er tour), les limites de zones (5 Personnages, 1 Lieu). Ce qui change par rapport au solo (v1-v4) : la gestion réelle de l'information cachée entre deux clients, la synchronisation temps réel, et l'authentification.
 
 ## Décisions produit actées
 
 - **Matchmaking** : aléatoire (file d'attente publique) **et** code de partie / lien d'invitation — les deux coexistent.
-- **Moteur de règles** : arbitre **structurel** côté serveur (zones, phases, ciblage, limites, information cachée) ; **les effets de texte des cartes restent déclaratifs**, appliqués manuellement par les joueurs — pas de moteur de scripting par carte.
+- **Moteur de règles** : arbitre **structurel** côté serveur (zones, phases, ciblage, limites, information cachée) **et** moteur d'effets côté serveur : métadonnées carte depuis OPTCG API, règles d'effets locales par `cardId`, DSL/objet d'effet structuré, résolution déterministe, file de résolution, déclencheurs, décisions joueur explicites, effets continus, effets de remplacement et handlers spéciaux isolés.
 - **Comptes utilisateurs** : oui, persistants, avec sauvegarde de decks entre sessions.
 - **Stack technique retenue** :
   - **Backend : NestJS** — fait autorité sur tout : API REST (comptes, decks), authentification, et hébergement du serveur temps réel.
@@ -65,9 +65,9 @@ Deux types d'état, à ne pas confondre :
 - Aucun système de mot de passe interne à gérer, y compris en développement — réduit la surface de risque sécurité et simplifie le schéma de compte (pas de champ mot de passe produit, pas de flux de reset, pas de vérification d'email à gérer). Les comptes anonymes de dev restent temporaires et ne sont jamais activables en production.
 - Export/import au format texte du deck (§4) conservé en plus du stockage compte, pour le partage et la sauvegarde externe.
 
-## 3. Moteur de règles structurel (pas de scripting d'effets)
+## 3. Moteur de règles structurel + moteur d'effets serveur
 
-Cette couche est le seul moteur de règles du MVP. Elle repose uniquement sur les champs structurés du schéma de carte (`cost`, `power`, `life`, `type`, `colors`) — jamais sur le texte libre (`card_text`), qui reste affiché mais jamais interprété automatiquement.
+Cette couche reste le cœur du MVP. Les champs structurés du schéma de carte (`cost`, `power`, `life`, `type`, `colors`) pilotent toujours les règles structurelles, mais le texte libre de l'API (`card_text`) n'est jamais exécuté directement. Les règles d'effets jouables sont définies **localement** dans le codebase, par `cardId`, puis résolues côté serveur via un moteur déclaratif à file d'actions et décisions sérialisables.
 
 Fonctions attendues :
 - Mélange, pioche, mulligan (un par joueur), génération de la zone Vie selon le Leader.
@@ -81,11 +81,11 @@ Fonctions attendues :
 - **Étape de Blocage déclarative** : le défenseur peut désigner une carte de sa zone Personnage comme Blocker au moment de l'attaque ; le serveur ne vérifie pas que la carte possède réellement l'effet *Blocker* dans son texte — c'est au joueur de le faire honnêtement, comme sur un vrai plateau. La carte désignée prend structurellement la place de la cible pour la comparaison de puissance.
 - **Étape de Contre déclarative** : le défenseur peut défausser une carte de sa main en déclarant une valeur de Contre ; le serveur ajoute cette valeur à la puissance de défense sans vérifier le texte de la carte défaussée.
 - **Résolution de combat structurelle** : comparaison de puissance (calcul automatique), KO d'un Personnage (déplacement en Défausse), déclenchement du flux de dégât de Vie côté Leader — tout ceci est mécanique et ne dépend d'aucun texte d'effet.
-- **Flux de dégât sur la Vie** : la carte du dessus de la pile de Vie est retirée côté serveur et révélée **uniquement au joueur défenseur**. Celui-ci déclare manuellement si un effet Trigger s'applique (le serveur ne lit pas le texte) ; s'il l'active, la carte est écartée, sinon elle rejoint sa main.
+- **Flux de dégât sur la Vie** : la carte du dessus de la pile de Vie est retirée côté serveur et révélée **uniquement au joueur défenseur**. Si la carte possède un effet [Trigger] pris en charge dans le registre local, le serveur le résout automatiquement ; sinon le flux manuel de secours reste possible tant que la carte n'a pas encore sa définition locale.
 - Conditions de fin de partie : Vie à zéro (le Leader subit un dégât alors que sa Vie est déjà vide) et deck-out — les deux déclenchent une défaite immédiate.
 - Gestion de la reconnexion : si un joueur perd sa connexion, la room doit survivre un délai raisonnable (ex: 2 minutes) avant de déclarer forfait, pour absorber les coupures réseau temporaires.
 
-**Principe directeur inchangé du solo, maintenant appliqué à deux joueurs** : *si une donnée peut être calculée à partir des champs structurés du schéma, elle est automatisée côté serveur ; si elle nécessite de lire `card_text`, elle reste déclarative — chaque joueur applique lui-même les effets de ses cartes et de celles de son adversaire, sur la base de la confiance mutuelle, comme autour d'une vraie table.* Le serveur garantit uniquement que les deux joueurs voient le même état structurel synchronisé et que l'information cachée reste réellement cachée — pas que le texte des cartes est correctement appliqué.
+**Principe directeur** : *toute résolution qui fait autorité vit côté serveur*. Les métadonnées d'affichage viennent de l'API externe ; les règles d'effets viennent d'un registre local versionné ; le moteur résout automatiquement ce qui est couvert et reste extensible carte par carte sans dépendre d'un parser de langage naturel. Le serveur garantit à la fois l'état structurel synchronisé, l'information cachée réellement cachée, et la résolution déterministe des effets pris en charge.
 
 ## 4. Deck builder avec catalogue intégré
 
@@ -104,7 +104,7 @@ Repris et adapté des versions précédentes :
 - File d'attente aléatoire : appariement simple par ordre d'arrivée pour le MVP (pas de MMR/elo au départ).
 - Génération de code de room partageable, pour jouer contre un ami spécifique.
 - Écran de lobby : sélection du deck à utiliser pour la partie parmi ceux sauvegardés sur le compte, avant d'entrer en file d'attente ou de créer/rejoindre une room par code.
-- 🆕 **Lobby décrite (hébergement public avec description)** : en plus de la file aléatoire et du code privé, un joueur peut héberger une room **publique et listée**, accompagnée d'une courte description libre (ex: "Débutant bienvenu", "Format événement uniquement", "Cherche partie tranquille"). Cette description sert de filtre humain, pas structurel : le serveur ne l'interprète jamais, il la stocke et la diffuse telle quelle — c'est au joueur intéressé de lire la description et de décider de rejoindre en conséquence, exactement comme le texte des cartes reste déclaratif (§3).
+- 🆕 **Lobby décrite (hébergement public avec description)** : en plus de la file aléatoire et du code privé, un joueur peut héberger une room **publique et listée**, accompagnée d'une courte description libre (ex: "Débutant bienvenu", "Format événement uniquement", "Cherche partie tranquille"). Cette description sert de filtre humain, pas structurel : le serveur ne l'interprète jamais, il la stocke et la diffuse telle quelle — c'est au joueur intéressé de lire la description et de décider de rejoindre en conséquence.
   - Le serveur expose la liste des rooms hébergées de cette façon (room Colyseus `duel` marquée publique avec métadonnée `description`), interrogeable par les autres clients — via une requête au matchmaking Colyseus (ex: `matchMaker.query`/`getAvailableRooms` côté API) exposée par un endpoint dédié, ou tout mécanisme équivalent exposant les rooms publiques avec leur métadonnée.
   - Chaque entrée listée affiche a minima : la description fournie par l'hôte, un identifiant de room permettant de la rejoindre, et le nombre de joueurs déjà présents (1/2 en attente).
   - La liste n'est pas poussée en temps réel obligatoirement : un rafraîchissement manuel côté client (bouton "Actualiser") est suffisant pour le MVP — pas de garantie de synchronisation live requise.
@@ -181,7 +181,7 @@ Objectif : donner à chaque utilisateur un aperçu de ses performances passées,
 
 ## Hors périmètre v1 (pivot multijoueur)
 
-- Résolution automatique du texte des effets de cartes, quel que soit le set — reste déclaratif indéfiniment dans cette version (pas de moteur de scripting prévu).
+- Couverture exhaustive de toutes les cartes de tous les sets au lancement — le moteur d'effets existe en v1, mais la couverture locale progresse carte par carte.
 - Classement/MMR, saisons compétitives.
 - Spectateur de partie, replay.
 - Chat en partie (à évaluer séparément — nécessite modération).
@@ -214,4 +214,4 @@ Objectif : donner à chaque utilisateur un aperçu de ses performances passées,
 
 ## Recommandation produit
 
-Ce choix simplifie considérablement le projet par rapport à un arbitre complet, sans sacrifier l'essentiel de l'expérience multijoueur : deux joueurs peuvent se retrouver en ligne, construire leurs decks, et jouer une partie en temps réel avec une vraie gestion de l'information cachée — ce qui est déjà, en soi, un projet substantiel bien au-delà du solo initial. Le risque technique principal se limite désormais aux briques bien connues et outillées (Colyseus pour le temps réel, OAuth pour l'auth, PostgreSQL pour la persistance), sans le risque ouvert du scripting exhaustif d'effets de cartes. Le compromis assumé : les joueurs restent responsables d'appliquer correctement les effets de texte de leurs cartes, comme autour d'une vraie table — un modèle de confiance mutuelle qui a fait ses preuves dans des simulateurs équivalents pour d'autres jeux de cartes (Cockatrice pour Magic, par exemple), et qui reste cohérent avec l'esprit "assisté, pas automatisé" présent depuis la toute première version de ce MVP.
+Ce choix garde une architecture claire tout en franchissant un cap important d'automatisation : deux joueurs peuvent se retrouver en ligne, construire leurs decks, et jouer une partie en temps réel avec une vraie gestion de l'information cachée **et** un moteur d'effets serveur déterministe. Le risque technique principal n'est plus un parser libre du texte des cartes, mais la montée progressive d'une bibliothèque locale d'effets, mieux testable et bien plus maintenable : registre par `cardId`, DSL réutilisable, effets continus, remplacements, handlers spéciaux isolés et couverture incrémentale.

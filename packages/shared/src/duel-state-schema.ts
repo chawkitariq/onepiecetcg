@@ -49,6 +49,10 @@ export class DuelCard extends Schema {
 
   @view()
   @type('number')
+  basePower = -1;
+
+  @view()
+  @type('number')
   power = -1;
 
   @view()
@@ -58,6 +62,14 @@ export class DuelCard extends Schema {
   @view()
   @type('number')
   counter = -1;
+
+  @view()
+  @type(['string'])
+  attributes = new ArraySchema<string>();
+
+  @view()
+  @type(['string'])
+  families = new ArraySchema<string>();
 
   @view()
   @type('string')
@@ -256,9 +268,12 @@ export function createDuelCard(
   duelCard.type = card.type;
   duelCard.colors.push(...card.colors);
   duelCard.cost = card.cost ?? -1;
+  duelCard.basePower = card.power ?? -1;
   duelCard.power = card.power ?? -1;
   duelCard.life = card.life ?? -1;
   duelCard.counter = card.counter ?? -1;
+  duelCard.attributes.push(...card.attributes);
+  duelCard.families.push(...card.families);
   duelCard.imageUrl = card.imageUrl ?? '';
   duelCard.text = card.text;
   duelCard.trigger = card.trigger ?? '';

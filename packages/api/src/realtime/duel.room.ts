@@ -14,10 +14,19 @@ import {
   DuelLog,
   DuelPlayer,
   DuelState,
+  type EffectDecisionResponse,
+  type EffectTargetSelector,
   createDuelCard,
   type FirstOrSecondChoice,
   type GamePhase,
 } from '@onepiecetcg/shared';
+import { EffectEngine } from '../game/effects/effect-engine';
+import {
+  effectRegistry,
+  registerCardEffects,
+} from '../game/effects/effect-registry';
+import { sampleEffectDefinitions } from '../game/effects/sample-effect-definitions';
+import { specialEffectRegistry } from '../game/effects/special-effect-registry';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;
@@ -37,6 +46,8 @@ type DeclareCounterMessage = {
 type ResolveTriggerMessage = {
   activate: boolean;
 };
+
+type ResolveEffectDecisionMessage = EffectDecisionResponse;
 
 const RECONNECTION_SECONDS = 120;
 
@@ -123,6 +134,8 @@ export class DuelRoom extends Room<DuelState> {
 
   private matchResultRecorded = false;
 
+  private effectEngine!: EffectEngine;
+
   maxClients = 2;
 
   static async onAuth(
@@ -145,6 +158,40 @@ export class DuelRoom extends Room<DuelState> {
 
   async onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
+    registerCardEffects(sampleEffectDefinitions);
+    this.effectEngine = new EffectEngine(
+      effectRegistry,
+      {
+        state: this.state,
+        addLog: (message) => this.addLog(message),
+        getPlayer: (sessionId) => this.state.players.get(sessionId),
+        getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+        getCard: (instanceId) => this.getCardByInstanceId(instanceId),
+        getCards: (selector, controllerSessionId) =>
+          this.getCardsForSelector(selector, controllerSessionId),
+        moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
+          this.moveCardToZone(card, destinationPlayerSessionId, destinationZone, options),
+        drawCard: (playerSessionId) => this.drawCardForEffect(playerSessionId),
+        trashTopDeckCards: (playerSessionId, amount) =>
+          this.trashTopDeckCards(playerSessionId, amount),
+        addDonToCost: (playerSessionId, amount, rested) =>
+          this.addDonToCost(playerSessionId, amount, rested),
+        attachDon: (playerSessionId, targetInstanceId, amount) =>
+          this.attachDonFromCost(playerSessionId, targetInstanceId, amount),
+        returnDonToDonDeck: (playerSessionId, amount) =>
+          this.returnEffectDonToDeck(playerSessionId, amount),
+        koCharacter: (playerSessionId, instanceId, reason) =>
+          this.knockOutCharacterById(playerSessionId, instanceId, reason),
+        syncPlayer: (playerSessionId) => {
+          const player = this.state.players.get(playerSessionId);
+
+          if (player) {
+            this.syncZoneCounts(player);
+          }
+        },
+      },
+      specialEffectRegistry,
+    );
 
     const description = options.description
       ?.trim()
@@ -206,6 +253,13 @@ export class DuelRoom extends Room<DuelState> {
       'resolveTrigger',
       (client: Client, message: ResolveTriggerMessage) => {
         this.handleResolveTrigger(client, message);
+      },
+    );
+
+    this.onMessage(
+      'resolveEffectDecision',
+      (client: Client, message: ResolveEffectDecisionMessage) => {
+        this.handleResolveEffectDecision(client, message);
       },
     );
   }
@@ -532,6 +586,7 @@ export class DuelRoom extends Room<DuelState> {
     );
 
     this.runRefreshPhase(this.state.firstPlayerSessionId);
+    this.emitWindowEffects('onTurnStart');
   }
 
   private sendError(client: Client, message: string) {
@@ -545,6 +600,11 @@ export class DuelRoom extends Room<DuelState> {
   private handleEndPhase(client: Client) {
     if (this.state.phase === 'finished') {
       this.sendError(client, 'La partie est terminee.');
+      return;
+    }
+
+    if (this.effectEngine.getPendingDecision()) {
+      this.sendError(client, "Une decision d'effet est en attente.");
       return;
     }
 
@@ -704,6 +764,9 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(`${endingPlayer.displayName} termine son tour.`);
     }
 
+    this.emitWindowEffects('onTurnEnd');
+    this.effectEngine.clearTurnModifiers();
+
     const sessionIds = Array.from(this.state.players.keys());
     const nextSessionId = sessionIds.find(
       (sessionId) => sessionId !== this.state.activePlayerSessionId,
@@ -716,7 +779,9 @@ export class DuelRoom extends Room<DuelState> {
     this.state.activePlayerSessionId = nextSessionId;
     this.state.turn += 1;
     this.state.phase = 'refresh';
+    this.effectEngine.reapplyContinuousEffects();
     this.runRefreshPhase(nextSessionId);
+    this.emitWindowEffects('onTurnStart');
   }
 
   private findCardInZone(
@@ -767,6 +832,11 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private assertMainPhaseAction(client: Client): DuelPlayer | null {
+    if (this.effectEngine.getPendingDecision()) {
+      this.sendError(client, "Une decision d'effet est en attente.");
+      return null;
+    }
+
     if (this.state.phase !== 'main') {
       this.sendError(client, 'Action impossible hors de la phase Principale.');
       return null;
@@ -929,6 +999,13 @@ export class DuelRoom extends Room<DuelState> {
       `${attacker.displayName} attaque avec ${attackerCard.name} vers ${targetLabel}.`,
     );
 
+    this.effectEngine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: client.sessionId,
+      sourceInstanceId: attackerCard.instanceId,
+      sourceCardId: attackerCard.cardId,
+    });
+
     this.state.combat.step = 'blocked';
   }
 
@@ -973,6 +1050,12 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(
         `${defender.displayName} declare ${blockerFound.card.name} comme Bloqueur.`,
       );
+      this.effectEngine.handleEvent({
+        type: 'onBlock',
+        playerSessionId: defender.sessionId,
+        sourceInstanceId: blockerFound.card.instanceId,
+        sourceCardId: blockerFound.card.cardId,
+      });
     } else {
       this.addLog(`${defender.displayName} ne bloque pas.`);
     }
@@ -1117,7 +1200,7 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(`${attacker.displayName} remporte le combat.`);
 
     if (combat.blockerInstanceId || combat.targetType === 'character') {
-      this.knockOutCharacter(defender, defendingCard);
+      this.knockOutCharacter(defender, defendingCard, 'battle');
       this.endCombat();
       return;
     }
@@ -1141,7 +1224,25 @@ export class DuelRoom extends Room<DuelState> {
     return Math.max(card.power, 0) + donBonus;
   }
 
-  private knockOutCharacter(owner: DuelPlayer, card: DuelCard) {
+  private knockOutCharacter(
+    owner: DuelPlayer,
+    card: DuelCard,
+    reason: 'battle' | 'effect' = 'battle',
+    skipReplacement = false,
+  ) {
+    if (
+      !skipReplacement &&
+      this.effectEngine.applyReplacement({
+        type: 'wouldKoCharacter',
+        playerSessionId: owner.sessionId,
+        sourceInstanceId: card.instanceId,
+        reason,
+      })
+    ) {
+      this.effectEngine.reapplyContinuousEffects();
+      return;
+    }
+
     const found = this.findCardInZone(owner, 'characters', card.instanceId);
 
     if (!found) {
@@ -1155,6 +1256,13 @@ export class DuelRoom extends Room<DuelState> {
     this.unshiftIntoZone(owner.zones.trash, card);
     this.returnDonToCost(owner, owner.sessionId, attachedDon);
     this.addLog(`${card.name} est mis KO et rejoint la Defausse.`);
+    this.effectEngine.handleEvent({
+      type: 'onKo',
+      playerSessionId: owner.sessionId,
+      sourceInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+    });
+    this.effectEngine.reapplyContinuousEffects();
   }
 
   private dealLeaderDamage(defender: DuelPlayer) {
@@ -1180,6 +1288,21 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     revealedCard.faceDown = false;
+
+    if (effectRegistry.get(revealedCard.cardId)?.standard?.some((effect) => effect.trigger.type === 'trigger')) {
+      this.unshiftIntoZone(defender.zones.trash, revealedCard);
+      this.broadcastCardView(revealedCard);
+      this.effectEngine.handleEvent({
+        type: 'trigger',
+        playerSessionId: defender.sessionId,
+        sourceInstanceId: revealedCard.instanceId,
+        sourceCardId: revealedCard.cardId,
+      });
+      if (!this.effectEngine.getPendingDecision()) {
+        this.endCombat();
+      }
+      return;
+    }
 
     if (revealedCard.trigger) {
       this.state.combat.awaitingTriggerDecision = true;
@@ -1348,6 +1471,13 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(
         `${player.displayName} joue ${card.name} en zone Personnage.`,
       );
+      this.effectEngine.reapplyContinuousEffects();
+      this.effectEngine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: player.sessionId,
+        sourceInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+      });
     } else if (card.type === 'Stage') {
       if (player.zones.stage.instanceId) {
         const discardedStage = player.zones.stage;
@@ -1361,12 +1491,23 @@ export class DuelRoom extends Room<DuelState> {
       player.zones.stage = card;
       this.broadcastCardView(card);
       this.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
+      this.effectEngine.reapplyContinuousEffects();
+      this.effectEngine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: player.sessionId,
+        sourceInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+      });
     } else {
       this.unshiftIntoZone(player.zones.trash, card);
       this.broadcastCardView(card);
-      this.addLog(
-        `${player.displayName} active ${card.name} (effet a appliquer manuellement) puis la defausse.`,
-      );
+      this.addLog(`${player.displayName} active ${card.name}.`);
+      this.effectEngine.handleEvent({
+        type: 'activateMain',
+        playerSessionId: player.sessionId,
+        sourceInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+      });
     }
 
     this.syncZoneCounts(player);
@@ -1461,6 +1602,29 @@ export class DuelRoom extends Room<DuelState> {
     card.type = 'DON!!';
 
     return card;
+  }
+
+  private handleResolveEffectDecision(
+    client: Client,
+    message: ResolveEffectDecisionMessage,
+  ) {
+    const decision = this.effectEngine.getPendingDecision();
+
+    if (!decision) {
+      this.sendError(client, "Aucune decision d'effet n'est en attente.");
+      return;
+    }
+
+    if (decision.playerSessionId !== client.sessionId) {
+      this.sendError(client, "Cette decision n'appartient pas a ce joueur.");
+      return;
+    }
+
+    this.effectEngine.answerDecision(message);
+
+    if (this.isCombatInProgress() && !this.effectEngine.getPendingDecision()) {
+      this.endCombat();
+    }
   }
 
   /**
@@ -1594,5 +1758,372 @@ export class DuelRoom extends Room<DuelState> {
         cards[otherIndex] = current;
       }
     }
+  }
+
+  private emitWindowEffects(type: 'onTurnStart' | 'onTurnEnd') {
+    for (const player of this.state.players.values()) {
+      this.effectEngine.handleEvent({
+        type,
+        playerSessionId: player.sessionId,
+        sourceInstanceId: player.zones.leader.instanceId,
+        sourceCardId: player.zones.leader.cardId,
+      });
+
+      for (const character of player.zones.characters) {
+        this.effectEngine.handleEvent({
+          type,
+          playerSessionId: player.sessionId,
+          sourceInstanceId: character.instanceId,
+          sourceCardId: character.cardId,
+        });
+      }
+
+      if (player.zones.stage.instanceId) {
+        this.effectEngine.handleEvent({
+          type,
+          playerSessionId: player.sessionId,
+          sourceInstanceId: player.zones.stage.instanceId,
+          sourceCardId: player.zones.stage.cardId,
+        });
+      }
+    }
+  }
+
+  private getCardByInstanceId(instanceId: string): DuelCard | null {
+    for (const player of this.state.players.values()) {
+      if (player.zones.leader.instanceId === instanceId) {
+        return player.zones.leader;
+      }
+
+      if (player.zones.stage.instanceId === instanceId) {
+        return player.zones.stage;
+      }
+
+      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
+        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+
+        if (found) {
+          return found;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private getCardsForSelector(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+  ): DuelCard[] {
+    const sessionIds =
+      selector.player === 'self'
+        ? [controllerSessionId]
+        : selector.player === 'opponent'
+          ? [this.getOpponentSessionId(controllerSessionId)].filter(Boolean)
+          : Array.from(this.state.players.keys());
+
+    const matches: DuelCard[] = [];
+
+    for (const sessionId of sessionIds) {
+      const player = sessionId ? this.state.players.get(sessionId) : undefined;
+
+      if (!player) {
+        continue;
+      }
+
+      for (const zone of selector.zones) {
+        const cards =
+          zone === 'leader'
+            ? [player.zones.leader]
+            : zone === 'stage'
+              ? player.zones.stage.instanceId
+                ? [player.zones.stage]
+                : []
+              : Array.from(player.zones[zone] ?? []);
+
+        for (const card of cards) {
+          if (this.cardMatchesSelectorFilter(card, selector.filter, controllerSessionId)) {
+            matches.push(card);
+          }
+        }
+      }
+    }
+
+    return matches;
+  }
+
+  private cardMatchesSelectorFilter(
+    card: DuelCard,
+    filter: EffectTargetSelector['filter'],
+    controllerSessionId: string,
+  ) {
+    if (!filter) {
+      return true;
+    }
+
+    if (filter.cardCategory && !filter.cardCategory.includes(card.type)) {
+      return false;
+    }
+
+    if (typeof filter.costMax === 'number' && card.cost > filter.costMax) {
+      return false;
+    }
+
+    if (typeof filter.costMin === 'number' && card.cost < filter.costMin) {
+      return false;
+    }
+
+    if (typeof filter.powerMax === 'number' && this.cardPower(card) > filter.powerMax) {
+      return false;
+    }
+
+    if (typeof filter.powerMin === 'number' && this.cardPower(card) < filter.powerMin) {
+      return false;
+    }
+
+    if (filter.color && !filter.color.some((color: string) => card.colors.includes(color as never))) {
+      return false;
+    }
+
+    if (filter.trait && !filter.trait.some((trait: string) => card.families.includes(trait))) {
+      return false;
+    }
+
+    if (filter.name && !filter.name.includes(card.name)) {
+      return false;
+    }
+
+    if (filter.excludeName && filter.excludeName.includes(card.name)) {
+      return false;
+    }
+
+    if (typeof filter.rested === 'boolean' && card.rested !== filter.rested) {
+      return false;
+    }
+
+    if (filter.owner === 'self' && card.ownerSessionId !== controllerSessionId) {
+      return false;
+    }
+
+    if (filter.owner === 'opponent' && card.ownerSessionId === controllerSessionId) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private moveCardToZone(
+    card: DuelCard,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean },
+  ) {
+    this.removeCardFromCurrentZone(card.instanceId);
+    const destinationPlayer = this.state.players.get(destinationPlayerSessionId);
+
+    if (!destinationPlayer) {
+      return;
+    }
+
+    card.ownerSessionId = destinationPlayerSessionId;
+    card.faceDown = options?.faceDown ?? false;
+    card.rested = options?.rested ?? false;
+    card.playedThisTurn = false;
+
+    if (destinationZone === 'leader') {
+      destinationPlayer.zones.leader = card;
+    } else if (destinationZone === 'stage') {
+      destinationPlayer.zones.stage = card;
+    } else {
+      const zone = destinationPlayer.zones[destinationZone as keyof typeof destinationPlayer.zones];
+
+      if (zone instanceof ArraySchema) {
+        if (destinationZone === 'trash') {
+          this.unshiftIntoZone(zone, card);
+        } else {
+          zone.push(card);
+        }
+      }
+    }
+
+    this.broadcastCardView(card);
+    this.syncZoneCounts(destinationPlayer);
+    this.effectEngine.reapplyContinuousEffects();
+  }
+
+  private removeCardFromCurrentZone(instanceId: string): DuelCard | null {
+    for (const player of this.state.players.values()) {
+      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
+        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
+
+        if (index >= 0) {
+          return player.zones[zone].splice(index, 1)[0] ?? null;
+        }
+      }
+
+      if (player.zones.stage.instanceId === instanceId) {
+        const stage = player.zones.stage;
+        player.zones.stage = new DuelCard();
+        return stage;
+      }
+    }
+
+    return null;
+  }
+
+  private drawCardForEffect(playerSessionId: string): DuelCard | null {
+    const player = this.state.players.get(playerSessionId);
+    const card = player?.zones.deck.shift();
+
+    if (!player || !card) {
+      return null;
+    }
+
+    card.faceDown = false;
+    player.zones.hand.push(card);
+    this.syncZoneCounts(player);
+    return card;
+  }
+
+  private trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
+    const player = this.state.players.get(playerSessionId);
+    const moved: DuelCard[] = [];
+
+    if (!player) {
+      return moved;
+    }
+
+    for (let index = 0; index < amount; index += 1) {
+      const card = player.zones.deck.shift();
+
+      if (!card) {
+        break;
+      }
+
+      card.faceDown = false;
+      this.unshiftIntoZone(player.zones.trash, card);
+      this.broadcastCardView(card);
+      moved.push(card);
+    }
+
+    this.syncZoneCounts(player);
+    return moved;
+  }
+
+  private addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
+    const player = this.state.players.get(playerSessionId);
+
+    if (!player) {
+      return 0;
+    }
+
+    let moved = 0;
+
+    for (let index = 0; index < amount; index += 1) {
+      const card = player.zones.donDeck.shift();
+
+      if (!card) {
+        break;
+      }
+
+      card.rested = rested;
+      player.zones.cost.push(card);
+      moved += 1;
+    }
+
+    return moved;
+  }
+
+  private attachDonFromCost(
+    playerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+  ): number {
+    const player = this.state.players.get(playerSessionId);
+
+    if (!player || amount <= 0) {
+      return 0;
+    }
+
+    const target =
+      player.zones.leader.instanceId === targetInstanceId
+        ? player.zones.leader
+        : this.findCardInZone(player, 'characters', targetInstanceId)?.card;
+
+    if (!target) {
+      return 0;
+    }
+
+    const donCards = this.takeUntappedDonCards(player, amount);
+
+    if (!donCards) {
+      return 0;
+    }
+
+    let attached = 0;
+
+    for (const donCard of donCards) {
+      const index = player.zones.cost.indexOf(donCard);
+
+      if (index >= 0) {
+        player.zones.cost.splice(index, 1);
+        attached += 1;
+      }
+    }
+
+    target.attachedDon += attached;
+    return attached;
+  }
+
+  private returnEffectDonToDeck(playerSessionId: string, amount: number): number {
+    const player = this.state.players.get(playerSessionId);
+
+    if (!player) {
+      return 0;
+    }
+
+    let removed = 0;
+
+    while (removed < amount && player.zones.cost.length > 0) {
+      const card = player.zones.cost.pop();
+
+      if (!card) {
+        break;
+      }
+
+      card.rested = false;
+      player.zones.donDeck.push(card);
+      removed += 1;
+    }
+
+    return removed;
+  }
+
+  private knockOutCharacterById(
+    playerSessionId: string,
+    instanceId: string,
+    reason: 'battle' | 'effect',
+  ): boolean {
+    const player = this.state.players.get(playerSessionId);
+    const found = player ? this.findCardInZone(player, 'characters', instanceId) : null;
+
+    if (!player || !found) {
+      return false;
+    }
+
+    if (
+      this.effectEngine.applyReplacement({
+        type: 'wouldKoCharacter',
+        playerSessionId,
+        sourceInstanceId: instanceId,
+        reason,
+      })
+    ) {
+      this.effectEngine.reapplyContinuousEffects();
+      return false;
+    }
+
+    this.knockOutCharacter(player, found.card, reason, true);
+    return true;
   }
 }
