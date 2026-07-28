@@ -8,7 +8,6 @@ import {
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
 import { op01EffectDefinitions } from './definitions/op01.effects';
-import { op01047SpecialHandler } from './definitions/special/op01-047.special';
 import { EffectEngine, type EffectEngineHost } from './effect-engine';
 import { buildEffectIndexes } from './effect-indexes';
 import type {
@@ -37,7 +36,7 @@ const makeCard = (overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name'
 
 const createRegistry = (
   definitions = [op01EffectDefinitions],
-  specialHandlers: readonly SpecialHandlerDefinition[] = [op01047SpecialHandler],
+  specialHandlers: readonly SpecialHandlerDefinition[] = [],
 ): EffectRegistry => {
   const effectsByCardId: Record<string, CardEffectDefinition> = {};
   const specialHandlersByCardId: Record<string, SpecialHandlerDefinition> = {};
@@ -574,7 +573,7 @@ describe('EffectEngine', () => {
     expect(host.logs.at(-1)).toContain('effet de remplacement');
   });
 
-  it('runs the special Trafalgar Law handler as a two-step decision flow', () => {
+  it('runs Trafalgar Law on-play as a two-step decision flow', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');

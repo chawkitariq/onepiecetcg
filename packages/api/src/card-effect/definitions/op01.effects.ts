@@ -260,12 +260,43 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
         },
       ],
     },
+    // OP01-047 Trafalgar Law
+    // [On Play] You may return 1 of your Characters to the owner's hand: Play up to 1 Character card with a cost of 5 or less from your hand.
     {
       cardId: 'OP01-047',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'trafalgar-law-on-play',
+          kind: 'standard',
+          effect: {
+            id: 'trafalgar-law-on-play-return-1-character-play-cost-5-or-less',
+            text: "[On Play] You may return 1 of your Characters to the owner's hand: Play up to 1 Character card with a cost of 5 or less from your hand.",
+            trigger: { type: 'onPlay' },
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'hand',
+              },
+            ],
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { cardCategory: ['Character'], costMax: 5 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destination: 'characters',
+              },
+            ],
+          },
         },
       ],
     },
