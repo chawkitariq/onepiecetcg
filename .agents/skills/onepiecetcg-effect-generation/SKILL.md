@@ -20,9 +20,16 @@ Generate and validate the effect-definition files used by this repository's back
    - Validate existing definitions: run `scripts/run-validate-effects.sh`.
    - Generate from live card metadata: run `scripts/run-generate-effects.sh --edition OP01`.
    - Generate from a local metadata snapshot: run `scripts/run-generate-effects.sh --edition OP01 --source-file /abs/path/cards.json`.
-   - Refine generated placeholders into authored effects in `packages/api/src/card-effect/definitions/`, then validate again.
-9. Keep changes declarative by default. Only use `definitions/special/` when a card cannot be represented safely or clearly by the DSL.
-10. After every change, rerun validation and then run the most focused repo checks that cover the touched area.
+   - Refine generated placeholders into authored effects in `packages/api/src/card-effect/definitions/`.
+9. After generating a skeleton, implement the full DSL for every generated card entry in that edition before considering the work complete.
+10. Run a validation loop:
+   - run validation
+   - fix every reported issue
+   - fill every remaining placeholder card without a real DSL
+   - rerun validation
+   - repeat until validation passes and the generated edition has no unfinished generated placeholders left
+11. Keep changes declarative by default. Only use `definitions/special/` when a card cannot be represented safely or clearly by the DSL.
+12. After the validation loop is clean, run the most focused repo checks that cover the touched area.
 
 ## Working Rules
 
@@ -31,6 +38,7 @@ Generate and validate the effect-definition files used by this repository's back
 - Execute generation and validation through the skill's bundled scripts. Do not rely on backend `src/` CLI files as the skill runtime.
 - Load cards from metadata first, then derive effect definitions from that metadata and the rules documents. Do not invent card facts that are absent from the metadata source.
 - Preserve authored definitions whenever generation runs. The bundled generator is designed to merge deterministic placeholder output with existing entries, not wipe human-authored work.
+- Do not stop after skeleton generation. Finish by implementing the DSL for every generated card in scope, then loop on validation until there are no structural errors and no unfinished generated placeholders.
 - Prefer `--source-file` when upstream OPTCG API data is unavailable or when deterministic reproduction matters.
 - Keep special handlers rare and card-specific. If multiple cards can share the same new behavior, improve the DSL instead of multiplying imperative handlers.
 

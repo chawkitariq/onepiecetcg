@@ -88,9 +88,14 @@ The handler file declares one `cardId`, but a different card references it.
 Use this sequence:
 
 1. generate or edit edition files
-2. ensure aggregate indexes are current
-3. run the validator
-4. fix every reported issue
-5. rerun until validation passes cleanly
+2. implement the full DSL for every generated placeholder card in scope
+3. ensure aggregate indexes are current
+4. run the validator
+5. fix every reported issue
+6. scan the generated edition again for unfinished placeholder-only card blocks
+7. rerun until validation passes cleanly and no unfinished generated placeholders remain
 
-The file set is only ready when validation succeeds with zero reported issues.
+The file set is only ready when both conditions are true:
+
+1. validation succeeds with zero reported issues
+2. the generated edition contains no unfinished generated placeholders for the requested scope

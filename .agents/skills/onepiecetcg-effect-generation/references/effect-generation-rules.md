@@ -71,7 +71,7 @@ Example:
 }
 ```
 
-This is intentional. The skill prepares the correct file placement and coverage; the calling model then authors the DSL.
+This is intentional. The skill prepares the correct file placement and coverage; the calling model must then author the DSL for every generated placeholder card.
 
 ## How authored effects must be added later
 
@@ -83,6 +83,19 @@ When replacing a placeholder with a real definition, add `effects` using only th
 - `special-ref`
 
 Use `special-ref` only when the card truly needs a special handler in `definitions/special/`.
+
+## Required completion step after generation
+
+After the generator writes the edition file, do not stop at placeholders.
+
+You must:
+
+1. inspect every newly generated placeholder card in the target edition
+2. read the card metadata comments and `docs/rule_comprehensive.md`
+3. implement the full DSL or `special-ref` for every generated card
+4. keep going until no generated card in scope remains as a bare `{ cardId: '...' }` placeholder
+
+The output is only considered complete when every generated card in scope has been fully authored.
 
 ## Mandatory rules source
 
