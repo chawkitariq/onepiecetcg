@@ -21,6 +21,13 @@ export default defineNuxtConfig({
     }
   },
 
+  colorMode: {
+    preference: 'dark',
+    fallback: 'dark',
+    classSuffix: '',
+    storageKey: 'onepiecetcg-color-mode-dark-locked'
+  },
+
   routeRules: {},
 
   compatibilityDate: '2026-06-30',
