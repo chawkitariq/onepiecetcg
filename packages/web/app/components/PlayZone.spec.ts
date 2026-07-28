@@ -166,6 +166,26 @@ describe('PlayZone transitions', () => {
     expect(zones.some(component => component.props('label') === 'Main')).toBe(false)
   })
 
+  it('applies the shared targetable highlight class to a valid character target', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a', { rested: true })]
+        }),
+        side: 0,
+        targetableCharacterIds: ['character-a']
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    expect(characterButton.classes()).toContain('duel-highlight')
+    expect(characterButton.classes()).toContain('duel-highlight--targetable')
+  })
+
   it('renders ghosts for hidden-zone transitions from life, deck and DON!! deck', () => {
     const wrapper = mount(PlayZone, {
       props: {

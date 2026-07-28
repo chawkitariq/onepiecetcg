@@ -24,14 +24,54 @@
     filter 180ms ease-out;
 }
 
+.duel-highlight {
+  transition:
+    box-shadow 180ms ease-out,
+    transform 180ms ease-out,
+    filter 180ms ease-out,
+    background-color 180ms ease-out,
+    border-color 180ms ease-out;
+}
+
+.duel-highlight--interactive {
+  box-shadow:
+    0 0 0 0.18rem color-mix(in oklab, var(--ui-border) 78%, transparent),
+    0 0 0.75rem color-mix(in oklab, var(--ui-border) 22%, transparent);
+}
+
+.duel-highlight--selected {
+  box-shadow:
+    0 0 0 0.24rem color-mix(in oklab, var(--ui-info) 26%, transparent),
+    0 0 1rem color-mix(in oklab, var(--ui-info) 22%, transparent);
+  transform: translateY(-2px);
+}
+
+.duel-highlight--source {
+  box-shadow:
+    0 0 0 0.24rem color-mix(in oklab, var(--ui-primary) 22%, transparent),
+    0 0 1.1rem color-mix(in oklab, var(--ui-primary) 24%, transparent);
+}
+
+.duel-highlight--targetable,
 .duel-targetable {
   box-shadow:
     0 0 0 0.24rem color-mix(in oklab, var(--ui-success) 16%, transparent),
     0 0 1.2rem color-mix(in oklab, var(--ui-success) 18%, transparent);
 }
 
+.duel-highlight--drop-target {
+  background: color-mix(in oklab, var(--ui-success) 10%, transparent);
+  box-shadow:
+    0 0 0 0.26rem color-mix(in oklab, var(--ui-success) 24%, transparent),
+    0 0 1.25rem color-mix(in oklab, var(--ui-success) 22%, transparent);
+}
+
+.duel-highlight--invalid,
 .duel-invalid-target {
   animation: duel-invalid-target 220ms ease-out;
+  box-shadow:
+    0 0 0 0.24rem color-mix(in oklab, var(--ui-error) 22%, transparent),
+    0 0 1rem color-mix(in oklab, var(--ui-error) 18%, transparent);
 }
 
 .duel-connection-waiting,
@@ -70,6 +110,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .duel-card-shell,
+  .duel-highlight,
   .duel-invalid-target,
   .duel-connection-waiting,
   .duel-connection-banner {
