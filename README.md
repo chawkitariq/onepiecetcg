@@ -55,7 +55,7 @@ Copy the environment file and fill in local values:
 cp packages/api/.env.example packages/api/.env
 ```
 
-The defaults match `docker-compose.yml` and work out of the box — you only need to edit `.env` if you're adding OAuth credentials (see [packages/api/README.md](packages/api/README.md)).
+The defaults match `docker-compose.yml` for Postgres. You still need to edit `.env` to add Google and/or Discord OAuth credentials before you can sign in (see [packages/api/README.md](packages/api/README.md)).
 
 Start every package at once — `shared` (build, then watch), `api`, and `web`, in the right order:
 
@@ -68,7 +68,7 @@ Once running:
 - Web app: [http://localhost:3001](http://localhost:3001)
 - API: [http://localhost:3000](http://localhost:3000)
 
-Sign in locally with one of the seeded dev fixture accounts shown on the login page — no OAuth provider setup required for local development (see [packages/api/README.md](packages/api/README.md#authentication)).
+Sign in locally from `/login` with Google or Discord after configuring the corresponding OAuth credentials in `packages/api/.env` (see [packages/api/README.md](packages/api/README.md#authentication)).
 
 ## Common workflows
 

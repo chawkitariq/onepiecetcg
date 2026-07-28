@@ -98,11 +98,6 @@ export function createAuth() {
       connectionString: config.databaseUrl,
     }),
     trustedOrigins: [config.webOrigin],
-    // Dev-only shortcut so contributors can test the app without an OAuth provider.
-    // Gated on NODE_ENV==='development' (fail-closed, see runtime-config.ts) — never available in production.
-    emailAndPassword: {
-      enabled: config.isDevelopment,
-    },
     socialProviders: {
       google: {
         clientId: config.auth.google.clientId,

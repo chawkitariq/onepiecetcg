@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import type { ButtonProps } from '@nuxt/ui'
-import type { DevFixtureAccount } from '~/composables/useSession'
 
-const { loading, profile, refresh, signIn, signInWithEmailPassword, getAuthConfig } = useSession()
+const { loading, profile, refresh, signIn } = useSession()
 const route = useRoute()
-
-const devFixtureAccounts = ref<DevFixtureAccount[]>([])
-
-onMounted(async () => {
-  const config = await getAuthConfig().catch(() => null)
-  devFixtureAccounts.value = config?.devFixtureAccounts ?? []
-})
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect
@@ -46,10 +38,6 @@ const providers = computed<ButtonProps[]>(() => [
     onClick: () => signIn('discord')
   }
 ])
-
-async function signInAsFixture(account: DevFixtureAccount) {
-  await signInWithEmailPassword(account.email, account.password)
-}
 </script>
 
 <template>
@@ -71,27 +59,6 @@ async function signInAsFixture(account: DevFixtureAccount) {
         icon="i-lucide-log-in"
         :providers="providers"
       />
-
-      <template v-if="devFixtureAccounts.length > 0">
-        <USeparator
-          label="Developpement"
-          class="my-4"
-        />
-        <div class="flex flex-col gap-2">
-          <UButton
-            v-for="account in devFixtureAccounts"
-            :key="account.email"
-            color="neutral"
-            variant="soft"
-            icon="i-lucide-flask-conical"
-            :loading="loading"
-            block
-            @click="signInAsFixture(account)"
-          >
-            Se connecter en tant que {{ account.name }}
-          </UButton>
-        </div>
-      </template>
     </UPageCard>
   </div>
 </template>

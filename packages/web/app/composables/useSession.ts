@@ -20,20 +20,8 @@ type SocialSignInResponse = {
   redirect: boolean
   url?: string
 }
-
-export type DevFixtureAccount = {
-  name: string
-  email: string
-  password: string
-}
-
 type DeleteAccountResponse = {
   deleted: true
-}
-
-type AuthConfigResponse = {
-  emailPasswordEnabled: boolean
-  devFixtureAccounts: DevFixtureAccount[]
 }
 
 export function useSession() {
@@ -79,31 +67,6 @@ export function useSession() {
     }
   }
 
-  /**
-   * Dev-only shortcut: signs in with email/password. The API only accepts this when
-   * running in development (see packages/api CLAUDE.md) — always rejected in production.
-   */
-  async function signInWithEmailPassword(email: string, password: string) {
-    loading.value = true
-    errorMessage.value = null
-
-    try {
-      await api('/api/auth/sign-in/email', {
-        method: 'POST',
-        body: { email, password }
-      })
-      await refresh()
-    } catch {
-      errorMessage.value = 'La connexion a echoue.'
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function getAuthConfig() {
-    return api<AuthConfigResponse>('/auth-config')
-  }
-
   async function signOut() {
     loading.value = true
     errorMessage.value = null
@@ -142,8 +105,6 @@ export function useSession() {
     profile,
     refresh,
     signIn,
-    signInWithEmailPassword,
-    getAuthConfig,
     signOut
   }
 }

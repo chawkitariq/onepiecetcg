@@ -40,14 +40,13 @@ Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`US
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and `ColyseusService`, which attaches the Colyseus server onto Nest's underlying HTTP server (see below).
 - `auth/` — TypeORM entities for Better Auth's own tables (`BetterAuthUser`, `BetterAuthAccount`, `BetterAuthSession`, `BetterAuthVerification`); `src/auth.ts` (note: outside `auth/`) holds `createAuth()`, the Better Auth instance factory.
 - `spike/` — leftover technical-spike module (see `docs/spec.md` §0, "Spike technique") validating the Better Auth + Colyseus + Nest integration; not part of the product feature set.
-- `dev-fixtures/` — dev-only module (`DevFixturesModule`) that seeds three fixed email/password test accounts (`DEV_FIXTURE_ACCOUNTS`) on startup, gated on `config.isDevelopment`; lets contributors sign in without configuring an OAuth provider locally.
 - `runtime-config.ts` — single `getApiConfig()` reads all env vars with defaults; use this instead of reading `process.env` directly elsewhere.
 
 ### Better Auth integration
 
 Mounted via the community package `@thallesp/nestjs-better-auth` (no official Nest integration exists). Two points that are easy to break:
 - Nest's default body parser is disabled globally (`NestFactory.create(AppModule, { bodyParser: false })` in `main.ts`) so Better Auth can parse raw auth requests itself; `AuthModule.forRoot` configures its own body parser limits instead.
-- Cross-domain session cookies between this API and the Nuxt web app are controlled by `SESSION_COOKIE_DOMAIN`/`SESSION_COOKIE_SAME_SITE`/`SESSION_COOKIE_SECURE` in `runtime-config.ts`, consumed in `auth.ts`'s `advanced.crossSubDomainCookies`/`defaultCookieAttributes`. Google and Discord OAuth providers are the only sign-in path in production. `emailAndPassword` is also enabled in `auth.ts`, but gated on `config.isDevelopment` (fail-closed) — it exists solely so contributors can sign in locally via the `dev-fixtures/` seeded accounts, not as a production auth method.
+- Cross-domain session cookies between this API and the Nuxt web app are controlled by `SESSION_COOKIE_DOMAIN`/`SESSION_COOKIE_SAME_SITE`/`SESSION_COOKIE_SECURE` in `runtime-config.ts`, consumed in `auth.ts`'s `advanced.crossSubDomainCookies`/`defaultCookieAttributes`. Google and Discord OAuth providers are the only sign-in paths in every environment.
 
 Protect routes with `@UseGuards(AuthGuard)` from `@thallesp/nestjs-better-auth`; the authenticated user is attached to `request.user` (see `AuthenticatedRequest` type pattern in `accounts.controller.ts`/`decks.controller.ts`).
 

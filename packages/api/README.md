@@ -22,10 +22,10 @@ The API starts on [http://localhost:3000](http://localhost:3000). `pnpm start:de
 Verify it's running:
 
 ```bash
-curl http://localhost:3000/auth-config
+curl http://localhost:3000
 ```
 
-You should get a JSON response describing which auth methods are enabled.
+You should get a plain `Hello World!` response.
 
 ## Environment variables
 
@@ -35,19 +35,18 @@ Copy `.env.example` to `.env` and adjust as needed. Defaults match the root `doc
 | --- | --- |
 | `API_PORT` | Port the API listens on (default `3000`). |
 | `WEB_ORIGIN` | Origin of the Nuxt client, for CORS. |
-| `NODE_ENV` | Set to `development` to enable dev-only email/password auth (see [Authentication](#authentication)). Never enabled otherwise. |
 | `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` | Postgres connection. |
 | `DATABASE_URL` | Optional: a single connection string that overrides the `DATABASE_*` fields above. |
 | `BETTER_AUTH_SECRET` | Better Auth signing secret. Change this for anything beyond local development. |
 | `BETTER_AUTH_URL` | Base URL Better Auth uses for callbacks. |
 | `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAME_SITE` | Session cookie behavior; matters most for cross-domain cookies between `api` and `web` in production. |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | OAuth provider credentials. Optional for local development — see below. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | OAuth provider credentials. Required for the provider(s) you want to use locally. |
 
 ## Authentication
 
-Production sign-in is OAuth-only (Google and Discord), handled by [Better Auth](https://better-auth.com) mounted inside NestJS via the community package `@thallesp/nestjs-better-auth`.
+Sign-in is OAuth-only (Google and Discord), handled by [Better Auth](https://better-auth.com) mounted inside NestJS via the community package `@thallesp/nestjs-better-auth`.
 
-For local development, you don't need OAuth credentials: when `NODE_ENV=development`, a dev-only email/password provider is enabled and seeded with fixed test accounts (`dev-fixtures/`) on startup. The Nuxt login page renders a picker for these accounts automatically. This path is fail-closed — any other `NODE_ENV` value disables it, including production.
+Local development uses the same sign-in path as deployed environments. Configure at least one OAuth provider in `.env` before testing login locally.
 
 ## Commands
 
@@ -79,7 +78,6 @@ There's no `pnpm build` step documented here for local development — CI valida
 - `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and the service that attaches Colyseus onto Nest's underlying HTTP server.
 - `auth/` — TypeORM entities for Better Auth's own tables. `src/auth.ts` (outside `auth/`) holds the Better Auth instance factory.
-- `dev-fixtures/` — dev-only module seeding fixed email/password test accounts, gated on `NODE_ENV=development`.
 - `runtime-config.ts` — reads all environment variables in one place; use this instead of reading `process.env` directly elsewhere in the codebase.
 
 ### Realtime (Colyseus)

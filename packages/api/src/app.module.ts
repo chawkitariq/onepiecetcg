@@ -12,7 +12,6 @@ import { BetterAuthUser } from './auth/better-auth-user.entity';
 import { BetterAuthVerification } from './auth/better-auth-verification.entity';
 import { CatalogModule } from './catalog/catalog.module';
 import { DecksModule } from './decks/decks.module';
-import { DevFixturesModule } from './dev-fixtures/dev-fixtures.module';
 import { ColyseusService } from './realtime/colyseus.service';
 import { LobbyController } from './realtime/lobby.controller';
 import { getApiConfig } from './runtime-config';
@@ -52,7 +51,6 @@ import { StatsModule } from './stats/stats.module';
     AccountsModule,
     CatalogModule,
     DecksModule,
-    DevFixturesModule,
     SpikeModule,
     StatsModule,
   ],

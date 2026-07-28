@@ -15,7 +15,6 @@ jest.mock('./runtime-config', () => ({
   getApiConfig: jest.fn(() => ({
     databaseUrl: 'postgres://test:test@localhost:5432/onepiecetcg',
     webOrigin: 'http://localhost:3001',
-    isDevelopment: false,
     auth: {
       secret: 'secret',
       baseURL: 'http://localhost:3000',
