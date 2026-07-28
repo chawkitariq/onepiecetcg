@@ -1,45 +1,20 @@
 import type {
   DuelCard,
   DuelPlayer,
-  DuelState,
   EffectDecisionResponse,
-  PendingEffectDecision,
-  EffectTargetSelector,
 } from '@onepiecetcg/shared';
 import {
   EffectEngine,
-  type EffectEngineHost,
   type EffectEventType,
 } from '../card-effect/effect-engine';
 import { effectRegistry } from '../card-effect/effect-registry';
+import {
+  createDuelEffectEngineHost,
+  type DuelEffectEngineHostDeps,
+} from './duel-effect-engine-host';
 import { DuelManualTriggerManager } from './duel-manual-trigger-manager';
 
-export type DuelRoomEffectBoundaryDeps = {
-  state: DuelState;
-  addLog: (message: string) => void;
-  onPendingEffectDecisionChange?: (
-    decision: PendingEffectDecision | null,
-  ) => void;
-  getPlayer: (sessionId: string) => DuelPlayer | undefined;
-  getOpponentSessionId: (sessionId: string) => string | null;
-  getCard: (instanceId: string) => DuelCard | null;
-  getCards: (
-    selector: EffectTargetSelector,
-    controllerSessionId: string,
-  ) => DuelCard[];
-  moveCard: EffectEngineHost['moveCard'];
-  shuffleDeck: (playerSessionId: string) => void;
-  drawCard: (playerSessionId: string) => DuelCard | null;
-  trashTopDeckCards: (playerSessionId: string, amount: number) => DuelCard[];
-  addDonToCost: (
-    playerSessionId: string,
-    amount: number,
-    rested: boolean,
-  ) => number;
-  attachDon: EffectEngineHost['attachDon'];
-  returnDonToDonDeck: (playerSessionId: string, amount: number) => number;
-  koCharacter: EffectEngineHost['koCharacter'];
-  syncPlayer: (playerSessionId: string) => void;
+export type DuelRoomEffectBoundaryDeps = DuelEffectEngineHostDeps & {
   broadcastCardView: (card: DuelCard) => void;
 };
 
@@ -55,25 +30,10 @@ export class DuelRoomEffectBoundary {
   private readonly manualTriggers: DuelManualTriggerManager;
 
   public constructor(private readonly deps: DuelRoomEffectBoundaryDeps) {
-    this.engine = new EffectEngine(effectRegistry, {
-      state: deps.state,
-      addLog: deps.addLog,
-      onPendingDecisionChange: (decision) =>
-        deps.onPendingEffectDecisionChange?.(decision),
-      getPlayer: deps.getPlayer,
-      getOpponentSessionId: deps.getOpponentSessionId,
-      getCard: deps.getCard,
-      getCards: deps.getCards,
-      moveCard: deps.moveCard,
-      shuffleDeck: deps.shuffleDeck,
-      drawCard: deps.drawCard,
-      trashTopDeckCards: deps.trashTopDeckCards,
-      addDonToCost: deps.addDonToCost,
-      attachDon: deps.attachDon,
-      returnDonToDonDeck: deps.returnDonToDonDeck,
-      koCharacter: deps.koCharacter,
-      syncPlayer: deps.syncPlayer,
-    });
+    this.engine = new EffectEngine(
+      effectRegistry,
+      createDuelEffectEngineHost(deps),
+    );
     this.manualTriggers = new DuelManualTriggerManager({
       state: deps.state,
       addLog: deps.addLog,
