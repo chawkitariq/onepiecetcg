@@ -7,8 +7,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { PlayerAccount } from '../accounts/player-account.entity';
-import { SavedDeck } from '../decks/saved-deck.entity';
+import { PlayerAccount } from '../player-account/player-account.entity';
+import { SavedDeck } from '../deck/saved-deck.entity';
 
 /**
  * One row per duel that ended via a clean structural game-end: life-to-zero,

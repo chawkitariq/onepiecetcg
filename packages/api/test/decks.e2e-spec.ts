@@ -5,7 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import type { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
-import { SavedDeck } from '../src/decks/saved-deck.entity';
+import { SavedDeck } from '../src/deck/saved-deck.entity';
 import { createAuthenticatedTestUser } from './auth-fixture';
 
 type CreateDeckErrorBody = { message: string; validation: { valid: boolean } };

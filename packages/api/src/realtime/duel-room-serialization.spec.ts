@@ -12,8 +12,8 @@ import {
 import { listDescribedDuelRooms } from './lobby';
 
 jest.mock('@onepiecetcg/shared', () => {
-  const sharedMock: typeof import('../decks/shared-test.mock') =
-    jest.requireActual('../decks/shared-test.mock');
+  const sharedMock: typeof import('../deck/shared-test.mock') =
+    jest.requireActual('../deck/shared-test.mock');
 
   return sharedMock;
 });

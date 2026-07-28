@@ -4,14 +4,14 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AccountsModule } from './accounts/accounts.module';
+import { PlayerAccountModule } from './player-account/player-account.module';
 import { createAuth } from './auth';
-import { BetterAuthAccount } from './auth/better-auth-account.entity';
-import { BetterAuthSession } from './auth/better-auth-session.entity';
-import { BetterAuthUser } from './auth/better-auth-user.entity';
-import { BetterAuthVerification } from './auth/better-auth-verification.entity';
+import { BetterAuthAccount } from './better-auth/better-auth-account.entity';
+import { BetterAuthSession } from './better-auth/better-auth-session.entity';
+import { BetterAuthUser } from './better-auth/better-auth-user.entity';
+import { BetterAuthVerification } from './better-auth/better-auth-verification.entity';
 import { CatalogModule } from './catalog/catalog.module';
-import { DecksModule } from './decks/decks.module';
+import { DeckModule } from './deck/deck.module';
 import { ColyseusService } from './realtime/colyseus.service';
 import { LobbyController } from './realtime/lobby.controller';
 import { getApiConfig } from './runtime-config';
@@ -47,9 +47,9 @@ import { StatsModule } from './stats/stats.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    AccountsModule,
+    PlayerAccountModule,
     CatalogModule,
-    DecksModule,
+    DeckModule,
     StatsModule,
   ],
   controllers: [AppController, LobbyController],

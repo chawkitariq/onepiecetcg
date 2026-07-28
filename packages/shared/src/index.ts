@@ -185,9 +185,12 @@ export type PublicCard = {
   type: CardType;
   colors: CardColor[];
   cost: number | null;
+  basePower?: number | null;
   power: number | null;
   life: number | null;
   counter: number | null;
+  attributes?: string[];
+  families?: string[];
   imageUrl: string | null;
   rested: boolean;
   attachedDon: number;
@@ -346,3 +349,4 @@ export function parseDeckText(
 }
 
 export * from './duel-state-schema.js';
+export * from './effects.js';

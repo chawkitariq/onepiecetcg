@@ -1,15 +1,18 @@
 import { Controller, Delete, Get, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { Request } from 'express';
-import { AccountsService, type AuthenticatedUser } from './accounts.service';
+import {
+  PlayerAccountService,
+  type AuthenticatedUser,
+} from './player-account.service';
 
 type AuthenticatedRequest = Request & {
   user: AuthenticatedUser;
 };
 
 @Controller()
-export class AccountsController {
-  constructor(private readonly accountsService: AccountsService) {}
+export class PlayerAccountController {
+  constructor(private readonly accountsService: PlayerAccountService) {}
 
   @UseGuards(AuthGuard)
   @Get('me')

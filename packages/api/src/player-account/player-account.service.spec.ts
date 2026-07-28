@@ -1,15 +1,15 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, type Repository } from 'typeorm';
-import { BetterAuthAccount } from '../auth/better-auth-account.entity';
-import { BetterAuthSession } from '../auth/better-auth-session.entity';
-import { BetterAuthUser } from '../auth/better-auth-user.entity';
-import { BetterAuthVerification } from '../auth/better-auth-verification.entity';
-import { AccountsService } from './accounts.service';
+import { BetterAuthAccount } from '../better-auth/better-auth-account.entity';
+import { BetterAuthSession } from '../better-auth/better-auth-session.entity';
+import { BetterAuthUser } from '../better-auth/better-auth-user.entity';
+import { BetterAuthVerification } from '../better-auth/better-auth-verification.entity';
+import { PlayerAccountService } from './player-account.service';
 import { PlayerAccount } from './player-account.entity';
 
-describe('AccountsService', () => {
-  let service: AccountsService;
+describe('PlayerAccountService', () => {
+  let service: PlayerAccountService;
   let repository: jest.Mocked<
     Pick<Repository<PlayerAccount>, 'create' | 'findOne' | 'save'>
   >;
@@ -51,7 +51,7 @@ describe('AccountsService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AccountsService,
+        PlayerAccountService,
         {
           provide: getRepositoryToken(PlayerAccount),
           useValue: repository,
@@ -63,7 +63,7 @@ describe('AccountsService', () => {
       ],
     }).compile();
 
-    service = module.get(AccountsService);
+    service = module.get(PlayerAccountService);
   });
 
   it('creates a persistent player account for a new auth user', async () => {

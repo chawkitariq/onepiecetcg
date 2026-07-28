@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PlayerAccount } from '../accounts/player-account.entity';
+import { PlayerAccount } from '../player-account/player-account.entity';
 
 @Entity({ name: 'saved_decks' })
 export class SavedDeck {

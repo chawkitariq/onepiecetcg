@@ -4,7 +4,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Encoder } from '@colyseus/schema';
 import type { Server as HttpServer } from 'node:http';
 import { createAuth } from '../auth';
-import { DecksService } from '../decks/decks.service';
+import { DeckService } from '../deck/deck.service';
 import { StatsService } from '../stats/stats.service';
 import {
   DuelRoom,
@@ -17,7 +17,7 @@ export class ColyseusService implements OnModuleDestroy {
   private gameServer?: Server;
 
   constructor(
-    private readonly decksService: DecksService,
+    private readonly decksService: DeckService,
     private readonly statsService: StatsService,
   ) {}
 
