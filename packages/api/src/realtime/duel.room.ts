@@ -926,11 +926,16 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    if (attackerCard.playedThisTurn) {
+    if (attackerCard.playedThisTurn && !attackerCard.hasRush) {
       this.sendError(
         client,
         'Un Personnage joue ce tour-ci ne peut pas attaquer.',
       );
+      return;
+    }
+
+    if (attackerCard.cannotAttackUntilTurn >= this.state.turn) {
+      this.sendError(client, 'Ce Personnage ne peut pas attaquer pour le moment.');
       return;
     }
 
@@ -947,7 +952,18 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
+    const forcedTargets = defender.zones.characters.filter(
+      (card) => card.mustBeAttackTarget,
+    );
+
     if (message.targetType === 'leader') {
+      if (forcedTargets.length > 0) {
+        this.sendError(
+          client,
+          'Une autre carte doit etre choisie comme cible de cette attaque.',
+        );
+        return;
+      }
       // valid unconditionally: attacking the opposing Leader has no epuise requirement.
     } else if (message.targetType === 'character') {
       const targetFound = message.targetInstanceId
@@ -959,10 +975,21 @@ export class DuelRoom extends Room<DuelState> {
         return;
       }
 
-      if (!targetFound.card.rested) {
+      if (!targetFound.card.rested && !attackerCard.canAttackActiveCharacters) {
         this.sendError(
           client,
           'Seul un Personnage adverse epuise peut etre cible.',
+        );
+        return;
+      }
+
+      if (
+        forcedTargets.length > 0 &&
+        !forcedTargets.some((card) => card.instanceId === targetFound.card.instanceId)
+      ) {
+        this.sendError(
+          client,
+          'Une autre carte doit etre choisie comme cible de cette attaque.',
         );
         return;
       }
@@ -1163,6 +1190,15 @@ export class DuelRoom extends Room<DuelState> {
         sourceCardId: found.card.cardId,
       });
     }
+
+    if (found.card.type === 'Event') {
+      this.effectEngine.handleEvent({
+        type: 'onEventActivated',
+        playerSessionId: defender.sessionId,
+        sourceInstanceId: found.card.instanceId,
+        sourceCardId: found.card.cardId,
+      });
+    }
   }
 
   private handleFinishCounterStep(client: Client) {
@@ -1217,7 +1253,7 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    this.dealLeaderDamage(defender);
+    this.dealLeaderDamage(defender, attackerCard);
   }
 
   /**
@@ -1277,7 +1313,22 @@ export class DuelRoom extends Room<DuelState> {
     this.effectEngine.reapplyContinuousEffects();
   }
 
-  private dealLeaderDamage(defender: DuelPlayer) {
+  private dealLeaderDamage(defender: DuelPlayer, attackerCard: DuelCard) {
+    const damageCount = attackerCard.hasDoubleAttack ? 2 : 1;
+
+    for (let damageIndex = 0; damageIndex < damageCount; damageIndex += 1) {
+      if (!this.resolveSingleLeaderDamage(defender, attackerCard)) {
+        return;
+      }
+    }
+
+    this.endCombat();
+  }
+
+  private resolveSingleLeaderDamage(
+    defender: DuelPlayer,
+    attackerCard: DuelCard,
+  ): boolean {
     if (defender.zones.life.length === 0) {
       this.finalizeMatch(
         'life',
@@ -1288,7 +1339,7 @@ export class DuelRoom extends Room<DuelState> {
       );
       this.endCombat();
       this.recordMatchResult();
-      return;
+      return false;
     }
 
     const revealedCard = defender.zones.life.shift();
@@ -1296,10 +1347,19 @@ export class DuelRoom extends Room<DuelState> {
 
     if (!revealedCard) {
       this.endCombat();
-      return;
+      return false;
     }
 
     revealedCard.faceDown = false;
+
+    if (attackerCard.hasBanish) {
+      this.unshiftIntoZone(defender.zones.trash, revealedCard);
+      this.broadcastCardView(revealedCard);
+      this.addLog(
+        `${defender.displayName} subit 1 degat en [Banish] et la carte de Vie est mise a la Defausse.`,
+      );
+      return true;
+    }
 
     if (
       effectRegistry.effectsByCardId[revealedCard.cardId]?.standard?.some(
@@ -1317,7 +1377,7 @@ export class DuelRoom extends Room<DuelState> {
       if (!this.effectEngine.getPendingDecision()) {
         this.endCombat();
       }
-      return;
+      return false;
     }
 
     if (revealedCard.trigger) {
@@ -1327,7 +1387,7 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(
         `${defender.displayName} subit 1 degat et revele une carte avec [Declenchement] : decision en attente.`,
       );
-      return;
+      return false;
     }
 
     defender.zones.hand.push(revealedCard);
@@ -1335,7 +1395,7 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(
       `${defender.displayName} subit 1 degat et ajoute la carte de Vie a sa main.`,
     );
-    this.endCombat();
+    return true;
   }
 
   private handleResolveTrigger(client: Client, message: ResolveTriggerMessage) {
@@ -1521,6 +1581,12 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(`${player.displayName} active ${card.name}.`);
       this.effectEngine.handleEvent({
         type: 'activateMain',
+        playerSessionId: player.sessionId,
+        sourceInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+      });
+      this.effectEngine.handleEvent({
+        type: 'onEventActivated',
         playerSessionId: player.sessionId,
         sourceInstanceId: card.instanceId,
         sourceCardId: card.cardId,

@@ -12,6 +12,7 @@ const triggerTypes = [
   'onPlay',
   'activateMain',
   'activateCounter',
+  'onEventActivated',
   'whenAttacking',
   'onKo',
   'trigger',

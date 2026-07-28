@@ -986,4 +986,754 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.deck).toContain(nonMatching1);
     expect(host.getPlayer('p1')?.zones.deck).toContain(nonMatching2);
   });
+
+  it('assigns the discard decision to the opponent when an effect makes them trash from hand', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const xDrake = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-114',
+        number: 'OP01-114',
+        name: 'X.Drake',
+        type: 'Character',
+      }),
+      'x-drake',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-COST-1',
+        number: 'DON-COST-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-cost-1',
+    );
+    const kept = host.addCardToZone(
+      'p2',
+      'hand',
+      makeCard({
+        id: 'P2-HAND-1',
+        number: 'P2-HAND-1',
+        name: 'Kept Card',
+        type: 'Character',
+      }),
+      'kept',
+    );
+    const trashed = host.addCardToZone(
+      'p2',
+      'hand',
+      makeCard({
+        id: 'P2-HAND-2',
+        number: 'P2-HAND-2',
+        name: 'Trashed Card',
+        type: 'Character',
+      }),
+      'trashed',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: xDrake.instanceId,
+      sourceCardId: xDrake.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.playerSessionId).toBe('p2');
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [trashed.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.hand).toContain(kept);
+    expect(host.getPlayer('p2')?.zones.hand).not.toContain(trashed);
+    expect(host.getPlayer('p2')?.zones.trash[0]).toBe(trashed);
+  });
+
+  it('applies counter-phase power bonuses until end of battle only', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const eventCard = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP01-058',
+        number: 'OP01-058',
+        name: 'Punk Gibson',
+        type: 'Event',
+      }),
+      'punk-gibson',
+    );
+    const enemy = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'ENEMY-REST',
+        number: 'ENEMY-REST',
+        name: 'Enemy',
+        type: 'Character',
+        cost: 4,
+      }),
+      'enemy',
+    );
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: eventCard.instanceId,
+      sourceCardId: eventCard.cardId,
+    });
+
+    const firstDecision = engine.getPendingDecision();
+    expect(firstDecision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: firstDecision?.id ?? '',
+      selectedCardInstanceIds: [host.getPlayer('p1')?.zones.leader.instanceId ?? ''],
+    });
+
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(9000);
+    expect(enemy.rested).toBe(true);
+
+    engine.clearCombatModifiers();
+
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(5000);
+  });
+
+  it('counts attached and cost DON toward total DON conditions', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const kyoshirou = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-095',
+        number: 'OP01-095',
+        name: 'Kyoshirou',
+        type: 'Character',
+      }),
+      'kyoshirou',
+    );
+    kyoshirou.attachedDon = 1;
+    host.getPlayer('p1')!.zones.leader.attachedDon = 1;
+
+    for (let index = 0; index < 6; index += 1) {
+      host.addCardToZone(
+        'p1',
+        'cost',
+        makeCard({
+          id: `DON-${index}`,
+          number: `DON-${index}`,
+          name: 'DON!!',
+          type: 'DON!!',
+          cost: 0,
+          power: 0,
+        }),
+        `don-${index}`,
+      );
+    }
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-001',
+        number: 'DRAW-001',
+        name: 'Drawn Card',
+        type: 'Character',
+      }),
+      'drawn-card',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: kyoshirou.instanceId,
+      sourceCardId: kyoshirou.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+  });
+
+  it('moves a selected character to its owner hand with selectedCardOwner', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const overheat = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP01-086',
+        number: 'OP01-086',
+        name: 'Overheat',
+        type: 'Event',
+      }),
+      'overheat',
+    );
+    const enemy = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'ENEMY-001',
+        number: 'ENEMY-001',
+        name: 'Enemy',
+        type: 'Character',
+        cost: 3,
+      }),
+      'enemy',
+    );
+
+    engine.handleEvent({
+      type: 'trigger',
+      playerSessionId: 'p1',
+      sourceInstanceId: overheat.instanceId,
+      sourceCardId: overheat.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [enemy.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.hand).toContain(enemy);
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(enemy);
+  });
+
+  it('shuffles the deck after a full-deck search effect', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const orochi = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-098',
+        number: 'OP01-098',
+        name: 'Kurozumi Orochi',
+        type: 'Character',
+      }),
+      'orochi',
+    );
+    const top = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP',
+        number: 'TOP',
+        name: 'Top Card',
+        type: 'Character',
+      }),
+      'top',
+    );
+    const smile = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'SMILE',
+        number: 'SMILE',
+        name: 'Artificial Devil Fruit SMILE',
+        type: 'Event',
+      }),
+      'smile',
+    );
+    const bottom = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'BOTTOM',
+        number: 'BOTTOM',
+        name: 'Bottom Card',
+        type: 'Character',
+      }),
+      'bottom',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: orochi.instanceId,
+      sourceCardId: orochi.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [smile.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toContain(smile);
+    expect(host.getPlayer('p1')?.zones.deck[0]).toBe(bottom);
+    expect(host.getPlayer('p1')?.zones.deck[1]).toBe(top);
+  });
+
+  it('reorders a viewed deck window between the top and bottom in chosen order', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const perona = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-077',
+        number: 'OP01-077',
+        name: 'Perona',
+        type: 'Character',
+      }),
+      'perona',
+    );
+    const top1 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'TOP-1', number: 'TOP-1', name: 'Top 1', type: 'Character' }),
+      'top-1',
+    );
+    const top2 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'TOP-2', number: 'TOP-2', name: 'Top 2', type: 'Character' }),
+      'top-2',
+    );
+    const top3 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'TOP-3', number: 'TOP-3', name: 'Top 3', type: 'Character' }),
+      'top-3',
+    );
+    const top4 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'TOP-4', number: 'TOP-4', name: 'Top 4', type: 'Character' }),
+      'top-4',
+    );
+    const top5 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'TOP-5', number: 'TOP-5', name: 'Top 5', type: 'Character' }),
+      'top-5',
+    );
+    const nextTop = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'TOP-6', number: 'TOP-6', name: 'Next Top', type: 'Character' }),
+      'top-6',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: perona.instanceId,
+      sourceCardId: perona.cardId,
+    });
+
+    let decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: [top2.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: ['top'],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: [top5.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: ['bottom'],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: [top1.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: ['top'],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: [top4.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: ['bottom'],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: [top3.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: ['top'],
+    });
+
+    const deck = host.getPlayer('p1')?.zones.deck ?? [];
+    expect(deck[0]).toBe(top2);
+    expect(deck[1]).toBe(top1);
+    expect(deck[2]).toBe(top3);
+    expect(deck[3]).toBe(nextTop);
+    expect(deck.at(-2)).toBe(top5);
+    expect(deck.at(-1)).toBe(top4);
+  });
+
+  it('triggers an in-play reaction when the opponent activates an Event', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    host.state.activePlayerSessionId = 'p1';
+    const engine = new EffectEngine(createRegistry(), host);
+    const usopp = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-004',
+        number: 'OP01-004',
+        name: 'Usopp',
+        type: 'Character',
+      }),
+      'usopp',
+    );
+    usopp.attachedDon = 1;
+    const enemyEvent = host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'EVENT-001',
+        number: 'EVENT-001',
+        name: 'Enemy Event',
+        type: 'Event',
+      }),
+      'enemy-event',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-001',
+        number: 'DRAW-001',
+        name: 'Drawn Card',
+        type: 'Character',
+      }),
+      'drawn',
+    );
+
+    engine.handleEvent({
+      type: 'onEventActivated',
+      playerSessionId: 'p2',
+      sourceInstanceId: enemyEvent.instanceId,
+      sourceCardId: enemyEvent.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+  });
+
+  it('triggers a leader reaction when you activate an Event', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const leader = host.getPlayer('p1')!.zones.leader;
+    leader.cardId = 'OP01-062';
+    leader.number = 'OP01-062';
+    leader.name = 'Crocodile';
+    leader.type = 'Leader';
+    leader.attachedDon = 1;
+    const ownEvent = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'EVENT-002',
+        number: 'EVENT-002',
+        name: 'Own Event',
+        type: 'Event',
+      }),
+      'own-event',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-002',
+        number: 'DRAW-002',
+        name: 'Leader Draw',
+        type: 'Character',
+      }),
+      'leader-draw',
+    );
+
+    engine.handleEvent({
+      type: 'onEventActivated',
+      playerSessionId: 'p1',
+      sourceInstanceId: ownEvent.instanceId,
+      sourceCardId: ownEvent.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      confirmed: true,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+  });
+
+  it('grants temporary rush from Queen on play and clears it at end of turn', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const queen = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-097',
+        number: 'OP01-097',
+        name: 'Queen',
+        type: 'Character',
+      }),
+      'queen',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-COST-QUEEN',
+        number: 'DON-COST-QUEEN',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-queen',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: queen.instanceId,
+      sourceCardId: queen.cardId,
+    });
+
+    expect(queen.hasRush).toBe(true);
+
+    engine.clearTurnModifiers();
+
+    expect(queen.hasRush).toBe(false);
+  });
+
+  it('triggers an in-play reaction when the opponent character is KOd', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    host.state.activePlayerSessionId = 'p1';
+    const engine = new EffectEngine(createRegistry(), host);
+    const kaido = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-061',
+        number: 'OP01-061',
+        name: 'Kaido',
+        type: 'Character',
+      }),
+      'kaido',
+    );
+    kaido.attachedDon = 1;
+    host.addCardToZone(
+      'p1',
+      'donDeck',
+      makeCard({
+        id: 'DON-DECK-KAIDO',
+        number: 'DON-DECK-KAIDO',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-kaido',
+    );
+    const enemy = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'ENEMY-KO',
+        number: 'ENEMY-KO',
+        name: 'Enemy KO',
+        type: 'Character',
+      }),
+      'enemy-ko',
+    );
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p2',
+      sourceInstanceId: enemy.instanceId,
+      sourceCardId: enemy.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.cost[0]?.rested).toBe(false);
+  });
+
+  it('supports wiping all characters except the source with a declarative action', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const wipeDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'WIPE-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'wipe-all-others',
+                text: 'K.O. all Characters other than this Character.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'koAllCharacters' as const,
+                    selector: {
+                      player: 'either' as const,
+                      zones: ['characters'],
+                      filter: { cardCategory: ['Character'] },
+                    },
+                    excludeSource: true,
+                    reason: 'effect' as const,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, wipeDefinition]),
+      host,
+    );
+    const source = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'WIPE-001',
+        number: 'WIPE-001',
+        name: 'Wipe Source',
+        type: 'Character',
+      }),
+      'wipe-source',
+    );
+    const ally = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-WIPE',
+        number: 'ALLY-WIPE',
+        name: 'Ally Wipe',
+        type: 'Character',
+      }),
+      'ally-wipe',
+    );
+    const enemy = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'ENEMY-WIPE',
+        number: 'ENEMY-WIPE',
+        name: 'Enemy Wipe',
+        type: 'Character',
+      }),
+      'enemy-wipe',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.characters).toContain(source);
+    expect(host.getPlayer('p1')?.zones.characters).not.toContain(ally);
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(enemy);
+  });
+
+  it('supports continuous variable power based on counted cards and a divisor', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const mr1 = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-083',
+        number: 'OP01-083',
+        name: 'Mr.1 (Daz.Bonez)',
+        type: 'Character',
+        power: 4000,
+      }),
+      'mr1',
+    );
+    mr1.attachedDon = 1;
+    host.getPlayer('p1')!.zones.leader.families.push('Baroque Works');
+    host.state.activePlayerSessionId = 'p1';
+
+    for (let index = 0; index < 5; index += 1) {
+      host.addCardToZone(
+        'p1',
+        'trash',
+        makeCard({
+          id: `EVENT-${index}`,
+          number: `EVENT-${index}`,
+          name: `Event ${index}`,
+          type: 'Event',
+        }),
+        `event-${index}`,
+      );
+    }
+
+    engine.reapplyContinuousEffects();
+
+    expect(mr1.power).toBe(6000);
+  });
 });

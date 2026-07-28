@@ -195,6 +195,12 @@ export type PublicCard = {
   rested: boolean;
   attachedDon: number;
   playedThisTurn: boolean;
+  hasRush: boolean;
+  hasDoubleAttack: boolean;
+  hasBanish: boolean;
+  canAttackActiveCharacters: boolean;
+  mustBeAttackTarget: boolean;
+  cannotAttackUntilTurn: number;
 };
 
 export type PrivateCard = PublicCard & {

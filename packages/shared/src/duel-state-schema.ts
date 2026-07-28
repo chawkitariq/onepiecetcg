@@ -94,6 +94,30 @@ export class DuelCard extends Schema {
 
   @type('boolean')
   playedThisTurn = false;
+
+  @view()
+  @type('boolean')
+  hasRush = false;
+
+  @view()
+  @type('boolean')
+  hasDoubleAttack = false;
+
+  @view()
+  @type('boolean')
+  hasBanish = false;
+
+  @view()
+  @type('boolean')
+  canAttackActiveCharacters = false;
+
+  @view()
+  @type('boolean')
+  mustBeAttackTarget = false;
+
+  @view()
+  @type('number')
+  cannotAttackUntilTurn = 0;
 }
 
 export class DuelZones extends Schema {

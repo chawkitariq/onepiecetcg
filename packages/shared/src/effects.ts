@@ -4,6 +4,7 @@ export type EffectTriggerType =
   | 'onPlay'
   | 'activateMain'
   | 'activateCounter'
+  | 'onEventActivated'
   | 'whenAttacking'
   | 'onKo'
   | 'trigger'
@@ -12,6 +13,13 @@ export type EffectTriggerType =
   | 'onTurnEnd';
 
 export type EffectOwnerSelector = 'self' | 'opponent' | 'either';
+
+export type EffectKeyword =
+  | 'rush'
+  | 'doubleAttack'
+  | 'banish'
+  | 'canAttackActiveCharacters'
+  | 'mustBeAttackTarget';
 
 export type EffectCount =
   | { kind: 'exact'; value: number }
@@ -24,6 +32,7 @@ export type EffectCondition =
   | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
   | { type: 'targetExists'; selector: EffectTargetSelector }
   | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
   | { type: 'targetCountAtMost'; selector: EffectTargetSelector; value: number }
@@ -46,6 +55,7 @@ export type EffectCardFilter = {
 
 export type EffectTargetSelector = {
   player: EffectOwnerSelector;
+  chooser?: EffectOwnerSelector;
   zones: GameZone[];
   filter?: EffectCardFilter;
   count?: EffectCount;
@@ -127,6 +137,12 @@ export type EffectAction =
       reason?: 'battle' | 'effect';
     }
   | {
+      type: 'koAllCharacters';
+      selector: EffectTargetSelector;
+      excludeSource?: boolean;
+      reason?: 'battle' | 'effect';
+    }
+  | {
       type: 'trashFromDeck';
       player: EffectOwnerSelector;
       amount: number;
@@ -190,6 +206,17 @@ export type EffectAction =
       description?: string;
     }
   | {
+      type: 'grantKeywords';
+      selector: EffectTargetSelector;
+      keywords: EffectKeyword[];
+      duration: EffectDuration;
+    }
+  | {
+      type: 'restrictAttack';
+      selector: EffectTargetSelector;
+      turns: number;
+    }
+  | {
       type: 'activateEffect';
       cardId: string;
       effectId: string;
@@ -208,6 +235,11 @@ export type EffectAction =
   | {
       type: 'shuffleDeck';
       player: EffectOwnerSelector;
+    }
+  | {
+      type: 'arrangeDeckWindow';
+      player: EffectOwnerSelector;
+      amount: number;
     };
 
 export type StandardEffectDefinition = {
@@ -226,6 +258,14 @@ export type ContinuousEffectDefinition = {
   modifier: {
     selector: EffectTargetSelector;
     power?: number;
+    powerPerCount?:
+      | {
+          selector: EffectTargetSelector;
+          amount: number;
+          divisor?: number;
+        }
+      | undefined;
+    keywords?: EffectKeyword[];
   };
 };
 

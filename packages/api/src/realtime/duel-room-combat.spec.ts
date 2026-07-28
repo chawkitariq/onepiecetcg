@@ -819,4 +819,173 @@ describe('DuelRoom structural combat (stage 8)', () => {
 
     await disposeRoom(room);
   });
+
+  it('allows a Character with Rush to attack on the turn it entered play', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    placeUntappedDon(attacker, 1);
+    const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
+    access.handlePlayCard(fakeClient(firstSessionId), {
+      instanceId: attackerCharacterInstanceId,
+    });
+    const attackerCharacter = attacker!.zones.characters.find(
+      (card) => card.instanceId === attackerCharacterInstanceId,
+    )!;
+    attackerCharacter.hasRush = true;
+
+    access.handleDeclareAttack(fakeClient(firstSessionId), {
+      attackerInstanceId: attackerCharacterInstanceId,
+      targetType: 'leader',
+    });
+
+    expect(room.state.combat.attackerInstanceId).toBe(attackerCharacterInstanceId);
+
+    await disposeRoom(room);
+  });
+
+  it('allows a Character that can attack active Characters to target one', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    placeUntappedDon(attacker, 1);
+    const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
+    access.handlePlayCard(fakeClient(firstSessionId), {
+      instanceId: attackerCharacterInstanceId,
+    });
+    const attackerCharacter = attacker!.zones.characters.find(
+      (card) => card.instanceId === attackerCharacterInstanceId,
+    )!;
+    attackerCharacter.rested = false;
+    attackerCharacter.playedThisTurn = false;
+    attackerCharacter.canAttackActiveCharacters = true;
+
+    const defender = room.state.players.get(secondSessionId);
+    const targetInstanceId = putCharacterInPlay(defender, 'C-001', false);
+
+    access.handleDeclareAttack(fakeClient(firstSessionId), {
+      attackerInstanceId: attackerCharacterInstanceId,
+      targetType: 'character',
+      targetInstanceId,
+    });
+
+    expect(room.state.combat.targetInstanceId).toBe(targetInstanceId);
+
+    await disposeRoom(room);
+  });
+
+  it('deals 2 life damage when the attacker has Double Attack', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    attacker!.zones.leader.hasDoubleAttack = true;
+    const defender = room.state.players.get(secondSessionId);
+    const lifeBefore = defender!.zones.life.length;
+
+    access.handleDeclareAttack(fakeClient(firstSessionId), {
+      attackerInstanceId: attacker!.zones.leader.instanceId,
+      targetType: 'leader',
+    });
+    access.handleDeclareBlock(fakeClient(secondSessionId), {
+      blockerInstanceId: null,
+    });
+    access.handleFinishCounterStep(fakeClient(secondSessionId));
+
+    expect(defender!.zones.life.length).toBe(lifeBefore - 2);
+
+    await disposeRoom(room);
+  });
+
+  it('trashes the life card instead of adding it to hand when the attacker has Banish', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    attacker!.zones.leader.hasBanish = true;
+    const defender = room.state.players.get(secondSessionId);
+    const lifeBefore = defender!.zones.life.length;
+    const handBefore = defender!.zones.hand.length;
+    const topLifeCard = defender!.zones.life[0];
+
+    access.handleDeclareAttack(fakeClient(firstSessionId), {
+      attackerInstanceId: attacker!.zones.leader.instanceId,
+      targetType: 'leader',
+    });
+    access.handleDeclareBlock(fakeClient(secondSessionId), {
+      blockerInstanceId: null,
+    });
+    access.handleFinishCounterStep(fakeClient(secondSessionId));
+
+    expect(defender!.zones.life.length).toBe(lifeBefore - 1);
+    expect(defender!.zones.hand.length).toBe(handBefore);
+    expect(defender!.zones.trash.some((card) => card.instanceId === topLifeCard.instanceId)).toBe(true);
+
+    await disposeRoom(room);
+  });
+
+  it('forces attacks to target a character marked as the mandatory target', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    const defender = room.state.players.get(secondSessionId);
+    const forcedTargetId = putCharacterInPlay(defender, 'C-001', true);
+    const forcedTarget = defender!.zones.characters.find(
+      (card) => card.instanceId === forcedTargetId,
+    )!;
+    forcedTarget.mustBeAttackTarget = true;
+
+    const client = fakeClient(firstSessionId);
+    access.handleDeclareAttack(client, {
+      attackerInstanceId: attacker!.zones.leader.instanceId,
+      targetType: 'leader',
+    });
+
+    expectErrorMessage(client, 'autre carte doit etre choisie');
+
+    await disposeRoom(room);
+  });
+
+  it('rejects attacking with a character restricted until the current turn', async () => {
+    const { room, firstSessionId, secondSessionId } =
+      await createRoomAtFirstTurn();
+    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+
+    const access = asPrivateRoom(room);
+    const attacker = room.state.players.get(firstSessionId);
+    placeUntappedDon(attacker, 1);
+    const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
+    access.handlePlayCard(fakeClient(firstSessionId), {
+      instanceId: attackerCharacterInstanceId,
+    });
+    const attackerCharacter = attacker!.zones.characters.find(
+      (card) => card.instanceId === attackerCharacterInstanceId,
+    )!;
+    attackerCharacter.rested = false;
+    attackerCharacter.playedThisTurn = false;
+    attackerCharacter.cannotAttackUntilTurn = room.state.turn;
+
+    const client = fakeClient(firstSessionId);
+    access.handleDeclareAttack(client, {
+      attackerInstanceId: attackerCharacterInstanceId,
+      targetType: 'leader',
+    });
+
+    expectErrorMessage(client, 'ne peut pas attaquer');
+
+    await disposeRoom(room);
+  });
 });
