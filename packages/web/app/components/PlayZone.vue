@@ -261,8 +261,25 @@ function shouldPrioritizeSelectedDonAttach() {
   return selectedDonCount.value > 0
 }
 
+function shouldSuppressAttackDragForSelection(instanceId?: string) {
+  if (props.isSelectable) {
+    return true
+  }
+
+  if (instanceId && isCharacterSelectable(instanceId)) {
+    return true
+  }
+
+  return Boolean(props.selectableLeader)
+}
+
 function onCharacterPointerDown(instanceId: string, event: PointerEvent) {
-  if (event.button !== 0 || shouldPrioritizeSelectedDonAttach() || !isCharacterAttackable(instanceId)) {
+  if (
+    event.button !== 0
+    || shouldPrioritizeSelectedDonAttach()
+    || shouldSuppressAttackDragForSelection(instanceId)
+    || !isCharacterAttackable(instanceId)
+  ) {
     return
   }
 
@@ -278,7 +295,12 @@ function onCharacterClick(instanceId: string) {
 }
 
 function onLeaderPointerDown(event: PointerEvent) {
-  if (event.button !== 0 || shouldPrioritizeSelectedDonAttach() || !props.attackableLeader) {
+  if (
+    event.button !== 0
+    || shouldPrioritizeSelectedDonAttach()
+    || shouldSuppressAttackDragForSelection()
+    || !props.attackableLeader
+  ) {
     return
   }
 

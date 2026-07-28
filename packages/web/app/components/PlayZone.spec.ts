@@ -608,6 +608,31 @@ describe('PlayZone transitions', () => {
     expect(wrapper.emitted('characterClick')).toEqual([[0, 'character-a']])
   })
 
+  it('does not start an attack drag when an attackable character is being selected for replacement', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        isSelectable: true,
+        attackableCharacterIds: ['character-a'],
+        selectableCharacterIds: ['character-a']
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    await characterButton.trigger('pointerdown', { button: 0 })
+    await characterButton.trigger('click')
+
+    expect(wrapper.emitted('characterAttackStart')).toBeUndefined()
+    expect(wrapper.emitted('characterClick')).toEqual([[0, 'character-a']])
+  })
+
   it('marks selected untapped DON!! cards and emits a drag drop attach on the leader', async () => {
     const wrapper = mount(PlayZone, {
       props: {
