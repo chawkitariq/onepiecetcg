@@ -20,8 +20,8 @@ import {
   type FirstOrSecondChoice,
   type GamePhase,
 } from '@onepiecetcg/shared';
-import { EffectEngine } from '../game/effects/effect-engine';
-import { effectRegistry } from '../game/effects/effect-registry';
+import { EffectEngine } from '../card-effect/effect-engine';
+import { effectRegistry } from '../card-effect/effect-registry';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;

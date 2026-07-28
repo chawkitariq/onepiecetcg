@@ -14,7 +14,7 @@ registry. Matches never read effect files from disk and never rebuild global ind
 ## Folder Structure
 
 ```text
-packages/api/src/game/effects/
+packages/api/src/card-effect/
   definitions/
     index.ts
     op01.effects.ts

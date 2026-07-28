@@ -238,10 +238,19 @@ async function createRoomAtFirstTurn(): Promise<{
           leader,
           cards: [
             weakCharacter,
-            strongCharacter,
-            counterEvent,
-            triggerCharacter,
-            ...Array.from({ length: 46 }, (_, index) => ({
+            ...Array.from({ length: 4 }, (_, index) => ({
+              ...strongCharacter,
+              copyIndex: index + 1,
+            })),
+            ...Array.from({ length: 4 }, (_, index) => ({
+              ...counterEvent,
+              copyIndex: index + 1,
+            })),
+            ...Array.from({ length: 4 }, (_, index) => ({
+              ...triggerCharacter,
+              copyIndex: index + 1,
+            })),
+            ...Array.from({ length: 37 }, (_, index) => ({
               ...weakCharacter,
               copyIndex: index + 1,
             })),
