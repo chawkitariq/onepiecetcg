@@ -77,7 +77,7 @@ There's no `pnpm build` step documented here for local development — CI valida
 - `catalog/` — card catalogue: fetches and normalizes cards from the external [OPTCG API](https://optcgapi.com/api) into the shared `Card` schema, with a 12-hour in-memory cache.
 - `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and the service that attaches Colyseus onto Nest's underlying HTTP server.
-- `auth/` — TypeORM entities for Better Auth's own tables. `src/auth.ts` (outside `auth/`) holds the Better Auth instance factory.
+- `better-auth/` — TypeORM entities for Better Auth's own tables. `src/auth.ts` (outside `better-auth/`) holds the Better Auth instance factory.
 - `runtime-config.ts` — reads all environment variables in one place; use this instead of reading `process.env` directly elsewhere in the codebase.
 
 ### Realtime (Colyseus)

@@ -3,8 +3,8 @@ import { makeSignature } from 'better-auth/crypto';
 import type { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { BetterAuthSession } from '../src/auth/better-auth-session.entity';
-import { BetterAuthUser } from '../src/auth/better-auth-user.entity';
+import { BetterAuthSession } from '../src/better-auth/better-auth-session.entity';
+import { BetterAuthUser } from '../src/better-auth/better-auth-user.entity';
 import { getApiConfig } from '../src/runtime-config';
 
 export type AuthenticatedTestUser = {

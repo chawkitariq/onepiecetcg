@@ -38,7 +38,7 @@ Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`US
 - `catalog/` — card catalogue: fetches and normalizes cards from the external OPTCG API (`https://optcgapi.com/api`) into the shared `Card` schema, with a 12h in-memory cache (`CatalogService`).
 - `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and `ColyseusService`, which attaches the Colyseus server onto Nest's underlying HTTP server (see below).
-- `auth/` — TypeORM entities for Better Auth's own tables (`BetterAuthUser`, `BetterAuthAccount`, `BetterAuthSession`, `BetterAuthVerification`); `src/auth.ts` (note: outside `auth/`) holds `createAuth()`, the Better Auth instance factory.
+- `better-auth/` — TypeORM entities for Better Auth's own tables (`BetterAuthUser`, `BetterAuthAccount`, `BetterAuthSession`, `BetterAuthVerification`); `src/auth.ts` (note: outside `better-auth/`) holds `createAuth()`, the Better Auth instance factory.
 - `runtime-config.ts` — single `getApiConfig()` reads all env vars with defaults; use this instead of reading `process.env` directly elsewhere.
 
 ### Better Auth integration

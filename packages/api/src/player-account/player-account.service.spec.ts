@@ -1,10 +1,10 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, type Repository } from 'typeorm';
-import { BetterAuthAccount } from '../auth/better-auth-account.entity';
-import { BetterAuthSession } from '../auth/better-auth-session.entity';
-import { BetterAuthUser } from '../auth/better-auth-user.entity';
-import { BetterAuthVerification } from '../auth/better-auth-verification.entity';
+import { BetterAuthAccount } from '../better-auth/better-auth-account.entity';
+import { BetterAuthSession } from '../better-auth/better-auth-session.entity';
+import { BetterAuthUser } from '../better-auth/better-auth-user.entity';
+import { BetterAuthVerification } from '../better-auth/better-auth-verification.entity';
 import { PlayerAccountService } from './player-account.service';
 import { PlayerAccount } from './player-account.entity';
 
