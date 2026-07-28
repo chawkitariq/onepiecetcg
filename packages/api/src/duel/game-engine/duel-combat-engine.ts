@@ -133,6 +133,11 @@ export class DuelCombatEngine {
       return false;
     }
 
+    if (attackerCard.cannotAttack) {
+      this.deps.sendError('Cette carte ne peut pas attaquer.');
+      return false;
+    }
+
     if (attackerCard.cannotAttackUntilTurn >= this.deps.state.turn) {
       this.deps.sendError('Ce Personnage ne peut pas attaquer pour le moment.');
       return false;
@@ -156,6 +161,16 @@ export class DuelCombatEngine {
     );
 
     if (message.targetType === 'leader') {
+      if (
+        attackerCard.playedThisTurn &&
+        attackerCard.cannotAttackLeaderOnTurnPlayed
+      ) {
+        this.deps.sendError(
+          'Cette carte ne peut pas attaquer un Leader le tour ou elle est jouee.',
+        );
+        return false;
+      }
+
       if (forcedTargets.length > 0) {
         this.deps.sendError(
           'Une autre carte doit etre choisie comme cible de cette attaque.',
@@ -299,6 +314,14 @@ export class DuelCombatEngine {
       );
     } else {
       this.deps.addLog(`${defender.displayName} ne bloque pas.`);
+    }
+
+    if (!combat.blockerInstanceId && combat.targetType === 'leader') {
+      this.deps.effectBoundary.emitCardEvent(
+        'onAttacked',
+        defender.sessionId,
+        defender.zones.leader,
+      );
     }
 
     combat.step = 'countering';
@@ -556,6 +579,12 @@ export class DuelCombatEngine {
     const triggerResolution = this.deps.effectBoundary.resolveRevealedLifeCard(
       defender,
       revealedCard,
+    );
+
+    this.deps.effectBoundary.emitCardEvent(
+      'onLifeDamageDealt',
+      this.deps.getOpponentSessionId(defender.sessionId) ?? '',
+      attackerCard,
     );
 
     if (triggerResolution === 'addedToHand') {

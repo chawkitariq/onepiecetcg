@@ -275,8 +275,10 @@ class TestHost implements EffectEngineHost {
       player.zones.trash.unshift(card);
     } else if (destinationZone === 'hand') {
       player.zones.hand.push(card);
-    } else if (destinationZone === 'life') {
+    } else if (destinationZone === 'life' && options?.toBottom) {
       player.zones.life.push(card);
+    } else if (destinationZone === 'life') {
+      player.zones.life.unshift(card);
     } else if (destinationZone === 'deck' && options?.toBottom) {
       player.zones.deck.push(card);
     } else if (destinationZone === 'deck') {

@@ -144,6 +144,14 @@ export class EffectSelectorResolver {
       return false;
     }
 
+    if (filter.hasTrigger === true && card.trigger.length === 0) {
+      return false;
+    }
+
+    if (filter.hasTrigger === false && card.trigger.length > 0) {
+      return false;
+    }
+
     if (typeof filter.rested === 'boolean' && card.rested !== filter.rested) {
       return false;
     }
@@ -160,6 +168,43 @@ export class EffectSelectorResolver {
       card.ownerSessionId === controllerSessionId
     ) {
       return false;
+    }
+
+    if (filter.zonePosition) {
+      const located = this.findZoneOfCard(card);
+
+      if (!located) {
+        return false;
+      }
+
+      const zoneCards = located.player.zones[
+        located.zone as keyof typeof located.player.zones
+      ];
+
+      if (
+        !zoneCards ||
+        typeof (zoneCards as { length?: number }).length !== 'number'
+      ) {
+        return false;
+      }
+
+      const orderedCards = Array.from(zoneCards as Iterable<DuelCard>);
+
+      const isTop = orderedCards[0]?.instanceId === card.instanceId;
+      const isBottom =
+        orderedCards[orderedCards.length - 1]?.instanceId === card.instanceId;
+
+      if (filter.zonePosition === 'top' && !isTop) {
+        return false;
+      }
+
+      if (filter.zonePosition === 'bottom' && !isBottom) {
+        return false;
+      }
+
+      if (filter.zonePosition === 'topOrBottom' && !isTop && !isBottom) {
+        return false;
+      }
     }
 
     return true;

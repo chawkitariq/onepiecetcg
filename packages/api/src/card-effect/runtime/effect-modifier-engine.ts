@@ -55,9 +55,13 @@ export class EffectModifierEngine {
         card.hasBanish = false;
         card.canAttackActiveCharacters = false;
         card.mustBeAttackTarget = false;
+        card.cannotAttack = false;
+        card.cannotAttackLeaderOnTurnPlayed = false;
         card.cannotBlock = false;
         card.cannotBeKoedInBattle = false;
+        card.cannotBeKoedBySlashInBattle = false;
         card.cannotBeKoedByStrikeInBattle = false;
+        card.winOnDeckOut = false;
         card.cannotBeRemovedByOpponentEffects = false;
       }
     }
@@ -450,9 +454,13 @@ export class EffectModifierEngine {
       hasBanish: boolean;
       canAttackActiveCharacters: boolean;
       mustBeAttackTarget: boolean;
+      cannotAttack: boolean;
+      cannotAttackLeaderOnTurnPlayed: boolean;
       cannotBlock: boolean;
       cannotBeKoedInBattle: boolean;
+      cannotBeKoedBySlashInBattle: boolean;
       cannotBeKoedByStrikeInBattle: boolean;
+      winOnDeckOut: boolean;
       cannotBeRemovedByOpponentEffects: boolean;
     },
     keywords: EffectKeyword[],
@@ -474,14 +482,26 @@ export class EffectModifierEngine {
         case 'mustBeAttackTarget':
           card.mustBeAttackTarget = true;
           break;
+        case 'cannotAttack':
+          card.cannotAttack = true;
+          break;
+        case 'cannotAttackLeaderOnTurnPlayed':
+          card.cannotAttackLeaderOnTurnPlayed = true;
+          break;
         case 'cannotBlock':
           card.cannotBlock = true;
           break;
         case 'cannotBeKoedInBattle':
           card.cannotBeKoedInBattle = true;
           break;
+        case 'cannotBeKoedBySlashInBattle':
+          card.cannotBeKoedBySlashInBattle = true;
+          break;
         case 'cannotBeKoedByStrikeInBattle':
           card.cannotBeKoedByStrikeInBattle = true;
+          break;
+        case 'winOnDeckOut':
+          card.winOnDeckOut = true;
           break;
         case 'cannotBeRemovedByOpponentEffects':
           card.cannotBeRemovedByOpponentEffects = true;

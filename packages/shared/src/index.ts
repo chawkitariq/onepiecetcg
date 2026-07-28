@@ -201,9 +201,13 @@ export type PublicCard = {
   hasBanish: boolean;
   canAttackActiveCharacters: boolean;
   mustBeAttackTarget: boolean;
+  cannotAttack: boolean;
+  cannotAttackLeaderOnTurnPlayed: boolean;
   cannotBlock: boolean;
   cannotBeKoedInBattle: boolean;
+  cannotBeKoedBySlashInBattle: boolean;
   cannotBeKoedByStrikeInBattle: boolean;
+  winOnDeckOut: boolean;
   cannotAttackUntilTurn: number;
 };
 

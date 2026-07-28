@@ -121,6 +121,14 @@ export class DuelCard extends Schema {
 
   @view()
   @type('boolean')
+  cannotAttack = false;
+
+  @view()
+  @type('boolean')
+  cannotAttackLeaderOnTurnPlayed = false;
+
+  @view()
+  @type('boolean')
   cannotBlock = false;
 
   @view()
@@ -129,7 +137,15 @@ export class DuelCard extends Schema {
 
   @view()
   @type('boolean')
+  cannotBeKoedBySlashInBattle = false;
+
+  @view()
+  @type('boolean')
   cannotBeKoedByStrikeInBattle = false;
+
+  @view()
+  @type('boolean')
+  winOnDeckOut = false;
 
   @view()
   @type('boolean')

@@ -147,4 +147,29 @@ describe('DuelTurnEngine', () => {
     expect(onMatchStarted).toHaveBeenCalledTimes(1);
     expect(emitWindowEffects).toHaveBeenCalledWith('onTurnStart');
   });
+
+  it('awards the win to the drawing player when their Leader has winOnDeckOut', () => {
+    const { deps, state } = createDeps();
+    const engine = new DuelTurnEngine(deps);
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    engine.initializeGame();
+
+    engine.handleChooseFirstOrSecond('session-a', 'first');
+    engine.handleMulligan('session-a', false);
+    engine.handleMulligan('session-b', false);
+
+    const activePlayer = state.players.get('session-a');
+    expect(activePlayer).toBeDefined();
+    activePlayer!.zones.leader.winOnDeckOut = true;
+    activePlayer!.zones.deck.splice(0);
+    state.turn = 2;
+    state.phase = 'refresh';
+    state.activePlayerSessionId = 'session-a';
+
+    const result = engine.handleEndPhase('session-a');
+
+    expect(result).toBeNull();
+    expect(deps.finalizeMatch).toHaveBeenCalledWith('deckOut', 'session-a');
+    expect(deps.recordMatchResult).toHaveBeenCalledTimes(1);
+  });
 });

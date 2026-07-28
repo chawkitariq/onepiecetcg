@@ -37,6 +37,25 @@ export class EffectConditionEvaluator {
           const player = playerId ? this.host.getPlayer(playerId) : undefined;
           return (player?.zones.life.length ?? 0) <= condition.value;
         }
+        case 'playerHasLessLifeThan': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const thanPlayerId = this.selectors.resolvePlayer(
+            condition.thanPlayer,
+            controllerSessionId,
+          );
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          const thanPlayer = thanPlayerId
+            ? this.host.getPlayer(thanPlayerId)
+            : undefined;
+
+          return (
+            (player?.zones.life.length ?? 0) <
+            (thanPlayer?.zones.life.length ?? 0)
+          );
+        }
         case 'playerHasLeaderName': {
           const playerId = this.selectors.resolvePlayer(
             condition.player,

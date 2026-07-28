@@ -295,36 +295,20 @@ export class EffectActionExecutor {
           this.createDecisionId(source.instanceId, action.type),
           'Choisissez la carte a deplacer.',
           (cards) => {
-            for (const card of cards) {
-              if (
-                !this.canMoveCardByEffect(
-                  card,
-                  controllerSessionId,
-                  action.destinationZone,
-                )
-              ) {
-                continue;
-              }
-
-              const playerId =
-                action.destinationPlayer === 'selectedCardOwner'
-                  ? card.ownerSessionId
-                  : this.selectors.resolvePlayer(
-                      action.destinationPlayer,
-                      controllerSessionId,
-                    );
-
-              if (!playerId) {
-                continue;
-              }
-
-              this.host.moveCard(card, playerId, action.destinationZone, {
+            this.moveCardsWithOptionalDestinationChoice(
+              cards,
+              controllerSessionId,
+              source,
+              action.destinationPlayer,
+              action.destinationZone,
+              {
                 faceDown: action.faceDown,
                 rested: action.rested,
                 toBottom: action.toBottom,
-              });
-            }
-            next();
+                chooseDestinationPosition: action.chooseDestinationPosition,
+              },
+              next,
+            );
           },
         );
         return;
@@ -385,6 +369,38 @@ export class EffectActionExecutor {
                 controllerSessionId,
                 target.instanceId,
                 action.amount,
+                action.duration.type,
+              );
+            }
+
+            this.modifiers.reapplyContinuousEffects();
+            next();
+          },
+        );
+        return;
+      }
+      case 'modifyPowerByStoredCount': {
+        const cards = context.storedSelections[action.key] ?? [];
+        const amount = cards.length * action.amountPerCard;
+
+        if (amount === 0) {
+          next();
+          return;
+        }
+
+        this.forSelectedCards(
+          action.selector,
+          controllerSessionId,
+          context,
+          this.createDecisionId(source.instanceId, action.type),
+          'Choisissez la carte dont la puissance sera modifiee.',
+          (targets) => {
+            for (const target of targets) {
+              this.modifiers.addPowerModifier(
+                source.instanceId,
+                controllerSessionId,
+                target.instanceId,
+                amount,
                 action.duration.type,
               );
             }
@@ -710,38 +726,20 @@ export class EffectActionExecutor {
       }
       case 'moveStoredCards': {
         const cards = context.storedSelections[action.key] ?? [];
-
-        for (const card of cards) {
-          if (
-            !this.canMoveCardByEffect(
-              card,
-              controllerSessionId,
-              action.destinationZone,
-            )
-          ) {
-            continue;
-          }
-
-          const playerId =
-            action.destinationPlayer === 'selectedCardOwner'
-              ? card.ownerSessionId
-              : this.selectors.resolvePlayer(
-                  action.destinationPlayer,
-                  controllerSessionId,
-                );
-
-          if (!playerId) {
-            continue;
-          }
-
-          this.host.moveCard(card, playerId, action.destinationZone, {
+        this.moveCardsWithOptionalDestinationChoice(
+          cards,
+          controllerSessionId,
+          source,
+          action.destinationPlayer,
+          action.destinationZone,
+          {
             faceDown: action.faceDown,
             rested: action.rested,
             toBottom: action.toBottom,
-          });
-        }
-
-        next();
+            chooseDestinationPosition: action.chooseDestinationPosition,
+          },
+          next,
+        );
         return;
       }
       case 'ifStoredSelectionMatches': {
@@ -789,6 +787,44 @@ export class EffectActionExecutor {
               );
             }
             next();
+          },
+        );
+        return;
+      }
+      case 'chooseActionBranch': {
+        if (action.choices.length === 0) {
+          next();
+          return;
+        }
+
+        this.decisions.chooseChoices(
+          this.createDecisionId(source.instanceId, action.type),
+          controllerSessionId,
+          action.message,
+          action.choices.map((choice) => ({
+            id: choice.id,
+            label: choice.label,
+          })),
+          1,
+          1,
+          (choiceIds) => {
+            const selected = action.choices.find(
+              (choice) => choice.id === choiceIds[0],
+            );
+
+            if (!selected) {
+              next();
+              return;
+            }
+
+            this.resolveActions(
+              selected.actions,
+              controllerSessionId,
+              source,
+              context,
+              0,
+              next,
+            );
           },
         );
         return;
@@ -979,6 +1015,7 @@ export class EffectActionExecutor {
       case 'modifyPower':
       case 'modifyCost':
       case 'grantKeywords':
+      case 'modifyPowerByStoredCount':
       case 'restrictAttack':
       case 'addToLife':
       case 'detachDon':
@@ -1002,6 +1039,8 @@ export class EffectActionExecutor {
       case 'preventOwnEffectLifeToHand':
       case 'registerNextPlayCostModifier':
         return true;
+      case 'chooseActionBranch':
+        return true;
       case 'storeSelectedCards':
         return this.selectors.hasSelectableCards(
           action.selector,
@@ -1012,6 +1051,104 @@ export class EffectActionExecutor {
 
   private createDecisionId(sourceInstanceId: string, suffix: string): string {
     return `${sourceInstanceId}:${suffix}:${Math.random()}`;
+  }
+
+  private moveCardsWithOptionalDestinationChoice(
+    cards: DuelCard[],
+    controllerSessionId: string,
+    source: DuelCard,
+    destinationPlayer:
+      | import('@onepiecetcg/shared').EffectOwnerSelector
+      | 'selectedCardOwner',
+    destinationZone: string,
+    options: {
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
+    },
+    onComplete: () => void,
+    index = 0,
+  ): void {
+    if (index >= cards.length) {
+      onComplete();
+      return;
+    }
+
+    const card = cards[index];
+
+    if (
+      !this.canMoveCardByEffect(card, controllerSessionId, destinationZone)
+    ) {
+      this.moveCardsWithOptionalDestinationChoice(
+        cards,
+        controllerSessionId,
+        source,
+        destinationPlayer,
+        destinationZone,
+        options,
+        onComplete,
+        index + 1,
+      );
+      return;
+    }
+
+    const playerId =
+      destinationPlayer === 'selectedCardOwner'
+        ? card.ownerSessionId
+        : this.selectors.resolvePlayer(destinationPlayer, controllerSessionId);
+
+    if (!playerId) {
+      this.moveCardsWithOptionalDestinationChoice(
+        cards,
+        controllerSessionId,
+        source,
+        destinationPlayer,
+        destinationZone,
+        options,
+        onComplete,
+        index + 1,
+      );
+      return;
+    }
+
+    const finishMove = (toBottom: boolean | undefined) => {
+      this.host.moveCard(card, playerId, destinationZone, {
+        faceDown: options.faceDown,
+        rested: options.rested,
+        toBottom,
+      });
+      this.moveCardsWithOptionalDestinationChoice(
+        cards,
+        controllerSessionId,
+        source,
+        destinationPlayer,
+        destinationZone,
+        options,
+        onComplete,
+        index + 1,
+      );
+    };
+
+    if (!options.chooseDestinationPosition) {
+      finishMove(options.toBottom);
+      return;
+    }
+
+    this.decisions.chooseChoices(
+      `${source.instanceId}:move-pos:${card.instanceId}:${index}`,
+      controllerSessionId,
+      `Placez ${card.name} en haut ou en bas de ${destinationZone}.`,
+      [
+        { id: 'top', label: 'Haut' },
+        { id: 'bottom', label: 'Bas' },
+      ],
+      1,
+      1,
+      (choiceIds) => {
+        finishMove(choiceIds[0] === 'bottom');
+      },
+    );
   }
 
   private canMoveCardByEffect(

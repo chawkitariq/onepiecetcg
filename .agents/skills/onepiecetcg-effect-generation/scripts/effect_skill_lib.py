@@ -399,10 +399,13 @@ def extract_cards_array_body(text: str) -> str:
     array_start = match.end() - 1
     depth = 0
     in_string: str | None = None
+    in_line_comment = False
+    in_block_comment = False
     escape = False
 
     for index in range(array_start, len(text)):
         char = text[index]
+        next_char = text[index + 1] if index + 1 < len(text) else ""
 
         if in_string is not None:
             if escape:
@@ -411,6 +414,24 @@ def extract_cards_array_body(text: str) -> str:
                 escape = True
             elif char == in_string:
                 in_string = None
+            continue
+
+        if in_line_comment:
+            if char == "\n":
+                in_line_comment = False
+            continue
+
+        if in_block_comment:
+            if char == "*" and next_char == "/":
+                in_block_comment = False
+            continue
+
+        if char == "/" and next_char == "/":
+            in_line_comment = True
+            continue
+
+        if char == "/" and next_char == "*":
+            in_block_comment = True
             continue
 
         if char in ("'", '"', "`"):

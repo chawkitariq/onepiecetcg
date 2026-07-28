@@ -168,6 +168,7 @@ export class EffectEngine {
           effect.conditions ?? [],
           query.playerSessionId,
           source,
+          query,
         )
       ) {
         continue;
@@ -317,6 +318,7 @@ export class EffectEngine {
       type === 'onDonAttached' ||
       type === 'onDonReturned' ||
       type === 'onBattleKo' ||
+      type === 'onLifeDamageDealt' ||
       type === 'onTurnStart' ||
       type === 'onTurnEnd' ||
       type === 'onKo'

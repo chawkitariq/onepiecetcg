@@ -72,6 +72,10 @@ export class DuelZoneEngine {
       if (zone instanceof ArraySchema) {
         if (destinationZone === 'trash') {
           zone.unshift(card);
+        } else if (destinationZone === 'life' && options?.toBottom) {
+          zone.push(card);
+        } else if (destinationZone === 'life') {
+          zone.unshift(card);
         } else if (destinationZone === 'deck' && options?.toBottom) {
           zone.push(card);
         } else if (destinationZone === 'deck') {

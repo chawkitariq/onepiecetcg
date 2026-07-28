@@ -258,7 +258,7 @@ class TestHost implements EffectEngineHost {
     card: DuelCard,
     destinationPlayerSessionId: string,
     destinationZone: string,
-    options?: { faceDown?: boolean; rested?: boolean },
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
   ): void {
     this.removeCard(card.instanceId);
     const player = this.getPlayer(destinationPlayerSessionId);
@@ -275,8 +275,10 @@ class TestHost implements EffectEngineHost {
       player.zones.trash.unshift(card);
     } else if (destinationZone === 'hand') {
       player.zones.hand.push(card);
-    } else if (destinationZone === 'life') {
+    } else if (destinationZone === 'life' && options?.toBottom) {
       player.zones.life.push(card);
+    } else if (destinationZone === 'life') {
+      player.zones.life.unshift(card);
     } else if (destinationZone === 'deck') {
       player.zones.deck.push(card);
     } else if (destinationZone === 'donDeck') {

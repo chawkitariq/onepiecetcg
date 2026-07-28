@@ -331,6 +331,15 @@ export class DuelTurnEngine {
   }
 
   private declareDefeatByDeckOut(player: DuelPlayer): void {
+    if (player.zones.leader.winOnDeckOut) {
+      this.deps.finalizeMatch('deckOut', player.sessionId);
+      this.deps.addLog(
+        `${player.displayName} a reduit son deck a 0 et gagne a la place de perdre.`,
+      );
+      this.deps.recordMatchResult();
+      return;
+    }
+
     this.deps.finalizeMatch(
       'deckOut',
       this.deps.getOpponentSessionId(player.sessionId) ?? '',

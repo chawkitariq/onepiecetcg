@@ -9,7 +9,9 @@ export type EffectTriggerType =
   | 'onDonAttached'
   | 'onDonReturned'
   | 'onBattleKo'
+  | 'onLifeDamageDealt'
   | 'whenAttacking'
+  | 'onAttacked'
   | 'onKo'
   | 'trigger'
   | 'onBlock'
@@ -24,10 +26,14 @@ export type EffectKeyword =
   | 'banish'
   | 'canAttackActiveCharacters'
   | 'mustBeAttackTarget'
+  | 'cannotAttack'
+  | 'cannotAttackLeaderOnTurnPlayed'
   | 'cannotBlock'
   | 'cannotBeKoedInBattle'
+  | 'cannotBeKoedBySlashInBattle'
   | 'cannotBeKoedByStrikeInBattle'
-  | 'cannotBeRemovedByOpponentEffects';
+  | 'cannotBeRemovedByOpponentEffects'
+  | 'winOnDeckOut';
 
 export type EffectCount =
   | { kind: 'exact'; value: number }
@@ -37,6 +43,7 @@ export type EffectCondition =
   | { type: 'controllerTurn'; value: boolean }
   | { type: 'sourceHasAttachedDonAtLeast'; value: number }
   | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLessLifeThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
   | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
@@ -61,8 +68,10 @@ export type EffectCardFilter = {
   name?: string[];
   excludeName?: string[];
   hasNoBaseEffect?: boolean;
+  hasTrigger?: boolean;
   rested?: boolean;
   owner?: EffectOwnerSelector;
+  zonePosition?: 'top' | 'bottom' | 'topOrBottom';
 };
 
 export type EffectTargetSelector = {
@@ -217,6 +226,7 @@ export type EffectAction =
       faceDown?: boolean;
       rested?: boolean;
       toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
     }
   | {
       type: 'moveFirstCard';
@@ -231,6 +241,14 @@ export type EffectAction =
       type: 'modifyPower';
       selector: EffectTargetSelector;
       amount: number;
+      duration: EffectDuration;
+      description?: string;
+    }
+  | {
+      type: 'modifyPowerByStoredCount';
+      key: string;
+      selector: EffectTargetSelector;
+      amountPerCard: number;
       duration: EffectDuration;
       description?: string;
     }
@@ -309,6 +327,7 @@ export type EffectAction =
       faceDown?: boolean;
       rested?: boolean;
       toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
     }
   | {
       type: 'scheduleMoveAtEndOfBattle';
@@ -331,6 +350,15 @@ export type EffectAction =
       filter: EffectCardFilter;
       sourceZone: 'hand';
       amount: number;
+    }
+  | {
+      type: 'chooseActionBranch';
+      message: string;
+      choices: Array<{
+        id: string;
+        label: string;
+        actions: EffectAction[];
+      }>;
     };
 
 export type StandardEffectDefinition = {

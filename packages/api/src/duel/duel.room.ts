@@ -561,6 +561,8 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     return (
+      (defendingCard.cannotBeKoedBySlashInBattle &&
+        attackerCard.attributes.includes('Slash')) ||
       defendingCard.cannotBeKoedByStrikeInBattle &&
       attackerCard.attributes.includes('Strike')
     );
