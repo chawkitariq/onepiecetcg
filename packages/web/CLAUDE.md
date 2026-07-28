@@ -28,7 +28,7 @@ CI (`packages/web/.github/workflows/ci.yml`) runs `pnpm install`, `pnpm run lint
 
 ### App structure (Nuxt 4 `app/` directory convention)
 
-- `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder + integrated card catalogue, no separate `/catalogue` route per spec), `lobby.vue` (matchmaking/lobby, at `/lobby`), `zone/[roomId].vue` (live game board, keyed by the Colyseus room id so the URL is shareable/bookmarkable — `lobby.vue` navigates here as `/zone/${room.roomId}` once both players are ready), `spike.vue` (technical spike page).
+- `app/pages/` — file-based routes: `index.vue` (home), `login.vue`, `decks.vue` (deck builder + integrated card catalogue, no separate `/catalogue` route per spec), `lobby.vue` (matchmaking/lobby, at `/lobby`), `zone/[roomId].vue` (live game board, keyed by the Colyseus room id so the URL is shareable/bookmarkable — `lobby.vue` navigates here as `/zone/${room.roomId}` once both players are ready)).
 - `app/components/` — Vue components (PascalCase filenames). `PlayZone.vue`/`DuelBoard.vue`/`MockDuelBoard.vue` render the game board; `DuelCard.vue`/`DuelZoneSlot.vue`/`DuelSetupOverlay.vue` are duel-board pieces; `UserAccountMenu.vue` and `AppConfirmDialog.vue` are shared chrome.
 - `app/layouts/` — `default.vue` and `lobby.vue` share the branded header (incl. logo), auth-aware user menu, and footer chrome; `simulator.vue` is a minimal layout for the live game board.
 - `app/middleware/` — route middleware, e.g. `auth.ts` (auth-gated route protection).
@@ -42,7 +42,7 @@ CI (`packages/web/.github/workflows/ci.yml`) runs `pnpm install`, `pnpm run lint
 - `useApi()` — returns a `$fetch` instance pre-configured with `runtimeConfig.public.apiBase`, `credentials: 'include'`, and forwarded cookies (`useRequestHeaders(['cookie'])`). **Always** go through this composable for API calls instead of raw `$fetch`/`fetch`, so cookies and base URL stay consistent between SSR and client.
 - `useSession()` — wraps auth state (`profile`, `loading`, `errorMessage`) using `useState` (SSR-safe shared state), backed by `GET /me` and Better Auth's sign-in/sign-out endpoints on the API. `login.vue` renders the Google/Discord OAuth entry points plus a development-only anonymous shortcut when running in dev mode, and delegates auth entirely to the backend.
 - `useColyseus()` — client-only (`import.meta.client` guarded) wrapper around `colyseus.js`, connecting to `runtimeConfig.public.colyseusEndpoint` and joining the `duel` room (`joinOrCreate('duel', options)`). This is the sole channel for realtime game state; do not add other websocket clients.
-- `useDuelRoom()` / `useMockDuel()` — game-board state composables built on top of `useColyseus()`; `useMockDuel()` backs the `spike.vue`/local-preview path without a real server connection.
+- `useDuelRoom()` — game-board state composable built on top of `useColyseus()`.
 - `useCardPreview()`, `useConfirmDialog()` / `useAppConfirmDialog()` — smaller UI-state composables (card zoom preview, the app-wide confirm dialog).
 
 ### Runtime config

@@ -10,32 +10,6 @@ Ce plan découpe `docs/spec.md` en étapes livrables. L'ordre privilégie les fo
 - Les données cachées ne doivent jamais être envoyées au mauvais client, même temporairement dans le state réseau brut.
 - Toute nouvelle dépendance doit être validée avec l'utilisateur avant installation.
 
-## Étape 0 — Spike technique
-
-Objectif : valider les briques risquées avant de construire le produit dessus.
-
-État : réalisé. Les preuves sont documentées dans `docs/spikes/step-0-technical-spike.md`.
-
-### Backend
-
-- Créer une preuve d'intégration Better Auth dans NestJS.
-- Vérifier la contrainte de body-parser brut pour les routes Better Auth.
-- Valider les cookies de session côté API avec une configuration compatible cross-domain.
-- Créer une preuve d'intégration Colyseus attachée au serveur HTTP de NestJS.
-- Vérifier qu'une room Colyseus peut être créée, rejointe par deux clients et détruite proprement.
-- Configurer PostgreSQL avec TypeORM dans le backend.
-
-### Frontend
-
-- Vérifier qu'un client Nuxt peut appeler l'API Nest avec les cookies de session.
-- Vérifier qu'un client Nuxt peut se connecter à une room Colyseus exposée par NestJS.
-
-### Validation
-
-- Un endpoint de session répond correctement après authentification de test.
-- Deux clients locaux rejoignent la même room Colyseus.
-- Une entité TypeORM minimale peut être persistée et relue.
-
 ## Étape 1 — Structure du monorepo et contrats partagés
 
 Objectif : installer les frontières de code avant les fonctionnalités.

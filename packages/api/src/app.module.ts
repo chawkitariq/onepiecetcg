@@ -15,7 +15,6 @@ import { DecksModule } from './decks/decks.module';
 import { ColyseusService } from './realtime/colyseus.service';
 import { LobbyController } from './realtime/lobby.controller';
 import { getApiConfig } from './runtime-config';
-import { SpikeModule } from './spike/spike.module';
 import { StatsModule } from './stats/stats.module';
 
 @Module({
@@ -51,7 +50,6 @@ import { StatsModule } from './stats/stats.module';
     AccountsModule,
     CatalogModule,
     DecksModule,
-    SpikeModule,
     StatsModule,
   ],
   controllers: [AppController, LobbyController],

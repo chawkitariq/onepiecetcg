@@ -11,7 +11,6 @@ import {
   configureDuelRoomAuth,
   configureDuelRoomServices,
 } from './duel.room';
-import { DuelSpikeRoom } from './duel-spike.room';
 
 @Injectable()
 export class ColyseusService implements OnModuleDestroy {
@@ -51,7 +50,6 @@ export class ColyseusService implements OnModuleDestroy {
       transport: new WebSocketTransport({ server }),
     });
     this.gameServer.define('duel', DuelRoom);
-    this.gameServer.define('duel_spike', DuelSpikeRoom);
 
     return this.gameServer;
   }

@@ -47,7 +47,7 @@ export function getApiConfig() {
       process.env.DATABASE_URL ??
       `postgres://${database.user}:${database.password}@${database.host}:${database.port}/${database.name}`,
     auth: {
-      secret: process.env.BETTER_AUTH_SECRET ?? 'development-spike-secret',
+      secret: process.env.BETTER_AUTH_SECRET ?? 'development-auth-secret',
       baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
       cookieDomain: process.env.SESSION_COOKIE_DOMAIN || undefined,
       cookieSecure: readBoolean('SESSION_COOKIE_SECURE', false),

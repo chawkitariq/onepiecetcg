@@ -190,7 +190,6 @@ Objectif : donner à chaque utilisateur un aperçu de ses performances passées,
 
 ## Priorisation de livraison
 
-0. 🎯 **Spike technique (1-2 jours)** : valider l'intégration Better Auth dans NestJS (module communautaire) et l'attachement de Colyseus au serveur HTTP Nest, avant de construire dessus — ce sont les deux seules briques de la stack sans intégration officielle Nest, donc les points de risque technique à défricher en premier.
 1. Authentification OAuth + modèle de compte/deck en base.
 2. Deck builder lié au compte avec catalogue de cartes intégré (repris et adapté du travail existant).
 3. Infrastructure Colyseus : room de partie, état synchronisé, autorité serveur.

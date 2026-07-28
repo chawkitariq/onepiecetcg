@@ -39,7 +39,6 @@ Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`US
 - `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and `ColyseusService`, which attaches the Colyseus server onto Nest's underlying HTTP server (see below).
 - `auth/` — TypeORM entities for Better Auth's own tables (`BetterAuthUser`, `BetterAuthAccount`, `BetterAuthSession`, `BetterAuthVerification`); `src/auth.ts` (note: outside `auth/`) holds `createAuth()`, the Better Auth instance factory.
-- `spike/` — leftover technical-spike module (see `docs/spec.md` §0, "Spike technique") validating the Better Auth + Colyseus + Nest integration; not part of the product feature set.
 - `runtime-config.ts` — single `getApiConfig()` reads all env vars with defaults; use this instead of reading `process.env` directly elsewhere.
 
 ### Better Auth integration
@@ -52,7 +51,7 @@ Protect routes with `@UseGuards(AuthGuard)` from `@thallesp/nestjs-better-auth`;
 
 ### Realtime (Colyseus)
 
-Colyseus is not officially integrated with Nest either. `ColyseusService.attach(httpServer)` is called manually from `main.ts` after `app.init()`, binding a `WebSocketTransport` onto Nest's raw HTTP server and registering room types (`duel`, `duel_spike`). The `DuelRoom` (`realtime/duel.room.ts`) needs `DecksService` outside of Nest's DI (Colyseus instantiates rooms itself), so it's wired through a module-level `configureDuelRoomServices()` call rather than constructor injection — don't try to `@Inject` into `DuelRoom`.
+Colyseus is not officially integrated with Nest either. `ColyseusService.attach(httpServer)` is called manually from `main.ts` after `app.init()`, binding a `WebSocketTransport` onto Nest's raw HTTP server and registering the `duel` room type. The `DuelRoom` (`realtime/duel.room.ts`) needs `DecksService` outside of Nest's DI (Colyseus instantiates rooms itself), so it's wired through a module-level `configureDuelRoomServices()` call rather than constructor injection — don't try to `@Inject` into `DuelRoom`.
 
 `DuelRoom` enforces the structural rules from `docs/spec.md` §3: joining requires a validated deck (`decksService.getValidatedGameDeck`), max 2 clients, reconnection grace period (`RECONNECTION_SECONDS = 120`). Card effect text is never interpreted server-side — only structural fields (`cost`, `power`, `life`, `type`, `colors`) drive automated logic; anything requiring reading card text (Blocker, Counter, Triggers) stays a player-declared action the server records but doesn't validate.
 
