@@ -19,9 +19,12 @@ import {
   type PendingEffectDecision,
   createDuelCard,
   type FirstOrSecondChoice,
-  type GamePhase,
 } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
+import { DuelCombatEngine } from './duel-combat-engine';
+import { DuelMainPhaseEngine } from './duel-main-phase-engine';
+import { DuelTurnEngine } from './duel-turn-engine';
+import { DuelZoneEngine } from './duel-zone-engine';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;
@@ -49,12 +52,6 @@ type EffectDecisionWaitingMessage = {
 };
 
 const RECONNECTION_SECONDS = 120;
-
-const MAX_CHARACTERS = 5;
-const DON_PER_TURN = 2;
-const FIRST_TURN_DON_COUNT = 1;
-
-const PHASE_ORDER: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end'];
 
 type DuelRoomServices = {
   decksService: DeckService;
@@ -125,6 +122,18 @@ export class DuelRoom extends Room<DuelState> {
 
   private effectBoundary!: DuelRoomEffectBoundary;
 
+  private turnEngine!: DuelTurnEngine;
+
+  private mainPhaseEngine!: DuelMainPhaseEngine;
+
+  private combatEngine!: DuelCombatEngine;
+
+  private zoneEngine!: DuelZoneEngine;
+
+  private currentMainPhaseClient: Pick<Client, 'send'> | null = null;
+
+  private currentCombatClient: Pick<Client, 'send'> | null = null;
+
   maxClients = 2;
 
   static async onAuth(
@@ -158,7 +167,12 @@ export class DuelRoom extends Room<DuelState> {
       getCards: (selector, controllerSessionId) =>
         this.getCardsForSelector(selector, controllerSessionId),
       moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
-        this.moveCardToZone(card, destinationPlayerSessionId, destinationZone, options),
+        this.zoneEngine.moveCardToZone(
+          card,
+          destinationPlayerSessionId,
+          destinationZone,
+          options,
+        ),
       shuffleDeck: (playerSessionId) => {
         const player = this.state.players.get(playerSessionId);
 
@@ -166,15 +180,21 @@ export class DuelRoom extends Room<DuelState> {
           this.shuffle(player.zones.deck);
         }
       },
-      drawCard: (playerSessionId) => this.drawCardForEffect(playerSessionId),
+      drawCard: (playerSessionId) =>
+        this.zoneEngine.drawCardForEffect(playerSessionId),
       trashTopDeckCards: (playerSessionId, amount) =>
-        this.trashTopDeckCards(playerSessionId, amount),
+        this.zoneEngine.trashTopDeckCards(playerSessionId, amount),
       addDonToCost: (playerSessionId, amount, rested) =>
-        this.addDonToCost(playerSessionId, amount, rested),
+        this.zoneEngine.addDonToCost(playerSessionId, amount, rested),
       attachDon: (playerSessionId, targetInstanceId, amount, options) =>
-        this.attachDonFromCost(playerSessionId, targetInstanceId, amount, options),
+        this.zoneEngine.attachDonFromCost(
+          playerSessionId,
+          targetInstanceId,
+          amount,
+          options,
+        ),
       returnDonToDonDeck: (playerSessionId, amount) =>
-        this.returnEffectDonToDeck(playerSessionId, amount),
+        this.zoneEngine.returnEffectDonToDeck(playerSessionId, amount),
       koCharacter: (playerSessionId, instanceId, reason) =>
         this.knockOutCharacterById(playerSessionId, instanceId, reason),
       syncPlayer: (playerSessionId) => {
@@ -185,6 +205,79 @@ export class DuelRoom extends Room<DuelState> {
         }
       },
       broadcastCardView: (card) => this.broadcastCardView(card),
+    });
+    this.turnEngine = new DuelTurnEngine({
+      state: this.state,
+      maxClients: this.maxClients,
+      effectBoundary: this.effectBoundary,
+      addLog: (message) => this.addLog(message),
+      shuffle: (cards) => this.shuffle(cards),
+      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      returnDonToCost: (player, sessionId, count) =>
+        this.returnDonToCost(player, sessionId, count),
+      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      isCombatInProgress: () => this.isCombatInProgress(),
+      finalizeMatch: (endReason, winnerSessionId) =>
+        this.finalizeMatch(endReason, winnerSessionId),
+      recordMatchResult: () => this.recordMatchResult(),
+      onMatchStarted: (startedAt) => {
+        this.matchStartedAt = startedAt;
+      },
+    });
+    this.zoneEngine = new DuelZoneEngine({
+      state: this.state,
+      effectBoundary: this.effectBoundary,
+      broadcastCardView: (card) => this.broadcastCardView(card),
+      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      findCardInZone: (player, zone, instanceId) =>
+        this.findCardInZone(player, zone, instanceId),
+      takeAttachableDonCards: (player, amount, rested) =>
+        this.takeAttachableDonCards(player, amount, rested),
+    });
+    this.mainPhaseEngine = new DuelMainPhaseEngine({
+      state: this.state,
+      effectBoundary: this.effectBoundary,
+      addLog: (message) => this.addLog(message),
+      sendError: (message) => {
+        if (this.currentMainPhaseClient) {
+          this.sendError(this.currentMainPhaseClient, message);
+        }
+      },
+      broadcastCardView: (card) => this.broadcastCardView(card),
+      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      unshiftIntoTrash: (player, card) =>
+        this.unshiftIntoZone(player.zones.trash, card),
+      returnDonToCost: (player, sessionId, count) =>
+        this.returnDonToCost(player, sessionId, count),
+      findCardInZone: (player, zone, instanceId) =>
+        this.findCardInZone(player, zone, instanceId),
+      takeUntappedDonCards: (player, amount) =>
+        this.takeUntappedDonCards(player, amount),
+    });
+    this.combatEngine = new DuelCombatEngine({
+      state: this.state,
+      effectBoundary: this.effectBoundary,
+      addLog: (message) => this.addLog(message),
+      sendError: (message) => {
+        if (this.currentCombatClient) {
+          this.sendError(this.currentCombatClient, message);
+        }
+      },
+      broadcastCardView: (card) => this.broadcastCardView(card),
+      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      unshiftIntoTrash: (player, card) =>
+        this.unshiftIntoZone(player.zones.trash, card),
+      isCombatInProgress: () => this.isCombatInProgress(),
+      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      findCardInZone: (player, zone, instanceId) =>
+        this.findCardInZone(player, zone, instanceId),
+      cardPower: (card) => this.cardPower(card),
+      knockOutCharacter: (owner, card) => this.knockOutCharacter(owner, card),
+      isProtectedFromBattleKo: (defendingCard, attackerCard) =>
+        this.isProtectedFromBattleKo(defendingCard, attackerCard),
+      finalizeMatch: (endReason, winnerSessionId) =>
+        this.finalizeMatch(endReason, winnerSessionId),
+      recordMatchResult: () => this.recordMatchResult(),
     });
 
     const description = options.description
@@ -426,171 +519,29 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private initializeGame() {
-    for (const player of this.state.players.values()) {
-      if (player.zones.hand.length > 0) {
-        continue;
-      }
-
-      this.shuffle(player.zones.deck);
-      this.dealHand(player);
-    }
-
-    const sessionIds = Array.from(this.state.players.keys());
-    const startingPlayerSessionId =
-      sessionIds[Math.floor(Math.random() * sessionIds.length)];
-    this.state.startingPlayerSessionId = startingPlayerSessionId ?? '';
-    this.state.phase = 'mulligan';
-
-    const startingPlayer = startingPlayerSessionId
-      ? this.state.players.get(startingPlayerSessionId)
-      : undefined;
-    this.addLog(
-      `${startingPlayer?.displayName ?? 'Un joueur'} a ete designe pour choisir de jouer en premier ou en second.`,
-    );
+    this.turnEngine.initializeGame();
     void this.lock();
-  }
-
-  private dealHand(player: DuelPlayer) {
-    for (let index = 0; index < 5; index += 1) {
-      const card = player.zones.deck.shift();
-
-      if (card) {
-        card.faceDown = false;
-        player.zones.hand.push(card);
-      }
-    }
-
-    this.syncZoneCounts(player);
-  }
-
-  private dealLife(player: DuelPlayer) {
-    const lifeCount = Math.max(player.zones.leader.life, 0);
-
-    for (let index = 0; index < lifeCount; index += 1) {
-      const card = player.zones.deck.shift();
-
-      if (card) {
-        card.faceDown = true;
-        player.zones.life.push(card);
-      }
-    }
-
-    this.syncZoneCounts(player);
   }
 
   private handleChooseFirstOrSecond(
     client: Client,
     message: ChooseFirstOrSecondMessage,
   ) {
-    if (this.state.phase !== 'mulligan' || this.state.firstPlayerSessionId) {
-      return;
-    }
-
-    if (client.sessionId !== this.state.startingPlayerSessionId) {
-      return;
-    }
-
-    if (message.choice !== 'first' && message.choice !== 'second') {
-      return;
-    }
-
-    if (this.state.players.size !== this.maxClients) {
-      return;
-    }
-
-    const sessionIds = Array.from(this.state.players.keys());
-    const otherSessionId = sessionIds.find(
-      (sessionId) => sessionId !== client.sessionId,
-    );
-
-    if (!otherSessionId) {
-      return;
-    }
-
-    const firstPlayerSessionId =
-      message.choice === 'first' ? client.sessionId : otherSessionId;
-
-    this.state.firstPlayerSessionId = firstPlayerSessionId;
-
-    const firstPlayer = this.state.players.get(firstPlayerSessionId);
-    const choosingPlayer = this.state.players.get(client.sessionId);
-    this.addLog(
-      `${choosingPlayer?.displayName ?? 'Le joueur designe'} choisit de jouer en ${message.choice === 'first' ? 'premier' : 'second'}. ${firstPlayer?.displayName ?? ''} commencera.`.trim(),
-    );
+    this.turnEngine.handleChooseFirstOrSecond(client.sessionId, message.choice);
   }
 
   private handleMulligan(client: Client, message: MulliganMessage) {
-    if (this.state.phase !== 'mulligan' || !this.state.firstPlayerSessionId) {
-      return;
-    }
-
-    const player = this.state.players.get(client.sessionId);
-
-    if (!player || player.mulliganDecided) {
-      return;
-    }
-
-    const isFirstPlayer = client.sessionId === this.state.firstPlayerSessionId;
-
-    if (!isFirstPlayer) {
-      const firstPlayer = this.state.players.get(
-        this.state.firstPlayerSessionId,
-      );
-
-      if (!firstPlayer?.mulliganDecided) {
-        return;
-      }
-    }
-
-    if (message.mulligan) {
-      player.zones.deck.push(...player.zones.hand.splice(0));
-      this.shuffle(player.zones.deck);
-      this.dealHand(player);
-      this.addLog(`${player.displayName} fait un mulligan.`);
-    } else {
-      this.addLog(`${player.displayName} garde sa main de depart.`);
-    }
-
-    player.mulliganDecided = true;
-
-    const allDecided =
-      this.state.players.size === this.maxClients &&
-      Array.from(this.state.players.values()).every(
-        (candidate) => candidate.mulliganDecided,
-      );
-
-    if (allDecided) {
-      this.startFirstTurn();
-    }
+    this.turnEngine.handleMulligan(client.sessionId, message.mulligan);
   }
 
-  private startFirstTurn() {
-    for (const player of this.state.players.values()) {
-      this.dealLife(player);
-    }
-
-    this.matchStartedAt = new Date();
-    this.state.turn = 1;
-    this.state.startedAt = this.matchStartedAt.toISOString();
-    this.state.finishedAt = '';
-    this.state.activePlayerSessionId = this.state.firstPlayerSessionId;
-    this.state.phase = 'refresh';
-
-    const firstPlayer = this.state.players.get(this.state.firstPlayerSessionId);
-    this.addLog(
-      `Mise en place terminee. ${firstPlayer?.displayName ?? 'Le premier joueur'} commence le premier tour.`,
-    );
-
-    this.runRefreshPhase(this.state.firstPlayerSessionId);
-    this.effectBoundary.emitWindowEffects('onTurnStart');
-  }
-
-  private sendError(client: Client, message: string) {
+  private sendError(client: Pick<Client, 'send'>, message: string) {
     client.send('actionError', { message });
   }
 
   /** Syncs the out-of-band effect-decision channel for the chooser and opponent. */
-  private syncPendingEffectDecision(decision: PendingEffectDecision | null): void {
+  private syncPendingEffectDecision(
+    decision: PendingEffectDecision | null,
+  ): void {
     for (const currentClient of this.clients) {
       currentClient.send('clearPendingEffectDecision', {});
     }
@@ -635,82 +586,12 @@ export class DuelRoom extends Room<DuelState> {
     client.send('clearPendingEffectDecision', {});
   }
 
-  private getActivePlayer(): DuelPlayer | undefined {
-    return this.state.players.get(this.state.activePlayerSessionId);
-  }
-
   private handleEndPhase(client: Client) {
-    if (this.state.phase === 'finished') {
-      this.sendError(client, 'La partie est terminee.');
-      return;
+    const error = this.turnEngine.handleEndPhase(client.sessionId);
+
+    if (error) {
+      this.sendError(client, error);
     }
-
-    if (this.effectBoundary.hasPendingPlayerInteraction()) {
-      this.sendError(client, "Une decision d'effet est en attente.");
-      return;
-    }
-
-    if (this.isCombatInProgress()) {
-      this.sendError(client, 'Un combat est en cours.');
-      return;
-    }
-
-    if (client.sessionId !== this.state.activePlayerSessionId) {
-      this.sendError(client, "Ce n'est pas votre tour.");
-      return;
-    }
-
-    if (this.state.phase === 'end') {
-      this.endTurn();
-      return;
-    }
-
-    const currentIndex = PHASE_ORDER.indexOf(this.state.phase);
-    const nextPhase = PHASE_ORDER[currentIndex + 1] ?? 'end';
-    this.state.phase = nextPhase;
-
-    if (nextPhase === 'draw') {
-      this.runDrawPhase(client.sessionId);
-    } else if (nextPhase === 'don') {
-      this.runDonPhase(client.sessionId);
-    }
-  }
-
-  private runRefreshPhase(sessionId: string) {
-    const player = this.state.players.get(sessionId);
-
-    if (!player) {
-      return;
-    }
-
-    let returnedDonCount = 0;
-
-    if (player.zones.leader.attachedDon > 0) {
-      returnedDonCount += player.zones.leader.attachedDon;
-      player.zones.leader.attachedDon = 0;
-    }
-    player.zones.leader.rested = false;
-
-    for (const character of player.zones.characters) {
-      returnedDonCount += character.attachedDon;
-      character.attachedDon = 0;
-      character.rested = false;
-      character.playedThisTurn = false;
-    }
-
-    if (player.zones.stage.instanceId) {
-      player.zones.stage.rested = false;
-    }
-
-    for (const donCard of player.zones.cost) {
-      donCard.rested = false;
-    }
-
-    this.returnDonToCost(player, sessionId, returnedDonCount);
-
-    this.addLog(
-      `${player.displayName} redresse ses cartes en phase de Recharge.`,
-    );
   }
 
   /**
@@ -734,96 +615,6 @@ export class DuelRoom extends Room<DuelState> {
       returnedCard.rested = true;
       player.zones.cost.push(returnedCard);
     }
-  }
-
-  private runDrawPhase(sessionId: string) {
-    const player = this.state.players.get(sessionId);
-
-    if (!player) {
-      return;
-    }
-
-    if (this.state.turn === 1) {
-      this.addLog(
-        `${player.displayName} ne pioche pas lors de son premier tour.`,
-      );
-      return;
-    }
-
-    const card = player.zones.deck.shift();
-
-    if (!card) {
-      this.declareDefeatByDeckOut(player);
-      return;
-    }
-
-    card.faceDown = false;
-    player.zones.hand.push(card);
-    this.syncZoneCounts(player);
-    this.addLog(`${player.displayName} pioche 1 carte.`);
-  }
-
-  private declareDefeatByDeckOut(player: DuelPlayer) {
-    this.finalizeMatch(
-      'deckOut',
-      this.getOpponentSessionId(player.sessionId) ?? '',
-    );
-    this.addLog(
-      `${player.displayName} ne peut plus piocher : deck-out, defaite.`,
-    );
-    this.recordMatchResult();
-  }
-
-  private runDonPhase(sessionId: string) {
-    const player = this.state.players.get(sessionId);
-
-    if (!player) {
-      return;
-    }
-
-    const desired = this.state.turn === 1 ? FIRST_TURN_DON_COUNT : DON_PER_TURN;
-    const count = Math.min(desired, player.zones.donDeck.length);
-
-    for (let index = 0; index < count; index += 1) {
-      const card = player.zones.donDeck.shift();
-
-      if (card) {
-        card.rested = false;
-        player.zones.cost.push(card);
-      }
-    }
-
-    this.addLog(
-      `${player.displayName} place ${count} carte(s) DON!! en zone de Cout.`,
-    );
-  }
-
-  private endTurn() {
-    const endingPlayer = this.getActivePlayer();
-
-    if (endingPlayer) {
-      endingPlayer.hasTakenFirstTurn = true;
-      this.addLog(`${endingPlayer.displayName} termine son tour.`);
-    }
-
-    this.effectBoundary.emitWindowEffects('onTurnEnd');
-    this.effectBoundary.clearTurnModifiers();
-
-    const sessionIds = Array.from(this.state.players.keys());
-    const nextSessionId = sessionIds.find(
-      (sessionId) => sessionId !== this.state.activePlayerSessionId,
-    );
-
-    if (!nextSessionId) {
-      return;
-    }
-
-    this.state.activePlayerSessionId = nextSessionId;
-    this.state.turn += 1;
-    this.state.phase = 'refresh';
-    this.effectBoundary.reapplyContinuousEffects();
-    this.runRefreshPhase(nextSessionId);
-    this.effectBoundary.emitWindowEffects('onTurnStart');
   }
 
   private findCardInZone(
@@ -895,36 +686,6 @@ export class DuelRoom extends Room<DuelState> {
     return matches;
   }
 
-  private assertMainPhaseAction(client: Client): DuelPlayer | null {
-    if (this.effectBoundary.hasPendingPlayerInteraction()) {
-      this.sendError(client, "Une decision d'effet est en attente.");
-      return null;
-    }
-
-    if (this.state.phase !== 'main') {
-      this.sendError(client, 'Action impossible hors de la phase Principale.');
-      return null;
-    }
-
-    if (this.isCombatInProgress()) {
-      this.sendError(client, 'Un combat est en cours.');
-      return null;
-    }
-
-    if (client.sessionId !== this.state.activePlayerSessionId) {
-      this.sendError(client, "Ce n'est pas votre tour.");
-      return null;
-    }
-
-    const player = this.state.players.get(client.sessionId);
-
-    if (!player) {
-      return null;
-    }
-
-    return player;
-  }
-
   private isCombatInProgress(): boolean {
     return this.state.combat.attackerInstanceId !== '';
   }
@@ -938,377 +699,23 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private handleDeclareAttack(client: Client, message: DeclareAttackMessage) {
-    if (this.state.phase !== 'main') {
-      this.sendError(client, 'Action impossible hors de la phase Principale.');
-      return;
-    }
-
-    if (this.isCombatInProgress()) {
-      this.sendError(client, 'Un combat est deja en cours.');
-      return;
-    }
-
-    if (client.sessionId !== this.state.activePlayerSessionId) {
-      this.sendError(client, "Ce n'est pas votre tour.");
-      return;
-    }
-
-    const attacker = this.state.players.get(client.sessionId);
-
-    if (!attacker) {
-      return;
-    }
-
-    if (!attacker.hasTakenFirstTurn) {
-      this.sendError(
-        client,
-        "Aucune attaque n'est autorisee lors de votre premier tour.",
-      );
-      return;
-    }
-
-    let attackerCard: DuelCard | null = null;
-
-    if (attacker.zones.leader.instanceId === message.attackerInstanceId) {
-      attackerCard = attacker.zones.leader;
-    } else {
-      const found = this.findCardInZone(
-        attacker,
-        'characters',
-        message.attackerInstanceId,
-      );
-      attackerCard = found?.card ?? null;
-    }
-
-    if (!attackerCard) {
-      this.sendError(client, 'Attaquant introuvable.');
-      return;
-    }
-
-    if (attackerCard.rested) {
-      this.sendError(client, "L'attaquant est deja epuise.");
-      return;
-    }
-
-    if (attackerCard.playedThisTurn && !attackerCard.hasRush) {
-      this.sendError(
-        client,
-        'Un Personnage joue ce tour-ci ne peut pas attaquer.',
-      );
-      return;
-    }
-
-    if (attackerCard.cannotAttackUntilTurn >= this.state.turn) {
-      this.sendError(client, 'Ce Personnage ne peut pas attaquer pour le moment.');
-      return;
-    }
-
-    const defenderSessionId = this.getOpponentSessionId(client.sessionId);
-
-    if (!defenderSessionId) {
-      this.sendError(client, 'Adversaire introuvable.');
-      return;
-    }
-
-    const defender = this.state.players.get(defenderSessionId);
-
-    if (!defender) {
-      return;
-    }
-
-    const forcedTargets = defender.zones.characters.filter(
-      (card) => card.mustBeAttackTarget,
-    );
-
-    if (message.targetType === 'leader') {
-      if (forcedTargets.length > 0) {
-        this.sendError(
-          client,
-          'Une autre carte doit etre choisie comme cible de cette attaque.',
-        );
-        return;
-      }
-      // valid unconditionally: attacking the opposing Leader has no epuise requirement.
-    } else if (message.targetType === 'character') {
-      const targetFound = message.targetInstanceId
-        ? this.findCardInZone(defender, 'characters', message.targetInstanceId)
-        : null;
-
-      if (!targetFound) {
-        this.sendError(client, 'Cible introuvable.');
-        return;
-      }
-
-      if (!targetFound.card.rested && !attackerCard.canAttackActiveCharacters) {
-        this.sendError(
-          client,
-          'Seul un Personnage adverse epuise peut etre cible.',
-        );
-        return;
-      }
-
-      if (
-        forcedTargets.length > 0 &&
-        !forcedTargets.some((card) => card.instanceId === targetFound.card.instanceId)
-      ) {
-        this.sendError(
-          client,
-          'Une autre carte doit etre choisie comme cible de cette attaque.',
-        );
-        return;
-      }
-    } else {
-      this.sendError(client, 'Type de cible invalide.');
-      return;
-    }
-
-    attackerCard.rested = true;
-
-    this.state.combat.attackerSessionId = client.sessionId;
-    this.state.combat.attackerInstanceId = attackerCard.instanceId;
-    this.state.combat.defenderSessionId = defenderSessionId;
-    this.state.combat.targetType = message.targetType;
-    this.state.combat.targetInstanceId =
-      message.targetType === 'leader'
-        ? defender.zones.leader.instanceId
-        : (message.targetInstanceId ?? '');
-    this.state.combat.blockerInstanceId = '';
-    this.state.combat.step = 'declared';
-    this.state.combat.counterPowerBonus = 0;
-    this.state.combat.awaitingTriggerDecision = false;
-
-    const targetLabel =
-      message.targetType === 'leader'
-        ? `le Leader de ${defender.displayName}`
-        : (this.findCardInZone(
-            defender,
-            'characters',
-            this.state.combat.targetInstanceId,
-          )?.card.name ?? 'un Personnage');
-
-    this.addLog(
-      `${attacker.displayName} attaque avec ${attackerCard.name} vers ${targetLabel}.`,
-    );
-
-    this.effectBoundary.emitCardEvent(
-      'whenAttacking',
-      client.sessionId,
-      attackerCard,
-    );
-
-    this.state.combat.step = 'blocked';
+    this.bindCombatClient(client);
+    this.combatEngine.handleDeclareAttack(client.sessionId, message);
   }
 
   private handleDeclareBlock(client: Client, message: DeclareBlockMessage) {
-    const combat = this.state.combat;
-
-    if (!this.isCombatInProgress() || combat.step !== 'blocked') {
-      this.sendError(client, 'Aucune etape de Blocage en cours.');
-      return;
-    }
-
-    if (client.sessionId !== combat.defenderSessionId) {
-      this.sendError(client, "Vous n'etes pas le defenseur de ce combat.");
-      return;
-    }
-
-    const defender = this.state.players.get(combat.defenderSessionId);
-
-    if (!defender) {
-      return;
-    }
-
-    if (message.blockerInstanceId) {
-      const blockerFound = this.findCardInZone(
-        defender,
-        'characters',
-        message.blockerInstanceId,
-      );
-
-      if (!blockerFound) {
-        this.sendError(client, 'Bloqueur introuvable.');
-        return;
-      }
-
-      if (blockerFound.card.rested) {
-        this.sendError(client, 'Le Bloqueur doit etre redresse.');
-        return;
-      }
-
-      if (blockerFound.card.cannotBlock) {
-        this.sendError(client, 'Cette carte ne peut pas bloquer pendant ce combat.');
-        return;
-      }
-
-      blockerFound.card.rested = true;
-      combat.blockerInstanceId = blockerFound.card.instanceId;
-      this.addLog(
-        `${defender.displayName} declare ${blockerFound.card.name} comme Bloqueur.`,
-      );
-      this.effectBoundary.emitCardEvent(
-        'onBlock',
-        defender.sessionId,
-        blockerFound.card,
-      );
-    } else {
-      this.addLog(`${defender.displayName} ne bloque pas.`);
-    }
-
-    combat.step = 'countering';
-  }
-
-  private getCombatDefendingCard(): DuelCard | null {
-    const combat = this.state.combat;
-    const defender = this.state.players.get(combat.defenderSessionId);
-
-    if (!defender) {
-      return null;
-    }
-
-    if (combat.blockerInstanceId) {
-      return (
-        this.findCardInZone(defender, 'characters', combat.blockerInstanceId)
-          ?.card ?? null
-      );
-    }
-
-    if (combat.targetType === 'leader') {
-      return defender.zones.leader;
-    }
-
-    return (
-      this.findCardInZone(defender, 'characters', combat.targetInstanceId)
-        ?.card ?? null
-    );
-  }
-
-  private getCombatAttackingCard(): DuelCard | null {
-    const combat = this.state.combat;
-    const attacker = this.state.players.get(combat.attackerSessionId);
-
-    if (!attacker) {
-      return null;
-    }
-
-    if (attacker.zones.leader.instanceId === combat.attackerInstanceId) {
-      return attacker.zones.leader;
-    }
-
-    return (
-      this.findCardInZone(attacker, 'characters', combat.attackerInstanceId)
-        ?.card ?? null
-    );
+    this.bindCombatClient(client);
+    this.combatEngine.handleDeclareBlock(client.sessionId, message);
   }
 
   private handleDeclareCounter(client: Client, message: DeclareCounterMessage) {
-    const combat = this.state.combat;
-
-    if (!this.isCombatInProgress() || combat.step !== 'countering') {
-      this.sendError(client, 'Aucune etape de Contre en cours.');
-      return;
-    }
-
-    if (client.sessionId !== combat.defenderSessionId) {
-      this.sendError(client, "Vous n'etes pas le defenseur de ce combat.");
-      return;
-    }
-
-    const defender = this.state.players.get(combat.defenderSessionId);
-
-    if (!defender) {
-      return;
-    }
-
-    const found = this.findCardInZone(
-      defender,
-      'hand',
-      message.discardInstanceId,
-    );
-
-    if (!found) {
-      this.sendError(client, 'Carte introuvable en main.');
-      return;
-    }
-
-    const bonus = Math.max(0, Math.trunc(message.counterPowerBonus));
-    const hasCounterEffect = this.effectBoundary.hasCounterEffect(found.card.cardId);
-
-    if (bonus <= 0 && !hasCounterEffect) {
-      this.sendError(client, 'Valeur de Contre invalide.');
-      return;
-    }
-
-    defender.zones.hand.splice(found.index, 1);
-    this.unshiftIntoZone(defender.zones.trash, found.card);
-    this.broadcastCardView(found.card);
-    combat.counterPowerBonus += bonus;
-
-    this.addLog(
-      `${defender.displayName} defausse ${found.card.name} et declare +${bonus} de Contre.`,
-    );
-
-    if (hasCounterEffect || found.card.type === 'Event') {
-      this.effectBoundary.emitCounterUsage(defender.sessionId, found.card);
-    }
+    this.bindCombatClient(client);
+    this.combatEngine.handleDeclareCounter(client.sessionId, message);
   }
 
   private handleFinishCounterStep(client: Client) {
-    const combat = this.state.combat;
-
-    if (!this.isCombatInProgress() || combat.step !== 'countering') {
-      this.sendError(client, 'Aucune etape de Contre en cours.');
-      return;
-    }
-
-    if (client.sessionId !== combat.defenderSessionId) {
-      this.sendError(client, "Vous n'etes pas le defenseur de ce combat.");
-      return;
-    }
-
-    this.resolveCombatDamage();
-  }
-
-  private resolveCombatDamage() {
-    const combat = this.state.combat;
-    combat.step = 'resolving';
-
-    const attackerCard = this.getCombatAttackingCard();
-    const defendingCard = this.getCombatDefendingCard();
-    const attacker = this.state.players.get(combat.attackerSessionId);
-    const defender = this.state.players.get(combat.defenderSessionId);
-
-    if (!attackerCard || !defendingCard || !attacker || !defender) {
-      this.endCombat();
-      return;
-    }
-
-    const attackerPower = this.cardPower(attackerCard);
-    const defenderPower =
-      this.cardPower(defendingCard) + combat.counterPowerBonus;
-
-    this.addLog(
-      `Etape de Degats : ${attackerCard.name} (${attackerPower}) contre ${defendingCard.name} (${defenderPower}).`,
-    );
-
-    if (attackerPower < defenderPower) {
-      this.addLog(`${attacker.displayName} perd le combat.`);
-      this.endCombat();
-      return;
-    }
-
-    this.addLog(`${attacker.displayName} remporte le combat.`);
-
-    if (combat.blockerInstanceId || combat.targetType === 'character') {
-      if (this.isProtectedFromBattleKo(defendingCard, attackerCard)) {
-        this.addLog(`${defendingCard.name} ne peut pas etre mis KO pendant ce combat.`);
-      } else {
-        this.knockOutCharacter(defender, defendingCard, 'battle');
-      }
-      this.endCombat();
-      return;
-    }
-
-    this.dealLeaderDamage(defender, attackerCard);
+    this.bindCombatClient(client);
+    this.combatEngine.handleFinishCounterStep(client.sessionId);
   }
 
   /**
@@ -1335,7 +742,11 @@ export class DuelRoom extends Room<DuelState> {
   ) {
     if (
       !skipReplacement &&
-      this.effectBoundary.applyKoReplacement(owner.sessionId, card.instanceId, reason)
+      this.effectBoundary.applyKoReplacement(
+        owner.sessionId,
+        card.instanceId,
+        reason,
+      )
     ) {
       this.effectBoundary.reapplyContinuousEffects();
       return;
@@ -1358,7 +769,10 @@ export class DuelRoom extends Room<DuelState> {
     this.effectBoundary.reapplyContinuousEffects();
   }
 
-  private isProtectedFromBattleKo(defendingCard: DuelCard, attackerCard: DuelCard): boolean {
+  private isProtectedFromBattleKo(
+    defendingCard: DuelCard,
+    attackerCard: DuelCard,
+  ): boolean {
     if (defendingCard.cannotBeKoedInBattle) {
       return true;
     }
@@ -1367,70 +781,6 @@ export class DuelRoom extends Room<DuelState> {
       defendingCard.cannotBeKoedByStrikeInBattle &&
       attackerCard.attributes.includes('Strike')
     );
-  }
-
-  private dealLeaderDamage(defender: DuelPlayer, attackerCard: DuelCard) {
-    const damageCount = attackerCard.hasDoubleAttack ? 2 : 1;
-
-    for (let damageIndex = 0; damageIndex < damageCount; damageIndex += 1) {
-      if (!this.resolveSingleLeaderDamage(defender, attackerCard)) {
-        return;
-      }
-    }
-
-    this.endCombat();
-  }
-
-  private resolveSingleLeaderDamage(
-    defender: DuelPlayer,
-    attackerCard: DuelCard,
-  ): boolean {
-    if (defender.zones.life.length === 0) {
-      this.finalizeMatch(
-        'life',
-        this.getOpponentSessionId(defender.sessionId) ?? '',
-      );
-      this.addLog(
-        `${defender.displayName} subit un degat sur une Vie deja vide : defaite.`,
-      );
-      this.endCombat();
-      this.recordMatchResult();
-      return false;
-    }
-
-    const revealedCard = defender.zones.life.shift();
-    this.syncZoneCounts(defender);
-
-    if (!revealedCard) {
-      this.endCombat();
-      return false;
-    }
-
-    revealedCard.faceDown = false;
-
-    if (attackerCard.hasBanish) {
-      this.unshiftIntoZone(defender.zones.trash, revealedCard);
-      this.broadcastCardView(revealedCard);
-      this.addLog(
-        `${defender.displayName} subit 1 degat en [Banish] et la carte de Vie est mise a la Defausse.`,
-      );
-      return true;
-    }
-
-    const triggerResolution = this.effectBoundary.resolveRevealedLifeCard(
-      defender,
-      revealedCard,
-    );
-
-    if (triggerResolution === 'addedToHand') {
-      return true;
-    }
-
-    if (!this.effectBoundary.hasPendingPlayerInteraction()) {
-      this.endCombat();
-    }
-
-    return false;
   }
 
   private handleResolveTrigger(client: Client, message: ResolveTriggerMessage) {
@@ -1444,220 +794,25 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    this.endCombat();
-  }
-
-  private endCombat() {
-    const combat = this.state.combat;
-    combat.step = 'resolved';
-    this.addLog('Fin du combat, retour a la phase Principale.');
-    combat.attackerSessionId = '';
-    combat.attackerInstanceId = '';
-    combat.defenderSessionId = '';
-    combat.targetType = 'leader';
-    combat.targetInstanceId = '';
-    combat.blockerInstanceId = '';
-    combat.step = 'declared';
-    combat.counterPowerBonus = 0;
-    combat.awaitingTriggerDecision = false;
-    this.effectBoundary.clearCombatModifiers();
+    this.combatEngine.endCombat();
   }
 
   private handlePlayCard(client: Client, message: PlayCardMessage) {
-    const player = this.assertMainPhaseAction(client);
-
-    if (!player) {
-      return;
-    }
-
-    const found = this.findCardInZone(player, 'hand', message.instanceId);
-
-    if (!found) {
-      this.sendError(client, 'Carte introuvable en main.');
-      return;
-    }
-
-    const { card, index } = found;
-
-    if (
-      card.type !== 'Character' &&
-      card.type !== 'Event' &&
-      card.type !== 'Stage'
-    ) {
-      this.sendError(
-        client,
-        'Cette carte ne peut pas etre jouee depuis la main.',
-      );
-      return;
-    }
-
-    let characterToDiscard: { card: DuelCard; index: number } | null = null;
-
-    if (
-      card.type === 'Character' &&
-      player.zones.characters.length >= MAX_CHARACTERS
-    ) {
-      const discardTarget = message.discardCharacterInstanceId
-        ? this.findCardInZone(
-            player,
-            'characters',
-            message.discardCharacterInstanceId,
-          )
-        : null;
-
-      if (!discardTarget) {
-        this.sendError(
-          client,
-          `Zone Personnage pleine (${MAX_CHARACTERS} max) : choisissez un Personnage a defausser pour jouer ${card.name}.`,
-        );
-        return;
-      }
-
-      characterToDiscard = discardTarget;
-    }
-
-    const cost = Math.max(card.cost, 0);
-    const paidDonCards = this.takeUntappedDonCards(player, cost);
-
-    if (!paidDonCards) {
-      this.sendError(
-        client,
-        `DON!! insuffisant pour jouer ${card.name} (cout ${cost}).`,
-      );
-      return;
-    }
-
-    player.zones.hand.splice(index, 1);
-
-    if (card.type === 'Character') {
-      if (characterToDiscard) {
-        const [discarded] = player.zones.characters.splice(
-          characterToDiscard.index,
-          1,
-        );
-
-        if (discarded) {
-          const attachedDon = discarded.attachedDon;
-          discarded.attachedDon = 0;
-          this.unshiftIntoZone(player.zones.trash, discarded);
-          this.returnDonToCost(player, client.sessionId, attachedDon);
-          this.addLog(
-            `${player.displayName} defausse ${discarded.name} pour liberer la zone Personnage.`,
-          );
-        }
-      }
-
-      card.playedThisTurn = true;
-      card.rested = false;
-      player.zones.characters.push(card);
-      this.broadcastCardView(card);
-      this.addLog(
-        `${player.displayName} joue ${card.name} en zone Personnage.`,
-      );
-      this.effectBoundary.reapplyContinuousEffects();
-      this.effectBoundary.emitPlayedCard(player.sessionId, card);
-    } else if (card.type === 'Stage') {
-      if (player.zones.stage.instanceId) {
-        const discardedStage = player.zones.stage;
-        const attachedDon = discardedStage.attachedDon;
-        discardedStage.attachedDon = 0;
-        this.unshiftIntoZone(player.zones.trash, discardedStage);
-        this.returnDonToCost(player, client.sessionId, attachedDon);
-      }
-
-      card.rested = false;
-      player.zones.stage = card;
-      this.broadcastCardView(card);
-      this.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
-      this.effectBoundary.reapplyContinuousEffects();
-      this.effectBoundary.emitPlayedCard(player.sessionId, card);
-    } else {
-      this.unshiftIntoZone(player.zones.trash, card);
-      this.broadcastCardView(card);
-      this.addLog(`${player.displayName} active ${card.name}.`);
-      this.effectBoundary.emitPlayedCard(player.sessionId, card);
-    }
-
-    this.syncZoneCounts(player);
+    this.bindMainPhaseClient(client);
+    this.mainPhaseEngine.handlePlayCard(client.sessionId, message);
   }
 
   private handleAttachDon(client: Client, message: AttachDonMessage) {
-    const player = this.assertMainPhaseAction(client);
+    this.bindMainPhaseClient(client);
+    this.mainPhaseEngine.handleAttachDon(client.sessionId, message);
+  }
 
-    if (!player) {
-      return;
-    }
+  private bindMainPhaseClient(client: Pick<Client, 'send'>): void {
+    this.currentMainPhaseClient = client;
+  }
 
-    const count = Number.isInteger(message.count) ? (message.count ?? 1) : 1;
-
-    if (count < 1) {
-      this.sendError(client, 'Quantite de DON!! invalide.');
-      return;
-    }
-
-    const donCards = this.takeUntappedDonCards(player, count);
-
-    if (!donCards) {
-      this.sendError(
-        client,
-        'Pas assez de DON!! redresses disponibles en zone de Cout.',
-      );
-      return;
-    }
-
-    if (message.target === 'leader') {
-      let attachedCount = 0;
-
-      for (const donCard of donCards) {
-        const removed = player.zones.cost.splice(
-          player.zones.cost.indexOf(donCard),
-          1,
-        )[0];
-
-        if (removed) {
-          attachedCount += 1;
-        }
-      }
-
-      if (attachedCount > 0) {
-        player.zones.leader.attachedDon += attachedCount;
-      }
-
-      this.addLog(
-        `${player.displayName} donne ${attachedCount} DON!! a son Leader (+${attachedCount * 1000} de puissance).`,
-      );
-      return;
-    }
-
-    const found = message.targetInstanceId
-      ? this.findCardInZone(player, 'characters', message.targetInstanceId)
-      : null;
-
-    if (!found) {
-      for (const donCard of donCards) {
-        donCard.rested = false;
-      }
-      this.sendError(client, 'Cible invalide pour attacher un DON!!.');
-      return;
-    }
-
-    let attachedCount = 0;
-
-    for (const donCard of donCards) {
-      const removed = player.zones.cost.splice(
-        player.zones.cost.indexOf(donCard),
-        1,
-      )[0];
-
-      if (removed) {
-        attachedCount += 1;
-      }
-    }
-
-    found.card.attachedDon += attachedCount;
-    this.addLog(
-      `${player.displayName} donne ${attachedCount} DON!! a ${found.card.name} (+${attachedCount * 1000} de puissance).`,
-    );
+  private bindCombatClient(client: Pick<Client, 'send'>): void {
+    this.currentCombatClient = client;
   }
 
   private createDonCard(client: Client, index: number): DuelCard {
@@ -1695,7 +850,7 @@ export class DuelRoom extends Room<DuelState> {
       this.state.combat.step === 'resolving' &&
       !this.effectBoundary.hasPendingPlayerInteraction()
     ) {
-      this.endCombat();
+      this.combatEngine.endCombat();
     }
   }
 
@@ -1842,8 +997,18 @@ export class DuelRoom extends Room<DuelState> {
         return player.zones.stage;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const found = player.zones[zone].find(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (found) {
           return found;
@@ -1885,7 +1050,13 @@ export class DuelRoom extends Room<DuelState> {
               : Array.from(player.zones[zone] ?? []);
 
         for (const card of cards) {
-          if (this.cardMatchesSelectorFilter(card, selector.filter, controllerSessionId)) {
+          if (
+            this.cardMatchesSelectorFilter(
+              card,
+              selector.filter,
+              controllerSessionId,
+            )
+          ) {
             matches.push(card);
           }
         }
@@ -1916,19 +1087,33 @@ export class DuelRoom extends Room<DuelState> {
       return false;
     }
 
-    if (typeof filter.powerMax === 'number' && this.cardPower(card) > filter.powerMax) {
+    if (
+      typeof filter.powerMax === 'number' &&
+      this.cardPower(card) > filter.powerMax
+    ) {
       return false;
     }
 
-    if (typeof filter.powerMin === 'number' && this.cardPower(card) < filter.powerMin) {
+    if (
+      typeof filter.powerMin === 'number' &&
+      this.cardPower(card) < filter.powerMin
+    ) {
       return false;
     }
 
-    if (filter.color && !filter.color.some((color: string) => card.colors.includes(color as never))) {
+    if (
+      filter.color &&
+      !filter.color.some((color: string) =>
+        card.colors.includes(color as never),
+      )
+    ) {
       return false;
     }
 
-    if (filter.trait && !filter.trait.some((trait: string) => card.families.includes(trait))) {
+    if (
+      filter.trait &&
+      !filter.trait.some((trait: string) => card.families.includes(trait))
+    ) {
       return false;
     }
 
@@ -1944,203 +1129,21 @@ export class DuelRoom extends Room<DuelState> {
       return false;
     }
 
-    if (filter.owner === 'self' && card.ownerSessionId !== controllerSessionId) {
+    if (
+      filter.owner === 'self' &&
+      card.ownerSessionId !== controllerSessionId
+    ) {
       return false;
     }
 
-    if (filter.owner === 'opponent' && card.ownerSessionId === controllerSessionId) {
+    if (
+      filter.owner === 'opponent' &&
+      card.ownerSessionId === controllerSessionId
+    ) {
       return false;
     }
 
     return true;
-  }
-
-  private moveCardToZone(
-    card: DuelCard,
-    destinationPlayerSessionId: string,
-    destinationZone: string,
-    options?: { faceDown?: boolean; rested?: boolean },
-  ) {
-    this.removeCardFromCurrentZone(card.instanceId);
-    const destinationPlayer = this.state.players.get(destinationPlayerSessionId);
-
-    if (!destinationPlayer) {
-      return;
-    }
-
-    card.ownerSessionId = destinationPlayerSessionId;
-    card.faceDown = options?.faceDown ?? false;
-    card.rested = options?.rested ?? false;
-    card.playedThisTurn = false;
-
-    if (destinationZone === 'leader') {
-      destinationPlayer.zones.leader = card;
-    } else if (destinationZone === 'stage') {
-      destinationPlayer.zones.stage = card;
-    } else {
-      const zone = destinationPlayer.zones[destinationZone as keyof typeof destinationPlayer.zones];
-
-      if (zone instanceof ArraySchema) {
-        if (destinationZone === 'trash') {
-          this.unshiftIntoZone(zone, card);
-        } else {
-          zone.push(card);
-        }
-      }
-    }
-
-    this.broadcastCardView(card);
-    this.syncZoneCounts(destinationPlayer);
-    this.effectBoundary.reapplyContinuousEffects();
-  }
-
-  private removeCardFromCurrentZone(instanceId: string): DuelCard | null {
-    for (const player of this.state.players.values()) {
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
-
-        if (index >= 0) {
-          return player.zones[zone].splice(index, 1)[0] ?? null;
-        }
-      }
-
-      if (player.zones.stage.instanceId === instanceId) {
-        const stage = player.zones.stage;
-        player.zones.stage = new DuelCard();
-        return stage;
-      }
-    }
-
-    return null;
-  }
-
-  private drawCardForEffect(playerSessionId: string): DuelCard | null {
-    const player = this.state.players.get(playerSessionId);
-    const card = player?.zones.deck.shift();
-
-    if (!player || !card) {
-      return null;
-    }
-
-    card.faceDown = false;
-    player.zones.hand.push(card);
-    this.syncZoneCounts(player);
-    return card;
-  }
-
-  private trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
-    const player = this.state.players.get(playerSessionId);
-    const moved: DuelCard[] = [];
-
-    if (!player) {
-      return moved;
-    }
-
-    for (let index = 0; index < amount; index += 1) {
-      const card = player.zones.deck.shift();
-
-      if (!card) {
-        break;
-      }
-
-      card.faceDown = false;
-      this.unshiftIntoZone(player.zones.trash, card);
-      this.broadcastCardView(card);
-      moved.push(card);
-    }
-
-    this.syncZoneCounts(player);
-    return moved;
-  }
-
-  private addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
-    const player = this.state.players.get(playerSessionId);
-
-    if (!player) {
-      return 0;
-    }
-
-    let moved = 0;
-
-    for (let index = 0; index < amount; index += 1) {
-      const card = player.zones.donDeck.shift();
-
-      if (!card) {
-        break;
-      }
-
-      card.rested = rested;
-      player.zones.cost.push(card);
-      moved += 1;
-    }
-
-    return moved;
-  }
-
-  private attachDonFromCost(
-    playerSessionId: string,
-    targetInstanceId: string,
-    amount: number,
-    options?: { rested?: boolean },
-  ): number {
-    const player = this.state.players.get(playerSessionId);
-
-    if (!player || amount <= 0) {
-      return 0;
-    }
-
-    const target =
-      player.zones.leader.instanceId === targetInstanceId
-        ? player.zones.leader
-        : this.findCardInZone(player, 'characters', targetInstanceId)?.card;
-
-    if (!target) {
-      return 0;
-    }
-
-    const donCards = this.takeAttachableDonCards(player, amount, options?.rested);
-
-    if (donCards.length === 0) {
-      return 0;
-    }
-
-    let attached = 0;
-
-    for (const donCard of donCards) {
-      const index = player.zones.cost.indexOf(donCard);
-
-      if (index >= 0) {
-        player.zones.cost.splice(index, 1);
-        attached += 1;
-      }
-    }
-
-    target.attachedDon += attached;
-    return attached;
-  }
-
-  private returnEffectDonToDeck(playerSessionId: string, amount: number): number {
-    const player = this.state.players.get(playerSessionId);
-
-    if (!player) {
-      return 0;
-    }
-
-    let removed = 0;
-
-    while (removed < amount && player.zones.cost.length > 0) {
-      const card = player.zones.cost.pop();
-
-      if (!card) {
-        break;
-      }
-
-      card.rested = false;
-      player.zones.donDeck.push(card);
-      removed += 1;
-    }
-
-    return removed;
   }
 
   private knockOutCharacterById(
@@ -2149,13 +1152,21 @@ export class DuelRoom extends Room<DuelState> {
     reason: 'battle' | 'effect',
   ): boolean {
     const player = this.state.players.get(playerSessionId);
-    const found = player ? this.findCardInZone(player, 'characters', instanceId) : null;
+    const found = player
+      ? this.findCardInZone(player, 'characters', instanceId)
+      : null;
 
     if (!player || !found) {
       return false;
     }
 
-    if (this.effectBoundary.applyKoReplacement(playerSessionId, instanceId, reason)) {
+    if (
+      this.effectBoundary.applyKoReplacement(
+        playerSessionId,
+        instanceId,
+        reason,
+      )
+    ) {
       this.effectBoundary.reapplyContinuousEffects();
       return false;
     }

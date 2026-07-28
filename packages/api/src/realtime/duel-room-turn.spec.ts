@@ -123,9 +123,10 @@ type RoomAccessPlayer = DuelPlayer | undefined;
 
 /**
  * The deck is shuffled on join, so a card's type is not guaranteed to land in
- * the starting 5-card hand. Deterministically pulls one card of the given
- * type from the deck into the hand for tests that need to play a specific
- * card type without depending on shuffle order.
+ * the starting 5-card hand or remain in the visible deck after Life is dealt.
+ * Deterministically pulls one card of the given type from the owner's hidden
+ * setup zones into the hand for tests that need to play a specific card type
+ * without depending on shuffle order.
  */
 function ensureHandContains(
   player: RoomAccessPlayer,
@@ -147,20 +148,39 @@ function ensureHandContains(
     (card) => card.type === type,
   );
 
-  if (deckIndex === -1) {
-    throw new Error(`no ${type} card available in deck`);
+  if (deckIndex >= 0) {
+    const [card] = player.zones.deck.splice(deckIndex, 1);
+
+    if (!card) {
+      throw new Error(`no ${type} card available in deck`);
+    }
+
+    card.faceDown = false;
+    player.zones.hand.push(card);
+    player.handCount = player.zones.hand.length;
+    player.deckCount = player.zones.deck.length;
+
+    return card.instanceId;
   }
 
-  const [card] = player.zones.deck.splice(deckIndex, 1);
+  const lifeIndex = Array.from(player.zones.life).findIndex(
+    (card) => card.type === type,
+  );
+
+  if (lifeIndex === -1) {
+    throw new Error(`no ${type} card available in deck or life`);
+  }
+
+  const [card] = player.zones.life.splice(lifeIndex, 1);
 
   if (!card) {
-    throw new Error(`no ${type} card available in deck`);
+    throw new Error(`no ${type} card available in deck or life`);
   }
 
   card.faceDown = false;
   player.zones.hand.push(card);
   player.handCount = player.zones.hand.length;
-  player.deckCount = player.zones.deck.length;
+  player.lifeCount = player.zones.life.length;
 
   return card.instanceId;
 }
