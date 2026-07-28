@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Card } from '@onepiecetcg/shared';
-import { AccountsService } from '../accounts/accounts.service';
+import { PlayerAccountService } from '../player-account/player-account.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { MatchResult } from './match-result.entity';
 import { StatsService } from './stats.service';
@@ -77,7 +77,7 @@ describe('StatsService', () => {
           },
         },
         {
-          provide: AccountsService,
+          provide: PlayerAccountService,
           useValue: {
             findOrCreateForAuthUser: jest.fn((user: { id: string }) =>
               Promise.resolve({ id: `account-${user.id}` }),

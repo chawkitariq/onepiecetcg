@@ -7,7 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { PlayerAccount } from '../accounts/player-account.entity';
+import { PlayerAccount } from '../player-account/player-account.entity';
 import { SavedDeck } from '../decks/saved-deck.entity';
 
 /**

@@ -9,8 +9,8 @@ import type {
 } from '@onepiecetcg/shared';
 import { Repository } from 'typeorm';
 import { CatalogService } from '../catalog/catalog.service';
-import type { AuthenticatedUser } from '../accounts/accounts.service';
-import { AccountsService } from '../accounts/accounts.service';
+import type { AuthenticatedUser } from '../player-account/player-account.service';
+import { PlayerAccountService } from '../player-account/player-account.service';
 import { MatchResult } from './match-result.entity';
 
 export type RecordMatchResultInput = {
@@ -48,7 +48,7 @@ export class StatsService {
   constructor(
     @InjectRepository(MatchResult)
     private readonly matchResults: Repository<MatchResult>,
-    private readonly accountsService: AccountsService,
+    private readonly accountsService: PlayerAccountService,
     private readonly catalogService: CatalogService,
   ) {}
 

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { Request } from 'express';
-import type { AuthenticatedUser } from '../accounts/accounts.service';
+import type { AuthenticatedUser } from '../player-account/player-account.service';
 import { DeckIdParamDto, DeckPayloadDto } from './deck.dto';
 import { DecksService } from './decks.service';
 

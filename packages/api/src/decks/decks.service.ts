@@ -19,9 +19,9 @@ import {
 } from '@onepiecetcg/shared';
 import { Repository } from 'typeorm';
 import {
-  AccountsService,
+  PlayerAccountService,
   type AuthenticatedUser,
-} from '../accounts/accounts.service';
+} from '../player-account/player-account.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { SavedDeck } from './saved-deck.entity';
 
@@ -42,7 +42,7 @@ export class DecksService {
   constructor(
     @InjectRepository(SavedDeck)
     private readonly decks: Repository<SavedDeck>,
-    private readonly accountsService: AccountsService,
+    private readonly accountsService: PlayerAccountService,
     private readonly catalogService: CatalogService,
   ) {}
 

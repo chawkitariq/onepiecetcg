@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AccountsModule } from './accounts/accounts.module';
+import { PlayerAccountModule } from './player-account/player-account.module';
 import { createAuth } from './auth';
 import { BetterAuthAccount } from './auth/better-auth-account.entity';
 import { BetterAuthSession } from './auth/better-auth-session.entity';
@@ -47,7 +47,7 @@ import { StatsModule } from './stats/stats.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    AccountsModule,
+    PlayerAccountModule,
     CatalogModule,
     DecksModule,
     StatsModule,

@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Card } from '@onepiecetcg/shared';
-import { AccountsService } from '../accounts/accounts.service';
+import { PlayerAccountService } from '../player-account/player-account.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { DecksService } from './decks.service';
 import { SavedDeck } from './saved-deck.entity';
@@ -46,7 +46,7 @@ describe('DecksService', () => {
           useValue: {},
         },
         {
-          provide: AccountsService,
+          provide: PlayerAccountService,
           useValue: {},
         },
         {

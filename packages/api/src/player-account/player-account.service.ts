@@ -16,7 +16,7 @@ export type AuthenticatedUser = {
 };
 
 @Injectable()
-export class AccountsService {
+export class PlayerAccountService {
   constructor(
     @InjectRepository(PlayerAccount)
     private readonly accounts: Repository<PlayerAccount>,
