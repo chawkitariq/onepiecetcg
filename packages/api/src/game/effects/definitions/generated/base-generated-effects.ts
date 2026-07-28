@@ -1,7 +1,6 @@
 import type { CardEffectDefinition } from '@onepiecetcg/shared';
 
-/** Sample real-card-style local effects used by the MVP engine and tests. */
-export const sampleEffectDefinitions: CardEffectDefinition[] = [
+export const baseGeneratedEffects: readonly CardEffectDefinition[] = [
   {
     cardId: 'OP01-006',
     standard: [
@@ -103,8 +102,4 @@ export const sampleEffectDefinitions: CardEffectDefinition[] = [
       },
     ],
   },
-  {
-    cardId: 'OP01-047',
-    specialHandlerId: 'trafalgar-law-on-play',
-  },
-];
+] as const;

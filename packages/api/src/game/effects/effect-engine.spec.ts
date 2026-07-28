@@ -8,9 +8,7 @@ import {
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
 import { EffectEngine, type EffectEngineHost } from './effect-engine';
-import { effectRegistry, registerCardEffects } from './effect-registry';
-import { sampleEffectDefinitions } from './sample-effect-definitions';
-import { specialEffectRegistry } from './special-effect-registry';
+import { buildEffectRegistry, loadEffectSources } from './effect-loader';
 
 const makeCard = (overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>): Card => ({
   id: overrides.id,
@@ -333,11 +331,10 @@ class TestHost implements EffectEngineHost {
 
 describe('EffectEngine', () => {
   it('resolves an on-play power modifier through an explicit card selection decision', () => {
-    registerCardEffects(sampleEffectDefinitions);
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(effectRegistry, host, specialEffectRegistry);
+    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
 
     const otama = host.addCardToZone(
       'p1',
@@ -370,11 +367,10 @@ describe('EffectEngine', () => {
   });
 
   it('recomputes continuous power bonuses from in-play cards without mutating printed power', () => {
-    registerCardEffects(sampleEffectDefinitions);
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(effectRegistry, host, specialEffectRegistry);
+    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
 
     const zoro = host.addCardToZone(
       'p1',
@@ -399,11 +395,10 @@ describe('EffectEngine', () => {
   });
 
   it('applies replacement effects before a KO is resolved', () => {
-    registerCardEffects(sampleEffectDefinitions);
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(effectRegistry, host, specialEffectRegistry);
+    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
 
     const borsalino = host.addCardToZone(
       'p1',
@@ -431,11 +426,10 @@ describe('EffectEngine', () => {
   });
 
   it('runs the special Trafalgar Law handler as a two-step decision flow', () => {
-    registerCardEffects(sampleEffectDefinitions);
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(effectRegistry, host, specialEffectRegistry);
+    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
 
     const law = host.addCardToZone(
       'p1',
@@ -525,12 +519,17 @@ describe('EffectEngine', () => {
         },
       ],
     };
-    registerCardEffects([triggerDefinition]);
-
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(effectRegistry, host, specialEffectRegistry);
+    const baseSources = loadEffectSources();
+    const engine = new EffectEngine(
+      buildEffectRegistry({
+        ...baseSources,
+        manual: [...baseSources.manual, triggerDefinition],
+      }),
+      host,
+    );
     const triggerCard = host.addCardToZone(
       'p1',
       'trash',

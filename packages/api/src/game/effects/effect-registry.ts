@@ -1,11 +1,20 @@
 import type { CardEffectDefinition } from '@onepiecetcg/shared';
+import { buildEffectRegistry, loadEffectSources } from './effect-loader';
+import type { EffectRegistry } from './types/effect-registry';
 
-/** Local card-effect source of truth keyed by card id. */
-export const effectRegistry = new Map<string, CardEffectDefinition>();
+/** Process-level immutable registry built once and shared across all rooms. */
+export const effectRegistry: EffectRegistry = buildEffectRegistry(
+  loadEffectSources(),
+);
 
-/** Registers card effect definitions into the local registry. */
-export function registerCardEffects(definitions: CardEffectDefinition[]): void {
-  for (const definition of definitions) {
-    effectRegistry.set(definition.cardId, definition);
-  }
+/** Rebuild helper for tests or future bootstrap hooks. */
+export function createEffectRegistry(): EffectRegistry {
+  return buildEffectRegistry(loadEffectSources());
+}
+
+/** Direct normalized lookup for one card definition. */
+export function getEffectDefinition(
+  cardId: string,
+): CardEffectDefinition | undefined {
+  return effectRegistry.effectsByCardId[cardId.trim().toUpperCase()];
 }

@@ -1,5 +1,4 @@
 import type {
-  CardEffectDefinition,
   EffectAction,
   EffectCardFilter,
   EffectCondition,
@@ -10,6 +9,7 @@ import type {
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
 import { DuelCard, type DuelPlayer, type DuelState } from '@onepiecetcg/shared';
+import type { EffectRegistry } from './types/effect-registry';
 
 export type EffectEventType =
   | 'onPlay'
@@ -95,12 +95,8 @@ export class EffectEngine {
   private pendingDecisionState: PendingDecisionState | null = null;
 
   public constructor(
-    private readonly registry: Map<string, CardEffectDefinition>,
+    private readonly registry: EffectRegistry,
     private readonly host: EffectEngineHost,
-    private readonly specialHandlers: Map<
-      string,
-      (event: EffectEvent, engine: EffectEngine) => void
-    > = new Map(),
   ) {}
 
   /** Serializes the pending player choice, if the resolver is paused on one. */
@@ -125,7 +121,7 @@ export class EffectEngine {
     }
 
     for (const card of this.collectInPlayCards()) {
-      const definition = this.registry.get(card.cardId);
+      const definition = this.registry.effectsByCardId[card.cardId];
 
       for (const continuous of definition?.continuous ?? []) {
         if (!this.conditionsPass(continuous.conditions ?? [], card.ownerSessionId, card)) {
@@ -167,7 +163,7 @@ export class EffectEngine {
       return;
     }
 
-    const definition = this.registry.get(event.sourceCardId);
+    const definition = this.registry.effectsByCardId[event.sourceCardId];
 
     for (const effect of definition?.standard ?? []) {
       if (effect.trigger.type !== event.type) {
@@ -186,11 +182,10 @@ export class EffectEngine {
       });
     }
 
-    const specialHandlerId = definition?.specialHandlerId;
-
-    if (specialHandlerId) {
-      this.specialHandlers.get(specialHandlerId)?.(event, this);
-    }
+    this.registry.specialHandlersByCardId[event.sourceCardId]?.resolve(
+      event,
+      this,
+    );
 
     this.flushQueue();
   }
@@ -203,16 +198,11 @@ export class EffectEngine {
       return false;
     }
 
-    const definition = this.registry.get(source.cardId);
-    const effects = [...(definition?.replacements ?? [])].sort(
-      (left, right) => (left.priority ?? 0) - (right.priority ?? 0),
-    );
+    const effects = this.registry.replacementEffectsByEventType[
+      query.type
+    ].filter((entry) => entry.cardId === source.cardId);
 
-    for (const effect of effects) {
-      if (effect.event !== 'wouldKoCharacter') {
-        continue;
-      }
-
+    for (const { effect } of effects) {
       if (!this.conditionsPass(effect.conditions ?? [], query.playerSessionId, source)) {
         continue;
       }
@@ -531,7 +521,7 @@ export class EffectEngine {
       }
       case 'activateEffect': {
         const definition = this.registry
-          .get(action.cardId)
+          .effectsByCardId[action.cardId]
           ?.standard?.find((candidate) => candidate.id === action.effectId);
 
         if (definition) {

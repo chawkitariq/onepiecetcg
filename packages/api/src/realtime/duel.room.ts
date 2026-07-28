@@ -21,12 +21,7 @@ import {
   type GamePhase,
 } from '@onepiecetcg/shared';
 import { EffectEngine } from '../game/effects/effect-engine';
-import {
-  effectRegistry,
-  registerCardEffects,
-} from '../game/effects/effect-registry';
-import { sampleEffectDefinitions } from '../game/effects/sample-effect-definitions';
-import { specialEffectRegistry } from '../game/effects/special-effect-registry';
+import { effectRegistry } from '../game/effects/effect-registry';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;
@@ -158,7 +153,6 @@ export class DuelRoom extends Room<DuelState> {
 
   async onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
-    registerCardEffects(sampleEffectDefinitions);
     this.effectEngine = new EffectEngine(
       effectRegistry,
       {
@@ -190,7 +184,6 @@ export class DuelRoom extends Room<DuelState> {
           }
         },
       },
-      specialEffectRegistry,
     );
 
     const description = options.description
@@ -1289,7 +1282,11 @@ export class DuelRoom extends Room<DuelState> {
 
     revealedCard.faceDown = false;
 
-    if (effectRegistry.get(revealedCard.cardId)?.standard?.some((effect) => effect.trigger.type === 'trigger')) {
+    if (
+      effectRegistry.effectsByCardId[revealedCard.cardId]?.standard?.some(
+        (effect) => effect.trigger.type === 'trigger',
+      )
+    ) {
       this.unshiftIntoZone(defender.zones.trash, revealedCard);
       this.broadcastCardView(revealedCard);
       this.effectEngine.handleEvent({
