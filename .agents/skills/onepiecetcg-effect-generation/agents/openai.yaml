@@ -1,0 +1,4 @@
+interface:
+  display_name: "OPTCG Effect Generation"
+  short_description: "Generate, validate, and evolve One Piece TCG effect definitions"
+  default_prompt: "Use $onepiecetcg-effect-generation to generate, validate, or refine One Piece TCG effect definitions in this repository."
