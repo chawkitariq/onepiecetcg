@@ -6,7 +6,7 @@ import type {
 } from '@onepiecetcg/shared';
 import { effectDefinitionEditions } from '../definitions';
 import { buildEffectIndexes } from '../effect-indexes';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '../definitions/special';
 import type {
   CardEffectEntry,
   CardEffectSource,

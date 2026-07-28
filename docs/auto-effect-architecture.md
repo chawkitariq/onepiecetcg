@@ -4,7 +4,7 @@
 
 The effect system is edition-based, bootstrap-loaded, and entirely in memory at runtime.
 `definitions/` is the single source of truth for card effect declarations, grouped one file per
-edition. Most cards stay declarative through a typed DSL. `special/` is reserved for the rare
+edition. Most cards stay declarative through a typed DSL. `definitions/special/` is reserved for the rare
 outlier card whose behavior would be awkward or unsafe to force into the DSL.
 
 At startup, the server imports every edition file, normalizes `cardId`s, validates duplicate
@@ -20,10 +20,10 @@ packages/api/src/game/effects/
     op01.effects.ts
     op02.effects.ts
     op05.effects.ts
-  special/
-    handlers/
-      trafalgar-law-on-play.special.ts
-    index.ts
+    special/
+      handlers/
+        op01-047.special.ts
+      index.ts
   types/
     effect-registry.ts
     effect-definition-source.ts
@@ -46,7 +46,7 @@ packages/api/src/game/effects/
 - `definitions/`
   Edition-based card declarations. One file per set or release. This is the only place where most
   card effect behavior should be authored.
-- `special/`
+- `definitions/special/`
   True outlier card-specific imperative handlers only. Use this when the DSL would be unclear,
   brittle, or disproportionately complex.
 - `types/`
@@ -93,7 +93,7 @@ entry’s `kind`, without any generated/override layering or primitive indirecti
 - `replacement`
   “Would happen instead” logic that intercepts an event before the base event applies.
 - `special-ref`
-  A pointer to an imperative handler in `special/` for rare card-specific outliers.
+  A pointer to an imperative handler in `definitions/special/` for rare card-specific outliers.
 
 The loader walks each card’s `effects` array once and distributes entries into the runtime
 `standard`, `continuous`, `replacements`, and `specialHandlerId` fields on
@@ -102,7 +102,7 @@ The loader walks each card’s `effects` array once and distributes entries into
 ## Bootstrap Loading
 
 1. Import all edition files from `definitions/index.ts`.
-2. Import all special handlers from `special/index.ts`.
+2. Import all special handlers from `definitions/special/index.ts`.
 3. Normalize every `cardId`.
 4. Validate duplicate card definitions across editions.
 5. Validate that every `special-ref` points to a real special handler for the same `cardId`.
@@ -149,12 +149,12 @@ Why:
 - rebuilding indexes per room or per action
 - reintroducing generated/override layers for MVP behavior authoring
 - splitting one-off continuous or replacement logic into fake “reusable” folders
-- forcing an awkward imperative card into the DSL when `special/` would be clearer
+- forcing an awkward imperative card into the DSL when `definitions/special/` would be clearer
 - scattering card behavior across multiple folders when one edition file would do
 
 ## Final Recommendation
 
 Keep the current engine runtime and registry shape, but author effects through edition files in
-`definitions/` and reserve `special/` for true exceptions. That is the simplest architecture that
+`definitions/` and reserve `definitions/special/` for true exceptions. That is the simplest architecture that
 still stays deterministic, scalable enough for MVP coverage, and easy to extend by adding one more
 `<edition-id>.effects.ts` file.
