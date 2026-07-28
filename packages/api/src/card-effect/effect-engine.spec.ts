@@ -491,6 +491,124 @@ describe('EffectEngine', () => {
     expect(target.power).toBe(3000);
   });
 
+  it('does not retrigger Gordon when another character with an on-play effect enters play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-011',
+        number: 'OP01-011',
+        name: 'Gordon',
+        type: 'Character',
+        power: 3000,
+      }),
+      'gordon',
+    );
+    const izo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-033',
+        number: 'OP01-033',
+        name: 'Izo',
+        type: 'Character',
+        power: 3000,
+      }),
+      'izo',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: izo.instanceId,
+      sourceCardId: izo.cardId,
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+  });
+
+  it('does not retrigger another on-play character already in play when Gordon is played', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-033',
+        number: 'OP01-033',
+        name: 'Izo',
+        type: 'Character',
+        power: 3000,
+      }),
+      'izo',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-FODDER',
+        number: 'HAND-FODDER',
+        name: 'Hand Fodder',
+        type: 'Character',
+        power: 1000,
+      }),
+      'hand-fodder',
+    );
+    const enemy = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'ENEMY-REST-TARGET',
+        number: 'ENEMY-REST-TARGET',
+        name: 'Enemy Rest Target',
+        type: 'Character',
+        power: 4000,
+      }),
+      'enemy-rest-target',
+    );
+
+    const gordon = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-011',
+        number: 'OP01-011',
+        name: 'Gordon',
+        type: 'Character',
+        power: 3000,
+      }),
+      'gordon',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: gordon.instanceId,
+      sourceCardId: gordon.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.effectId).toBe('gordon-on-play-bottom-deck-1-draw-1');
+    expect(decision?.sourceInstanceId).toBe(gordon.instanceId);
+
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      confirmed: true,
+      selectedCardInstanceIds: ['p1:hand-fodder'],
+    });
+
+    expect(enemy.rested).toBe(false);
+    expect(engine.getPendingDecision()).toBeNull();
+  });
+
   it('recomputes continuous power bonuses from in-play cards without mutating printed power', () => {
     const host = new TestHost();
     host.addPlayer('p1');
@@ -896,6 +1014,78 @@ describe('EffectEngine', () => {
     });
 
     expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+  });
+
+  it("does not trigger Raizo when a different character attacks", () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    host.state.turn = 3;
+    const engine = new EffectEngine(createRegistry(), host);
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-052',
+        number: 'OP01-052',
+        name: 'Raizo',
+        type: 'Character',
+      }),
+      'raizo',
+    );
+    const otherAttacker = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-ATTACKER',
+        number: 'ALLY-ATTACKER',
+        name: 'Other Attacker',
+        type: 'Character',
+      }),
+      'other-attacker',
+    );
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-REST-1',
+        number: 'ALLY-REST-1',
+        name: 'Rested Ally 1',
+        type: 'Character',
+      }),
+      'rested-ally-1',
+    ).rested = true;
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-REST-2',
+        number: 'ALLY-REST-2',
+        name: 'Rested Ally 2',
+        type: 'Character',
+      }),
+      'rested-ally-2',
+    ).rested = true;
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-SHOULD-NOT-HAPPEN',
+        number: 'DRAW-SHOULD-NOT-HAPPEN',
+        name: 'Unexpected Draw',
+        type: 'Character',
+      }),
+      'unexpected-draw',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: otherAttacker.instanceId,
+      sourceCardId: otherAttacker.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(0);
   });
 
   it('returns unchosen searched cards to the bottom of the deck for In Two Years', () => {

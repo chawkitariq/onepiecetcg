@@ -258,16 +258,18 @@ export class EffectEngine {
 
     this.queueTriggeredEffectsForCard(event, source, event.playerSessionId);
 
-    for (const candidate of this.collectInPlayCards()) {
-      if (candidate.instanceId === source.instanceId) {
-        continue;
-      }
+    if (this.shouldBroadcastTriggerToOtherCards(event.type)) {
+      for (const candidate of this.collectInPlayCards()) {
+        if (candidate.instanceId === source.instanceId) {
+          continue;
+        }
 
-      this.queueTriggeredEffectsForCard(
-        event,
-        candidate,
-        candidate.ownerSessionId,
-      );
+        this.queueTriggeredEffectsForCard(
+          event,
+          candidate,
+          candidate.ownerSessionId,
+        );
+      }
     }
 
     this.registry.specialHandlersByCardId[event.sourceCardId]?.resolve(
@@ -276,6 +278,20 @@ export class EffectEngine {
     );
 
     this.flushQueue();
+  }
+
+  /**
+   * Only true observer-style windows should be evaluated against every card in play.
+   * Source-bound windows like [On Play] or [When Attacking] must stay attached to
+   * the card that actually caused the event, otherwise unrelated cards can retrigger.
+   */
+  private shouldBroadcastTriggerToOtherCards(type: EffectEventType): boolean {
+    return (
+      type === 'onEventActivated' ||
+      type === 'onTurnStart' ||
+      type === 'onTurnEnd' ||
+      type === 'onKo'
+    );
   }
 
   /** Checks whether a replacement effect cancels or rewrites a pending KO event. */
