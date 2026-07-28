@@ -1,7 +1,7 @@
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
-export const trafalgarLawOnPlayHandler: SpecialHandlerDefinition = {
+export const op01047SpecialHandler: SpecialHandlerDefinition = {
   id: 'trafalgar-law-on-play',
   cardId: 'OP01-047',
   resolve(event, engine) {

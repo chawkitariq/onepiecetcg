@@ -6,60 +6,34 @@ import type {
 } from '@onepiecetcg/shared';
 import type { CardId } from './effect-registry';
 
-export type ReplacementPrimitiveId = string;
-
-export type ContinuousPrimitiveId = string;
-
 export type SpecialHandlerId = string;
 
-export type StandardEffectSource = {
-  kind: 'standard';
-  effect: StandardEffectDefinition;
-};
-
-export type ContinuousEffectSource =
+export type CardEffectEntry =
+  | {
+      kind: 'standard';
+      effect: StandardEffectDefinition;
+    }
   | {
       kind: 'continuous';
       effect: ContinuousEffectDefinition;
     }
   | {
-      kind: 'continuous-ref';
-      primitiveId: ContinuousPrimitiveId;
-    };
-
-export type ReplacementEffectSource =
-  | {
       kind: 'replacement';
       effect: ReplacementEffectDefinition;
     }
   | {
-      kind: 'replacement-ref';
-      primitiveId: ReplacementPrimitiveId;
+      kind: 'special-ref';
+      specialHandlerId: SpecialHandlerId;
     };
 
-export type SpecialHandlerSource = {
-  kind: 'special-ref';
-  specialHandlerId: SpecialHandlerId;
-};
-
-export interface GeneratedCardEffectDefinition {
+export interface CardEffectSource {
   cardId: CardId;
-  standards?: readonly StandardEffectSource[];
-  continuous?: readonly ContinuousEffectSource[];
-  replacements?: readonly ReplacementEffectSource[];
-  special?: SpecialHandlerSource;
+  effects?: readonly CardEffectEntry[];
 }
 
-export interface OverrideCardEffectDefinition extends GeneratedCardEffectDefinition {}
-
-export interface ReplacementPrimitiveDefinition {
-  id: ReplacementPrimitiveId;
-  effect: ReplacementEffectDefinition;
-}
-
-export interface ContinuousPrimitiveDefinition {
-  id: ContinuousPrimitiveId;
-  effect: ContinuousEffectDefinition;
+export interface EditionEffectDefinitions {
+  editionId: string;
+  cards: readonly CardEffectSource[];
 }
 
 export interface ResolvedCardEffectDefinition extends CardEffectDefinition {}

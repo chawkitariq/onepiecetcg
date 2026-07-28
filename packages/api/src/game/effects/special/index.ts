@@ -1,6 +1,6 @@
 import type { SpecialHandlerDefinition } from '../types/effect-registry';
-import { trafalgarLawOnPlayHandler } from './handlers/trafalgar-law-on-play.special';
+import { op01047SpecialHandler } from './handlers/op01-047.special';
 
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
-  trafalgarLawOnPlayHandler,
+  op01047SpecialHandler,
 ] as const;

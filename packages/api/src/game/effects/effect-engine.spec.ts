@@ -509,16 +509,21 @@ describe('EffectEngine', () => {
 
   it('supports trigger effects via local definitions', () => {
     const triggerDefinition = {
-      cardId: 'TRIGGER-001',
-      standards: [
+      editionId: 'TEST',
+      cards: [
         {
-          kind: 'standard' as const,
-          effect: {
-            id: 'trigger-draw',
-            text: '[Trigger] Draw 1 card.',
-            trigger: { type: 'trigger' },
-            actions: [{ type: 'draw', player: 'self', amount: 1 }],
-          },
+          cardId: 'TRIGGER-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'trigger-draw',
+                text: '[Trigger] Draw 1 card.',
+                trigger: { type: 'trigger' },
+                actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              },
+            },
+          ],
         },
       ],
     };
@@ -529,7 +534,7 @@ describe('EffectEngine', () => {
     const engine = new EffectEngine(
       buildEffectRegistry({
         ...baseSources,
-        overrides: [...baseSources.overrides, triggerDefinition],
+        definitions: [...baseSources.definitions, triggerDefinition],
       }),
       host,
     );

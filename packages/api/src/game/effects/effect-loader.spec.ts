@@ -6,109 +6,105 @@ import type {
 } from './types/effect-registry';
 
 describe('buildEffectRegistry', () => {
-  it('merges generated and manual definitions by cardId with manual section precedence', () => {
+  it('loads edition-based card definitions into a single cardId registry', () => {
     const sources: EffectSourceBundle = {
-      generated: [
+      definitions: [
         {
-          cardId: 'op01-001',
-          standards: [
+          editionId: 'OP01',
+          cards: [
             {
-              kind: 'standard',
-              effect: {
-                id: 'generated-standard',
-                text: 'Generated',
-                trigger: { type: 'onPlay' },
-                actions: [{ type: 'draw', player: 'self', amount: 1 }],
-              },
-            },
-          ],
-          continuous: [
-            {
-              kind: 'continuous',
-              effect: {
-                id: 'generated-continuous',
-                text: 'Generated continuous',
-                modifier: {
-                  selector: { player: 'self', zones: ['characters'] },
-                  power: 1000,
+              cardId: 'op01-001',
+              effects: [
+                {
+                  kind: 'standard',
+                  effect: {
+                    id: 'on-play',
+                    text: 'Draw 1.',
+                    trigger: { type: 'onPlay' },
+                    actions: [{ type: 'draw', player: 'self', amount: 1 }],
+                  },
                 },
-              },
+              ],
             },
           ],
         },
-      ],
-      overrides: [
         {
-          cardId: 'OP01-001',
-          standards: [
+          editionId: 'OP02',
+          cards: [
             {
-              kind: 'standard',
-              effect: {
-                id: 'manual-standard',
-                text: 'Manual',
-                trigger: { type: 'whenAttacking' },
-                actions: [{ type: 'draw', player: 'self', amount: 2 }],
-              },
+              cardId: 'OP02-002',
+              effects: [
+                {
+                  kind: 'continuous',
+                  effect: {
+                    id: 'buff',
+                    text: 'Buff.',
+                    modifier: {
+                      selector: { player: 'self', zones: ['characters'] },
+                      power: 1000,
+                    },
+                  },
+                },
+              ],
             },
           ],
         },
       ],
-      replacementPrimitives: [],
-      continuousPrimitives: [],
       specialHandlers: [],
     };
 
     const registry = buildEffectRegistry(sources);
-    const definition = registry.effectsByCardId['OP01-001'];
 
-    expect(definition.standard?.map((effect) => effect.id)).toEqual([
-      'manual-standard',
-    ]);
-    expect(definition.continuous).toBeUndefined();
+    expect(registry.effectsByCardId['OP01-001']?.standard?.[0]?.id).toBe(
+      'on-play',
+    );
+    expect(registry.effectsByCardId['OP02-002']?.continuous?.[0]?.id).toBe(
+      'buff',
+    );
   });
 
   it('builds trigger and replacement indexes once at startup', () => {
     const sources: EffectSourceBundle = {
-      generated: [
+      definitions: [
         {
-          cardId: 'OP01-002',
-          standards: [
+          editionId: 'OP01',
+          cards: [
             {
-              kind: 'standard',
-              effect: {
-                id: 'trigger-a',
-                text: 'A',
-                trigger: { type: 'onPlay' },
-                actions: [{ type: 'draw', player: 'self', amount: 1 }],
-              },
-            },
-            {
-              kind: 'standard',
-              effect: {
-                id: 'trigger-b',
-                text: 'B',
-                trigger: { type: 'trigger' },
-                actions: [{ type: 'draw', player: 'self', amount: 1 }],
-              },
-            },
-          ],
-          replacements: [
-            {
-              kind: 'replacement',
-              effect: {
-                id: 'replace-a',
-                text: 'Replace',
-                event: 'wouldKoCharacter',
-                replacement: [],
-                priority: 2,
-              },
+              cardId: 'OP01-002',
+              effects: [
+                {
+                  kind: 'standard',
+                  effect: {
+                    id: 'trigger-a',
+                    text: 'A',
+                    trigger: { type: 'onPlay' },
+                    actions: [{ type: 'draw', player: 'self', amount: 1 }],
+                  },
+                },
+                {
+                  kind: 'standard',
+                  effect: {
+                    id: 'trigger-b',
+                    text: 'B',
+                    trigger: { type: 'trigger' },
+                    actions: [{ type: 'draw', player: 'self', amount: 1 }],
+                  },
+                },
+                {
+                  kind: 'replacement',
+                  effect: {
+                    id: 'replace-a',
+                    text: 'Replace',
+                    event: 'wouldKoCharacter',
+                    replacement: [],
+                    priority: 2,
+                  },
+                },
+              ],
             },
           ],
         },
       ],
-      overrides: [],
-      replacementPrimitives: [],
-      continuousPrimitives: [],
       specialHandlers: [],
     };
 
@@ -128,10 +124,22 @@ describe('buildEffectRegistry', () => {
       resolve: jest.fn(),
     };
     const sources: EffectSourceBundle = {
-      generated: [{ cardId: 'OP99-001' }],
-      overrides: [],
-      replacementPrimitives: [],
-      continuousPrimitives: [],
+      definitions: [
+        {
+          editionId: 'OP99',
+          cards: [
+            {
+              cardId: 'OP99-001',
+              effects: [
+                {
+                  kind: 'special-ref',
+                  specialHandlerId: 'special-a',
+                },
+              ],
+            },
+          ],
+        },
+      ],
       specialHandlers: [handler],
     };
 
@@ -147,62 +155,23 @@ describe('buildEffectRegistry', () => {
     expect(registry.triggeredEffectsByTrigger.onPlay).toHaveLength(0);
   });
 
-  it('resolves replacement and continuous primitive references during bootstrap', () => {
+  it('rejects duplicate cardIds across edition files', () => {
     const sources: EffectSourceBundle = {
-      generated: [
+      definitions: [
         {
-          cardId: 'OP01-003',
-          replacements: [
-            {
-              kind: 'replacement-ref',
-              primitiveId: 'replace-a',
-            },
-          ],
-          continuous: [
-            {
-              kind: 'continuous-ref',
-              primitiveId: 'continuous-a',
-            },
-          ],
+          editionId: 'OP01',
+          cards: [{ cardId: 'OP01-003' }],
         },
-      ],
-      overrides: [],
-      replacementPrimitives: [
         {
-          id: 'replace-a',
-          effect: {
-            id: 'replace-a',
-            text: 'Replace',
-            event: 'wouldKoCharacter',
-            replacement: [],
-          },
-        },
-      ],
-      continuousPrimitives: [
-        {
-          id: 'continuous-a',
-          effect: {
-            id: 'continuous-a',
-            text: 'Continuous',
-            modifier: {
-              selector: { player: 'self', zones: ['characters'] },
-              power: 1000,
-            },
-          },
+          editionId: 'EB01',
+          cards: [{ cardId: 'op01-003' }],
         },
       ],
       specialHandlers: [],
     };
 
-    const registry = buildEffectRegistry(sources);
-
-    expect(registry.effectsByCardId['OP01-003']?.replacements?.[0]?.id).toBe(
-      'replace-a',
+    expect(() => buildEffectRegistry(sources)).toThrow(
+      'Duplicate effect definition for card "OP01-003" during effect bootstrap.',
     );
-    expect(registry.effectsByCardId['OP01-003']?.continuous?.[0]?.id).toBe(
-      'continuous-a',
-    );
-    expect(registry.replacementPrimitivesById['replace-a']).toBeDefined();
-    expect(registry.continuousPrimitivesById['continuous-a']).toBeDefined();
   });
 });
