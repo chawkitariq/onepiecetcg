@@ -47,7 +47,9 @@
     outline-offset 180ms ease-out,
     transform 180ms ease-out,
     background-color 180ms ease-out,
-    border-color 180ms ease-out;
+    border-color 180ms ease-out,
+    filter 180ms ease-out;
+  transform-origin: center;
   border-radius: var(--duel-highlight-radius);
   outline-offset: 0;
 }
@@ -60,12 +62,15 @@
 .duel-highlight--preview {
   outline: var(--duel-highlight-border-width) solid var(--duel-highlight-preview-border);
   background: var(--duel-highlight-preview-bg);
+  transform: scale(1.02);
+  filter: saturate(1.03);
 }
 
 .duel-highlight--selected {
   outline: var(--duel-highlight-border-width) solid var(--duel-highlight-selected-border);
   background: var(--duel-highlight-selected-bg);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.03);
+  filter: saturate(1.05);
 }
 
 .duel-highlight--source {
