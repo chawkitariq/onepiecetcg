@@ -7,7 +7,7 @@ import cardBackRegular from '~/assets/card-back-regular.png'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
-import { mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
+import { createHoveredDuelCard, mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
 
 type BoardTravelOverlay = {
@@ -151,9 +151,12 @@ type ScrollAreaInstance = {
 
 const api = useApi()
 const hoveredCard = ref<HoveredDuelCard | null>(null)
+const hoveredEffectPromptCard = ref<HoveredDuelCard | null>(null)
+const selectedEffectPromptCard = ref<HoveredDuelCard | null>(null)
 const hoveredCardCatalogDetails = reactive<Record<string, Pick<Card, 'text' | 'trigger'> | undefined>>({})
 const pendingHoveredCardDetailIds = ref<string[]>([])
-const failedHoveredCardDetailIds = new Set<string>()
+const hoveredCardDetailRetryTimestamps = reactive<Record<string, number | undefined>>({})
+const hoveredCardDetailRetryDelayMs = 5_000
 const reducedMotion = usePreferredReducedMotion()
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 const isJournalOpen = ref(false)
@@ -679,16 +682,22 @@ const turnButtonLabel = computed(() => {
 const turnButtonColor = computed(() => (isSelfTurn.value ? 'primary' : 'neutral'))
 const turnButtonVariant = 'solid' as const
 
+const inspectedCard = computed(() =>
+  hoveredCard.value
+  ?? hoveredEffectPromptCard.value
+  ?? selectedEffectPromptCard.value
+)
+
 const resolvedHoveredCard = computed(() =>
   mergeHoveredDuelCardDetails(
-    hoveredCard.value,
-    hoveredCard.value ? hoveredCardCatalogDetails[hoveredCard.value.cardId] : null
+    inspectedCard.value,
+    inspectedCard.value ? hoveredCardCatalogDetails[inspectedCard.value.cardId] : null
   )
 )
 const isHoveredCardDetailPending = computed(() =>
   Boolean(
-    hoveredCard.value
-    && pendingHoveredCardDetailIds.value.includes(hoveredCard.value.cardId)
+    inspectedCard.value
+    && pendingHoveredCardDetailIds.value.includes(inspectedCard.value.cardId)
   )
 )
 const hoveredCardRows = computed<Array<[string, string | number]>>(() => {
@@ -709,9 +718,35 @@ const hoveredCardRows = computed<Array<[string, string | number]>>(() => {
 })
 
 watch(
-  () => hoveredCard.value?.cardId ?? null,
+  () => inspectedCard.value,
+  (card) => {
+    if (!card) {
+      return
+    }
+
+    if (card.text === undefined && card.trigger === undefined) {
+      return
+    }
+
+    hoveredCardCatalogDetails[card.cardId] = {
+      text: card.text ?? null,
+      trigger: card.trigger ?? null
+    }
+    delete hoveredCardDetailRetryTimestamps[card.cardId]
+  },
+  { immediate: true }
+)
+
+watch(
+  () => inspectedCard.value?.cardId ?? null,
   async (cardId) => {
-    if (!cardId || hoveredCardCatalogDetails[cardId] || failedHoveredCardDetailIds.has(cardId)) {
+    if (!cardId || hoveredCardCatalogDetails[cardId]) {
+      return
+    }
+
+    const nextRetryAt = hoveredCardDetailRetryTimestamps[cardId]
+
+    if (nextRetryAt && Date.now() < nextRetryAt) {
       return
     }
 
@@ -727,13 +762,31 @@ watch(
         trigger: card.trigger
       }
     } catch {
-      failedHoveredCardDetailIds.add(cardId)
+      hoveredCardDetailRetryTimestamps[cardId] = Date.now() + hoveredCardDetailRetryDelayMs
     } finally {
       pendingHoveredCardDetailIds.value = pendingHoveredCardDetailIds.value.filter(id => id !== cardId)
     }
   },
   { immediate: true }
 )
+
+watch(
+  () => pendingEffectDecision.value?.id ?? null,
+  () => {
+    hoveredEffectPromptCard.value = null
+    selectedEffectPromptCard.value = null
+  }
+)
+
+function previewEffectPromptCard(card: PublicCard) {
+  const preview = createHoveredDuelCard(card)
+  hoveredEffectPromptCard.value = preview
+  selectedEffectPromptCard.value = preview
+}
+
+function clearEffectPromptPreview() {
+  hoveredEffectPromptCard.value = null
+}
 
 function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) {
   if (ghosts.length === 0) {
@@ -3225,6 +3278,8 @@ defineShortcuts({
           :selected-card-ids="selectedEffectCardIds"
           :revealed-card-ids="selectableRevealedDecisionCardIds"
           :submit-disabled-reason="effectDecisionSubmitState.reason"
+          @inspect="previewEffectPromptCard"
+          @clear-inspect="clearEffectPromptPreview"
           @toggle="toggleEffectCardSelection"
         />
         <DuelDecisionChoicePicker

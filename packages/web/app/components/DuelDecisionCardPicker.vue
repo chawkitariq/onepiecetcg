@@ -11,6 +11,8 @@ defineProps<{
 
 const emit = defineEmits<{
   toggle: [instanceId: string]
+  inspect: [card: PublicCard]
+  clearInspect: []
 }>()
 </script>
 
@@ -25,11 +27,16 @@ const emit = defineEmits<{
         v-for="card in cards"
         :key="card.instanceId"
         type="button"
+        :data-test="`effect-decision-card-${card.instanceId}`"
         class="rounded-xl border px-3 py-2 transition"
         :class="selectedCardIds.includes(card.instanceId)
           ? 'border-primary bg-primary/10 text-highlighted'
           : 'border-default bg-default/70 text-muted hover:border-primary/40 hover:text-highlighted'"
-        @click="emit('toggle', card.instanceId)"
+        @mouseenter="emit('inspect', card)"
+        @mouseleave="emit('clearInspect')"
+        @focus="emit('inspect', card)"
+        @blur="emit('clearInspect')"
+        @click="() => { emit('inspect', card); emit('toggle', card.instanceId) }"
       >
         <span class="block text-sm font-semibold">
           {{ card.name }}
