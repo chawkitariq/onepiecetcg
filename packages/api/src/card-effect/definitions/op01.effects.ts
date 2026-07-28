@@ -135,6 +135,41 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Activate:Main] (1) (You may rest the specified number of DON!! cards in your cost area) You may rest this Character: Look at 5 cards from the top of your deck; reveal up to 1 "Land of Wano" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.
     {
       cardId: 'OP01-041',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'kouzuki-momonosuke-activate-main-search-land-of-wano',
+            text: '[Activate:Main] (1) You may rest this Character: Look at 5 cards from the top of your deck; reveal up to 1 "Land of Wano" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.',
+            trigger: { type: 'activateMain' },
+            costs: [
+              { type: 'removeDon', player: 'self', amount: 1 },
+              {
+                type: 'rest',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Kouzuki Momonosuke'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'search',
+                player: 'self',
+                sourceZone: 'deck',
+                amount: 5,
+                filter: { trait: ['Land of Wano'] },
+                count: { kind: 'upTo', value: 1 },
+                destination: 'hand',
+                restDestination: 'deck',
+                restToBottom: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     {
       cardId: 'OP01-025',
@@ -343,6 +378,35 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [DON!! x1] [When Attacking] You may trash 1 card from your hand: Add up to 1 DON!! card from your DON!! deck and rest it.  This card has been officially errata'd.
     {
       cardId: 'OP01-101',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'sasaki-when-attacking-trash-1-add-rested-don',
+            text: '[DON!! x1] [When Attacking] You may trash 1 card from your hand: Add up to 1 DON!! card from your DON!! deck and rest it.',
+            trigger: { type: 'whenAttacking', optional: true },
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
+            costs: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 1,
+                rested: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-001 Roronoa Zoro (001) (Parallel)
     // [DON!! x1] [Your Turn] All of your Characters gain +1000 power.
@@ -476,6 +540,25 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] (1) (You may rest the specified number of DON!! cards in your cost area.): Add up to 1 DON!! card from your DON!! deck and rest it.  This card has been officially errata'd.
     {
       cardId: 'OP01-093',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'ulti-on-play-pay-1-add-rested-don',
+            text: '[On Play] (1): Add up to 1 DON!! card from your DON!! deck and rest it.',
+            trigger: { type: 'onPlay' },
+            costs: [{ type: 'removeDon', player: 'self', amount: 1 }],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 1,
+                rested: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-027 Round Table
     // [Main] Give up to 1 of your opponent's Characters -10000 power during this turn.  This card has been officially errata'd.
@@ -559,6 +642,8 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
                 },
                 count: { kind: 'upTo', value: 1 },
                 destination: 'hand',
+                restDestination: 'deck',
+                restToBottom: true,
               },
             ],
           },
@@ -589,6 +674,27 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] Rest up to 1 of your opponent's Characters with a cost of 3 or less.  This card has been officially errata'd.
     {
       cardId: 'OP01-048',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'nekomamushi-on-play-rest-cost-3-or-less',
+            text: "[On Play] Rest up to 1 of your opponent's Characters with a cost of 3 or less.",
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 3 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-111 Black Maria
     // [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Block] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character gains +1000 power during this turn.
@@ -604,6 +710,29 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)[DON!! x1] [On Block] If you have 3 or more Characters, draw 1 card.Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include "EN" at the end of the copyright) and the Artist Credit (Note: there is no pencil design on top of the artist name).
     {
       cardId: 'OP01-039',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'killer-on-block-draw-1',
+            text: '[DON!! x1] [On Block] If you have 3 or more Characters, draw 1 card.',
+            trigger: { type: 'onBlock' },
+            conditions: [
+              { type: 'sourceHasAttachedDonAtLeast', value: 1 },
+              {
+                type: 'targetCountAtLeast',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                },
+                value: 3,
+              },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
+        },
+      ],
     },
     // OP01-102 Jack (Parallel)
     // [When Attacking] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Your opponent trashes 1 card from their hand.
@@ -619,16 +748,97 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [DON!! x2] [When Attacking] Set up to 1 of your DON!! cards as active.  This card has been officially errata'd.
     {
       cardId: 'OP01-034',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'inuarashi-when-attacking-unrest-don',
+            text: '[DON!! x2] [When Attacking] Set up to 1 of your DON!! cards as active.',
+            trigger: { type: 'whenAttacking' },
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 2 }],
+            actions: [
+              {
+                type: 'unrest',
+                selector: {
+                  player: 'self',
+                  zones: ['cost'],
+                  filter: { rested: true },
+                  count: { kind: 'upTo', value: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-116 Artificial Devil Fruit SMILE
     // [Main] Look at 5 cards from the top of your deck; play up to 1 "SMILE" type Character card with a cost of 3 or less. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.
     {
       cardId: 'OP01-116',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'artificial-devil-fruit-smile-main-play-smile',
+            text: '[Main] Look at 5 cards from the top of your deck; play up to 1 "SMILE" type Character card with a cost of 3 or less. Then, place the rest at the bottom of your deck in any order.',
+            trigger: { type: 'activateMain' },
+            actions: [
+              {
+                type: 'search',
+                player: 'self',
+                sourceZone: 'deck',
+                amount: 5,
+                filter: {
+                  cardCategory: ['Character'],
+                  trait: ['SMILE'],
+                  costMax: 3,
+                },
+                count: { kind: 'upTo', value: 1 },
+                destination: 'characters',
+                restDestination: 'deck',
+                restToBottom: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-031 Kouzuki Oden (Parallel)
     // [Activate:Main] [Once Per Turn] You can trash 1 "Land of Wano" type card from your hand: Set up to 2 of your DON!! cards as active.
     {
       cardId: 'OP01-031',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'kouzuki-oden-activate-main-unrest-2-don',
+            text: '[Activate:Main] [Once Per Turn] You can trash 1 "Land of Wano" type card from your hand: Set up to 2 of your DON!! cards as active.',
+            trigger: { type: 'activateMain', oncePerTurn: true },
+            costs: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { trait: ['Land of Wano'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'unrest',
+                selector: {
+                  player: 'self',
+                  zones: ['cost'],
+                  filter: { rested: true },
+                  count: { kind: 'upTo', value: 2 },
+                },
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-108 Hitokiri Kamazo
     // [On K.O.] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck): K.O. up to 1 of your opponent's Characters with a cost of 5 or less.  This card has been officially errata'd.
@@ -664,11 +874,61 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] You may place 1 card from your hand at the bottom of your deck: Draw 1 card.
     {
       cardId: 'OP01-011',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'gordon-on-play-bottom-deck-1-draw-1',
+            text: '[On Play] You may place 1 card from your hand at the bottom of your deck: Draw 1 card.',
+            trigger: { type: 'onPlay', optional: true },
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'deck',
+              },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
+        },
+      ],
     },
     // OP01-084 Mr.2.Bon.Kurei (Bentham)
     // [DON!! x1] [When Attacking] Look at 5 cards from the top of your deck; reveal up to 1 "Baroque Works" type Event card and add it to your hand. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.
     {
       cardId: 'OP01-084',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'mr-2-bon-kurei-when-attacking-search-baroque-event',
+            text: '[DON!! x1] [When Attacking] Look at 5 cards from the top of your deck; reveal up to 1 "Baroque Works" type Event card and add it to your hand. Then, place the rest at the bottom of your deck in any order.',
+            trigger: { type: 'whenAttacking' },
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
+            actions: [
+              {
+                type: 'search',
+                player: 'self',
+                sourceZone: 'deck',
+                amount: 5,
+                filter: {
+                  cardCategory: ['Event'],
+                  trait: ['Baroque Works'],
+                },
+                count: { kind: 'upTo', value: 1 },
+                destination: 'hand',
+                restDestination: 'deck',
+                restToBottom: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-069 Caesar Clown
     // [On K.O.] Play up to 1 [Smiley] from your deck, then shuffle your deck.  This card has been officially errata'd.
@@ -689,6 +949,28 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [When Attacking] [Once Per Turn] If you have 2 or more rested Characters, draw 1 card.Disclaimer: This card was reprinted from the original set with changes to the artist credit (note the lack of pen symbol next to the artist name).
     {
       cardId: 'OP01-052',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'raizo-when-attacking-draw-1',
+            text: '[When Attacking] [Once Per Turn] If you have 2 or more rested Characters, draw 1 card.',
+            trigger: { type: 'whenAttacking', oncePerTurn: true },
+            conditions: [
+              {
+                type: 'targetCountAtLeast',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], rested: true },
+                },
+                value: 2,
+              },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
+        },
+      ],
     },
     // OP01-056 Demon Face
     // [Main] K.O. up to 2 of your opponent's rested Characters with a cost of 5 or less.  This card has been officially errata'd.
@@ -704,6 +986,32 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Main] Look at 5 cards from the top of your deck; reveal up to 1 "Baroque Works" type card other than [Baroque Works] and add it to your hand. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.
     {
       cardId: 'OP01-090',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'baroque-works-main-search-baroque-card',
+            text: '[Main] Look at 5 cards from the top of your deck; reveal up to 1 "Baroque Works" type card other than [Baroque Works] and add it to your hand. Then, place the rest at the bottom of your deck in any order.',
+            trigger: { type: 'activateMain' },
+            actions: [
+              {
+                type: 'search',
+                player: 'self',
+                sourceZone: 'deck',
+                amount: 5,
+                filter: {
+                  trait: ['Baroque Works'],
+                  excludeName: ['Baroque Works'],
+                },
+                count: { kind: 'upTo', value: 1 },
+                destination: 'hand',
+                restDestination: 'deck',
+                restToBottom: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-089 Crescent Cutlass
     // [Counter] If your Leader has the "The Seven Warlords of the Sea" type, return up to 1 Character with a cost of 5 or less to the owner's hand.  This card has been officially errata'd.
@@ -851,6 +1159,39 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Activate:Main] You may rest this Character: Up to 1 of your Leader or Character cards gains +2000 power during this turn.  This card has been officially errata'd.
     {
       cardId: 'OP01-020',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'hyogoro-activate-main-plus-2000',
+            text: '[Activate:Main] You may rest this Character: Up to 1 of your Leader or Character cards gains +2000 power during this turn.',
+            trigger: { type: 'activateMain' },
+            costs: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Hyogoro'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
+                amount: 2000,
+                duration: { type: 'untilEndOfTurn' },
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-050 Penguin
     // [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] If you don't have [Shachi], play up to 1 [Shachi] from your hand.  This card has been officially errata'd.

@@ -7,8 +7,14 @@ import {
   type Card,
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
+import { op01EffectDefinitions } from './definitions/op01.effects';
+import { op01047SpecialHandler } from './definitions/special/op01-047.special';
 import { EffectEngine, type EffectEngineHost } from './effect-engine';
-import { buildEffectRegistry, loadEffectSources } from './effect-loader';
+import { buildEffectIndexes } from './effect-indexes';
+import type {
+  EffectRegistry,
+  SpecialHandlerDefinition,
+} from './types/effect-registry';
 
 const makeCard = (overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>): Card => ({
   id: overrides.id,
@@ -28,6 +34,52 @@ const makeCard = (overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name'
   set: overrides.set ?? { id: 'test', name: 'Test' },
   rarity: overrides.rarity ?? null,
 });
+
+const createRegistry = (
+  definitions = [op01EffectDefinitions],
+  specialHandlers: readonly SpecialHandlerDefinition[] = [op01047SpecialHandler],
+): EffectRegistry => {
+  const effectsByCardId: Record<string, CardEffectDefinition> = {};
+  const specialHandlersByCardId: Record<string, SpecialHandlerDefinition> = {};
+
+  for (const definition of definitions) {
+    for (const card of definition.cards) {
+      const resolved: CardEffectDefinition = { cardId: card.cardId };
+
+      for (const entry of card.effects ?? []) {
+        switch (entry.kind) {
+          case 'standard':
+            resolved.standard = [...(resolved.standard ?? []), entry.effect];
+            break;
+          case 'continuous':
+            resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
+            break;
+          case 'replacement':
+            resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+            break;
+          case 'special-ref':
+            resolved.specialHandlerId = entry.specialHandlerId;
+            break;
+        }
+      }
+
+      effectsByCardId[resolved.cardId] = resolved;
+    }
+  }
+
+  for (const handler of specialHandlers) {
+    specialHandlersByCardId[handler.cardId] = handler;
+  }
+
+  const indexes = buildEffectIndexes(effectsByCardId, specialHandlersByCardId);
+
+  return {
+    effectsByCardId,
+    specialHandlersByCardId,
+    triggeredEffectsByTrigger: indexes.triggeredEffectsByTrigger,
+    replacementEffectsByEventType: indexes.replacementEffectsByEventType,
+  };
+};
 
 class TestHost implements EffectEngineHost {
   public readonly state = new DuelState();
@@ -116,7 +168,33 @@ class TestHost implements EffectEngineHost {
               : Array.from(player.zones[zone] ?? []);
 
         for (const card of cards) {
+          if (
+            selector.filter?.cardCategory &&
+            !selector.filter.cardCategory.includes(card.type)
+          ) {
+            continue;
+          }
+
           if (selector.filter?.costMax != null && card.cost > selector.filter.costMax) {
+            continue;
+          }
+
+          if (selector.filter?.costMin != null && card.cost < selector.filter.costMin) {
+            continue;
+          }
+
+          if (selector.filter?.powerMax != null && card.power > selector.filter.powerMax) {
+            continue;
+          }
+
+          if (selector.filter?.powerMin != null && card.power < selector.filter.powerMin) {
+            continue;
+          }
+
+          if (
+            selector.filter?.color &&
+            !selector.filter.color.some((color: string) => card.colors.includes(color))
+          ) {
             continue;
           }
 
@@ -141,6 +219,20 @@ class TestHost implements EffectEngineHost {
           if (
             selector.filter?.name &&
             !selector.filter.name.includes(card.name)
+          ) {
+            continue;
+          }
+
+          if (
+            selector.filter?.owner === 'self' &&
+            card.ownerSessionId !== controllerSessionId
+          ) {
+            continue;
+          }
+
+          if (
+            selector.filter?.owner === 'opponent' &&
+            card.ownerSessionId === controllerSessionId
           ) {
             continue;
           }
@@ -176,6 +268,12 @@ class TestHost implements EffectEngineHost {
       player.zones.hand.push(card);
     } else if (destinationZone === 'life') {
       player.zones.life.push(card);
+    } else if (destinationZone === 'deck') {
+      player.zones.deck.push(card);
+    } else if (destinationZone === 'donDeck') {
+      player.zones.donDeck.push(card);
+    } else if (destinationZone === 'cost') {
+      player.zones.cost.push(card);
     } else if (destinationZone === 'characters') {
       player.zones.characters.push(card);
     } else if (destinationZone === 'stage') {
@@ -306,7 +404,7 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'characters' | 'trash' | 'cost',
+    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
@@ -334,7 +432,7 @@ describe('EffectEngine', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
+    const engine = new EffectEngine(createRegistry(), host);
 
     const otama = host.addCardToZone(
       'p1',
@@ -370,7 +468,7 @@ describe('EffectEngine', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
+    const engine = new EffectEngine(createRegistry(), host);
 
     const zoro = host.addCardToZone(
       'p1',
@@ -398,7 +496,30 @@ describe('EffectEngine', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
+    const engine = new EffectEngine(
+      createRegistry([
+        {
+          editionId: 'OP05',
+          cards: [
+            {
+              cardId: 'OP05-051',
+              effects: [
+                {
+                  kind: 'replacement',
+                  effect: {
+                    id: 'borsalino-cannot-be-ko-by-effects',
+                    text: "This Character can't be KO'd by your opponent's effects.",
+                    event: 'wouldKoCharacter',
+                    replacement: [],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ], []),
+      host,
+    );
 
     const borsalino = host.addCardToZone(
       'p1',
@@ -429,7 +550,7 @@ describe('EffectEngine', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(buildEffectRegistry(loadEffectSources()), host);
+    const engine = new EffectEngine(createRegistry(), host);
 
     const law = host.addCardToZone(
       'p1',
@@ -530,12 +651,8 @@ describe('EffectEngine', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const baseSources = loadEffectSources();
     const engine = new EffectEngine(
-      buildEffectRegistry({
-        ...baseSources,
-        definitions: [...baseSources.definitions, triggerDefinition],
-      }),
+      createRegistry([op01EffectDefinitions, triggerDefinition]),
       host,
     );
     const triggerCard = host.addCardToZone(
@@ -570,5 +687,293 @@ describe('EffectEngine', () => {
     });
 
     expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+  });
+
+  it('pays declarative DON costs before resolving Ulti on-play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const ulti = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-093',
+        number: 'OP01-093',
+        name: 'Ulti',
+        type: 'Character',
+      }),
+      'ulti',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-COST',
+        number: 'DON-COST',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'cost-don',
+    );
+    host.addCardToZone(
+      'p1',
+      'donDeck',
+      makeCard({
+        id: 'DON-DECK',
+        number: 'DON-DECK',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-deck-don',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: ulti.instanceId,
+      sourceCardId: ulti.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.cost[0]?.rested).toBe(true);
+  });
+
+  it('skips a declarative effect when its DON cost cannot be paid', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const ulti = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-093',
+        number: 'OP01-093',
+        name: 'Ulti',
+        type: 'Character',
+      }),
+      'ulti-no-cost',
+    );
+    host.addCardToZone(
+      'p1',
+      'donDeck',
+      makeCard({
+        id: 'DON-DECK-2',
+        number: 'DON-DECK-2',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-deck-only',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: ulti.instanceId,
+      sourceCardId: ulti.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(0);
+  });
+
+  it('honors once-per-turn on Raizo across repeated attacks in the same turn', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    host.state.turn = 3;
+    const engine = new EffectEngine(createRegistry(), host);
+    const raizo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-052',
+        number: 'OP01-052',
+        name: 'Raizo',
+        type: 'Character',
+      }),
+      'raizo',
+    );
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-REST-1',
+        number: 'ALLY-REST-1',
+        name: 'Rested Ally 1',
+        type: 'Character',
+      }),
+      'rested-ally-1',
+    ).rested = true;
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-REST-2',
+        number: 'ALLY-REST-2',
+        name: 'Rested Ally 2',
+        type: 'Character',
+      }),
+      'rested-ally-2',
+    ).rested = true;
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-RAIZO-1',
+        number: 'DRAW-RAIZO-1',
+        name: 'Raizo Draw 1',
+        type: 'Character',
+      }),
+      'raizo-draw-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-RAIZO-2',
+        number: 'DRAW-RAIZO-2',
+        name: 'Raizo Draw 2',
+        type: 'Character',
+      }),
+      'raizo-draw-2',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: raizo.instanceId,
+      sourceCardId: raizo.cardId,
+    });
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: raizo.instanceId,
+      sourceCardId: raizo.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+
+    host.state.turn = 4;
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: raizo.instanceId,
+      sourceCardId: raizo.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+  });
+
+  it('returns unchosen searched cards to the bottom of the deck for In Two Years', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const eventCard = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP01-030',
+        number: 'OP01-030',
+        name: 'In Two Years!! At the Sabaody Archipelago!!',
+        type: 'Event',
+      }),
+      'in-two-years',
+    );
+    const nonMatching1 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-1',
+        number: 'TOP-1',
+        name: 'Top 1',
+        type: 'Character',
+        families: ['Navy'],
+      }),
+      'top-1',
+    );
+    const matching = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-2',
+        number: 'TOP-2',
+        name: 'Straw Hat Hit',
+        type: 'Character',
+        families: ['Straw Hat Crew'],
+      }),
+      'top-2',
+    );
+    const nonMatching2 = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-3',
+        number: 'TOP-3',
+        name: 'Top 3',
+        type: 'Character',
+        families: ['Animal Kingdom Pirates'],
+      }),
+      'top-3',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-4',
+        number: 'TOP-4',
+        name: 'Top 4',
+        type: 'Character',
+      }),
+      'top-4',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-5',
+        number: 'TOP-5',
+        name: 'Top 5',
+        type: 'Character',
+      }),
+      'top-5',
+    );
+    const nextTop = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-6',
+        number: 'TOP-6',
+        name: 'Next Top',
+        type: 'Character',
+      }),
+      'top-6',
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: eventCard.instanceId,
+      sourceCardId: eventCard.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [matching.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toContain(matching);
+    expect(host.getPlayer('p1')?.zones.deck[0]).toBe(nextTop);
+    expect(host.getPlayer('p1')?.zones.deck).toContain(nonMatching1);
+    expect(host.getPlayer('p1')?.zones.deck).toContain(nonMatching2);
   });
 });

@@ -21,6 +21,7 @@ export type EffectCondition =
   | { type: 'sourceHasAttachedDonAtLeast'; value: number }
   | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
   | { type: 'targetExists'; selector: EffectTargetSelector }
+  | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
   | { type: 'cardInZone'; zone: GameZone }
   | { type: 'sourceIsRested'; value: boolean };
 

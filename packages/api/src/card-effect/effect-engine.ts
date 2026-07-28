@@ -92,6 +92,8 @@ export class EffectEngine {
 
   private readonly modifiers: RuntimeModifier[] = [];
 
+  private readonly resolvedOncePerTurnKeys = new Set<string>();
+
   private pendingDecisionState: PendingDecisionState | null = null;
 
   public constructor(
@@ -167,6 +169,15 @@ export class EffectEngine {
 
     for (const effect of definition?.standard ?? []) {
       if (effect.trigger.type !== event.type) {
+        continue;
+      }
+
+      if (
+        effect.trigger.oncePerTurn &&
+        this.resolvedOncePerTurnKeys.has(
+          this.getOncePerTurnKey(source.instanceId, effect.id),
+        )
+      ) {
         continue;
       }
 
@@ -278,8 +289,8 @@ export class EffectEngine {
           },
           continuation: (response) => {
             if (response.confirmed) {
-              this.resolveActions(
-                queued.definition.actions,
+              this.resolveStandardEffect(
+                queued.definition,
                 queued.controllerSessionId,
                 source,
               );
@@ -289,12 +300,39 @@ export class EffectEngine {
         return;
       }
 
-      this.resolveActions(
-        queued.definition.actions,
+      this.resolveStandardEffect(
+        queued.definition,
         queued.controllerSessionId,
         source,
       );
     }
+  }
+
+  private resolveStandardEffect(
+    definition: StandardEffectDefinition,
+    controllerSessionId: string,
+    source: DuelCard,
+  ): void {
+    if (!this.canPayCosts(definition.costs ?? [], controllerSessionId)) {
+      return;
+    }
+
+    const runActions = () => {
+      if (definition.trigger.oncePerTurn) {
+        this.resolvedOncePerTurnKeys.add(
+          this.getOncePerTurnKey(source.instanceId, definition.id),
+        );
+      }
+
+      this.resolveActions(definition.actions, controllerSessionId, source);
+    };
+
+    if (!definition.costs || definition.costs.length === 0) {
+      runActions();
+      return;
+    }
+
+    this.resolveActions(definition.costs, controllerSessionId, source, 0, runActions);
   }
 
   private resolveActions(
@@ -302,14 +340,25 @@ export class EffectEngine {
     controllerSessionId: string,
     source: DuelCard,
     startIndex = 0,
+    onComplete?: () => void,
   ): void {
     if (startIndex >= actions.length || this.pendingDecisionState) {
+      if (startIndex >= actions.length && !this.pendingDecisionState) {
+        onComplete?.();
+      }
+
       return;
     }
 
     const action = actions[startIndex];
     const next = () =>
-      this.resolveActions(actions, controllerSessionId, source, startIndex + 1);
+      this.resolveActions(
+        actions,
+        controllerSessionId,
+        source,
+        startIndex + 1,
+        onComplete,
+      );
 
     switch (action.type) {
       case 'draw': {
@@ -437,9 +486,6 @@ export class EffectEngine {
         const sourceCards =
           action.sourceZone === 'deck' ? player.zones.deck : player.zones.trash;
         const revealed = Array.from(sourceCards).slice(0, action.amount);
-        const matching = revealed.filter((card) =>
-          this.matchesFilter(card, action.filter, controllerSessionId),
-        );
 
         this.chooseCards(
           `${source.instanceId}:${action.type}:${Math.random()}`,
@@ -455,11 +501,13 @@ export class EffectEngine {
           (cards) => {
             const chosenIds = new Set(cards.map((card) => card.instanceId));
 
-            for (const card of matching) {
+            for (const card of revealed) {
               if (chosenIds.has(card.instanceId)) {
                 this.host.moveCard(card, playerId, action.destination);
               } else if (action.restDestination === 'trash') {
                 this.host.moveCard(card, playerId, 'trash');
+              } else if (action.restDestination === 'deck') {
+                this.host.moveCard(card, playerId, 'deck');
               }
             }
 
@@ -669,6 +717,11 @@ export class EffectEngine {
         }
         case 'targetExists':
           return this.host.getCards(condition.selector, controllerSessionId).length > 0;
+        case 'targetCountAtLeast':
+          return (
+            this.host.getCards(condition.selector, controllerSessionId).length >=
+            condition.value
+          );
         case 'cardInZone':
           return this.findZoneOfCard(source)?.zone === condition.zone;
         case 'sourceIsRested':
@@ -764,6 +817,65 @@ export class EffectEngine {
     }
 
     return cards;
+  }
+
+  private getOncePerTurnKey(sourceInstanceId: string, effectId: string): string {
+    return `${sourceInstanceId}:${effectId}:${this.host.state.turn}`;
+  }
+
+  private canPayCosts(
+    costs: EffectAction[],
+    controllerSessionId: string,
+  ): boolean {
+    return costs.every((cost) =>
+      this.canResolveCostAction(cost, controllerSessionId),
+    );
+  }
+
+  private canResolveCostAction(
+    action: EffectAction,
+    controllerSessionId: string,
+  ): boolean {
+    switch (action.type) {
+      case 'removeDon': {
+        const playerId = this.resolvePlayer(action.player, controllerSessionId);
+        const player = playerId ? this.host.getPlayer(playerId) : undefined;
+        return (player?.zones.cost.length ?? 0) >= action.amount;
+      }
+      case 'trashFromHand':
+      case 'rest':
+      case 'unrest':
+      case 'restand':
+      case 'moveCard':
+      case 'attachDon':
+      case 'play':
+      case 'ko':
+      case 'modifyPower':
+      case 'addToLife':
+      case 'detachDon':
+        return this.hasSelectableCards(action.selector, controllerSessionId);
+      case 'draw':
+      case 'trashFromDeck':
+      case 'addDon':
+      case 'reveal':
+      case 'search':
+      case 'activateEffect':
+        return true;
+    }
+  }
+
+  private hasSelectableCards(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+  ): boolean {
+    const available = this.host.getCards(selector, controllerSessionId).length;
+    const count = selector.count ?? { kind: 'exact' as const, value: available };
+
+    if (count.kind === 'upTo') {
+      return available > 0 || count.value === 0;
+    }
+
+    return available >= count.value;
   }
 
   private findZoneOfCard(card: DuelCard):
