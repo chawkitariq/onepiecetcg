@@ -22,6 +22,7 @@ import { DuelCardQueryEngine } from './duel-card-query-engine';
 import { DuelMainPhaseEngine } from './duel-main-phase-engine';
 import { DuelRoomClientNotifier } from './duel-room-client-notifier';
 import { DuelRoomLifecycle } from './duel-room-lifecycle';
+import { DuelRoomRuntimeState } from './duel-room-runtime-state';
 import { DuelRoomSeatBootstrap } from './duel-room-seat-bootstrap';
 import { DuelTurnEngine } from './duel-turn-engine';
 import { DuelZoneEngine } from './duel-zone-engine';
@@ -124,6 +125,8 @@ export class DuelRoom extends Room<DuelState> {
 
   private lifecycle!: DuelRoomLifecycle;
 
+  private runtimeState!: DuelRoomRuntimeState;
+
   private seatBootstrap!: DuelRoomSeatBootstrap;
 
   private notifier!: DuelRoomClientNotifier;
@@ -154,11 +157,15 @@ export class DuelRoom extends Room<DuelState> {
       state: this.state,
       statsService: services?.statsService,
       addLog: (message) => this.addLog(message),
-      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      getOpponentSessionId: (sessionId) =>
+        this.runtimeState.getOpponentSessionId(sessionId),
       disconnectRoom: () => this.disconnect(),
       reportStatsError: (error) => {
         this.logger.error('Failed to record match result', error);
       },
+    });
+    this.runtimeState = new DuelRoomRuntimeState({
+      state: this.state,
     });
     this.notifier = new DuelRoomClientNotifier({
       getClients: () => this.clients,
@@ -167,7 +174,7 @@ export class DuelRoom extends Room<DuelState> {
         this.effectBoundary.getPendingEffectDecision(),
     });
     this.seatBootstrap = new DuelRoomSeatBootstrap({
-      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
     });
     this.effectBoundary = new DuelRoomEffectBoundary({
@@ -176,7 +183,8 @@ export class DuelRoom extends Room<DuelState> {
       onPendingEffectDecisionChange: (decision) =>
         this.notifier.syncPendingEffectDecision(decision),
       getPlayer: (sessionId) => this.state.players.get(sessionId),
-      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      getOpponentSessionId: (sessionId) =>
+        this.runtimeState.getOpponentSessionId(sessionId),
       getCard: (instanceId) =>
         this.cardQueryEngine.getCardByInstanceId(instanceId),
       getCards: (selector, controllerSessionId) =>
@@ -216,7 +224,7 @@ export class DuelRoom extends Room<DuelState> {
         const player = this.state.players.get(playerSessionId);
 
         if (player) {
-          this.syncZoneCounts(player);
+          this.runtimeState.syncZoneCounts(player);
         }
       },
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
@@ -227,11 +235,12 @@ export class DuelRoom extends Room<DuelState> {
       effectBoundary: this.effectBoundary,
       addLog: (message) => this.addLog(message),
       shuffle: (cards) => this.shuffle(cards),
-      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       returnDonToCost: (player, sessionId, count) =>
-        this.returnDonToCost(player, sessionId, count),
-      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
-      isCombatInProgress: () => this.isCombatInProgress(),
+        this.runtimeState.returnDonToCost(player, sessionId, count),
+      getOpponentSessionId: (sessionId) =>
+        this.runtimeState.getOpponentSessionId(sessionId),
+      isCombatInProgress: () => this.runtimeState.isCombatInProgress(),
       finalizeMatch: (endReason, winnerSessionId) =>
         this.lifecycle.finalizeMatch(endReason, winnerSessionId),
       recordMatchResult: () => this.lifecycle.recordMatchResult(),
@@ -239,18 +248,19 @@ export class DuelRoom extends Room<DuelState> {
     });
     this.cardQueryEngine = new DuelCardQueryEngine({
       state: this.state,
-      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
-      cardPower: (card) => this.cardPower(card),
+      getOpponentSessionId: (sessionId) =>
+        this.runtimeState.getOpponentSessionId(sessionId),
+      cardPower: (card) => this.runtimeState.cardPower(card),
     });
     this.zoneEngine = new DuelZoneEngine({
       state: this.state,
       effectBoundary: this.effectBoundary,
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       findCardInZone: (player, zone, instanceId) =>
-        this.findCardInZone(player, zone, instanceId),
+        this.runtimeState.findCardInZone(player, zone, instanceId),
       takeAttachableDonCards: (player, amount, rested) =>
-        this.takeAttachableDonCards(player, amount, rested),
+        this.runtimeState.takeAttachableDonCards(player, amount, rested),
     });
     this.mainPhaseEngine = new DuelMainPhaseEngine({
       state: this.state,
@@ -258,15 +268,15 @@ export class DuelRoom extends Room<DuelState> {
       addLog: (message) => this.addLog(message),
       sendError: (message) => this.notifier.sendMainPhaseError(message),
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       unshiftIntoTrash: (player, card) =>
         this.unshiftIntoZone(player.zones.trash, card),
       returnDonToCost: (player, sessionId, count) =>
-        this.returnDonToCost(player, sessionId, count),
+        this.runtimeState.returnDonToCost(player, sessionId, count),
       findCardInZone: (player, zone, instanceId) =>
-        this.findCardInZone(player, zone, instanceId),
+        this.runtimeState.findCardInZone(player, zone, instanceId),
       takeUntappedDonCards: (player, amount) =>
-        this.takeUntappedDonCards(player, amount),
+        this.runtimeState.takeUntappedDonCards(player, amount),
     });
     this.combatEngine = new DuelCombatEngine({
       state: this.state,
@@ -274,14 +284,15 @@ export class DuelRoom extends Room<DuelState> {
       addLog: (message) => this.addLog(message),
       sendError: (message) => this.notifier.sendCombatError(message),
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       unshiftIntoTrash: (player, card) =>
         this.unshiftIntoZone(player.zones.trash, card),
-      isCombatInProgress: () => this.isCombatInProgress(),
-      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      isCombatInProgress: () => this.runtimeState.isCombatInProgress(),
+      getOpponentSessionId: (sessionId) =>
+        this.runtimeState.getOpponentSessionId(sessionId),
       findCardInZone: (player, zone, instanceId) =>
-        this.findCardInZone(player, zone, instanceId),
-      cardPower: (card) => this.cardPower(card),
+        this.runtimeState.findCardInZone(player, zone, instanceId),
+      cardPower: (card) => this.runtimeState.cardPower(card),
       knockOutCharacter: (owner, card) => this.knockOutCharacter(owner, card),
       isProtectedFromBattleKo: (defendingCard, attackerCard) =>
         this.isProtectedFromBattleKo(defendingCard, attackerCard),
@@ -447,12 +458,6 @@ export class DuelRoom extends Room<DuelState> {
     });
   }
 
-  private syncZoneCounts(player: DuelPlayer) {
-    player.handCount = player.zones.hand.length;
-    player.deckCount = player.zones.deck.length;
-    player.lifeCount = player.zones.life.length;
-  }
-
   private initializeGame() {
     this.turnEngine.initializeGame();
     void this.lock();
@@ -477,110 +482,6 @@ export class DuelRoom extends Room<DuelState> {
     }
   }
 
-  /**
-   * A DON!! card loses all attachments and becomes a brand-new tapped card
-   * in the Cost zone whenever the card it was attached to changes zone
-   * (docs/optcg-rules.md §3, "Règle importante sur le changement de zone").
-   */
-  private returnDonToCost(
-    player: DuelPlayer,
-    sessionId: string,
-    count: number,
-  ) {
-    for (let index = 0; index < count; index += 1) {
-      const returnedCard = new DuelCard();
-      returnedCard.instanceId = `${sessionId}:don-returned:${Date.now()}:${index}:${Math.random()}`;
-      returnedCard.ownerSessionId = sessionId;
-      returnedCard.cardId = 'DON!!';
-      returnedCard.number = 'DON!!';
-      returnedCard.name = 'DON!!';
-      returnedCard.type = 'DON!!';
-      returnedCard.rested = true;
-      player.zones.cost.push(returnedCard);
-    }
-  }
-
-  private findCardInZone(
-    player: DuelPlayer,
-    zone: 'characters' | 'cost' | 'hand',
-    instanceId: string,
-  ): { card: DuelCard; index: number } | null {
-    const cards = player.zones[zone];
-
-    for (let index = 0; index < cards.length; index += 1) {
-      const card = cards[index];
-
-      if (card?.instanceId === instanceId) {
-        return { card, index };
-      }
-    }
-
-    return null;
-  }
-
-  private takeUntappedDonCards(
-    player: DuelPlayer,
-    amount: number,
-  ): DuelCard[] | null {
-    const untapped: Array<{ card: DuelCard; index: number }> = [];
-
-    for (let index = 0; index < player.zones.cost.length; index += 1) {
-      const card = player.zones.cost[index];
-
-      if (card && !card.rested) {
-        untapped.push({ card, index });
-      }
-
-      if (untapped.length === amount) {
-        break;
-      }
-    }
-
-    if (untapped.length < amount) {
-      return null;
-    }
-
-    for (const entry of untapped) {
-      entry.card.rested = true;
-    }
-
-    return untapped.map((entry) => entry.card);
-  }
-
-  private takeAttachableDonCards(
-    player: DuelPlayer,
-    amount: number,
-    rested?: boolean,
-  ): DuelCard[] {
-    const matches: DuelCard[] = [];
-
-    for (const card of player.zones.cost) {
-      if (rested !== undefined && card.rested !== rested) {
-        continue;
-      }
-
-      matches.push(card);
-
-      if (matches.length === amount) {
-        break;
-      }
-    }
-
-    return matches;
-  }
-
-  private isCombatInProgress(): boolean {
-    return this.state.combat.attackerInstanceId !== '';
-  }
-
-  private getOpponentSessionId(sessionId: string): string | null {
-    return (
-      Array.from(this.state.players.keys()).find(
-        (candidate) => candidate !== sessionId,
-      ) ?? null
-    );
-  }
-
   private handleDeclareAttack(client: Client, message: DeclareAttackMessage) {
     this.notifier.bindCombatClient(client);
     this.combatEngine.handleDeclareAttack(client.sessionId, message);
@@ -601,22 +502,6 @@ export class DuelRoom extends Room<DuelState> {
     this.combatEngine.handleFinishCounterStep(client.sessionId);
   }
 
-  /**
-   * DON!! attached to a Leader/Character only grants +1000 power "during
-   * your turn" (docs/rule_comprehensive.md 6-5-5-2) -- attachedDon isn't
-   * cleared until the owner's own next Refresh Phase, so the bonus must be
-   * excluded here whenever it's being evaluated on the opponent's turn
-   * (e.g. a Character defending an attack still carrying last turn's DON!!).
-   */
-  private cardPower(card: DuelCard): number {
-    const donBonus =
-      card.ownerSessionId === this.state.activePlayerSessionId
-        ? card.attachedDon * 1000
-        : 0;
-
-    return Math.max(card.power, 0) + donBonus;
-  }
-
   private knockOutCharacter(
     owner: DuelPlayer,
     card: DuelCard,
@@ -635,7 +520,11 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    const found = this.findCardInZone(owner, 'characters', card.instanceId);
+    const found = this.runtimeState.findCardInZone(
+      owner,
+      'characters',
+      card.instanceId,
+    );
 
     if (!found) {
       return;
@@ -646,7 +535,7 @@ export class DuelRoom extends Room<DuelState> {
     card.attachedDon = 0;
     card.rested = false;
     this.unshiftIntoZone(owner.zones.trash, card);
-    this.returnDonToCost(owner, owner.sessionId, attachedDon);
+    this.runtimeState.returnDonToCost(owner, owner.sessionId, attachedDon);
     this.addLog(`${card.name} est mis KO et rejoint la Defausse.`);
     this.effectBoundary.emitCardEvent('onKo', owner.sessionId, card);
     this.effectBoundary.reapplyContinuousEffects();
@@ -715,7 +604,7 @@ export class DuelRoom extends Room<DuelState> {
     this.effectBoundary.answerEffectDecision(message);
 
     if (
-      this.isCombatInProgress() &&
+      this.runtimeState.isCombatInProgress() &&
       this.state.combat.step === 'resolving' &&
       !this.effectBoundary.hasPendingPlayerInteraction()
     ) {
@@ -755,7 +644,7 @@ export class DuelRoom extends Room<DuelState> {
   ): boolean {
     const player = this.state.players.get(playerSessionId);
     const found = player
-      ? this.findCardInZone(player, 'characters', instanceId)
+      ? this.runtimeState.findCardInZone(player, 'characters', instanceId)
       : null;
 
     if (!player || !found) {
