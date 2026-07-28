@@ -11,6 +11,7 @@ import type {
 const triggerTypes = [
   'onPlay',
   'activateMain',
+  'activateCounter',
   'whenAttacking',
   'onKo',
   'trigger',

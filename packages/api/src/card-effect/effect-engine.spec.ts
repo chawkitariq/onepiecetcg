@@ -114,6 +114,16 @@ class TestHost implements EffectEngineHost {
     this.logs.push(message);
   }
 
+  public shuffleDeck(playerSessionId: string): void {
+    const player = this.getPlayer(playerSessionId);
+
+    if (!player) {
+      return;
+    }
+
+    player.zones.deck.reverse();
+  }
+
   public getPlayer(sessionId: string): DuelPlayer | undefined {
     return this.state.players.get(sessionId);
   }

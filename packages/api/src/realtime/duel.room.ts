@@ -165,6 +165,13 @@ export class DuelRoom extends Room<DuelState> {
           this.getCardsForSelector(selector, controllerSessionId),
         moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
           this.moveCardToZone(card, destinationPlayerSessionId, destinationZone, options),
+        shuffleDeck: (playerSessionId) => {
+          const player = this.state.players.get(playerSessionId);
+
+          if (player) {
+            this.shuffle(player.zones.deck);
+          }
+        },
         drawCard: (playerSessionId) => this.drawCardForEffect(playerSessionId),
         trashTopDeckCards: (playerSessionId, amount) =>
           this.trashTopDeckCards(playerSessionId, amount),
@@ -1130,8 +1137,11 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     const bonus = Math.max(0, Math.trunc(message.counterPowerBonus));
+    const hasCounterEffect = effectRegistry.effectsByCardId[found.card.cardId]?.standard?.some(
+      (effect) => effect.trigger.type === 'activateCounter',
+    );
 
-    if (bonus <= 0) {
+    if (bonus <= 0 && !hasCounterEffect) {
       this.sendError(client, 'Valeur de Contre invalide.');
       return;
     }
@@ -1144,6 +1154,15 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(
       `${defender.displayName} defausse ${found.card.name} et declare +${bonus} de Contre.`,
     );
+
+    if (hasCounterEffect) {
+      this.effectEngine.handleEvent({
+        type: 'activateCounter',
+        playerSessionId: defender.sessionId,
+        sourceInstanceId: found.card.instanceId,
+        sourceCardId: found.card.cardId,
+      });
+    }
   }
 
   private handleFinishCounterStep(client: Client) {
@@ -1375,6 +1394,7 @@ export class DuelRoom extends Room<DuelState> {
     combat.step = 'declared';
     combat.counterPowerBonus = 0;
     combat.awaitingTriggerDecision = false;
+    this.effectEngine.clearCombatModifiers();
   }
 
   private handlePlayCard(client: Client, message: PlayCardMessage) {
@@ -1619,7 +1639,11 @@ export class DuelRoom extends Room<DuelState> {
 
     this.effectEngine.answerDecision(message);
 
-    if (this.isCombatInProgress() && !this.effectEngine.getPendingDecision()) {
+    if (
+      this.isCombatInProgress() &&
+      this.state.combat.step === 'resolving' &&
+      !this.effectEngine.getPendingDecision()
+    ) {
       this.endCombat();
     }
   }

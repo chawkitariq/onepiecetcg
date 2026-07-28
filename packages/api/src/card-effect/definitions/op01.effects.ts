@@ -216,11 +216,70 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)[DON!! x1] [When Attacking]/[On Block] Draw 1 card if you have 5 or less cards in your hand.
     {
       cardId: 'OP01-078',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'boa-hancock-when-attacking-draw-1',
+            text: '[DON!! x1] [When Attacking] Draw 1 card if you have 5 or less cards in your hand.',
+            trigger: { type: 'whenAttacking' },
+            conditions: [
+              { type: 'sourceHasAttachedDonAtLeast', value: 1 },
+              {
+                type: 'targetCountAtMost',
+                selector: { player: 'self', zones: ['hand'] },
+                value: 5,
+              },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'boa-hancock-on-block-draw-1',
+            text: '[DON!! x1] [On Block] Draw 1 card if you have 5 or less cards in your hand.',
+            trigger: { type: 'onBlock' },
+            conditions: [
+              { type: 'sourceHasAttachedDonAtLeast', value: 1 },
+              {
+                type: 'targetCountAtMost',
+                selector: { player: 'self', zones: ['hand'] },
+                value: 5,
+              },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
+        },
+      ],
     },
     // OP01-070 Dracule Mihawk (OP01-070) (Alternate Art)
     // [On Play] Place up to 1 Character with a cost of 7 or less at the bottom of the owner's deck.
     {
       cardId: 'OP01-070',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'dracule-mihawk-on-play-bottom-deck-cost-7-or-less',
+            text: "[On Play] Place up to 1 Character with a cost of 7 or less at the bottom of the owner's deck.",
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'either',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 7 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'deck',
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-024 Monkey.D.Luffy
     // [DON!! x2] This Character cannot be K.O.'d in battle by "Strike" attribute Characters.   [Activate:Main] [Once Per Turn] Give this Character up to 2 rested DON!! cards.
@@ -299,6 +358,56 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, rest up to 1 of your opponent's Characters with a cost of 4 or less. [Trigger] Rest up to 1 of your opponent's Characters.  This card has been officially errata'd.
     {
       cardId: 'OP01-058',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'punk-gibson-counter-plus-4000-then-rest',
+            text: "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+            trigger: { type: 'activateCounter' },
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
+                amount: 4000,
+                duration: { type: 'untilEndOfBattle' },
+              },
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 4 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'punk-gibson-trigger-rest-1',
+            text: "[Trigger] Rest up to 1 of your opponent's Characters.",
+            trigger: { type: 'trigger' },
+            actions: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-054 X.Drake (054)
     // [On Play] K.O. up to 1 of your opponent's rested Characters with a cost of 4 or less.  This card has been officially errata'd.

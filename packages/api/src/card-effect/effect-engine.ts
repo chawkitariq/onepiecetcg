@@ -13,6 +13,7 @@ import type { EffectRegistry } from './types/effect-registry';
 
 export type EffectEventType =
   | 'onPlay'
+  | 'activateCounter'
   | 'whenAttacking'
   | 'onKo'
   | 'trigger'
@@ -40,6 +41,7 @@ type RuntimeModifier = {
   targetInstanceId: string;
   amount: number;
   expiresAtEndOfTurn: boolean;
+  expiresAtEndOfBattle: boolean;
 };
 
 type QueuedEffect = {
@@ -71,6 +73,7 @@ export interface EffectEngineHost {
     destinationZone: string,
     options?: { faceDown?: boolean; rested?: boolean },
   ): void;
+  shuffleDeck(playerSessionId: string): void;
   drawCard(playerSessionId: string): DuelCard | null;
   trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[];
   addDonToCost(playerSessionId: string, amount: number, rested: boolean): number;
@@ -135,7 +138,7 @@ export class EffectEngine {
           card.ownerSessionId,
         )) {
           if (continuous.modifier.power) {
-            target.power = target.basePower + continuous.modifier.power;
+            target.power += continuous.modifier.power;
           }
         }
       }
@@ -153,6 +156,15 @@ export class EffectEngine {
   /** Removes temporary end-of-turn modifiers and refreshes derived values. */
   public clearTurnModifiers(): void {
     const kept = this.modifiers.filter((modifier) => !modifier.expiresAtEndOfTurn);
+    this.modifiers.splice(0, this.modifiers.length, ...kept);
+    this.reapplyContinuousEffects();
+  }
+
+  /** Removes temporary end-of-battle modifiers and refreshes derived values. */
+  public clearCombatModifiers(): void {
+    const kept = this.modifiers.filter(
+      (modifier) => !modifier.expiresAtEndOfBattle,
+    );
     this.modifiers.splice(0, this.modifiers.length, ...kept);
     this.reapplyContinuousEffects();
   }
@@ -517,16 +529,6 @@ export class EffectEngine {
         return;
       }
       case 'moveCard': {
-        const playerId = this.resolvePlayer(
-          action.destinationPlayer,
-          controllerSessionId,
-        );
-
-        if (!playerId) {
-          next();
-          return;
-        }
-
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
@@ -534,6 +536,18 @@ export class EffectEngine {
           'Choisissez la carte a deplacer.',
           (cards) => {
             for (const card of cards) {
+              const playerId =
+                action.destinationPlayer === 'selectedCardOwner'
+                  ? card.ownerSessionId
+                  : this.resolvePlayer(
+                      action.destinationPlayer,
+                      controllerSessionId,
+                    );
+
+              if (!playerId) {
+                continue;
+              }
+
               this.host.moveCard(card, playerId, action.destinationZone, {
                 faceDown: action.faceDown,
                 rested: action.rested,
@@ -558,6 +572,8 @@ export class EffectEngine {
                 amount: action.amount,
                 expiresAtEndOfTurn:
                   action.duration.type === 'untilEndOfTurn',
+                expiresAtEndOfBattle:
+                  action.duration.type === 'untilEndOfBattle',
               });
             }
 
@@ -607,6 +623,17 @@ export class EffectEngine {
       case 'detachDon': {
         for (const target of this.host.getCards(action.selector, controllerSessionId)) {
           target.attachedDon = Math.max(0, target.attachedDon - action.amount);
+        }
+
+        next();
+        return;
+      }
+      case 'shuffleDeck': {
+        const playerId = this.resolvePlayer(action.player, controllerSessionId);
+
+        if (playerId) {
+          this.host.shuffleDeck(playerId);
+          this.host.syncPlayer(playerId);
         }
 
         next();
@@ -715,11 +742,32 @@ export class EffectEngine {
           const player = playerId ? this.host.getPlayer(playerId) : undefined;
           return (player?.zones.life.length ?? 0) <= condition.value;
         }
+        case 'playerHasLeaderName': {
+          const playerId = this.resolvePlayer(condition.player, controllerSessionId);
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          return player?.zones.leader.name === condition.value;
+        }
+        case 'playerHasLeaderTrait': {
+          const playerId = this.resolvePlayer(condition.player, controllerSessionId);
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          return player?.zones.leader.families.includes(condition.value) ?? false;
+        }
+        case 'playerHasTotalDonAtLeast': {
+          const playerId = this.resolvePlayer(condition.player, controllerSessionId);
+          return (
+            this.countTotalDonOnField(playerId) >= condition.value
+          );
+        }
         case 'targetExists':
           return this.host.getCards(condition.selector, controllerSessionId).length > 0;
         case 'targetCountAtLeast':
           return (
             this.host.getCards(condition.selector, controllerSessionId).length >=
+            condition.value
+          );
+        case 'targetCountAtMost':
+          return (
+            this.host.getCards(condition.selector, controllerSessionId).length <=
             condition.value
           );
         case 'cardInZone':
@@ -859,6 +907,7 @@ export class EffectEngine {
       case 'addDon':
       case 'reveal':
       case 'search':
+      case 'shuffleDeck':
       case 'activateEffect':
         return true;
     }
@@ -876,6 +925,29 @@ export class EffectEngine {
     }
 
     return available >= count.value;
+  }
+
+  private countTotalDonOnField(playerSessionId: string | null): number {
+    if (!playerSessionId) {
+      return 0;
+    }
+
+    const player = this.host.getPlayer(playerSessionId);
+
+    if (!player) {
+      return 0;
+    }
+
+    const inPlayCards = [
+      player.zones.leader,
+      ...player.zones.characters,
+      ...(player.zones.stage.instanceId ? [player.zones.stage] : []),
+    ];
+
+    return (
+      player.zones.cost.length +
+      inPlayCards.reduce((sum, card) => sum + card.attachedDon, 0)
+    );
   }
 
   private findZoneOfCard(card: DuelCard):

@@ -3,6 +3,7 @@ import type { CardColor, CardType, GameZone } from './index.js';
 export type EffectTriggerType =
   | 'onPlay'
   | 'activateMain'
+  | 'activateCounter'
   | 'whenAttacking'
   | 'onKo'
   | 'trigger'
@@ -20,8 +21,12 @@ export type EffectCondition =
   | { type: 'controllerTurn'; value: boolean }
   | { type: 'sourceHasAttachedDonAtLeast'; value: number }
   | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
   | { type: 'targetExists'; selector: EffectTargetSelector }
   | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
+  | { type: 'targetCountAtMost'; selector: EffectTargetSelector; value: number }
   | { type: 'cardInZone'; zone: GameZone }
   | { type: 'sourceIsRested'; value: boolean };
 
@@ -48,6 +53,7 @@ export type EffectTargetSelector = {
 
 export type EffectDuration =
   | { type: 'untilEndOfTurn' }
+  | { type: 'untilEndOfBattle' }
   | { type: 'whileSourceInPlay' }
   | { type: 'permanent' };
 
@@ -171,7 +177,7 @@ export type EffectAction =
   | {
       type: 'moveCard';
       selector: EffectTargetSelector;
-      destinationPlayer: EffectOwnerSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
       destinationZone: GameZone;
       faceDown?: boolean;
       rested?: boolean;
@@ -198,6 +204,10 @@ export type EffectAction =
       type: 'detachDon';
       selector: EffectTargetSelector;
       amount: number;
+    }
+  | {
+      type: 'shuffleDeck';
+      player: EffectOwnerSelector;
     };
 
 export type StandardEffectDefinition = {
