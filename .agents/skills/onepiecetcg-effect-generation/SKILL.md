@@ -22,14 +22,16 @@ Generate and validate the effect-definition files used by this repository's back
    - Generate from a local metadata snapshot: run `scripts/run-generate-effects.sh --edition OP01 --source-file /abs/path/cards.json`.
    - Refine generated placeholders into authored effects in `packages/api/src/card-effect/definitions/`.
 9. After generating a skeleton, implement the full DSL for every generated card entry in that edition before considering the work complete.
-10. Run a validation loop:
+10. Add or update focused backend tests for every authored effect touched in scope. Cover the complete effect path, including trigger window, costs, player decisions, target resolution, modifiers, and final zone or stat changes. Make the assertions match the card text itself: verify each meaningful clause the description expresses, including scope words such as "this character", optional wording such as "you may", quantity limits such as "up to", and ordering words such as "then" when present. Prefer `packages/api/src/card-effect/effect-engine.spec.ts`, and add loader tests when bootstrap behavior changes.
+11. Run a validation loop:
    - run validation
    - fix every reported issue
    - fill every remaining placeholder card without a real DSL
+   - add or refine missing effect tests until each touched effect has direct coverage and the observed behavior demonstrably matches the authored card text
    - rerun validation
-   - repeat until validation passes and the generated edition has no unfinished generated placeholders left
-11. Keep changes declarative by default. Only use `definitions/special/` when a card cannot be represented safely or clearly by the DSL.
-12. After the validation loop is clean, run the most focused repo checks that cover the touched area.
+   - repeat until validation passes, the generated edition has no unfinished generated placeholders left, and every touched effect has focused tests
+12. Keep changes declarative by default. Only use `definitions/special/` when a card cannot be represented safely or clearly by the DSL.
+13. After the validation loop is clean, run the most focused repo checks that cover the touched area.
 
 ## Working Rules
 
@@ -39,6 +41,11 @@ Generate and validate the effect-definition files used by this repository's back
 - Load cards from metadata first, then derive effect definitions from that metadata and the rules documents. Do not invent card facts that are absent from the metadata source.
 - Preserve authored definitions whenever generation runs. The bundled generator is designed to merge deterministic placeholder output with existing entries, not wipe human-authored work.
 - Do not stop after skeleton generation. Finish by implementing the DSL for every generated card in scope, then loop on validation until there are no structural errors and no unfinished generated placeholders.
+- Every touched effect must ship with focused tests that exercise the full authored behavior, not just the surrounding helper or selector in isolation.
+- Test the complete effect path whenever possible: trigger, optional confirmation, costs, target choice, modifier application, moved cards, and the final authoritative state.
+- Use the card text as an assertion checklist. Tests should prove that what happens in engine terms is what the description actually says should happen, rather than only proving that some internal helper was called.
+- When a card text contains multiple clauses or constraints, add assertions for each meaningful part that affects gameplay semantics, especially actor ownership, eligible targets, timing, optionality, quantity bounds, and ordered "do X, then Y" resolution.
+- If one effect definition expands into multiple authored effect blocks, add enough assertions to prove the whole card behavior, not just one fragment.
 - Prefer `--source-file` when upstream OPTCG API data is unavailable or when deterministic reproduction matters.
 - Keep special handlers rare and card-specific. If multiple cards can share the same new behavior, improve the DSL instead of multiplying imperative handlers.
 
