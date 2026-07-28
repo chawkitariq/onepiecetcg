@@ -2,35 +2,56 @@ import { betterAuth } from 'better-auth';
 import { Pool } from 'pg';
 import { getApiConfig } from './runtime-config';
 
-type OAuthProfile = Record<string, unknown>;
+type GoogleProfileLike = {
+  name?: string | null;
+  given_name?: string | null;
+  family_name?: string | null;
+  email?: string | null;
+  picture?: string | null;
+  image?: string | null;
+};
+
+type DiscordProfileLike = {
+  id?: string | null;
+  avatar?: string | null;
+  global_name?: string | null;
+  username?: string | null;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
 
 function firstNonEmptyString(
   ...values: Array<string | null | undefined>
 ): string | undefined {
-  return values.find((value) => typeof value === 'string' && value.trim());
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+  }
+
+  return undefined;
 }
 
-function readProfileString(
-  profile: OAuthProfile,
-  key: string,
-): string | undefined {
-  const value = profile[key];
-
+function normalizeProfileString(value: string | null | undefined): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
 
-function mapGoogleProfileToUser(profile: OAuthProfile) {
+function mapGoogleProfileToUser(profile: GoogleProfileLike) {
   const name = firstNonEmptyString(
-    readProfileString(profile, 'name'),
-    [readProfileString(profile, 'given_name'), readProfileString(profile, 'family_name')]
+    normalizeProfileString(profile.name),
+    [
+      normalizeProfileString(profile.given_name),
+      normalizeProfileString(profile.family_name),
+    ]
       .filter((value): value is string => Boolean(value))
       .join(' ')
       .trim(),
   );
-  const email = readProfileString(profile, 'email');
+  const email = normalizeProfileString(profile.email);
   const image = firstNonEmptyString(
-    readProfileString(profile, 'picture'),
-    readProfileString(profile, 'image'),
+    normalizeProfileString(profile.picture),
+    normalizeProfileString(profile.image),
   );
 
   return {
@@ -40,33 +61,26 @@ function mapGoogleProfileToUser(profile: OAuthProfile) {
   };
 }
 
-function mapDiscordProfileToUser(profile: OAuthProfile) {
-  const id = readProfileString(profile, 'id');
-  const avatarHash = readProfileString(profile, 'avatar');
+function mapDiscordProfileToUser(profile: DiscordProfileLike) {
+  const id = normalizeProfileString(profile.id);
+  const avatarHash = normalizeProfileString(profile.avatar);
   const image = firstNonEmptyString(
-    readProfileString(profile, 'image'),
+    normalizeProfileString(profile.image),
     avatarHash && id
       ? `https://cdn.discordapp.com/avatars/${id}/${avatarHash}.png`
       : undefined,
   );
 
+  const name = firstNonEmptyString(
+    normalizeProfileString(profile.global_name),
+    normalizeProfileString(profile.username),
+    normalizeProfileString(profile.name),
+  );
+  const email = normalizeProfileString(profile.email);
+
   return {
-    ...(firstNonEmptyString(
-      readProfileString(profile, 'global_name'),
-      readProfileString(profile, 'username'),
-      readProfileString(profile, 'name'),
-    )
-      ? {
-          name: firstNonEmptyString(
-            readProfileString(profile, 'global_name'),
-            readProfileString(profile, 'username'),
-            readProfileString(profile, 'name'),
-          ),
-        }
-      : {}),
-    ...(readProfileString(profile, 'email')
-      ? { email: readProfileString(profile, 'email') }
-      : {}),
+    ...(name ? { name } : {}),
+    ...(email ? { email } : {}),
     ...(image ? { image } : {}),
   };
 }
