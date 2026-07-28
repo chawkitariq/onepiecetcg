@@ -399,6 +399,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
                   count: { kind: 'exact', value: 1 },
                 },
                 amount: 2,
+                rested: true,
               },
             ],
           },
@@ -660,6 +661,46 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [DON!! x2] This Character cannot be K.O.'d in battle by "Strike" attribute Characters.   [Activate:Main] [Once Per Turn] Give this Character up to 2 rested DON!! cards.
     {
       cardId: 'OP01-024',
+      effects: [
+        {
+          kind: 'continuous',
+          effect: {
+            id: 'luffy-don-2-cannot-be-koed-by-strike-in-battle',
+            text: '[DON!! x2] This Character cannot be K.O.\'d in battle by "Strike" attribute Characters.',
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 2 }],
+            modifier: {
+              selector: {
+                player: 'self',
+                zones: ['characters'],
+                filter: { name: ['Monkey.D.Luffy'] },
+              },
+              keywords: ['cannotBeKoedByStrikeInBattle'],
+            },
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'luffy-activate-main-attach-up-to-2-rested-don',
+            text: '[Activate:Main] [Once Per Turn] Give this Character up to 2 rested DON!! cards.',
+            trigger: { type: 'activateMain', oncePerTurn: true },
+            actions: [
+              {
+                type: 'attachDon',
+                player: 'self',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Monkey.D.Luffy'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+                amount: 2,
+                rested: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-096 King (096) (Parallel)
     // [On Play] DON!! -2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): K.O. up to 1 of your opponent's Characters with a cost of 3 or less and up to 1 of your opponent's Characters with a cost of 2 or less.  This card has been officially errata'd.
@@ -727,6 +768,42 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Banish] (When this card deals damage, the target card is trashed without activating its Trigger.) [DON!! x1] Give blue Events in your hand -1 cost.
     {
       cardId: 'OP01-067',
+      effects: [
+        {
+          kind: 'continuous',
+          effect: {
+            id: 'crocodile-has-banish',
+            text: '[Banish]',
+            modifier: {
+              selector: {
+                player: 'self',
+                zones: ['characters'],
+                filter: { name: ['Crocodile'] },
+              },
+              keywords: ['banish'],
+            },
+          },
+        },
+        {
+          kind: 'continuous',
+          effect: {
+            id: 'crocodile-don-1-blue-events-in-hand-cost-minus-1',
+            text: '[DON!! x1] Give blue Events in your hand -1 cost.',
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
+            modifier: {
+              selector: {
+                player: 'self',
+                zones: ['hand'],
+                filter: {
+                  cardCategory: ['Event'],
+                  color: ['Blue'],
+                },
+              },
+              cost: -1,
+            },
+          },
+        },
+      ],
     },
     // OP01-075 Pacifista
     // Under the rules of this game, you may have any number of this card in your deck. [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)
@@ -738,6 +815,46 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Rush] (This card can attack on the turn in which it is played.)[When Attacking] Your opponent cannot activate a [Blocker] Character that has 2000 or less power during this battle.Disclaimer: This card was reprinted from the original set without the original textured foil.
     {
       cardId: 'OP01-120',
+      effects: [
+        {
+          kind: 'continuous',
+          effect: {
+            id: 'shanks-has-rush',
+            text: '[Rush]',
+            modifier: {
+              selector: {
+                player: 'self',
+                zones: ['characters'],
+                filter: { name: ['Shanks'] },
+              },
+              keywords: ['rush'],
+            },
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'shanks-when-attacking-opponent-small-blockers-cannot-block',
+            text: "Your opponent cannot activate a [Blocker] Character that has 2000 or less power during this battle.",
+            trigger: { type: 'whenAttacking' },
+            actions: [
+              {
+                type: 'grantKeywords',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    powerMax: 2000,
+                  },
+                },
+                keywords: ['cannotBlock'],
+                duration: { type: 'untilEndOfBattle' },
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-106 Basil Hawkins
     // [On Play] Add up to 1 DON!! card from your DON!! deck and rest it. [Trigger] Play this card.  This card has been officially errata'd.
@@ -1271,6 +1388,31 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [DON!! x2] [When Attacking] [1] (You may rest the specified number of DON!! cards in your cost area.): Reveal 1 card from the top of your deck. If that card is a "The Seven Warlords of the Sea" type Character card with a cost of 4 or less, you may play that card rested.
     {
       cardId: 'OP01-060',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'doflamingo-don-2-when-attacking-pay-1-reveal-top-and-play-warlord',
+            text: 'Reveal 1 card from the top of your deck. If that card is a "The Seven Warlords of the Sea" type Character card with a cost of 4 or less, you may play that card rested.',
+            trigger: { type: 'whenAttacking' },
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 2 }],
+            costs: [{ type: 'removeDon', player: 'self', amount: 1 }],
+            actions: [
+              {
+                type: 'revealTopAndPlayIfMatches',
+                player: 'self',
+                filter: {
+                  cardCategory: ['Character'],
+                  trait: ['The Seven Warlords of the Sea'],
+                  costMax: 4,
+                },
+                destination: 'characters',
+                rested: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-112 Page One
     // [Activate:Main] [Once Per Turn] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character can also attack your opponent's active Characters during this turn.
@@ -1917,11 +2059,120 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [Activate:Main] [Once Per Turn] (2) (You may rest the specified number of DON!! cards in your cost area): If you have 5 Characters, return 1 of your Characters to your hand. Then, play up to 1 Character with a cost of 5 or less from your hand that is a different color than the returned character.  This card has been officially errata'd.
     {
       cardId: 'OP01-002',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'trafalgar-law-activate-main-pay-2-return-character-play-different-color',
+            text: 'If you have 5 Characters, return 1 of your Characters to your hand. Then, play up to 1 Character with a cost of 5 or less from your hand that is a different color than the returned character.',
+            trigger: { type: 'activateMain', oncePerTurn: true },
+            conditions: [
+              {
+                type: 'targetCountAtLeast',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                },
+                value: 5,
+              },
+            ],
+            costs: [{ type: 'removeDon', player: 'self', amount: 2 }],
+            actions: [
+              {
+                type: 'storeSelectedCards',
+                key: 'returnedCharacter',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+              {
+                type: 'moveStoredCards',
+                key: 'returnedCharacter',
+                destinationPlayer: 'self',
+                destinationZone: 'hand',
+              },
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 5,
+                    differentColorThanStoredSelection: 'returnedCharacter',
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destination: 'characters',
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-063 Arlong
     // [DON!! x1] [Activate:Main] You may rest this Character: Choose 1 card from your opponent's hand; your opponent reveals that card. If the revealed card is an Event, place up to 1 card from your opponent's Life area at the bottom of the owner's deck.  This card has been officially errata'd.
     {
       cardId: 'OP01-063',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'arlong-don-1-activate-main-reveal-opponent-hand-card-and-bottom-life-if-event',
+            text: "Choose 1 card from your opponent's hand; your opponent reveals that card. If the revealed card is an Event, place up to 1 card from your opponent's Life area at the bottom of the owner's deck.",
+            trigger: { type: 'activateMain' },
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
+            costs: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Arlong'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'storeSelectedCards',
+                key: 'revealedOpponentHandCard',
+                selector: {
+                  player: 'opponent',
+                  chooser: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+              {
+                type: 'revealStoredCards',
+                key: 'revealedOpponentHandCard',
+              },
+              {
+                type: 'ifStoredSelectionMatches',
+                key: 'revealedOpponentHandCard',
+                filter: { cardCategory: ['Event'] },
+                actions: [
+                  {
+                    type: 'moveCard',
+                    selector: {
+                      player: 'opponent',
+                      zones: ['life'],
+                      count: { kind: 'upTo', value: 1 },
+                    },
+                    destinationPlayer: 'selectedCardOwner',
+                    destinationZone: 'deck',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-004 Usopp
     // [DON!! x1] [Your Turn] [Once Per Turn] Draw 1 card when your opponent activates an Event.
@@ -2812,6 +3063,32 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] Choose 2 cards from your opponent's hand; your opponent reveals those cards.
     {
       cardId: 'OP01-105',
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'bao-huang-on-play-reveal-2-opponent-hand-cards',
+            text: "Choose 2 cards from your opponent's hand; your opponent reveals those cards.",
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'storeSelectedCards',
+                key: 'revealedOpponentHandCards',
+                selector: {
+                  player: 'opponent',
+                  chooser: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 2 },
+                },
+              },
+              {
+                type: 'revealStoredCards',
+                key: 'revealedOpponentHandCards',
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP01-083 Mr.1 (Daz.Bonez)
     // [DON!! x1] [Your Turn] If your Leader has the "Baroque Works" type, this Character gains +1000 power for every 2 Events in your trash.
@@ -3049,6 +3326,26 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
     // Kurozumi Clan type Characters other than your [Kurozumi Semimaru] cannot be K.O.'d in battle.
     {
       cardId: 'OP01-099',
+      effects: [
+        {
+          kind: 'continuous',
+          effect: {
+            id: 'kurozumi-semimaru-kurozumi-clan-cannot-be-koed-in-battle',
+            text: "Kurozumi Clan type Characters other than your [Kurozumi Semimaru] cannot be K.O.'d in battle.",
+            modifier: {
+              selector: {
+                player: 'self',
+                zones: ['characters'],
+                filter: {
+                  trait: ['Kurozumi Clan'],
+                  excludeName: ['Kurozumi Semimaru'],
+                },
+              },
+              keywords: ['cannotBeKoedInBattle'],
+            },
+          },
+        },
+      ],
     },
     // OP01-059 BE-BENG!!
     // [Main] You may trash 1 "Land of Wano" type card from your hand: Set up to 1 of your "Land of Wano" type Character cards with a cost of 3 or less as active.  This card has been officially errata'd.

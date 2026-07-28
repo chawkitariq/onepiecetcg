@@ -185,6 +185,7 @@ export type PublicCard = {
   type: CardType;
   colors: CardColor[];
   cost: number | null;
+  baseCost?: number | null;
   basePower?: number | null;
   power: number | null;
   life: number | null;
@@ -200,6 +201,9 @@ export type PublicCard = {
   hasBanish: boolean;
   canAttackActiveCharacters: boolean;
   mustBeAttackTarget: boolean;
+  cannotBlock: boolean;
+  cannotBeKoedInBattle: boolean;
+  cannotBeKoedByStrikeInBattle: boolean;
   cannotAttackUntilTurn: number;
 };
 

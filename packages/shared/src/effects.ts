@@ -19,7 +19,10 @@ export type EffectKeyword =
   | 'doubleAttack'
   | 'banish'
   | 'canAttackActiveCharacters'
-  | 'mustBeAttackTarget';
+  | 'mustBeAttackTarget'
+  | 'cannotBlock'
+  | 'cannotBeKoedInBattle'
+  | 'cannotBeKoedByStrikeInBattle';
 
 export type EffectCount =
   | { kind: 'exact'; value: number }
@@ -46,6 +49,7 @@ export type EffectCardFilter = {
   powerMax?: number;
   powerMin?: number;
   color?: CardColor[];
+  differentColorThanStoredSelection?: string;
   trait?: string[];
   name?: string[];
   excludeName?: string[];
@@ -199,6 +203,14 @@ export type EffectAction =
       rested?: boolean;
     }
   | {
+      type: 'moveFirstCard';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+    }
+  | {
       type: 'modifyPower';
       selector: EffectTargetSelector;
       amount: number;
@@ -226,6 +238,7 @@ export type EffectAction =
       selector: EffectTargetSelector;
       player: EffectOwnerSelector;
       amount: number;
+      rested?: boolean;
     }
   | {
       type: 'detachDon';
@@ -240,6 +253,36 @@ export type EffectAction =
       type: 'arrangeDeckWindow';
       player: EffectOwnerSelector;
       amount: number;
+    }
+  | {
+      type: 'revealTopAndPlayIfMatches';
+      player: EffectOwnerSelector;
+      filter: EffectCardFilter;
+      destination: 'characters' | 'stage';
+      rested?: boolean;
+    }
+  | {
+      type: 'storeSelectedCards';
+      key: string;
+      selector: EffectTargetSelector;
+    }
+  | {
+      type: 'revealStoredCards';
+      key: string;
+    }
+  | {
+      type: 'moveStoredCards';
+      key: string;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+    }
+  | {
+      type: 'ifStoredSelectionMatches';
+      key: string;
+      filter: EffectCardFilter;
+      actions: EffectAction[];
     };
 
 export type StandardEffectDefinition = {
@@ -258,6 +301,7 @@ export type ContinuousEffectDefinition = {
   modifier: {
     selector: EffectTargetSelector;
     power?: number;
+    cost?: number;
     powerPerCount?:
       | {
           selector: EffectTargetSelector;

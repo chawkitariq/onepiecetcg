@@ -49,6 +49,10 @@ export class DuelCard extends Schema {
 
   @view()
   @type('number')
+  baseCost = -1;
+
+  @view()
+  @type('number')
   basePower = -1;
 
   @view()
@@ -114,6 +118,18 @@ export class DuelCard extends Schema {
   @view()
   @type('boolean')
   mustBeAttackTarget = false;
+
+  @view()
+  @type('boolean')
+  cannotBlock = false;
+
+  @view()
+  @type('boolean')
+  cannotBeKoedInBattle = false;
+
+  @view()
+  @type('boolean')
+  cannotBeKoedByStrikeInBattle = false;
 
   @view()
   @type('number')
@@ -292,6 +308,7 @@ export function createDuelCard(
   duelCard.type = card.type;
   duelCard.colors.push(...card.colors);
   duelCard.cost = card.cost ?? -1;
+  duelCard.baseCost = card.cost ?? -1;
   duelCard.basePower = card.power ?? -1;
   duelCard.power = card.power ?? -1;
   duelCard.life = card.life ?? -1;

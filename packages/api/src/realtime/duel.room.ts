@@ -177,8 +177,8 @@ export class DuelRoom extends Room<DuelState> {
           this.trashTopDeckCards(playerSessionId, amount),
         addDonToCost: (playerSessionId, amount, rested) =>
           this.addDonToCost(playerSessionId, amount, rested),
-        attachDon: (playerSessionId, targetInstanceId, amount) =>
-          this.attachDonFromCost(playerSessionId, targetInstanceId, amount),
+        attachDon: (playerSessionId, targetInstanceId, amount, options) =>
+          this.attachDonFromCost(playerSessionId, targetInstanceId, amount, options),
         returnDonToDonDeck: (playerSessionId, amount) =>
           this.returnEffectDonToDeck(playerSessionId, amount),
         koCharacter: (playerSessionId, instanceId, reason) =>
@@ -831,6 +831,28 @@ export class DuelRoom extends Room<DuelState> {
     return untapped.map((entry) => entry.card);
   }
 
+  private takeAttachableDonCards(
+    player: DuelPlayer,
+    amount: number,
+    rested?: boolean,
+  ): DuelCard[] {
+    const matches: DuelCard[] = [];
+
+    for (const card of player.zones.cost) {
+      if (rested !== undefined && card.rested !== rested) {
+        continue;
+      }
+
+      matches.push(card);
+
+      if (matches.length === amount) {
+        break;
+      }
+    }
+
+    return matches;
+  }
+
   private assertMainPhaseAction(client: Client): DuelPlayer | null {
     if (this.effectEngine.getPendingDecision()) {
       this.sendError(client, "Une decision d'effet est en attente.");
@@ -1072,6 +1094,11 @@ export class DuelRoom extends Room<DuelState> {
         return;
       }
 
+      if (blockerFound.card.cannotBlock) {
+        this.sendError(client, 'Cette carte ne peut pas bloquer pendant ce combat.');
+        return;
+      }
+
       blockerFound.card.rested = true;
       combat.blockerInstanceId = blockerFound.card.instanceId;
       this.addLog(
@@ -1248,7 +1275,11 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(`${attacker.displayName} remporte le combat.`);
 
     if (combat.blockerInstanceId || combat.targetType === 'character') {
-      this.knockOutCharacter(defender, defendingCard, 'battle');
+      if (this.isProtectedFromBattleKo(defendingCard, attackerCard)) {
+        this.addLog(`${defendingCard.name} ne peut pas etre mis KO pendant ce combat.`);
+      } else {
+        this.knockOutCharacter(defender, defendingCard, 'battle');
+      }
       this.endCombat();
       return;
     }
@@ -1311,6 +1342,17 @@ export class DuelRoom extends Room<DuelState> {
       sourceCardId: card.cardId,
     });
     this.effectEngine.reapplyContinuousEffects();
+  }
+
+  private isProtectedFromBattleKo(defendingCard: DuelCard, attackerCard: DuelCard): boolean {
+    if (defendingCard.cannotBeKoedInBattle) {
+      return true;
+    }
+
+    return (
+      defendingCard.cannotBeKoedByStrikeInBattle &&
+      attackerCard.attributes.includes('Strike')
+    );
   }
 
   private dealLeaderDamage(defender: DuelPlayer, attackerCard: DuelCard) {
@@ -2125,6 +2167,7 @@ export class DuelRoom extends Room<DuelState> {
     playerSessionId: string,
     targetInstanceId: string,
     amount: number,
+    options?: { rested?: boolean },
   ): number {
     const player = this.state.players.get(playerSessionId);
 
@@ -2141,9 +2184,9 @@ export class DuelRoom extends Room<DuelState> {
       return 0;
     }
 
-    const donCards = this.takeUntappedDonCards(player, amount);
+    const donCards = this.takeAttachableDonCards(player, amount, options?.rested);
 
-    if (!donCards) {
+    if (donCards.length === 0) {
       return 0;
     }
 

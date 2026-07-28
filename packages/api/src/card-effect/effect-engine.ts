@@ -66,6 +66,10 @@ type PendingDecisionState = {
   continuation: (response: EffectDecisionResponse) => void;
 };
 
+type EffectResolutionContext = {
+  storedSelections: Record<string, DuelCard[]>;
+};
+
 /**
  * Host adapter used by the effect engine so the duel room remains the
  * Colyseus/network boundary while gameplay resolution stays testable.
@@ -87,7 +91,12 @@ export interface EffectEngineHost {
   drawCard(playerSessionId: string): DuelCard | null;
   trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[];
   addDonToCost(playerSessionId: string, amount: number, rested: boolean): number;
-  attachDon(playerSessionId: string, targetInstanceId: string, amount: number): number;
+  attachDon(
+    playerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+    options?: { rested?: boolean },
+  ): number;
   returnDonToDonDeck(playerSessionId: string, amount: number): number;
   koCharacter(
     playerSessionId: string,
@@ -126,31 +135,24 @@ export class EffectEngine {
     const players = Array.from(this.host.state.players.values());
 
     for (const player of players) {
-      player.zones.leader.power = player.zones.leader.basePower;
-
-      for (const character of player.zones.characters) {
-        character.power = character.basePower;
-        character.hasRush = false;
-        character.hasDoubleAttack = false;
-        character.hasBanish = false;
-        character.canAttackActiveCharacters = false;
-        character.mustBeAttackTarget = false;
+      for (const card of this.collectPlayerCards(player)) {
+        const baseCost = Number.isFinite(card.baseCost)
+          ? card.baseCost
+          : Number.isFinite(card.cost)
+            ? card.cost
+            : -1;
+        card.baseCost = baseCost;
+        card.cost = baseCost;
+        card.power = card.basePower;
+        card.hasRush = false;
+        card.hasDoubleAttack = false;
+        card.hasBanish = false;
+        card.canAttackActiveCharacters = false;
+        card.mustBeAttackTarget = false;
+        card.cannotBlock = false;
+        card.cannotBeKoedInBattle = false;
+        card.cannotBeKoedByStrikeInBattle = false;
       }
-
-      if (player.zones.stage.instanceId) {
-        player.zones.stage.power = player.zones.stage.basePower;
-        player.zones.stage.hasRush = false;
-        player.zones.stage.hasDoubleAttack = false;
-        player.zones.stage.hasBanish = false;
-        player.zones.stage.canAttackActiveCharacters = false;
-        player.zones.stage.mustBeAttackTarget = false;
-      }
-
-      player.zones.leader.hasRush = false;
-      player.zones.leader.hasDoubleAttack = false;
-      player.zones.leader.hasBanish = false;
-      player.zones.leader.canAttackActiveCharacters = false;
-      player.zones.leader.mustBeAttackTarget = false;
     }
 
     for (const card of this.collectInPlayCards()) {
@@ -167,6 +169,15 @@ export class EffectEngine {
         )) {
           if (continuous.modifier.power) {
             target.power += continuous.modifier.power;
+          }
+
+          if (continuous.modifier.cost) {
+            target.cost = Number.isFinite(target.cost)
+              ? target.cost
+              : Number.isFinite(target.baseCost)
+                ? target.baseCost
+                : -1;
+            target.cost += continuous.modifier.cost;
           }
 
           if (continuous.modifier.powerPerCount) {
@@ -200,6 +211,14 @@ export class EffectEngine {
 
       if (target) {
         this.applyKeywords(target, modifier.keywords);
+      }
+    }
+
+    for (const player of players) {
+      for (const card of this.collectPlayerCards(player)) {
+        if (card.cost >= 0) {
+          card.cost = Math.max(card.cost, 0);
+        }
       }
     }
   }
@@ -381,7 +400,9 @@ export class EffectEngine {
         );
       }
 
-      this.resolveActions(definition.actions, controllerSessionId, source);
+      this.resolveActions(definition.actions, controllerSessionId, source, {
+        storedSelections: {},
+      });
     };
 
     if (!definition.costs || definition.costs.length === 0) {
@@ -389,13 +410,21 @@ export class EffectEngine {
       return;
     }
 
-    this.resolveActions(definition.costs, controllerSessionId, source, 0, runActions);
+    this.resolveActions(
+      definition.costs,
+      controllerSessionId,
+      source,
+      { storedSelections: {} },
+      0,
+      runActions,
+    );
   }
 
   private resolveActions(
     actions: EffectAction[],
     controllerSessionId: string,
     source: DuelCard,
+    context: EffectResolutionContext,
     startIndex = 0,
     onComplete?: () => void,
   ): void {
@@ -413,6 +442,7 @@ export class EffectEngine {
         actions,
         controllerSessionId,
         source,
+        context,
         startIndex + 1,
         onComplete,
       );
@@ -436,6 +466,7 @@ export class EffectEngine {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez la carte a mettre KO.',
           (cards) => {
@@ -484,6 +515,7 @@ export class EffectEngine {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez des cartes a defausser.',
           (cards) => {
@@ -565,6 +597,7 @@ export class EffectEngine {
         this.chooseCards(
           `${source.instanceId}:${action.type}:${Math.random()}`,
           controllerSessionId,
+          { storedSelections: {} },
           controllerSessionId,
           `Choisissez ${action.count.kind === 'upTo' ? "jusqu'a " : ''}${action.count.value} carte(s).`,
           {
@@ -596,6 +629,7 @@ export class EffectEngine {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez la carte a deplacer.',
           (cards) => {
@@ -622,10 +656,38 @@ export class EffectEngine {
         );
         return;
       }
+      case 'moveFirstCard': {
+        const card = this.getSelectableCards(
+          action.selector,
+          controllerSessionId,
+          context,
+        )[0];
+
+        if (!card) {
+          next();
+          return;
+        }
+
+        const playerId =
+          action.destinationPlayer === 'selectedCardOwner'
+            ? card.ownerSessionId
+            : this.resolvePlayer(action.destinationPlayer, controllerSessionId);
+
+        if (playerId) {
+          this.host.moveCard(card, playerId, action.destinationZone, {
+            faceDown: action.faceDown,
+            rested: action.rested,
+          });
+        }
+
+        next();
+        return;
+      }
       case 'modifyPower': {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez la carte dont la puissance sera modifiee.',
           (cards) => {
@@ -651,6 +713,7 @@ export class EffectEngine {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez la carte qui gagne un mot-cle.',
           (cards) => {
@@ -703,6 +766,7 @@ export class EffectEngine {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez une carte a laquelle attacher des DON!!',
           (cards) => {
@@ -710,7 +774,9 @@ export class EffectEngine {
 
             if (playerId) {
               for (const card of cards) {
-                this.host.attachDon(playerId, card.instanceId, action.amount);
+                this.host.attachDon(playerId, card.instanceId, action.amount, {
+                  rested: action.rested,
+                });
               }
             }
 
@@ -766,10 +832,115 @@ export class EffectEngine {
         );
         return;
       }
+      case 'revealTopAndPlayIfMatches': {
+        const playerId = this.resolvePlayer(action.player, controllerSessionId);
+        const player = playerId ? this.host.getPlayer(playerId) : undefined;
+        const topCard = player?.zones.deck[0];
+
+        if (!playerId || !player || !topCard) {
+          next();
+          return;
+        }
+
+        this.host.addLog(`${source.name} revele ${topCard.name} depuis le dessus du deck.`);
+
+        if (!this.matchesFilter(topCard, action.filter, controllerSessionId)) {
+          next();
+          return;
+        }
+
+        this.pendingDecisionState = {
+          decision: {
+            id: `${source.instanceId}:${action.type}:${topCard.instanceId}`,
+            effectId: action.type,
+            effectCardId: source.cardId,
+            sourceInstanceId: source.instanceId,
+            playerSessionId: controllerSessionId,
+            createdAt: new Date().toISOString(),
+            prompt: {
+              type: 'confirm',
+              message: `Jouer ${topCard.name} revelee depuis le dessus du deck ?`,
+              optional: true,
+            },
+          },
+          continuation: (response) => {
+            if (response.confirmed) {
+              this.host.moveCard(topCard, playerId, action.destination, {
+                rested: action.rested ?? false,
+              });
+            }
+            next();
+          },
+        };
+        return;
+      }
+      case 'storeSelectedCards': {
+        this.forSelectedCards(
+          action.selector,
+          controllerSessionId,
+          context,
+          `${source.instanceId}:${action.type}:${action.key}:${Math.random()}`,
+          'Choisissez la ou les cartes.',
+          (cards) => {
+            context.storedSelections[action.key] = cards;
+            next();
+          },
+        );
+        return;
+      }
+      case 'revealStoredCards': {
+        const cards = context.storedSelections[action.key] ?? [];
+
+        if (cards.length > 0) {
+          this.host.addLog(
+            `${source.name} revele ${cards.map((card) => card.name).join(', ')}.`,
+          );
+        }
+
+        next();
+        return;
+      }
+      case 'moveStoredCards': {
+        const cards = context.storedSelections[action.key] ?? [];
+
+        for (const card of cards) {
+          const playerId =
+            action.destinationPlayer === 'selectedCardOwner'
+              ? card.ownerSessionId
+              : this.resolvePlayer(action.destinationPlayer, controllerSessionId);
+
+          if (!playerId) {
+            continue;
+          }
+
+          this.host.moveCard(card, playerId, action.destinationZone, {
+            faceDown: action.faceDown,
+            rested: action.rested,
+          });
+        }
+
+        next();
+        return;
+      }
+      case 'ifStoredSelectionMatches': {
+        const cards = context.storedSelections[action.key] ?? [];
+        const matches = cards.some((card) =>
+          this.matchesFilter(card, action.filter, controllerSessionId, context),
+        );
+
+        if (!matches) {
+          next();
+          return;
+        }
+
+        this.resolveActions(action.actions, controllerSessionId, source, context, 0, next);
+        return;
+      }
       case 'play': {
         this.forSelectedCards(
           action.selector,
           controllerSessionId,
+          context,
           `${source.instanceId}:${action.type}:${Math.random()}`,
           'Choisissez une carte a mettre en jeu.',
           (cards) => {
@@ -788,11 +959,12 @@ export class EffectEngine {
   private forSelectedCards(
     selector: EffectTargetSelector,
     controllerSessionId: string,
+    context: EffectResolutionContext,
     decisionId: string,
     message: string,
     resolve: (cards: DuelCard[]) => void,
   ): void {
-    const targets = this.host.getCards(selector, controllerSessionId);
+    const targets = this.getSelectableCards(selector, controllerSessionId, context);
     const count = selector.count ?? { kind: 'exact', value: targets.length };
     const min = count.kind === 'exact' ? count.value : 0;
     const max = count.value;
@@ -810,6 +982,7 @@ export class EffectEngine {
     this.chooseCards(
       decisionId,
       controllerSessionId,
+      context,
       this.resolveSelectorChooser(selector, controllerSessionId),
       message,
       selector,
@@ -821,6 +994,7 @@ export class EffectEngine {
   private chooseCards(
     decisionId: string,
     controllerSessionId: string,
+    context: EffectResolutionContext,
     chooserSessionId: string,
     message: string,
     selector: EffectTargetSelector,
@@ -851,8 +1025,7 @@ export class EffectEngine {
       continuation: (response) => {
         const selected = new Set(response.selectedCardInstanceIds ?? []);
         resolve(
-          this.host
-            .getCards(selector, controllerSessionId)
+          this.getSelectableCards(selector, controllerSessionId, context)
             .filter((card) => selected.has(card.instanceId)),
         );
       },
@@ -1139,6 +1312,15 @@ export class EffectEngine {
         case 'mustBeAttackTarget':
           card.mustBeAttackTarget = true;
           break;
+        case 'cannotBlock':
+          card.cannotBlock = true;
+          break;
+        case 'cannotBeKoedInBattle':
+          card.cannotBeKoedInBattle = true;
+          break;
+        case 'cannotBeKoedByStrikeInBattle':
+          card.cannotBeKoedByStrikeInBattle = true;
+          break;
       }
     }
   }
@@ -1147,6 +1329,7 @@ export class EffectEngine {
     card: DuelCard,
     filter: EffectCardFilter | undefined,
     controllerSessionId: string,
+    context?: EffectResolutionContext,
   ): boolean {
     if (!filter) {
       return true;
@@ -1176,6 +1359,18 @@ export class EffectEngine {
       return false;
     }
 
+    if (filter.differentColorThanStoredSelection) {
+      const storedCard =
+        context?.storedSelections[filter.differentColorThanStoredSelection]?.[0];
+
+      if (
+        storedCard &&
+        card.colors.some((color) => storedCard.colors.includes(color))
+      ) {
+        return false;
+      }
+    }
+
     if (filter.trait && !filter.trait.some((trait) => card.families.includes(trait))) {
       return false;
     }
@@ -1203,6 +1398,18 @@ export class EffectEngine {
     return true;
   }
 
+  private getSelectableCards(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+    context: EffectResolutionContext,
+  ): DuelCard[] {
+    return this.host
+      .getCards(selector, controllerSessionId)
+      .filter((card) =>
+        this.matchesFilter(card, selector.filter, controllerSessionId, context),
+      );
+  }
+
   private collectInPlayCards(): DuelCard[] {
     const cards: DuelCard[] = [];
 
@@ -1215,6 +1422,20 @@ export class EffectEngine {
     }
 
     return cards;
+  }
+
+  private collectPlayerCards(player: DuelPlayer): DuelCard[] {
+    return [
+      player.zones.leader,
+      ...(player.zones.stage.instanceId ? [player.zones.stage] : []),
+      ...player.zones.deck,
+      ...player.zones.donDeck,
+      ...player.zones.hand,
+      ...player.zones.life,
+      ...player.zones.characters,
+      ...player.zones.cost,
+      ...player.zones.trash,
+    ];
   }
 
   private getOncePerTurnKey(sourceInstanceId: string, effectId: string): string {
@@ -1245,6 +1466,7 @@ export class EffectEngine {
       case 'unrest':
       case 'restand':
       case 'moveCard':
+      case 'moveFirstCard':
       case 'attachDon':
       case 'play':
       case 'ko':
@@ -1262,8 +1484,14 @@ export class EffectEngine {
       case 'search':
       case 'shuffleDeck':
       case 'arrangeDeckWindow':
+      case 'revealTopAndPlayIfMatches':
+      case 'revealStoredCards':
+      case 'moveStoredCards':
+      case 'ifStoredSelectionMatches':
       case 'activateEffect':
         return true;
+      case 'storeSelectedCards':
+        return this.hasSelectableCards(action.selector, controllerSessionId);
     }
   }
 

@@ -350,7 +350,12 @@ class TestHost implements EffectEngineHost {
     return moved;
   }
 
-  public attachDon(playerSessionId: string, targetInstanceId: string, amount: number): number {
+  public attachDon(
+    playerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+    options?: { rested?: boolean },
+  ): number {
     const player = this.getPlayer(playerSessionId);
     const target =
       player?.zones.leader.instanceId === targetInstanceId
@@ -361,8 +366,21 @@ class TestHost implements EffectEngineHost {
       return 0;
     }
 
-    target.attachedDon += amount;
-    return amount;
+    const matchingDon = player.zones.cost.filter((card) =>
+      options?.rested === undefined ? true : card.rested === options.rested,
+    );
+    const attached = Math.min(amount, matchingDon.length);
+
+    for (const don of matchingDon.slice(0, attached)) {
+      const index = player.zones.cost.indexOf(don);
+
+      if (index >= 0) {
+        player.zones.cost.splice(index, 1);
+      }
+    }
+
+    target.attachedDon += attached;
+    return attached;
   }
 
   public returnDonToDonDeck(playerSessionId: string, amount: number): number {
@@ -414,7 +432,7 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost',
+    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
@@ -1735,5 +1753,384 @@ describe('EffectEngine', () => {
     engine.reapplyContinuousEffects();
 
     expect(mr1.power).toBe(6000);
+  });
+
+  it('attaches rested DON!! from cost for declarative effects that ask for rested DON!!', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const luffy = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-024',
+        number: 'OP01-024',
+        name: 'Monkey.D.Luffy',
+        type: 'Character',
+      }),
+      'luffy-rested-don',
+    );
+    const restedDonA = host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-A',
+        number: 'DON-A',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-a',
+    );
+    const restedDonB = host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-B',
+        number: 'DON-B',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'don-b',
+    );
+    restedDonA.rested = true;
+    restedDonB.rested = true;
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: luffy.instanceId,
+      sourceCardId: luffy.cardId,
+    });
+
+    expect(luffy.attachedDon).toBe(2);
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(0);
+  });
+
+  it('recomputes continuous hand cost reduction effects from in-play sources', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const crocodile = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-067',
+        number: 'OP01-067',
+        name: 'Crocodile',
+        type: 'Character',
+      }),
+      'crocodile-cost',
+    );
+    crocodile.attachedDon = 1;
+    const blueEvent = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'BLUE-EVENT',
+        number: 'BLUE-EVENT',
+        name: 'Blue Event',
+        type: 'Event',
+        colors: ['Blue'],
+        cost: 2,
+      }),
+      'blue-event',
+    );
+    const redEvent = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'RED-EVENT',
+        number: 'RED-EVENT',
+        name: 'Red Event',
+        type: 'Event',
+        colors: ['Red'],
+        cost: 2,
+      }),
+      'red-event',
+    );
+
+    engine.reapplyContinuousEffects();
+
+    expect(blueEvent.cost).toBe(1);
+    expect(redEvent.cost).toBe(2);
+    expect(crocodile.hasBanish).toBe(true);
+  });
+
+  it('reveals the top deck card and can play it rested when it matches the declarative filter', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const doflamingo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-060',
+        number: 'OP01-060',
+        name: 'Donquixote Doflamingo',
+        type: 'Character',
+      }),
+      'doflamingo',
+    );
+    doflamingo.attachedDon = 2;
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-COST-DOFFY',
+        number: 'DON-COST-DOFFY',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'doflamingo-cost',
+    );
+    const topDeckCard = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'WARLORD-001',
+        number: 'WARLORD-001',
+        name: 'Warlord Character',
+        type: 'Character',
+        cost: 4,
+        families: ['The Seven Warlords of the Sea'],
+      }),
+      'warlord-top',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: doflamingo.instanceId,
+      sourceCardId: doflamingo.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      confirmed: true,
+    });
+
+    expect(host.getPlayer('p1')?.zones.characters).toContain(topDeckCard);
+    expect(topDeckCard.rested).toBe(true);
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(0);
+  });
+
+  it('stores a selected character, returns it to hand, then only allows playing a character of a different color', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const law = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-002',
+        number: 'OP01-002',
+        name: 'Trafalgar Law',
+        type: 'Character',
+        colors: ['Red'],
+      }),
+      'law-op01-002',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'LAW-DON-1',
+        number: 'LAW-DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'law-don-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'LAW-DON-2',
+        number: 'LAW-DON-2',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: 0,
+        power: 0,
+      }),
+      'law-don-2',
+    );
+    const returnedCharacter = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-RED',
+        number: 'ALLY-RED',
+        name: 'Returned Ally',
+        type: 'Character',
+        colors: ['Red'],
+      }),
+      'returned-ally',
+    );
+
+    for (let index = 0; index < 3; index += 1) {
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: `FILLER-${index}`,
+          number: `FILLER-${index}`,
+          name: `Filler ${index}`,
+          type: 'Character',
+          colors: ['Green'],
+        }),
+        `filler-${index}`,
+      );
+    }
+
+    const blueCharacter = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-BLUE',
+        number: 'HAND-BLUE',
+        name: 'Blue Character',
+        type: 'Character',
+        colors: ['Blue'],
+        cost: 5,
+      }),
+      'hand-blue',
+    );
+    const redCharacter = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-RED',
+        number: 'HAND-RED',
+        name: 'Red Character',
+        type: 'Character',
+        colors: ['Red'],
+        cost: 5,
+      }),
+      'hand-red',
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: law.instanceId,
+      sourceCardId: law.cardId,
+    });
+
+    let decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [returnedCharacter.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    const prompt = decision?.prompt;
+    expect(prompt?.type).toBe('selectCards');
+    expect(prompt?.selector.filter).toMatchObject({
+      differentColorThanStoredSelection: 'returnedCharacter',
+    });
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [blueCharacter.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toContain(returnedCharacter);
+    expect(host.getPlayer('p1')?.zones.characters).toContain(blueCharacter);
+    expect(host.getPlayer('p1')?.zones.characters).not.toContain(redCharacter);
+  });
+
+  it('reveals a stored opponent hand card and branches when it is an Event', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const arlong = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-063',
+        number: 'OP01-063',
+        name: 'Arlong',
+        type: 'Character',
+      }),
+      'arlong',
+    );
+    arlong.attachedDon = 1;
+    const opponentEvent = host.addCardToZone(
+      'p2',
+      'hand',
+      makeCard({
+        id: 'OPP-EVENT',
+        number: 'OPP-EVENT',
+        name: 'Opponent Event',
+        type: 'Event',
+      }),
+      'opponent-event',
+    );
+    host.addCardToZone(
+      'p2',
+      'hand',
+      makeCard({
+        id: 'OPP-CHARACTER',
+        number: 'OPP-CHARACTER',
+        name: 'Opponent Character',
+        type: 'Character',
+      }),
+      'opponent-character',
+    );
+    const lifeCard = host.addCardToZone(
+      'p2',
+      'life',
+      makeCard({
+        id: 'LIFE-001',
+        number: 'LIFE-001',
+        name: 'Life Card',
+        type: 'Character',
+      }),
+      'life-card',
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: arlong.instanceId,
+      sourceCardId: arlong.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision).not.toBeNull();
+    expect(decision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [opponentEvent.instanceId],
+    });
+
+    const lifeDecision = engine.getPendingDecision();
+    expect(lifeDecision).not.toBeNull();
+    expect(lifeDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: lifeDecision?.id ?? '',
+      selectedCardInstanceIds: [lifeCard.instanceId],
+    });
+
+    expect(host.logs.some((log) => log.includes('Opponent Event'))).toBe(true);
+    expect(host.getPlayer('p2')?.zones.deck).toContain(lifeCard);
+    expect(host.getPlayer('p2')?.zones.life).not.toContain(lifeCard);
+    expect(arlong.rested).toBe(true);
   });
 });
