@@ -5,6 +5,7 @@ type ProfileResponse = {
     name: string | null
     email: string | null
     image: string | null
+    isAnonymous: boolean
   }
   profile: {
     id: string
@@ -20,6 +21,7 @@ type SocialSignInResponse = {
   redirect: boolean
   url?: string
 }
+
 type DeleteAccountResponse = {
   deleted: true
 }
@@ -67,6 +69,22 @@ export function useSession() {
     }
   }
 
+  async function signInAnonymously() {
+    loading.value = true
+    errorMessage.value = null
+
+    try {
+      await api('/api/auth/sign-in/anonymous', {
+        method: 'POST'
+      })
+      await refresh()
+    } catch {
+      errorMessage.value = 'La connexion anonyme a echoue.'
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function signOut() {
     loading.value = true
     errorMessage.value = null
@@ -105,6 +123,7 @@ export function useSession() {
     profile,
     refresh,
     signIn,
+    signInAnonymously,
     signOut
   }
 }

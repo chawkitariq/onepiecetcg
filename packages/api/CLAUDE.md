@@ -46,7 +46,7 @@ Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`US
 
 Mounted via the community package `@thallesp/nestjs-better-auth` (no official Nest integration exists). Two points that are easy to break:
 - Nest's default body parser is disabled globally (`NestFactory.create(AppModule, { bodyParser: false })` in `main.ts`) so Better Auth can parse raw auth requests itself; `AuthModule.forRoot` configures its own body parser limits instead.
-- Cross-domain session cookies between this API and the Nuxt web app are controlled by `SESSION_COOKIE_DOMAIN`/`SESSION_COOKIE_SAME_SITE`/`SESSION_COOKIE_SECURE` in `runtime-config.ts`, consumed in `auth.ts`'s `advanced.crossSubDomainCookies`/`defaultCookieAttributes`. Google and Discord OAuth providers are the only sign-in paths in every environment.
+- Cross-domain session cookies between this API and the Nuxt web app are controlled by `SESSION_COOKIE_DOMAIN`/`SESSION_COOKIE_SAME_SITE`/`SESSION_COOKIE_SECURE` in `runtime-config.ts`, consumed in `auth.ts`'s `advanced.crossSubDomainCookies`/`defaultCookieAttributes`. Google and Discord OAuth providers are the production sign-in paths; Better Auth's anonymous plugin is also enabled only when `NODE_ENV==='development'` for local testing, fail-closed elsewhere.
 
 Protect routes with `@UseGuards(AuthGuard)` from `@thallesp/nestjs-better-auth`; the authenticated user is attached to `request.user` (see `AuthenticatedRequest` type pattern in `accounts.controller.ts`/`decks.controller.ts`).
 

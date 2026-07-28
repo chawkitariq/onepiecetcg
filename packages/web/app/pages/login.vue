@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { ButtonProps } from '@nuxt/ui'
 
-const { loading, profile, refresh, signIn } = useSession()
+const { loading, profile, refresh, signIn, signInAnonymously } = useSession()
 const route = useRoute()
+const anonymousEnabled = import.meta.dev
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect
@@ -59,6 +60,23 @@ const providers = computed<ButtonProps[]>(() => [
         icon="i-lucide-log-in"
         :providers="providers"
       />
+
+      <template v-if="anonymousEnabled">
+        <USeparator
+          label="Developpement"
+          class="my-4"
+        />
+        <UButton
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-user-round"
+          :loading="loading"
+          block
+          @click="signInAnonymously"
+        >
+          Continuer en anonyme
+        </UButton>
+      </template>
     </UPageCard>
   </div>
 </template>

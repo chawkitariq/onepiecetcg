@@ -12,6 +12,7 @@ export type AuthenticatedUser = {
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  isAnonymous?: boolean;
 };
 
 @Injectable()
@@ -94,6 +95,10 @@ export class AccountsService {
 
     if (trimmedName) {
       return trimmedName;
+    }
+
+    if (user.isAnonymous) {
+      return `Guest ${user.id.slice(0, 8)}`;
     }
 
     return user.email?.split('@')[0] || `Player ${user.id.slice(0, 8)}`;

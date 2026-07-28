@@ -25,6 +25,7 @@ export class AccountsController {
         name: request.user.name ?? null,
         email: request.user.email ?? null,
         image: request.user.image ?? null,
+        isAnonymous: request.user.isAnonymous ?? false,
       },
       profile: {
         id: account.id,

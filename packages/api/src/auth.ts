@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { anonymous } from 'better-auth/plugins';
 import { Pool } from 'pg';
 import { getApiConfig } from './runtime-config';
 
@@ -98,6 +99,13 @@ export function createAuth() {
       connectionString: config.databaseUrl,
     }),
     trustedOrigins: [config.webOrigin],
+    plugins: config.isDevelopment
+      ? [
+          anonymous({
+            emailDomainName: 'local.dev',
+          }),
+        ]
+      : [],
     socialProviders: {
       google: {
         clientId: config.auth.google.clientId,

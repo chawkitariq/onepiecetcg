@@ -7,6 +7,10 @@ jest.mock('better-auth', () => ({
   betterAuth: jest.fn((options: unknown) => options),
 }));
 
+jest.mock('better-auth/plugins', () => ({
+  anonymous: jest.fn(() => ({ id: 'anonymous' })),
+}));
+
 jest.mock('pg', () => ({
   Pool: jest.fn(() => ({ mockedPool: true })),
 }));
@@ -15,6 +19,7 @@ jest.mock('./runtime-config', () => ({
   getApiConfig: jest.fn(() => ({
     databaseUrl: 'postgres://test:test@localhost:5432/onepiecetcg',
     webOrigin: 'http://localhost:3001',
+    isDevelopment: false,
     auth: {
       secret: 'secret',
       baseURL: 'http://localhost:3000',
@@ -36,6 +41,14 @@ jest.mock('./runtime-config', () => ({
 describe('createAuth', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('enables no dev-only plugins outside development', () => {
+    const auth = createAuth() as {
+      plugins?: unknown[];
+    };
+
+    expect(auth.plugins).toEqual([]);
   });
 
   it('configures Google and Discord to refresh mapped profile images on sign-in', () => {
@@ -96,5 +109,34 @@ describe('createAuth', () => {
       email: 'nami@example.test',
       image: 'https://cdn.discordapp.com/avatars/123456/avatar-hash.png',
     });
+  });
+
+  it('enables the anonymous plugin in development only', () => {
+    (getApiConfig as jest.Mock).mockReturnValueOnce({
+      databaseUrl: 'postgres://test:test@localhost:5432/onepiecetcg',
+      webOrigin: 'http://localhost:3001',
+      isDevelopment: true,
+      auth: {
+        secret: 'secret',
+        baseURL: 'http://localhost:3000',
+        cookieDomain: undefined,
+        cookieSecure: false,
+        cookieSameSite: 'lax',
+        google: {
+          clientId: 'google-client-id',
+          clientSecret: 'google-client-secret',
+        },
+        discord: {
+          clientId: 'discord-client-id',
+          clientSecret: 'discord-client-secret',
+        },
+      },
+    });
+
+    const auth = createAuth() as {
+      plugins?: Array<{ id?: string }>;
+    };
+
+    expect(auth.plugins?.map((plugin) => plugin.id)).toContain('anonymous');
   });
 });

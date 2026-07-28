@@ -19,7 +19,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser — Nuxt's dev server binds here by default; if the API is already using port 3000, Nuxt falls back to the next free port (typically 3001).
 
-You should see the home page. Sign in from `/login` with Google or Discord after configuring the matching OAuth credentials in the API `.env` (see [packages/api/README.md](../api/README.md#authentication)).
+You should see the home page. In local `development`, sign in from `/login` with the anonymous shortcut, or configure Google/Discord credentials in the API `.env` if you want to test those OAuth flows too (see [packages/api/README.md](../api/README.md#authentication)).
 
 ## Environment variables
 

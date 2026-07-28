@@ -40,7 +40,7 @@ CI (`packages/web/.github/workflows/ci.yml`) runs `pnpm install`, `pnpm run lint
 ### Composables (integration layer)
 
 - `useApi()` — returns a `$fetch` instance pre-configured with `runtimeConfig.public.apiBase`, `credentials: 'include'`, and forwarded cookies (`useRequestHeaders(['cookie'])`). **Always** go through this composable for API calls instead of raw `$fetch`/`fetch`, so cookies and base URL stay consistent between SSR and client.
-- `useSession()` — wraps auth state (`profile`, `loading`, `errorMessage`) using `useState` (SSR-safe shared state), backed by `GET /me` and Better Auth's sign-in/sign-out endpoints on the API. `login.vue` renders the Google/Discord OAuth entry points and delegates auth entirely to the backend.
+- `useSession()` — wraps auth state (`profile`, `loading`, `errorMessage`) using `useState` (SSR-safe shared state), backed by `GET /me` and Better Auth's sign-in/sign-out endpoints on the API. `login.vue` renders the Google/Discord OAuth entry points plus a development-only anonymous shortcut when running in dev mode, and delegates auth entirely to the backend.
 - `useColyseus()` — client-only (`import.meta.client` guarded) wrapper around `colyseus.js`, connecting to `runtimeConfig.public.colyseusEndpoint` and joining the `duel` room (`joinOrCreate('duel', options)`). This is the sole channel for realtime game state; do not add other websocket clients.
 - `useDuelRoom()` / `useMockDuel()` — game-board state composables built on top of `useColyseus()`; `useMockDuel()` backs the `spike.vue`/local-preview path without a real server connection.
 - `useCardPreview()`, `useConfirmDialog()` / `useAppConfirmDialog()` — smaller UI-state composables (card zoom preview, the app-wide confirm dialog).

@@ -60,9 +60,9 @@ Deux types d'état, à ne pas confondre :
 ## 2. Authentification et comptes
 
 - Authentification gérée par **Better Auth, monté dans le backend NestJS** — Nuxt n'implémente aucune logique d'auth, il consomme les endpoints exposés par Nest et relaie les cookies de session.
-- 🎯 **Uniquement OAuth Google et Discord** — pas d'autre fournisseur prévu pour le MVP, y compris en développement local. Décision actée, pas une option ouverte à extension "si souhaité plus tard".
+- 🎯 **Google et Discord en production** ; en **développement local uniquement**, un accès Better Auth **anonyme** est activé pour les tests contributeur. Décision actée : aucun login email/mot de passe n'est prévu.
 - Un compte possède : un pseudonyme affiché, une liste de decks sauvegardés.
-- Aucun système de mot de passe interne à gérer en production (entièrement délégué à Google/Discord) — réduit la surface de risque sécurité et simplifie le schéma de compte (pas de champ mot de passe, pas de flux de reset, pas de vérification d'email à gérer).
+- Aucun système de mot de passe interne à gérer, y compris en développement — réduit la surface de risque sécurité et simplifie le schéma de compte (pas de champ mot de passe produit, pas de flux de reset, pas de vérification d'email à gérer). Les comptes anonymes de dev restent temporaires et ne sont jamais activables en production.
 - Export/import au format texte du deck (§4) conservé en plus du stockage compte, pour le partage et la sauvegarde externe.
 
 ## 3. Moteur de règles structurel (pas de scripting d'effets)

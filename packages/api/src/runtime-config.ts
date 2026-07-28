@@ -38,6 +38,10 @@ export function getApiConfig() {
   return {
     port: readNumber('API_PORT', 3000),
     webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:3001',
+    // Fail-closed: only an explicit 'development' enables anonymous dev auth,
+    // so a missing/misconfigured NODE_ENV in a future prod deployment never
+    // accidentally enables the local-testing shortcut.
+    isDevelopment: process.env.NODE_ENV === 'development',
     database,
     databaseUrl:
       process.env.DATABASE_URL ??

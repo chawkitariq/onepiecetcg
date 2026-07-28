@@ -23,6 +23,9 @@ export class BetterAuthUser {
   @Column({ type: 'text', nullable: true })
   image!: string | null;
 
+  @Column({ type: 'boolean', default: false })
+  isAnonymous!: boolean;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
