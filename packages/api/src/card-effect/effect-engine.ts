@@ -67,6 +67,7 @@ type PendingDecisionState = {
 };
 
 type EffectResolutionContext = {
+  sourceInstanceId: string;
   storedSelections: Record<string, DuelCard[]>;
 };
 
@@ -313,6 +314,7 @@ export class EffectEngine {
 
       this.host.addLog(`${source.name} applique un effet de remplacement.`);
       this.resolveActions(effect.replacement, query.playerSessionId, source, {
+        sourceInstanceId: source.instanceId,
         storedSelections: {},
       });
       return true;
@@ -420,6 +422,7 @@ export class EffectEngine {
       }
 
       this.resolveActions(definition.actions, controllerSessionId, source, {
+        sourceInstanceId: source.instanceId,
         storedSelections: {},
       });
     };
@@ -433,7 +436,7 @@ export class EffectEngine {
       definition.costs,
       controllerSessionId,
       source,
-      { storedSelections: {} },
+      { sourceInstanceId: source.instanceId, storedSelections: {} },
       0,
       runActions,
     );
@@ -616,7 +619,7 @@ export class EffectEngine {
         this.chooseCards(
           `${source.instanceId}:${action.type}:${Math.random()}`,
           controllerSessionId,
-          { storedSelections: {} },
+          context,
           controllerSessionId,
           `Choisissez ${action.count.kind === 'upTo' ? "jusqu'a " : ''}${action.count.value} carte(s).`,
           {
@@ -1431,8 +1434,24 @@ export class EffectEngine {
     return this.host
       .getCards(selector, controllerSessionId)
       .filter((card) =>
-        this.matchesFilter(card, selector.filter, controllerSessionId, context),
+        this.matchesSelector(card, selector, controllerSessionId, context),
       );
+  }
+
+  private matchesSelector(
+    card: DuelCard,
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+    context: EffectResolutionContext,
+  ): boolean {
+    if (
+      selector.source === 'effectSource' &&
+      card.instanceId !== context.sourceInstanceId
+    ) {
+      return false;
+    }
+
+    return this.matchesFilter(card, selector.filter, controllerSessionId, context);
   }
 
   private collectInPlayCards(): DuelCard[] {

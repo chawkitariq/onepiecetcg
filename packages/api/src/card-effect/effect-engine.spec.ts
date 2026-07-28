@@ -609,6 +609,58 @@ describe('EffectEngine', () => {
     expect(engine.getPendingDecision()).toBeNull();
   });
 
+  it('grants Cavendish rush without an extra target prompt when only the source is valid', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const cavendish = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP01-008',
+        number: 'OP01-008',
+        name: 'Cavendish',
+        type: 'Character',
+        power: 5000,
+      }),
+      'cavendish',
+    );
+    host.addCardToZone(
+      'p1',
+      'life',
+      makeCard({
+        id: 'LIFE-CAVENDISH',
+        number: 'LIFE-CAVENDISH',
+        name: 'Life Card',
+        type: 'Character',
+        power: 1000,
+      }),
+      'life-cavendish',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: cavendish.instanceId,
+      sourceCardId: cavendish.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.effectId).toBe('cavendish-on-play-life-to-hand-gain-rush');
+
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      confirmed: true,
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+    expect(cavendish.hasRush).toBe(true);
+    expect(host.getPlayer('p1')?.zones.life).toHaveLength(0);
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+  });
+
   it('recomputes continuous power bonuses from in-play cards without mutating printed power', () => {
     const host = new TestHost();
     host.addPlayer('p1');

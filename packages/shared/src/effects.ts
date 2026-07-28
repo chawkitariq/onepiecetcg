@@ -60,6 +60,7 @@ export type EffectCardFilter = {
 export type EffectTargetSelector = {
   player: EffectOwnerSelector;
   chooser?: EffectOwnerSelector;
+  source?: 'effectSource';
   zones: GameZone[];
   filter?: EffectCardFilter;
   count?: EffectCount;

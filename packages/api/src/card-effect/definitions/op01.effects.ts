@@ -3229,9 +3229,9 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'grantKeywords',
                 selector: {
+                  source: 'effectSource',
                   player: 'self',
                   zones: ['characters'],
-                  filter: { name: ['Cavendish'] },
                   count: { kind: 'exact', value: 1 },
                 },
                 keywords: ['rush'],
