@@ -15,7 +15,7 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 2. Read `docs/rule_comprehensive.md` before designing support for a new effect. Treat it as the gameplay source of truth.
 3. Read `references/engine-extension-decision-tree.md` to decide whether the gap belongs in the shared DSL, the engine runtime, a special handler, or a combination.
 4. Read `references/extension-patterns.md` before editing any type or runtime file so the extension stays declarative and reusable.
-5. Read `references/validation-loop.md` before testing so every engine change is proven by focused effect tests and a generation retry loop.
+5. Read `references/validation-loop.md` before testing so every engine change is proven by the right mix of runtime tests, reusable family tests, card-specific tests when justified, and a generation retry loop.
 6. Implement the smallest reusable engine capability that unlocks the blocked cards.
 7. Update or add the affected effect definitions in `packages/api/src/card-effect/definitions/`.
 8. Run the validation loop until the blocked cards can be authored cleanly and the targeted tests pass.
@@ -30,8 +30,13 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 - Preserve the repository split:
   - `packages/shared/` owns the effect DSL contracts.
   - `packages/api/src/card-effect/` owns loading, indexing, runtime resolution, and card-specific handlers.
-- Always add or update focused tests in `packages/api/src/card-effect/effect-engine.spec.ts` and/or `packages/api/src/card-effect/effect-loader.spec.ts` for every new engine capability.
+- Always add or update the right test layer for every new engine capability:
+  - `packages/api/src/card-effect/effect-engine.spec.ts` for reusable runtime or rules behavior
+  - `packages/api/src/card-effect/effect-loader.spec.ts` when loader or registry wiring changes
+  - edition-specific card suites such as `packages/api/src/card-effect/definitions/op01.effects.spec.ts` when the new capability unlocks a unique, ambiguous, special-handled, or especially critical card behavior
 - After unlocking the runtime, return to the blocked effect definitions and finish the declarative DSL conversion instead of leaving placeholders behind.
+- Do not default to one dedicated test per unlocked card if the behavior is already well protected by reusable engine or family coverage.
+- Add a dedicated per-card suite when the card uses a special handler, when the effect is uniquely complex, when several sensitive rules are mixed together, or when the card is important enough that a regression deserves explicit protection.
 
 ## Typical Triggers
 

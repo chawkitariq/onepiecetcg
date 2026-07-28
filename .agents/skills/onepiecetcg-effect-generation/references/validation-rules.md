@@ -89,14 +89,18 @@ Use this sequence:
 
 1. generate or edit edition files
 2. implement the full DSL for every generated placeholder card in scope
-3. add or update focused tests for every touched effect in `packages/api/src/card-effect/effect-engine.spec.ts`
-4. cover the complete effect path for each touched card: trigger, optional decisions, costs, target selection, modifiers, moves, and final state
-5. use the card text as a verification checklist: assert the gameplay meaning of each important clause the description expresses, including ownership words, optional wording, quantity bounds, and ordered "then" sequencing when present
-6. ensure aggregate indexes are current
-7. run the validator
-8. fix every reported issue
-9. scan the generated edition again for unfinished placeholder-only card blocks
-10. rerun until validation passes cleanly, no unfinished generated placeholders remain, every touched effect has direct test coverage, and the tests prove concordance with the card text
+3. choose the right test layer for the touched behavior:
+   - `packages/api/src/card-effect/effect-engine.spec.ts` for reusable runtime or rules behavior
+   - edition-specific specs such as `packages/api/src/card-effect/definitions/op01.effects.spec.ts` for card-level effect behavior
+   - `packages/api/src/card-effect/effect-loader.spec.ts` when loader or registry wiring changes
+4. add or update tests at that layer so the important touched behavior is covered
+5. when you add card-level coverage, cover the complete effect path: trigger, optional decisions, costs, target selection, modifiers, moves, and final state
+6. use the card text as a verification checklist: assert the gameplay meaning of each important clause the description expresses, including ownership words, optional wording, quantity bounds, and ordered "then" sequencing when present
+7. ensure aggregate indexes are current
+8. run the validator
+9. fix every reported issue
+10. scan the generated edition again for unfinished placeholder-only card blocks
+11. rerun until validation passes cleanly, no unfinished generated placeholders remain, and the touched behavior is covered at the appropriate test layer with assertions that prove concordance with the card text
 
 The file set is only ready when both conditions are true:
 
@@ -105,5 +109,6 @@ The file set is only ready when both conditions are true:
 
 The effect work is only ready when these test conditions are also true:
 
-3. every touched effect has focused tests that prove the full authored behavior end to end
-4. those tests explicitly verify that the implemented behavior matches the gameplay meaning expressed by the card description/text
+3. the touched behavior is covered at the appropriate test layer rather than only by incidental coverage
+4. card-specific suites exist for special handlers, uniquely complex effects, ambiguous texts, or especially critical cards
+5. the relevant tests explicitly verify that the implemented behavior matches the gameplay meaning expressed by the card description/text

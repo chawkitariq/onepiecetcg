@@ -20,6 +20,16 @@ Examples:
 - `op02.effects.ts`
 - `st10.effects.ts`
 
+## Edition test file naming
+
+Edition-specific effect test files must use the same base name as the edition definition file, with `.spec.ts` appended before the final extension.
+
+Examples:
+
+- `op01.effects.ts` -> `op01.effects.spec.ts`
+- `op02.effects.ts` -> `op02.effects.spec.ts`
+- `st10.effects.ts` -> `st10.effects.spec.ts`
+
 ## Edition export naming
 
 Each edition file must export one `EditionEffectDefinitions` constant named:
