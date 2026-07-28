@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
-import { ArraySchema, StateView } from '@colyseus/schema';
-import type { DeckService, ValidatedGameDeck } from '../deck/deck.service';
+import { ArraySchema } from '@colyseus/schema';
+import type { DeckService } from '../deck/deck.service';
 import type { StatsService } from '../stats/stats.service';
 import {
   DuelCard,
@@ -15,7 +15,6 @@ import {
   DuelState,
   type EffectDecisionResponse,
   type PendingEffectDecision,
-  createDuelCard,
   type FirstOrSecondChoice,
 } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
@@ -23,6 +22,7 @@ import { DuelCombatEngine } from './duel-combat-engine';
 import { DuelCardQueryEngine } from './duel-card-query-engine';
 import { DuelMainPhaseEngine } from './duel-main-phase-engine';
 import { DuelRoomLifecycle } from './duel-room-lifecycle';
+import { DuelRoomSeatBootstrap } from './duel-room-seat-bootstrap';
 import { DuelTurnEngine } from './duel-turn-engine';
 import { DuelZoneEngine } from './duel-zone-engine';
 
@@ -128,6 +128,8 @@ export class DuelRoom extends Room<DuelState> {
 
   private lifecycle!: DuelRoomLifecycle;
 
+  private seatBootstrap!: DuelRoomSeatBootstrap;
+
   private currentMainPhaseClient: Pick<Client, 'send'> | null = null;
 
   private currentCombatClient: Pick<Client, 'send'> | null = null;
@@ -163,6 +165,10 @@ export class DuelRoom extends Room<DuelState> {
       reportStatsError: (error) => {
         this.logger.error('Failed to record match result', error);
       },
+    });
+    this.seatBootstrap = new DuelRoomSeatBootstrap({
+      syncZoneCounts: (player) => this.syncZoneCounts(player),
+      broadcastCardView: (card) => this.broadcastCardView(card),
     });
     this.effectBoundary = new DuelRoomEffectBoundary({
       state: this.state,
@@ -389,37 +395,14 @@ export class DuelRoom extends Room<DuelState> {
       authUserId,
       deckId,
     );
-    client.view = new StateView();
-    const player = this.createPlayer(client, options, gameDeck);
+    const player = this.seatBootstrap.createPlayer(client, options, gameDeck);
     this.lifecycle.registerPlayer(client.sessionId, gameDeck.ownerAuthUserId);
     this.state.players.set(client.sessionId, player);
-
-    for (const card of player.zones.deck) {
-      client.view.add(card);
-    }
-
-    // Backfill this newly-joined client's view with any already-public
-    // cards from a player who joined earlier (leader, DON!! deck), and
-    // broadcast this player's own public cards to everyone already
-    // connected -- broadcastCardView() only reaches clients present in
-    // `this.clients` at call time.
-    for (const existingPlayer of this.state.players.values()) {
-      if (existingPlayer.sessionId === player.sessionId) {
-        continue;
-      }
-
-      client.view.add(existingPlayer.zones.leader);
-
-      for (const donCard of existingPlayer.zones.donDeck) {
-        client.view.add(donCard);
-      }
-    }
-
-    this.broadcastCardView(player.zones.leader);
-
-    for (const donCard of player.zones.donDeck) {
-      this.broadcastCardView(donCard);
-    }
+    this.seatBootstrap.initializeClientView(
+      client,
+      player,
+      this.state.players.values(),
+    );
 
     this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
     this.sendPendingEffectDecisionToClient(client);
@@ -454,43 +437,6 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(`${player.displayName} a perdu par forfait.`);
       this.lifecycle.removePlayer(client.sessionId);
     }
-  }
-
-  private createPlayer(
-    client: Client,
-    options: DuelJoinOptions,
-    gameDeck: ValidatedGameDeck,
-  ): DuelPlayer {
-    const player = new DuelPlayer();
-    player.sessionId = client.sessionId;
-    player.displayName =
-      options.displayName?.trim().slice(0, 40) ||
-      `Player ${gameDeck.ownerAuthUserId.slice(0, 8)}`;
-    player.deckId = gameDeck.id;
-    player.ready = true;
-    player.zones.leader = createDuelCard(
-      gameDeck.leader,
-      `${client.sessionId}:leader:${gameDeck.leader.id}`,
-      client.sessionId,
-    );
-    player.zones.deck.push(
-      ...gameDeck.cards.map((card, index) =>
-        createDuelCard(
-          card,
-          `${client.sessionId}:deck:${index + 1}`,
-          client.sessionId,
-          true,
-        ),
-      ),
-    );
-    player.zones.donDeck.push(
-      ...Array.from({ length: 10 }, (_, index) =>
-        this.createDonCard(client, index),
-      ),
-    );
-    this.syncZoneCounts(player);
-
-    return player;
   }
 
   /**
@@ -825,18 +771,6 @@ export class DuelRoom extends Room<DuelState> {
 
   private bindCombatClient(client: Pick<Client, 'send'>): void {
     this.currentCombatClient = client;
-  }
-
-  private createDonCard(client: Client, index: number): DuelCard {
-    const card = new DuelCard();
-    card.instanceId = `${client.sessionId}:don:${index + 1}`;
-    card.ownerSessionId = client.sessionId;
-    card.cardId = 'DON!!';
-    card.number = 'DON!!';
-    card.name = 'DON!!';
-    card.type = 'DON!!';
-
-    return card;
   }
 
   private handleResolveEffectDecision(
