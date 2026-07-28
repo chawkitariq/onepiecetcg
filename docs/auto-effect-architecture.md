@@ -22,7 +22,7 @@ packages/api/src/card-effect/
     op05.effects.ts
     special/
       handlers/
-        op01-047.special.ts
+      op01-047.special.ts
       index.ts
   types/
     effect-registry.ts
