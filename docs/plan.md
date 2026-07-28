@@ -329,7 +329,7 @@ Objectif : rendre l'expérience complète, robuste et testable.
 
 - Ajouter les tests unitaires des validateurs de deck.
 - Ajouter les tests unitaires du moteur structurel : phases, DON!!, zones, ciblage, combat, dégâts, deck-out.
-- Ajouter les tests e2e des endpoints auth/decks/lobby.
+- Ajouter les tests e2e des endpoints auth/deck/lobby.
 - Vérifier les logs et erreurs serveur.
 - Documenter les variables d'environnement nécessaires.
 

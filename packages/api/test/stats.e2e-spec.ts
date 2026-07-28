@@ -7,7 +7,7 @@ import type { Repository } from 'typeorm';
 import type { PlayerStats } from '@onepiecetcg/shared';
 import { AppModule } from '../src/app.module';
 import { PlayerAccount } from '../src/accounts/player-account.entity';
-import { SavedDeck } from '../src/decks/saved-deck.entity';
+import { SavedDeck } from '../src/deck/saved-deck.entity';
 import { MatchResult } from '../src/stats/match-result.entity';
 import { createAuthenticatedTestUser } from './auth-fixture';
 

@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Card } from '@onepiecetcg/shared';
 import { PlayerAccountService } from '../player-account/player-account.service';
 import { CatalogService } from '../catalog/catalog.service';
-import { DecksService } from './decks.service';
+import { DeckService } from './deck.service';
 import { SavedDeck } from './saved-deck.entity';
 
 jest.mock('@onepiecetcg/shared', () => {
@@ -34,13 +34,13 @@ const cards: Card[] = [
   card('DON-001', 'DON!!', []),
 ];
 
-describe('DecksService', () => {
-  let service: DecksService;
+describe('DeckService', () => {
+  let service: DeckService;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
-        DecksService,
+        DeckService,
         {
           provide: getRepositoryToken(SavedDeck),
           useValue: {},
@@ -63,7 +63,7 @@ describe('DecksService', () => {
       ],
     }).compile();
 
-    service = moduleRef.get(DecksService);
+    service = moduleRef.get(DeckService);
   });
 
   it('accepts a valid leader plus 50-card main deck', async () => {

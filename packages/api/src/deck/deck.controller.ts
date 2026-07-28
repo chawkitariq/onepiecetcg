@@ -13,7 +13,7 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../player-account/player-account.service';
 import { DeckIdParamDto, DeckPayloadDto } from './deck.dto';
-import { DecksService } from './decks.service';
+import { DeckService } from './deck.service';
 
 type AuthenticatedRequest = Request & {
   user: AuthenticatedUser;
@@ -21,8 +21,8 @@ type AuthenticatedRequest = Request & {
 
 @UseGuards(AuthGuard)
 @Controller('decks')
-export class DecksController {
-  constructor(private readonly decksService: DecksService) {}
+export class DeckController {
+  constructor(private readonly decksService: DeckService) {}
 
   @Get()
   async list(@Req() request: AuthenticatedRequest) {

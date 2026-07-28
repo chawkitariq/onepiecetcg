@@ -6,7 +6,7 @@ import {
 import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
 import { ArraySchema, StateView } from '@colyseus/schema';
-import type { DecksService, ValidatedGameDeck } from '../decks/decks.service';
+import type { DeckService, ValidatedGameDeck } from '../deck/deck.service';
 import type { StatsService } from '../stats/stats.service';
 import {
   DuelCard,
@@ -53,7 +53,7 @@ const FIRST_TURN_DON_COUNT = 1;
 const PHASE_ORDER: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end'];
 
 type DuelRoomServices = {
-  decksService: DecksService;
+  decksService: DeckService;
   statsService?: StatsService;
 };
 
@@ -95,7 +95,7 @@ type DuelSessionResolver = (
 let services: DuelRoomServices | null = null;
 let resolveSession: DuelSessionResolver | null = null;
 
-/** Injects `DecksService` into `DuelRoom`, which Colyseus instantiates outside Nest's DI container. */
+/** Injects `DeckService` into `DuelRoom`, which Colyseus instantiates outside Nest's DI container. */
 export function configureDuelRoomServices(nextServices: DuelRoomServices) {
   services = nextServices;
 }

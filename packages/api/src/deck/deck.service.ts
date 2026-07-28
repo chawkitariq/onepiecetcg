@@ -38,7 +38,7 @@ export type ValidatedGameDeck = {
 };
 
 @Injectable()
-export class DecksService {
+export class DeckService {
   constructor(
     @InjectRepository(SavedDeck)
     private readonly decks: Repository<SavedDeck>,

@@ -64,7 +64,7 @@ pnpm test:cov           # jest --coverage
 pnpm test:e2e           # jest -c test/jest-e2e.json (test/*.e2e-spec.ts)
 ```
 
-Run a single unit test: `pnpm exec jest src/decks/decks.service.spec.ts`. Run a single e2e spec: `pnpm exec jest --config ./test/jest-e2e.json test/app.e2e-spec.ts`.
+Run a single unit test: `pnpm exec jest src/deck/deck.service.spec.ts`. Run a single e2e spec: `pnpm exec jest --config ./test/jest-e2e.json test/app.e2e-spec.ts`.
 
 There's no `pnpm build` step documented here for local development — CI validates changes with `lint` and `typecheck`, not a production build.
 
@@ -75,7 +75,7 @@ There's no `pnpm build` step documented here for local development — CI valida
 - `app.module.ts` — composition root: wires `ConfigModule`, Better Auth, TypeORM, and the domain modules below. The global auth guard is disabled; routes opt into auth individually with `@UseGuards(AuthGuard)`.
 - `accounts/` — maps an authenticated Better Auth user to a persisted `PlayerAccount`, exposes `GET /me`.
 - `catalog/` — card catalogue: fetches and normalizes cards from the external [OPTCG API](https://optcgapi.com/api) into the shared `Card` schema, with a 12-hour in-memory cache.
-- `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
+- `deck/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and the service that attaches Colyseus onto Nest's underlying HTTP server.
 - `better-auth/` — TypeORM entities for Better Auth's own tables. `src/auth.ts` (outside `better-auth/`) holds the Better Auth instance factory.
 - `runtime-config.ts` — reads all environment variables in one place; use this instead of reading `process.env` directly elsewhere in the codebase.
@@ -92,7 +92,7 @@ Card effect text is never interpreted server-side. Only structural fields (`cost
 
 ## Testing
 
-Jest, configured inline in `package.json` (`rootDir: src`). Unit specs are colocated next to the code they test (e.g. `decks/decks.service.spec.ts`). End-to-end specs live in `test/` and run under `test/jest-e2e.json`. Shared deck/account fixtures live in `decks/shared-test.mock.ts` — reuse them instead of duplicating mock data.
+Jest, configured inline in `package.json` (`rootDir: src`). Unit specs are colocated next to the code they test (e.g. `deck/deck.service.spec.ts`). End-to-end specs live in `test/` and run under `test/jest-e2e.json`. Shared deck/account fixtures live in `deck/shared-test.mock.ts` — reuse them instead of duplicating mock data.
 
 ## Related documentation
 

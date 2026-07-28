@@ -24,7 +24,7 @@ pnpm test:debug         # jest --runInBand with node --inspect-brk
 pnpm test:e2e           # jest -c test/jest-e2e.json (test/*.e2e-spec.ts)
 ```
 
-Run a single unit test file: `pnpm exec jest src/decks/decks.service.spec.ts`. Run a single e2e spec: `pnpm exec jest --config ./test/jest-e2e.json test/app.e2e-spec.ts`.
+Run a single unit test file: `pnpm exec jest src/deck/deck.service.spec.ts`. Run a single e2e spec: `pnpm exec jest --config ./test/jest-e2e.json test/app.e2e-spec.ts`.
 
 Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`USER`/`PASSWORD`/`NAME`, or a single `DATABASE_URL`) — copy `.env.example` to `.env` and adjust as needed. `TypeOrmModule` is configured with `synchronize: true` (see `src/app.module.ts`), so entities auto-migrate the schema in this environment; there are no manual migration files.
 
@@ -36,7 +36,7 @@ Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`US
 - `common/all-exceptions.filter.ts` — global `AllExceptionsFilter`, registered in `main.ts` via `app.useGlobalFilters`. Logs every request error server-side (stack trace for 5xx/non-`HttpException` errors) without changing the response body Nest already produces for `HttpException`.
 - `accounts/` — maps an authenticated Better Auth user to a persisted `PlayerAccount` (`findOrCreateForAuthUser`), exposes `GET /me`.
 - `catalog/` — card catalogue: fetches and normalizes cards from the external OPTCG API (`https://optcgapi.com/api`) into the shared `Card` schema, with a 12h in-memory cache (`CatalogService`).
-- `decks/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
+- `deck/` — deck CRUD, server-side deck validation, and text import/export, scoped to the authenticated account.
 - `realtime/` — Colyseus integration: the `duel` room (authoritative game state) and `ColyseusService`, which attaches the Colyseus server onto Nest's underlying HTTP server (see below).
 - `better-auth/` — TypeORM entities for Better Auth's own tables (`BetterAuthUser`, `BetterAuthAccount`, `BetterAuthSession`, `BetterAuthVerification`); `src/auth.ts` (note: outside `better-auth/`) holds `createAuth()`, the Better Auth instance factory.
 - `runtime-config.ts` — single `getApiConfig()` reads all env vars with defaults; use this instead of reading `process.env` directly elsewhere.
@@ -51,7 +51,7 @@ Protect routes with `@UseGuards(AuthGuard)` from `@thallesp/nestjs-better-auth`;
 
 ### Realtime (Colyseus)
 
-Colyseus is not officially integrated with Nest either. `ColyseusService.attach(httpServer)` is called manually from `main.ts` after `app.init()`, binding a `WebSocketTransport` onto Nest's raw HTTP server and registering the `duel` room type. The `DuelRoom` (`realtime/duel.room.ts`) needs `DecksService` outside of Nest's DI (Colyseus instantiates rooms itself), so it's wired through a module-level `configureDuelRoomServices()` call rather than constructor injection — don't try to `@Inject` into `DuelRoom`.
+Colyseus is not officially integrated with Nest either. `ColyseusService.attach(httpServer)` is called manually from `main.ts` after `app.init()`, binding a `WebSocketTransport` onto Nest's raw HTTP server and registering the `duel` room type. The `DuelRoom` (`realtime/duel.room.ts`) needs `DeckService` outside of Nest's DI (Colyseus instantiates rooms itself), so it's wired through a module-level `configureDuelRoomServices()` call rather than constructor injection — don't try to `@Inject` into `DuelRoom`.
 
 `DuelRoom` enforces the structural rules from `docs/spec.md` §3: joining requires a validated deck (`decksService.getValidatedGameDeck`), max 2 clients, reconnection grace period (`RECONNECTION_SECONDS = 120`). Card effect text is never interpreted server-side — only structural fields (`cost`, `power`, `life`, `type`, `colors`) drive automated logic; anything requiring reading card text (Blocker, Counter, Triggers) stays a player-declared action the server records but doesn't validate.
 
@@ -71,4 +71,4 @@ ESLint (`eslint.config.mjs`) uses `typescript-eslint` `recommendedTypeChecked` p
 
 ## Testing
 
-Jest, configured inline in `package.json` (`rootDir: src`, `testRegex: '.*\\.spec\\.ts$'`). Unit specs are colocated next to the code they test (e.g. `decks/decks.service.spec.ts`). E2E specs live in `test/` and run under `test/jest-e2e.json`. `decks/shared-test.mock.ts` holds shared deck/account fixtures for tests — reuse it instead of duplicating mock data.
+Jest, configured inline in `package.json` (`rootDir: src`, `testRegex: '.*\\.spec\\.ts$'`). Unit specs are colocated next to the code they test (e.g. `deck/deck.service.spec.ts`). E2E specs live in `test/` and run under `test/jest-e2e.json`. `deck/shared-test.mock.ts` holds shared deck/account fixtures for tests — reuse it instead of duplicating mock data.

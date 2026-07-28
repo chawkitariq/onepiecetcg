@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlayerAccountModule } from '../player-account/player-account.module';
 import { CatalogModule } from '../catalog/catalog.module';
-import { DecksController } from './decks.controller';
-import { DecksService } from './decks.service';
+import { DeckController } from './deck.controller';
+import { DeckService } from './deck.service';
 import { SavedDeck } from './saved-deck.entity';
 
 @Module({
@@ -12,8 +12,8 @@ import { SavedDeck } from './saved-deck.entity';
     PlayerAccountModule,
     CatalogModule,
   ],
-  controllers: [DecksController],
-  providers: [DecksService],
-  exports: [DecksService],
+  controllers: [DeckController],
+  providers: [DeckService],
+  exports: [DeckService],
 })
-export class DecksModule {}
+export class DeckModule {}
