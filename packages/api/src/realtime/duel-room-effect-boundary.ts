@@ -12,6 +12,7 @@ import {
   createDuelEffectEngineHost,
   type DuelEffectEngineHostDeps,
 } from './duel-effect-engine-host';
+import { DuelLifeCardResolutionEngine } from './duel-life-card-resolution-engine';
 import { DuelManualTriggerManager } from './duel-manual-trigger-manager';
 
 export type DuelRoomEffectBoundaryDeps = DuelEffectEngineHostDeps & {
@@ -29,6 +30,8 @@ export class DuelRoomEffectBoundary {
 
   private readonly manualTriggers: DuelManualTriggerManager;
 
+  private readonly lifeCards: DuelLifeCardResolutionEngine;
+
   public constructor(private readonly deps: DuelRoomEffectBoundaryDeps) {
     this.engine = new EffectEngine(
       effectRegistry,
@@ -40,6 +43,21 @@ export class DuelRoomEffectBoundary {
       getPlayer: deps.getPlayer,
       syncPlayer: deps.syncPlayer,
       broadcastCardView: deps.broadcastCardView,
+    });
+    this.lifeCards = new DuelLifeCardResolutionEngine({
+      addLog: deps.addLog,
+      syncPlayer: deps.syncPlayer,
+      broadcastCardView: deps.broadcastCardView,
+      hasLocalTriggerDefinition: (cardId) =>
+        this.hasLocalTriggerDefinition(cardId),
+      emitTriggerEvent: (playerSessionId, card) =>
+        this.emitCardEvent('trigger', playerSessionId, card),
+      queueManualTriggerFallback: (ownerSessionId, card, defenderDisplayName) =>
+        this.manualTriggers.queueLifeCardFallback(
+          ownerSessionId,
+          card,
+          defenderDisplayName,
+        ),
     });
   }
 
@@ -151,28 +169,7 @@ export class DuelRoomEffectBoundary {
     defender: DuelPlayer,
     revealedCard: DuelCard,
   ): 'addedToHand' | 'engineTrigger' | 'manualFallback' {
-    if (this.hasLocalTriggerDefinition(revealedCard.cardId)) {
-      defender.zones.trash.unshift(revealedCard);
-      this.deps.broadcastCardView(revealedCard);
-      this.emitCardEvent('trigger', defender.sessionId, revealedCard);
-      return 'engineTrigger';
-    }
-
-    if (revealedCard.trigger) {
-      this.manualTriggers.queueFallback(
-        defender.sessionId,
-        revealedCard,
-        defender.displayName,
-      );
-      return 'manualFallback';
-    }
-
-    defender.zones.hand.push(revealedCard);
-    this.deps.syncPlayer(defender.sessionId);
-    this.deps.addLog(
-      `${defender.displayName} subit 1 degat et ajoute la carte de Vie a sa main.`,
-    );
-    return 'addedToHand';
+    return this.lifeCards.resolve(defender, revealedCard);
   }
 
   public resolveManualTriggerDecision(

@@ -48,6 +48,18 @@ export class DuelManualTriggerManager {
   }
 
   /**
+   * Public alias used by higher-level orchestrators when life-card resolution
+   * needs to defer to the manual trigger fallback.
+   */
+  public queueLifeCardFallback(
+    ownerSessionId: string,
+    card: DuelCard,
+    defenderDisplayName: string,
+  ): void {
+    this.queueFallback(ownerSessionId, card, defenderDisplayName);
+  }
+
+  /**
    * Resolves the queued manual fallback decision for the defending player.
    */
   public resolveDecision(
