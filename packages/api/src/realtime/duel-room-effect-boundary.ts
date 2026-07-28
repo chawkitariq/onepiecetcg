@@ -12,6 +12,7 @@ import {
   createDuelEffectEngineHost,
   type DuelEffectEngineHostDeps,
 } from './duel-effect-engine-host';
+import { DuelEffectEventDispatcher } from './duel-effect-event-dispatcher';
 import { DuelLifeCardResolutionEngine } from './duel-life-card-resolution-engine';
 import { DuelManualTriggerManager } from './duel-manual-trigger-manager';
 
@@ -32,11 +33,18 @@ export class DuelRoomEffectBoundary {
 
   private readonly lifeCards: DuelLifeCardResolutionEngine;
 
+  private readonly dispatcher: DuelEffectEventDispatcher;
+
   public constructor(private readonly deps: DuelRoomEffectBoundaryDeps) {
     this.engine = new EffectEngine(
       effectRegistry,
       createDuelEffectEngineHost(deps),
     );
+    this.dispatcher = new DuelEffectEventDispatcher({
+      state: deps.state,
+      emitCardEvent: (type, playerSessionId, card) =>
+        this.emitCardEvent(type, playerSessionId, card),
+    });
     this.manualTriggers = new DuelManualTriggerManager({
       state: deps.state,
       addLog: deps.addLog,
@@ -49,7 +57,7 @@ export class DuelRoomEffectBoundary {
       syncPlayer: deps.syncPlayer,
       broadcastCardView: deps.broadcastCardView,
       hasLocalTriggerDefinition: (cardId) =>
-        this.hasLocalTriggerDefinition(cardId),
+        this.dispatcher.hasLocalTriggerDefinition(cardId),
       emitTriggerEvent: (playerSessionId, card) =>
         this.emitCardEvent('trigger', playerSessionId, card),
       queueManualTriggerFallback: (ownerSessionId, card, defenderDisplayName) =>
@@ -116,53 +124,23 @@ export class DuelRoomEffectBoundary {
   }
 
   public emitWindowEffects(type: 'onTurnStart' | 'onTurnEnd'): void {
-    for (const player of this.deps.state.players.values()) {
-      this.emitCardEvent(type, player.sessionId, player.zones.leader);
-
-      for (const character of player.zones.characters) {
-        this.emitCardEvent(type, player.sessionId, character);
-      }
-
-      if (player.zones.stage.instanceId) {
-        this.emitCardEvent(type, player.sessionId, player.zones.stage);
-      }
-    }
+    this.dispatcher.emitWindowEffects(type);
   }
 
   public emitPlayedCard(playerSessionId: string, card: DuelCard): void {
-    if (card.type === 'Event') {
-      this.emitCardEvent('activateMain', playerSessionId, card);
-      this.emitCardEvent('onEventActivated', playerSessionId, card);
-      return;
-    }
-
-    this.emitCardEvent('onPlay', playerSessionId, card);
+    this.dispatcher.emitPlayedCard(playerSessionId, card);
   }
 
   public hasCounterEffect(cardId: string): boolean {
-    return (
-      effectRegistry.effectsByCardId[cardId]?.standard?.some(
-        (effect) => effect.trigger.type === 'activateCounter',
-      ) ?? false
-    );
+    return this.dispatcher.hasCounterEffect(cardId);
   }
 
   public emitCounterUsage(playerSessionId: string, card: DuelCard): void {
-    if (this.hasCounterEffect(card.cardId)) {
-      this.emitCardEvent('activateCounter', playerSessionId, card);
-    }
-
-    if (card.type === 'Event') {
-      this.emitCardEvent('onEventActivated', playerSessionId, card);
-    }
+    this.dispatcher.emitCounterUsage(playerSessionId, card);
   }
 
   public hasLocalTriggerDefinition(cardId: string): boolean {
-    return (
-      effectRegistry.effectsByCardId[cardId]?.standard?.some(
-        (effect) => effect.trigger.type === 'trigger',
-      ) ?? false
-    );
+    return this.dispatcher.hasLocalTriggerDefinition(cardId);
   }
 
   public resolveRevealedLifeCard(
