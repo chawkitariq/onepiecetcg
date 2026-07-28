@@ -92,6 +92,10 @@ export class DuelRoomEffectBoundary {
     this.engine.clearTurnModifiers();
   }
 
+  public clearTurnStartModifiers(playerSessionId: string): void {
+    this.engine.clearTurnStartModifiers(playerSessionId);
+  }
+
   public clearCombatModifiers(): void {
     this.engine.clearCombatModifiers();
     this.manualTriggers.clear();
@@ -129,6 +133,26 @@ export class DuelRoomEffectBoundary {
 
   public emitPlayedCard(playerSessionId: string, card: DuelCard): void {
     this.dispatcher.emitPlayedCard(playerSessionId, card);
+  }
+
+  public emitDonAttached(playerSessionId: string, card: DuelCard): void {
+    this.emitCardEvent('onDonAttached', playerSessionId, card);
+  }
+
+  public emitDonReturned(playerSessionId: string, card: DuelCard): void {
+    this.emitCardEvent('onDonReturned', playerSessionId, card);
+  }
+
+  public emitBattleKo(playerSessionId: string, card: DuelCard): void {
+    this.emitCardEvent('onBattleKo', playerSessionId, card);
+  }
+
+  public getNextPlayCostModifier(card: DuelCard): number {
+    return this.engine.getNextPlayCostModifier(card);
+  }
+
+  public consumeNextPlayCostModifier(card: DuelCard): void {
+    this.engine.consumeNextPlayCostModifier(card);
   }
 
   public hasCounterEffect(cardId: string): boolean {

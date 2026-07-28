@@ -98,9 +98,24 @@ export class EffectEngine {
     this.modifiers.clearTurnModifiers();
   }
 
+  /** Removes modifiers that expire at the start of the given player's turn. */
+  public clearTurnStartModifiers(playerSessionId: string): void {
+    this.modifiers.clearTurnStartModifiers(playerSessionId);
+  }
+
   /** Removes temporary end-of-battle modifiers and refreshes derived values. */
   public clearCombatModifiers(): void {
     this.modifiers.clearCombatModifiers();
+  }
+
+  /** Returns the next-play cost delta currently applicable to a card in hand. */
+  public getNextPlayCostModifier(source: DuelCard): number {
+    return this.modifiers.getNextPlayCostModifier(source, 'hand');
+  }
+
+  /** Consumes the first matching one-shot play-cost modifier for this card. */
+  public consumeNextPlayCostModifier(source: DuelCard): void {
+    this.modifiers.consumeNextPlayCostModifier(source, 'hand');
   }
 
   /** Queues and resolves all standard effects matching a gameplay event. */
@@ -298,6 +313,10 @@ export class EffectEngine {
   private shouldBroadcastTriggerToOtherCards(type: EffectEventType): boolean {
     return (
       type === 'onEventActivated' ||
+      type === 'onCharacterPlayed' ||
+      type === 'onDonAttached' ||
+      type === 'onDonReturned' ||
+      type === 'onBattleKo' ||
       type === 'onTurnStart' ||
       type === 'onTurnEnd' ||
       type === 'onKo'

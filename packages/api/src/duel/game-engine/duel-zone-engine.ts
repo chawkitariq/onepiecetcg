@@ -43,7 +43,7 @@ export class DuelZoneEngine {
     card: DuelCard,
     destinationPlayerSessionId: string,
     destinationZone: string,
-    options?: { faceDown?: boolean; rested?: boolean },
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
   ): void {
     this.removeCardFromCurrentZone(card.instanceId);
     const destinationPlayer = this.deps.state.players.get(
@@ -71,6 +71,10 @@ export class DuelZoneEngine {
 
       if (zone instanceof ArraySchema) {
         if (destinationZone === 'trash') {
+          zone.unshift(card);
+        } else if (destinationZone === 'deck' && options?.toBottom) {
+          zone.push(card);
+        } else if (destinationZone === 'deck') {
           zone.unshift(card);
         } else {
           zone.push(card);

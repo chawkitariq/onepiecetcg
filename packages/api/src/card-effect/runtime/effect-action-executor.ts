@@ -78,6 +78,26 @@ export class EffectActionExecutor {
         next();
         return;
       }
+      case 'drawUntilHandSize': {
+        const playerId = this.selectors.resolvePlayer(
+          action.player,
+          controllerSessionId,
+        );
+        const player = playerId ? this.host.getPlayer(playerId) : undefined;
+
+        if (playerId && player) {
+          const missing = Math.max(0, action.size - player.zones.hand.length);
+
+          for (let index = 0; index < missing; index += 1) {
+            this.host.drawCard(playerId);
+          }
+
+          this.host.syncPlayer(playerId);
+        }
+
+        next();
+        return;
+      }
       case 'ko': {
         this.forSelectedCards(
           action.selector,
@@ -276,6 +296,16 @@ export class EffectActionExecutor {
           'Choisissez la carte a deplacer.',
           (cards) => {
             for (const card of cards) {
+              if (
+                !this.canMoveCardByEffect(
+                  card,
+                  controllerSessionId,
+                  action.destinationZone,
+                )
+              ) {
+                continue;
+              }
+
               const playerId =
                 action.destinationPlayer === 'selectedCardOwner'
                   ? card.ownerSessionId
@@ -291,6 +321,7 @@ export class EffectActionExecutor {
               this.host.moveCard(card, playerId, action.destinationZone, {
                 faceDown: action.faceDown,
                 rested: action.rested,
+                toBottom: action.toBottom,
               });
             }
             next();
@@ -319,9 +350,21 @@ export class EffectActionExecutor {
               );
 
         if (playerId) {
+          if (
+            !this.canMoveCardByEffect(
+              card,
+              controllerSessionId,
+              action.destinationZone,
+            )
+          ) {
+            next();
+            return;
+          }
+
           this.host.moveCard(card, playerId, action.destinationZone, {
             faceDown: action.faceDown,
             rested: action.rested,
+            toBottom: action.toBottom,
           });
         }
 
@@ -339,6 +382,31 @@ export class EffectActionExecutor {
             for (const target of cards) {
               this.modifiers.addPowerModifier(
                 source.instanceId,
+                controllerSessionId,
+                target.instanceId,
+                action.amount,
+                action.duration.type,
+              );
+            }
+
+            this.modifiers.reapplyContinuousEffects();
+            next();
+          },
+        );
+        return;
+      }
+      case 'modifyCost': {
+        this.forSelectedCards(
+          action.selector,
+          controllerSessionId,
+          context,
+          this.createDecisionId(source.instanceId, action.type),
+          'Choisissez la carte dont le cout sera modifie.',
+          (cards) => {
+            for (const target of cards) {
+              this.modifiers.addCostModifier(
+                source.instanceId,
+                controllerSessionId,
                 target.instanceId,
                 action.amount,
                 action.duration.type,
@@ -362,6 +430,7 @@ export class EffectActionExecutor {
             for (const target of cards) {
               this.modifiers.addKeywordModifier(
                 source.instanceId,
+                controllerSessionId,
                 target.instanceId,
                 action.keywords,
                 action.duration.type,
@@ -372,6 +441,23 @@ export class EffectActionExecutor {
             next();
           },
         );
+        return;
+      }
+      case 'preventOwnEffectLifeToHand': {
+        const playerId = this.selectors.resolvePlayer(
+          action.player,
+          controllerSessionId,
+        );
+
+        if (playerId) {
+          this.modifiers.addPlayerRestriction(
+            playerId,
+            'preventOwnEffectLifeToHand',
+            action.duration.type,
+          );
+        }
+
+        next();
         return;
       }
       case 'restrictAttack': {
@@ -433,6 +519,63 @@ export class EffectActionExecutor {
         }
 
         next();
+        return;
+      }
+      case 'registerNextPlayCostModifier': {
+        const playerId = this.selectors.resolvePlayer(
+          action.player,
+          controllerSessionId,
+        );
+
+        if (playerId) {
+          this.modifiers.registerNextPlayCostModifier(
+            playerId,
+            source.instanceId,
+            action.filter,
+            action.sourceZone,
+            action.amount,
+          );
+        }
+
+        next();
+        return;
+      }
+      case 'scheduleMoveAtEndOfBattle': {
+        this.forSelectedCards(
+          action.selector,
+          controllerSessionId,
+          context,
+          this.createDecisionId(source.instanceId, action.type),
+          'Choisissez la carte a deplacer a la fin du combat.',
+          (cards) => {
+            for (const card of cards) {
+              const playerId =
+                action.destinationPlayer === 'selectedCardOwner'
+                  ? card.ownerSessionId
+                  : this.selectors.resolvePlayer(
+                      action.destinationPlayer,
+                      controllerSessionId,
+                    );
+
+              if (!playerId) {
+                continue;
+              }
+
+              this.modifiers.scheduleMoveAtEndOfBattle(
+                card.instanceId,
+                playerId,
+                action.destinationZone,
+                {
+                  faceDown: action.faceDown,
+                  rested: action.rested,
+                  toBottom: action.toBottom,
+                },
+              );
+            }
+
+            next();
+          },
+        );
         return;
       }
       case 'shuffleDeck': {
@@ -569,6 +712,16 @@ export class EffectActionExecutor {
         const cards = context.storedSelections[action.key] ?? [];
 
         for (const card of cards) {
+          if (
+            !this.canMoveCardByEffect(
+              card,
+              controllerSessionId,
+              action.destinationZone,
+            )
+          ) {
+            continue;
+          }
+
           const playerId =
             action.destinationPlayer === 'selectedCardOwner'
               ? card.ownerSessionId
@@ -584,6 +737,7 @@ export class EffectActionExecutor {
           this.host.moveCard(card, playerId, action.destinationZone, {
             faceDown: action.faceDown,
             rested: action.rested,
+            toBottom: action.toBottom,
           });
         }
 
@@ -817,11 +971,13 @@ export class EffectActionExecutor {
       case 'restand':
       case 'moveCard':
       case 'moveFirstCard':
+      case 'scheduleMoveAtEndOfBattle':
       case 'attachDon':
       case 'play':
       case 'ko':
       case 'koAllCharacters':
       case 'modifyPower':
+      case 'modifyCost':
       case 'grantKeywords':
       case 'restrictAttack':
       case 'addToLife':
@@ -842,6 +998,9 @@ export class EffectActionExecutor {
       case 'moveStoredCards':
       case 'ifStoredSelectionMatches':
       case 'activateEffect':
+      case 'drawUntilHandSize':
+      case 'preventOwnEffectLifeToHand':
+      case 'registerNextPlayCostModifier':
         return true;
       case 'storeSelectedCards':
         return this.selectors.hasSelectableCards(
@@ -853,5 +1012,40 @@ export class EffectActionExecutor {
 
   private createDecisionId(sourceInstanceId: string, suffix: string): string {
     return `${sourceInstanceId}:${suffix}:${Math.random()}`;
+  }
+
+  private canMoveCardByEffect(
+    card: DuelCard,
+    controllerSessionId: string,
+    destinationZone: string,
+  ): boolean {
+    const currentZone = this.selectors.findZoneOfCard(card)?.zone;
+    const staysInField =
+      destinationZone === 'characters' || destinationZone === 'stage';
+
+    if (
+      currentZone === 'life' &&
+      destinationZone === 'hand' &&
+      card.ownerSessionId === controllerSessionId &&
+      this.modifiers.blocksOwnEffectLifeToHand(card.ownerSessionId)
+    ) {
+      return false;
+    }
+
+    if (
+      !card.cannotBeRemovedByOpponentEffects ||
+      card.ownerSessionId === controllerSessionId
+    ) {
+      return true;
+    }
+
+    if (
+      (currentZone === 'characters' || currentZone === 'stage') &&
+      !staysInField
+    ) {
+      return false;
+    }
+
+    return true;
   }
 }

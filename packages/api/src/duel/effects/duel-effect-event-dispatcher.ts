@@ -49,6 +49,10 @@ export class DuelEffectEventDispatcher {
       return;
     }
 
+    if (card.type === 'Character') {
+      this.deps.emitCardEvent('onCharacterPlayed', playerSessionId, card);
+    }
+
     this.deps.emitCardEvent('onPlay', playerSessionId, card);
   }
 

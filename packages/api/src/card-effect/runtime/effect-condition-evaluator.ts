@@ -1,6 +1,6 @@
 import type { EffectCondition } from '@onepiecetcg/shared';
 import type { DuelCard } from '@onepiecetcg/shared';
-import type { EffectEvent } from './effect-engine-types';
+import type { EffectEvent, ReplacementQuery } from './effect-engine-types';
 import { EffectSelectorResolver } from './effect-selector-resolver';
 import type { EffectEngineHost } from './effect-engine-types';
 
@@ -18,7 +18,7 @@ export class EffectConditionEvaluator {
     conditions: EffectCondition[],
     controllerSessionId: string,
     source: DuelCard,
-    event?: EffectEvent,
+    event?: EffectEvent | ReplacementQuery,
   ): boolean {
     return conditions.every((condition) => {
       switch (condition.type) {
@@ -74,6 +74,23 @@ export class EffectConditionEvaluator {
             controllerSessionId,
           );
           return playerId === event.playerSessionId;
+        }
+        case 'eventReasonIs':
+          return event !== undefined && 'reason' in event
+            ? event.reason === condition.value
+            : false;
+        case 'eventSourceHasNoBaseEffect': {
+          if (!event) {
+            return false;
+          }
+
+          const eventSource = this.host.getCard(event.sourceInstanceId);
+
+          return (
+            eventSource !== null &&
+            eventSource.text.length === 0 &&
+            eventSource.trigger.length === 0
+          );
         }
         case 'targetExists':
           return (

@@ -140,6 +140,10 @@ export class EffectSelectorResolver {
       return false;
     }
 
+    if (filter.hasNoBaseEffect === true && (card.text.length > 0 || card.trigger.length > 0)) {
+      return false;
+    }
+
     if (typeof filter.rested === 'boolean' && card.rested !== filter.rested) {
       return false;
     }

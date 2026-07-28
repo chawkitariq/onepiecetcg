@@ -14,6 +14,10 @@ export type EffectEventType =
   | 'onPlay'
   | 'activateCounter'
   | 'onEventActivated'
+  | 'onCharacterPlayed'
+  | 'onDonAttached'
+  | 'onDonReturned'
+  | 'onBattleKo'
   | 'whenAttacking'
   | 'onKo'
   | 'trigger'
@@ -48,6 +52,16 @@ export type RuntimeModifier = {
   amount: number;
   expiresAtEndOfTurn: boolean;
   expiresAtEndOfBattle: boolean;
+  expiresAtTurnStartOfPlayerSessionId?: string;
+};
+
+export type RuntimeCostModifier = {
+  sourceInstanceId: string;
+  targetInstanceId: string;
+  amount: number;
+  expiresAtEndOfTurn: boolean;
+  expiresAtEndOfBattle: boolean;
+  expiresAtTurnStartOfPlayerSessionId?: string;
 };
 
 export type RuntimeKeywordModifier = {
@@ -56,6 +70,31 @@ export type RuntimeKeywordModifier = {
   keywords: EffectKeyword[];
   expiresAtEndOfTurn: boolean;
   expiresAtEndOfBattle: boolean;
+  expiresAtTurnStartOfPlayerSessionId?: string;
+};
+
+export type RuntimePlayerRestriction = {
+  playerSessionId: string;
+  type: 'preventOwnEffectLifeToHand';
+  expiresAtEndOfTurn: boolean;
+  expiresAtTurnStartOfPlayerSessionId?: string;
+};
+
+export type RuntimeNextPlayCostModifier = {
+  playerSessionId: string;
+  sourceInstanceId: string;
+  sourceZone: 'hand';
+  filter: import('@onepiecetcg/shared').EffectCardFilter;
+  amount: number;
+};
+
+export type RuntimeDelayedMove = {
+  targetInstanceId: string;
+  destinationPlayerSessionId: string;
+  destinationZone: string;
+  faceDown?: boolean;
+  rested?: boolean;
+  toBottom?: boolean;
 };
 
 export type QueuedEffect = {
@@ -94,7 +133,7 @@ export interface EffectEngineHost {
     card: DuelCard,
     destinationPlayerSessionId: string,
     destinationZone: string,
-    options?: { faceDown?: boolean; rested?: boolean },
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
   ): void;
   shuffleDeck(playerSessionId: string): void;
   drawCard(playerSessionId: string): DuelCard | null;

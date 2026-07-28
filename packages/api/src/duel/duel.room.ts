@@ -216,8 +216,19 @@ export class DuelRoom extends Room<DuelState> {
           amount,
           options,
         ),
-      returnDonToDonDeck: (playerSessionId, amount) =>
-        this.zoneEngine.returnEffectDonToDeck(playerSessionId, amount),
+      returnDonToDonDeck: (playerSessionId, amount) => {
+        const returned = this.zoneEngine.returnEffectDonToDeck(
+          playerSessionId,
+          amount,
+        );
+        const player = this.state.players.get(playerSessionId);
+
+        if (returned > 0 && player) {
+          this.effectBoundary.emitDonReturned(playerSessionId, player.zones.leader);
+        }
+
+        return returned;
+      },
       koCharacter: (playerSessionId, instanceId, reason) =>
         this.knockOutCharacterById(playerSessionId, instanceId, reason),
       syncPlayer: (playerSessionId) => {

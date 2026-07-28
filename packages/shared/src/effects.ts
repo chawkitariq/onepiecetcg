@@ -5,6 +5,10 @@ export type EffectTriggerType =
   | 'activateMain'
   | 'activateCounter'
   | 'onEventActivated'
+  | 'onCharacterPlayed'
+  | 'onDonAttached'
+  | 'onDonReturned'
+  | 'onBattleKo'
   | 'whenAttacking'
   | 'onKo'
   | 'trigger'
@@ -22,7 +26,8 @@ export type EffectKeyword =
   | 'mustBeAttackTarget'
   | 'cannotBlock'
   | 'cannotBeKoedInBattle'
-  | 'cannotBeKoedByStrikeInBattle';
+  | 'cannotBeKoedByStrikeInBattle'
+  | 'cannotBeRemovedByOpponentEffects';
 
 export type EffectCount =
   | { kind: 'exact'; value: number }
@@ -36,6 +41,8 @@ export type EffectCondition =
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
   | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
+  | { type: 'eventReasonIs'; value: 'battle' | 'effect' }
+  | { type: 'eventSourceHasNoBaseEffect' }
   | { type: 'targetExists'; selector: EffectTargetSelector }
   | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
   | { type: 'targetCountAtMost'; selector: EffectTargetSelector; value: number }
@@ -53,6 +60,7 @@ export type EffectCardFilter = {
   trait?: string[];
   name?: string[];
   excludeName?: string[];
+  hasNoBaseEffect?: boolean;
   rested?: boolean;
   owner?: EffectOwnerSelector;
 };
@@ -69,6 +77,7 @@ export type EffectTargetSelector = {
 export type EffectDuration =
   | { type: 'untilEndOfTurn' }
   | { type: 'untilEndOfBattle' }
+  | { type: 'untilStartOfYourNextTurn' }
   | { type: 'whileSourceInPlay' }
   | { type: 'permanent' };
 
@@ -128,6 +137,11 @@ export type EffectAction =
       type: 'draw';
       player: EffectOwnerSelector;
       amount: number;
+    }
+  | {
+      type: 'drawUntilHandSize';
+      player: EffectOwnerSelector;
+      size: number;
     }
   | {
       type: 'play';
@@ -202,6 +216,7 @@ export type EffectAction =
       destinationZone: GameZone;
       faceDown?: boolean;
       rested?: boolean;
+      toBottom?: boolean;
     }
   | {
       type: 'moveFirstCard';
@@ -210,6 +225,7 @@ export type EffectAction =
       destinationZone: GameZone;
       faceDown?: boolean;
       rested?: boolean;
+      toBottom?: boolean;
     }
   | {
       type: 'modifyPower';
@@ -219,10 +235,24 @@ export type EffectAction =
       description?: string;
     }
   | {
+      type: 'modifyCost';
+      selector: EffectTargetSelector;
+      amount: number;
+      duration: EffectDuration;
+    }
+  | {
       type: 'grantKeywords';
       selector: EffectTargetSelector;
       keywords: EffectKeyword[];
       duration: EffectDuration;
+    }
+  | {
+      type: 'preventOwnEffectLifeToHand';
+      player: EffectOwnerSelector;
+      duration: Extract<
+        EffectDuration,
+        { type: 'untilEndOfTurn' } | { type: 'untilStartOfYourNextTurn' }
+      >;
     }
   | {
       type: 'restrictAttack';
@@ -278,12 +308,29 @@ export type EffectAction =
       destinationZone: GameZone;
       faceDown?: boolean;
       rested?: boolean;
+      toBottom?: boolean;
+    }
+  | {
+      type: 'scheduleMoveAtEndOfBattle';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
     }
   | {
       type: 'ifStoredSelectionMatches';
       key: string;
       filter: EffectCardFilter;
       actions: EffectAction[];
+    }
+  | {
+      type: 'registerNextPlayCostModifier';
+      player: EffectOwnerSelector;
+      filter: EffectCardFilter;
+      sourceZone: 'hand';
+      amount: number;
     };
 
 export type StandardEffectDefinition = {

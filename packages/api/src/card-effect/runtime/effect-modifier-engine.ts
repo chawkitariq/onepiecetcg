@@ -1,7 +1,12 @@
 import type { EffectKeyword } from '@onepiecetcg/shared';
+import type { EffectCardFilter } from '@onepiecetcg/shared';
 import type { EffectRegistry } from '../types/effect-registry';
 import type {
   EffectEngineHost,
+  RuntimeDelayedMove,
+  RuntimeNextPlayCostModifier,
+  RuntimePlayerRestriction,
+  RuntimeCostModifier,
   RuntimeKeywordModifier,
   RuntimeModifier,
 } from './effect-engine-types';
@@ -14,7 +19,15 @@ import { EffectSelectorResolver } from './effect-selector-resolver';
 export class EffectModifierEngine {
   private readonly modifiers: RuntimeModifier[] = [];
 
+  private readonly costModifiers: RuntimeCostModifier[] = [];
+
   private readonly keywordModifiers: RuntimeKeywordModifier[] = [];
+
+  private readonly playerRestrictions: RuntimePlayerRestriction[] = [];
+
+  private readonly nextPlayCostModifiers: RuntimeNextPlayCostModifier[] = [];
+
+  private readonly delayedMovesAtEndOfBattle: RuntimeDelayedMove[] = [];
 
   public constructor(
     private readonly registry: EffectRegistry,
@@ -45,6 +58,7 @@ export class EffectModifierEngine {
         card.cannotBlock = false;
         card.cannotBeKoedInBattle = false;
         card.cannotBeKoedByStrikeInBattle = false;
+        card.cannotBeRemovedByOpponentEffects = false;
       }
     }
 
@@ -108,6 +122,14 @@ export class EffectModifierEngine {
       }
     }
 
+    for (const modifier of this.costModifiers) {
+      const target = this.host.getCard(modifier.targetInstanceId);
+
+      if (target) {
+        target.cost += modifier.amount;
+      }
+    }
+
     for (const modifier of this.keywordModifiers) {
       const target = this.host.getCard(modifier.targetInstanceId);
 
@@ -131,6 +153,10 @@ export class EffectModifierEngine {
       (modifier) => !modifier.expiresAtEndOfTurn,
     );
     this.modifiers.splice(0, this.modifiers.length, ...kept);
+    const keptCosts = this.costModifiers.filter(
+      (modifier) => !modifier.expiresAtEndOfTurn,
+    );
+    this.costModifiers.splice(0, this.costModifiers.length, ...keptCosts);
     const keptKeywords = this.keywordModifiers.filter(
       (modifier) => !modifier.expiresAtEndOfTurn,
     );
@@ -138,6 +164,52 @@ export class EffectModifierEngine {
       0,
       this.keywordModifiers.length,
       ...keptKeywords,
+    );
+    const keptRestrictions = this.playerRestrictions.filter(
+      (restriction) => !restriction.expiresAtEndOfTurn,
+    );
+    this.playerRestrictions.splice(
+      0,
+      this.playerRestrictions.length,
+      ...keptRestrictions,
+    );
+    this.nextPlayCostModifiers.splice(0, this.nextPlayCostModifiers.length);
+    this.reapplyContinuousEffects();
+  }
+
+  /** Removes modifiers that expire when the given player's turn starts. */
+  public clearTurnStartModifiers(playerSessionId: string): void {
+    this.modifiers.splice(
+      0,
+      this.modifiers.length,
+      ...this.modifiers.filter(
+        (modifier) =>
+          modifier.expiresAtTurnStartOfPlayerSessionId !== playerSessionId,
+      ),
+    );
+    this.costModifiers.splice(
+      0,
+      this.costModifiers.length,
+      ...this.costModifiers.filter(
+        (modifier) =>
+          modifier.expiresAtTurnStartOfPlayerSessionId !== playerSessionId,
+      ),
+    );
+    this.keywordModifiers.splice(
+      0,
+      this.keywordModifiers.length,
+      ...this.keywordModifiers.filter(
+        (modifier) =>
+          modifier.expiresAtTurnStartOfPlayerSessionId !== playerSessionId,
+      ),
+    );
+    this.playerRestrictions.splice(
+      0,
+      this.playerRestrictions.length,
+      ...this.playerRestrictions.filter(
+        (restriction) =>
+          restriction.expiresAtTurnStartOfPlayerSessionId !== playerSessionId,
+      ),
     );
     this.reapplyContinuousEffects();
   }
@@ -148,6 +220,10 @@ export class EffectModifierEngine {
       (modifier) => !modifier.expiresAtEndOfBattle,
     );
     this.modifiers.splice(0, this.modifiers.length, ...kept);
+    const keptCosts = this.costModifiers.filter(
+      (modifier) => !modifier.expiresAtEndOfBattle,
+    );
+    this.costModifiers.splice(0, this.costModifiers.length, ...keptCosts);
     const keptKeywords = this.keywordModifiers.filter(
       (modifier) => !modifier.expiresAtEndOfBattle,
     );
@@ -156,16 +232,45 @@ export class EffectModifierEngine {
       this.keywordModifiers.length,
       ...keptKeywords,
     );
+    const delayedMoves = this.delayedMovesAtEndOfBattle.splice(
+      0,
+      this.delayedMovesAtEndOfBattle.length,
+    );
+
+    for (const delayedMove of delayedMoves) {
+      const target = this.host.getCard(delayedMove.targetInstanceId);
+
+      if (!target) {
+        continue;
+      }
+
+      this.host.moveCard(
+        target,
+        delayedMove.destinationPlayerSessionId,
+        delayedMove.destinationZone,
+        {
+          faceDown: delayedMove.faceDown,
+          rested: delayedMove.rested,
+          toBottom: delayedMove.toBottom,
+        },
+      );
+    }
+
     this.reapplyContinuousEffects();
   }
 
   /** Adds a temporary or permanent power modifier to one resolved target. */
   public addPowerModifier(
     sourceInstanceId: string,
+    controllerSessionId: string,
     targetInstanceId: string,
     amount: number,
     duration:
-      'untilEndOfTurn' | 'untilEndOfBattle' | 'whileSourceInPlay' | 'permanent',
+      | 'untilEndOfTurn'
+      | 'untilEndOfBattle'
+      | 'untilStartOfYourNextTurn'
+      | 'whileSourceInPlay'
+      | 'permanent',
   ): void {
     this.modifiers.push({
       sourceInstanceId,
@@ -173,16 +278,51 @@ export class EffectModifierEngine {
       amount,
       expiresAtEndOfTurn: duration === 'untilEndOfTurn',
       expiresAtEndOfBattle: duration === 'untilEndOfBattle',
+      expiresAtTurnStartOfPlayerSessionId:
+        duration === 'untilStartOfYourNextTurn'
+          ? controllerSessionId
+          : undefined,
+    });
+  }
+
+  /** Adds a temporary or permanent cost modifier to one resolved target. */
+  public addCostModifier(
+    sourceInstanceId: string,
+    controllerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+    duration:
+      | 'untilEndOfTurn'
+      | 'untilEndOfBattle'
+      | 'untilStartOfYourNextTurn'
+      | 'whileSourceInPlay'
+      | 'permanent',
+  ): void {
+    this.costModifiers.push({
+      sourceInstanceId,
+      targetInstanceId,
+      amount,
+      expiresAtEndOfTurn: duration === 'untilEndOfTurn',
+      expiresAtEndOfBattle: duration === 'untilEndOfBattle',
+      expiresAtTurnStartOfPlayerSessionId:
+        duration === 'untilStartOfYourNextTurn'
+          ? controllerSessionId
+          : undefined,
     });
   }
 
   /** Adds a temporary or permanent keyword modifier to one resolved target. */
   public addKeywordModifier(
     sourceInstanceId: string,
+    controllerSessionId: string,
     targetInstanceId: string,
     keywords: EffectKeyword[],
     duration:
-      'untilEndOfTurn' | 'untilEndOfBattle' | 'whileSourceInPlay' | 'permanent',
+      | 'untilEndOfTurn'
+      | 'untilEndOfBattle'
+      | 'untilStartOfYourNextTurn'
+      | 'whileSourceInPlay'
+      | 'permanent',
   ): void {
     this.keywordModifiers.push({
       sourceInstanceId,
@@ -190,6 +330,116 @@ export class EffectModifierEngine {
       keywords,
       expiresAtEndOfTurn: duration === 'untilEndOfTurn',
       expiresAtEndOfBattle: duration === 'untilEndOfBattle',
+      expiresAtTurnStartOfPlayerSessionId:
+        duration === 'untilStartOfYourNextTurn'
+          ? controllerSessionId
+          : undefined,
+    });
+  }
+
+  public addPlayerRestriction(
+    playerSessionId: string,
+    type: RuntimePlayerRestriction['type'],
+    duration: 'untilEndOfTurn' | 'untilStartOfYourNextTurn',
+  ): void {
+    this.playerRestrictions.push({
+      playerSessionId,
+      type,
+      expiresAtEndOfTurn: duration === 'untilEndOfTurn',
+      expiresAtTurnStartOfPlayerSessionId:
+        duration === 'untilStartOfYourNextTurn' ? playerSessionId : undefined,
+    });
+  }
+
+  public blocksOwnEffectLifeToHand(playerSessionId: string): boolean {
+    return this.playerRestrictions.some(
+      (restriction) =>
+        restriction.playerSessionId === playerSessionId &&
+        restriction.type === 'preventOwnEffectLifeToHand',
+    );
+  }
+
+  public registerNextPlayCostModifier(
+    playerSessionId: string,
+    sourceInstanceId: string,
+    filter: EffectCardFilter,
+    sourceZone: 'hand',
+    amount: number,
+  ): void {
+    this.nextPlayCostModifiers.push({
+      playerSessionId,
+      sourceInstanceId,
+      filter,
+      sourceZone,
+      amount,
+    });
+  }
+
+  public getNextPlayCostModifier(
+    card: Parameters<typeof this.selectors.matchesFilter>[0],
+    sourceZone: 'hand',
+  ): number {
+    let total = 0;
+
+    for (const modifier of this.nextPlayCostModifiers) {
+      if (
+        modifier.playerSessionId !== card.ownerSessionId ||
+        modifier.sourceZone !== sourceZone
+      ) {
+        continue;
+      }
+
+      const matches = this.selectors.matchesFilter(
+        card,
+        modifier.filter,
+        card.ownerSessionId,
+      );
+
+      if (matches) {
+        total += modifier.amount;
+      }
+    }
+
+    return total;
+  }
+
+  public consumeNextPlayCostModifier(
+    card: Parameters<typeof this.selectors.matchesFilter>[0],
+    sourceZone: 'hand',
+  ): void {
+    const index = this.nextPlayCostModifiers.findIndex((modifier) => {
+      if (
+        modifier.playerSessionId !== card.ownerSessionId ||
+        modifier.sourceZone !== sourceZone
+      ) {
+        return false;
+      }
+
+      return this.selectors.matchesFilter(
+        card,
+        modifier.filter,
+        card.ownerSessionId,
+      );
+    });
+
+    if (index >= 0) {
+      this.nextPlayCostModifiers.splice(index, 1);
+    }
+  }
+
+  public scheduleMoveAtEndOfBattle(
+    targetInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ): void {
+    this.delayedMovesAtEndOfBattle.push({
+      targetInstanceId,
+      destinationPlayerSessionId,
+      destinationZone,
+      faceDown: options?.faceDown,
+      rested: options?.rested,
+      toBottom: options?.toBottom,
     });
   }
 
@@ -203,6 +453,7 @@ export class EffectModifierEngine {
       cannotBlock: boolean;
       cannotBeKoedInBattle: boolean;
       cannotBeKoedByStrikeInBattle: boolean;
+      cannotBeRemovedByOpponentEffects: boolean;
     },
     keywords: EffectKeyword[],
   ): void {
@@ -231,6 +482,9 @@ export class EffectModifierEngine {
           break;
         case 'cannotBeKoedByStrikeInBattle':
           card.cannotBeKoedByStrikeInBattle = true;
+          break;
+        case 'cannotBeRemovedByOpponentEffects':
+          card.cannotBeRemovedByOpponentEffects = true;
           break;
       }
     }

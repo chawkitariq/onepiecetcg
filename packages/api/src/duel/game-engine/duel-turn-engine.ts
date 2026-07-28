@@ -14,6 +14,7 @@ const PHASE_ORDER: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end'];
 type DuelTurnEngineEffectBoundary = {
   emitWindowEffects(type: 'onTurnStart' | 'onTurnEnd'): void;
   clearTurnModifiers(): void;
+  clearTurnStartModifiers(playerSessionId: string): void;
   reapplyContinuousEffects(): void;
   hasPendingPlayerInteraction(): boolean;
 };
@@ -390,6 +391,7 @@ export class DuelTurnEngine {
     this.deps.state.phase = 'refresh';
     this.deps.effectBoundary.reapplyContinuousEffects();
     this.runRefreshPhase(nextSessionId);
+    this.deps.effectBoundary.clearTurnStartModifiers(nextSessionId);
     this.deps.effectBoundary.emitWindowEffects('onTurnStart');
   }
 

@@ -12,6 +12,7 @@ type CombatEffectBoundary = {
     playerSessionId: string,
     card: DuelCard,
   ): void;
+  emitBattleKo(playerSessionId: string, card: DuelCard): void;
   emitCounterUsage(playerSessionId: string, card: DuelCard): void;
   hasCounterEffect(cardId: string): boolean;
   hasPendingPlayerInteraction(): boolean;
@@ -495,6 +496,7 @@ export class DuelCombatEngine {
         );
       } else {
         this.deps.knockOutCharacter(defender, defendingCard);
+        this.deps.effectBoundary.emitBattleKo(attacker.sessionId, attackerCard);
       }
       this.endCombat();
       return;

@@ -132,6 +132,10 @@ export class DuelCard extends Schema {
   cannotBeKoedByStrikeInBattle = false;
 
   @view()
+  @type('boolean')
+  cannotBeRemovedByOpponentEffects = false;
+
+  @view()
   @type('number')
   cannotAttackUntilTurn = 0;
 }

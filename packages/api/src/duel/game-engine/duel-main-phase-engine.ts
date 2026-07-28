@@ -6,6 +6,9 @@ type MainPhaseEffectBoundary = {
   hasPendingPlayerInteraction(): boolean;
   reapplyContinuousEffects(): void;
   emitPlayedCard(playerSessionId: string, card: DuelCard): void;
+  emitDonAttached(playerSessionId: string, card: DuelCard): void;
+  getNextPlayCostModifier(card: DuelCard): number;
+  consumeNextPlayCostModifier(card: DuelCard): void;
 };
 
 type PlayCardMessage = {
@@ -111,7 +114,10 @@ export class DuelMainPhaseEngine {
       }
     }
 
-    const cost = Math.max(card.cost, 0);
+    const cost = Math.max(
+      card.cost + this.deps.effectBoundary.getNextPlayCostModifier(card),
+      0,
+    );
     const paidDonCards = this.deps.takeUntappedDonCards(player, cost);
 
     if (!paidDonCards) {
@@ -125,6 +131,7 @@ export class DuelMainPhaseEngine {
 
     if (card.type === 'Character') {
       this.playCharacter(player, clientSessionId, card, characterToDiscard);
+      this.deps.effectBoundary.consumeNextPlayCostModifier(card);
     } else if (card.type === 'Stage') {
       this.playStage(player, clientSessionId, card);
     } else {
@@ -170,6 +177,7 @@ export class DuelMainPhaseEngine {
 
       if (attachedCount > 0) {
         player.zones.leader.attachedDon += attachedCount;
+        this.deps.effectBoundary.emitDonAttached(player.sessionId, player.zones.leader);
       }
 
       this.deps.addLog(
@@ -192,6 +200,9 @@ export class DuelMainPhaseEngine {
 
     const attachedCount = this.consumeReservedDon(player, donCards);
     found.card.attachedDon += attachedCount;
+    if (attachedCount > 0) {
+      this.deps.effectBoundary.emitDonAttached(player.sessionId, found.card);
+    }
     this.deps.addLog(
       `${player.displayName} donne ${attachedCount} DON!! a ${found.card.name} (+${attachedCount * 1000} de puissance).`,
     );
