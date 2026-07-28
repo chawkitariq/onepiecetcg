@@ -20,8 +20,7 @@ import {
   type FirstOrSecondChoice,
   type GamePhase,
 } from '@onepiecetcg/shared';
-import { EffectEngine } from '../card-effect/effect-engine';
-import { effectRegistry } from '../card-effect/effect-registry';
+import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;
@@ -115,21 +114,11 @@ export class DuelRoom extends Room<DuelState> {
 
   private readonly authUserIdBySession = new Map<string, string>();
 
-  /**
-   * The life-damage card currently awaiting the defender's manual
-   * [Declenchement] activation decision -- held server-side rather than in
-   * `DuelState` so it never gets replicated (would leak the trigger card's
-   * identity to the attacker before the defender decides).
-   */
-  private pendingTriggerCard: DuelCard | null = null;
-
-  private pendingTriggerOwnerSessionId = '';
-
   private matchStartedAt: Date | null = null;
 
   private matchResultRecorded = false;
 
-  private effectEngine!: EffectEngine;
+  private effectBoundary!: DuelRoomEffectBoundary;
 
   maxClients = 2;
 
@@ -153,45 +142,43 @@ export class DuelRoom extends Room<DuelState> {
 
   async onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
-    this.effectEngine = new EffectEngine(
-      effectRegistry,
-      {
-        state: this.state,
-        addLog: (message) => this.addLog(message),
-        getPlayer: (sessionId) => this.state.players.get(sessionId),
-        getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
-        getCard: (instanceId) => this.getCardByInstanceId(instanceId),
-        getCards: (selector, controllerSessionId) =>
-          this.getCardsForSelector(selector, controllerSessionId),
-        moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
-          this.moveCardToZone(card, destinationPlayerSessionId, destinationZone, options),
-        shuffleDeck: (playerSessionId) => {
-          const player = this.state.players.get(playerSessionId);
+    this.effectBoundary = new DuelRoomEffectBoundary({
+      state: this.state,
+      addLog: (message) => this.addLog(message),
+      getPlayer: (sessionId) => this.state.players.get(sessionId),
+      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      getCard: (instanceId) => this.getCardByInstanceId(instanceId),
+      getCards: (selector, controllerSessionId) =>
+        this.getCardsForSelector(selector, controllerSessionId),
+      moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
+        this.moveCardToZone(card, destinationPlayerSessionId, destinationZone, options),
+      shuffleDeck: (playerSessionId) => {
+        const player = this.state.players.get(playerSessionId);
 
-          if (player) {
-            this.shuffle(player.zones.deck);
-          }
-        },
-        drawCard: (playerSessionId) => this.drawCardForEffect(playerSessionId),
-        trashTopDeckCards: (playerSessionId, amount) =>
-          this.trashTopDeckCards(playerSessionId, amount),
-        addDonToCost: (playerSessionId, amount, rested) =>
-          this.addDonToCost(playerSessionId, amount, rested),
-        attachDon: (playerSessionId, targetInstanceId, amount, options) =>
-          this.attachDonFromCost(playerSessionId, targetInstanceId, amount, options),
-        returnDonToDonDeck: (playerSessionId, amount) =>
-          this.returnEffectDonToDeck(playerSessionId, amount),
-        koCharacter: (playerSessionId, instanceId, reason) =>
-          this.knockOutCharacterById(playerSessionId, instanceId, reason),
-        syncPlayer: (playerSessionId) => {
-          const player = this.state.players.get(playerSessionId);
-
-          if (player) {
-            this.syncZoneCounts(player);
-          }
-        },
+        if (player) {
+          this.shuffle(player.zones.deck);
+        }
       },
-    );
+      drawCard: (playerSessionId) => this.drawCardForEffect(playerSessionId),
+      trashTopDeckCards: (playerSessionId, amount) =>
+        this.trashTopDeckCards(playerSessionId, amount),
+      addDonToCost: (playerSessionId, amount, rested) =>
+        this.addDonToCost(playerSessionId, amount, rested),
+      attachDon: (playerSessionId, targetInstanceId, amount, options) =>
+        this.attachDonFromCost(playerSessionId, targetInstanceId, amount, options),
+      returnDonToDonDeck: (playerSessionId, amount) =>
+        this.returnEffectDonToDeck(playerSessionId, amount),
+      koCharacter: (playerSessionId, instanceId, reason) =>
+        this.knockOutCharacterById(playerSessionId, instanceId, reason),
+      syncPlayer: (playerSessionId) => {
+        const player = this.state.players.get(playerSessionId);
+
+        if (player) {
+          this.syncZoneCounts(player);
+        }
+      },
+      broadcastCardView: (card) => this.broadcastCardView(card),
+    });
 
     const description = options.description
       ?.trim()
@@ -586,7 +573,7 @@ export class DuelRoom extends Room<DuelState> {
     );
 
     this.runRefreshPhase(this.state.firstPlayerSessionId);
-    this.emitWindowEffects('onTurnStart');
+    this.effectBoundary.emitWindowEffects('onTurnStart');
   }
 
   private sendError(client: Client, message: string) {
@@ -603,7 +590,7 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    if (this.effectEngine.getPendingDecision()) {
+    if (this.effectBoundary.hasPendingPlayerInteraction()) {
       this.sendError(client, "Une decision d'effet est en attente.");
       return;
     }
@@ -764,8 +751,8 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(`${endingPlayer.displayName} termine son tour.`);
     }
 
-    this.emitWindowEffects('onTurnEnd');
-    this.effectEngine.clearTurnModifiers();
+    this.effectBoundary.emitWindowEffects('onTurnEnd');
+    this.effectBoundary.clearTurnModifiers();
 
     const sessionIds = Array.from(this.state.players.keys());
     const nextSessionId = sessionIds.find(
@@ -779,9 +766,9 @@ export class DuelRoom extends Room<DuelState> {
     this.state.activePlayerSessionId = nextSessionId;
     this.state.turn += 1;
     this.state.phase = 'refresh';
-    this.effectEngine.reapplyContinuousEffects();
+    this.effectBoundary.reapplyContinuousEffects();
     this.runRefreshPhase(nextSessionId);
-    this.emitWindowEffects('onTurnStart');
+    this.effectBoundary.emitWindowEffects('onTurnStart');
   }
 
   private findCardInZone(
@@ -854,7 +841,7 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private assertMainPhaseAction(client: Client): DuelPlayer | null {
-    if (this.effectEngine.getPendingDecision()) {
+    if (this.effectBoundary.hasPendingPlayerInteraction()) {
       this.sendError(client, "Une decision d'effet est en attente.");
       return null;
     }
@@ -1048,12 +1035,11 @@ export class DuelRoom extends Room<DuelState> {
       `${attacker.displayName} attaque avec ${attackerCard.name} vers ${targetLabel}.`,
     );
 
-    this.effectEngine.handleEvent({
-      type: 'whenAttacking',
-      playerSessionId: client.sessionId,
-      sourceInstanceId: attackerCard.instanceId,
-      sourceCardId: attackerCard.cardId,
-    });
+    this.effectBoundary.emitCardEvent(
+      'whenAttacking',
+      client.sessionId,
+      attackerCard,
+    );
 
     this.state.combat.step = 'blocked';
   }
@@ -1104,12 +1090,11 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(
         `${defender.displayName} declare ${blockerFound.card.name} comme Bloqueur.`,
       );
-      this.effectEngine.handleEvent({
-        type: 'onBlock',
-        playerSessionId: defender.sessionId,
-        sourceInstanceId: blockerFound.card.instanceId,
-        sourceCardId: blockerFound.card.cardId,
-      });
+      this.effectBoundary.emitCardEvent(
+        'onBlock',
+        defender.sessionId,
+        blockerFound.card,
+      );
     } else {
       this.addLog(`${defender.displayName} ne bloque pas.`);
     }
@@ -1191,9 +1176,7 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     const bonus = Math.max(0, Math.trunc(message.counterPowerBonus));
-    const hasCounterEffect = effectRegistry.effectsByCardId[found.card.cardId]?.standard?.some(
-      (effect) => effect.trigger.type === 'activateCounter',
-    );
+    const hasCounterEffect = this.effectBoundary.hasCounterEffect(found.card.cardId);
 
     if (bonus <= 0 && !hasCounterEffect) {
       this.sendError(client, 'Valeur de Contre invalide.');
@@ -1209,22 +1192,8 @@ export class DuelRoom extends Room<DuelState> {
       `${defender.displayName} defausse ${found.card.name} et declare +${bonus} de Contre.`,
     );
 
-    if (hasCounterEffect) {
-      this.effectEngine.handleEvent({
-        type: 'activateCounter',
-        playerSessionId: defender.sessionId,
-        sourceInstanceId: found.card.instanceId,
-        sourceCardId: found.card.cardId,
-      });
-    }
-
-    if (found.card.type === 'Event') {
-      this.effectEngine.handleEvent({
-        type: 'onEventActivated',
-        playerSessionId: defender.sessionId,
-        sourceInstanceId: found.card.instanceId,
-        sourceCardId: found.card.cardId,
-      });
+    if (hasCounterEffect || found.card.type === 'Event') {
+      this.effectBoundary.emitCounterUsage(defender.sessionId, found.card);
     }
   }
 
@@ -1311,14 +1280,9 @@ export class DuelRoom extends Room<DuelState> {
   ) {
     if (
       !skipReplacement &&
-      this.effectEngine.applyReplacement({
-        type: 'wouldKoCharacter',
-        playerSessionId: owner.sessionId,
-        sourceInstanceId: card.instanceId,
-        reason,
-      })
+      this.effectBoundary.applyKoReplacement(owner.sessionId, card.instanceId, reason)
     ) {
-      this.effectEngine.reapplyContinuousEffects();
+      this.effectBoundary.reapplyContinuousEffects();
       return;
     }
 
@@ -1335,13 +1299,8 @@ export class DuelRoom extends Room<DuelState> {
     this.unshiftIntoZone(owner.zones.trash, card);
     this.returnDonToCost(owner, owner.sessionId, attachedDon);
     this.addLog(`${card.name} est mis KO et rejoint la Defausse.`);
-    this.effectEngine.handleEvent({
-      type: 'onKo',
-      playerSessionId: owner.sessionId,
-      sourceInstanceId: card.instanceId,
-      sourceCardId: card.cardId,
-    });
-    this.effectEngine.reapplyContinuousEffects();
+    this.effectBoundary.emitCardEvent('onKo', owner.sessionId, card);
+    this.effectBoundary.reapplyContinuousEffects();
   }
 
   private isProtectedFromBattleKo(defendingCard: DuelCard, attackerCard: DuelCard): boolean {
@@ -1403,83 +1362,33 @@ export class DuelRoom extends Room<DuelState> {
       return true;
     }
 
-    if (
-      effectRegistry.effectsByCardId[revealedCard.cardId]?.standard?.some(
-        (effect) => effect.trigger.type === 'trigger',
-      )
-    ) {
-      this.unshiftIntoZone(defender.zones.trash, revealedCard);
-      this.broadcastCardView(revealedCard);
-      this.effectEngine.handleEvent({
-        type: 'trigger',
-        playerSessionId: defender.sessionId,
-        sourceInstanceId: revealedCard.instanceId,
-        sourceCardId: revealedCard.cardId,
-      });
-      if (!this.effectEngine.getPendingDecision()) {
-        this.endCombat();
-      }
-      return false;
-    }
-
-    if (revealedCard.trigger) {
-      this.state.combat.awaitingTriggerDecision = true;
-      this.pendingTriggerCard = revealedCard;
-      this.pendingTriggerOwnerSessionId = defender.sessionId;
-      this.addLog(
-        `${defender.displayName} subit 1 degat et revele une carte avec [Declenchement] : decision en attente.`,
-      );
-      return false;
-    }
-
-    defender.zones.hand.push(revealedCard);
-    this.syncZoneCounts(defender);
-    this.addLog(
-      `${defender.displayName} subit 1 degat et ajoute la carte de Vie a sa main.`,
+    const triggerResolution = this.effectBoundary.resolveRevealedLifeCard(
+      defender,
+      revealedCard,
     );
-    return true;
+
+    if (triggerResolution === 'addedToHand') {
+      return true;
+    }
+
+    if (!this.effectBoundary.hasPendingPlayerInteraction()) {
+      this.endCombat();
+    }
+
+    return false;
   }
 
   private handleResolveTrigger(client: Client, message: ResolveTriggerMessage) {
-    const combat = this.state.combat;
+    const result = this.effectBoundary.resolveManualTriggerDecision(
+      client.sessionId,
+      message.activate,
+    );
 
-    if (!combat.awaitingTriggerDecision || !this.pendingTriggerCard) {
-      this.sendError(client, 'Aucune decision de Declenchement en attente.');
+    if (!result.ok) {
+      this.sendError(client, result.error);
       return;
     }
 
-    if (client.sessionId !== this.pendingTriggerOwnerSessionId) {
-      this.sendError(
-        client,
-        "Seul le defenseur peut decider d'activer ce Declenchement.",
-      );
-      return;
-    }
-
-    const defender = this.state.players.get(client.sessionId);
-    const card = this.pendingTriggerCard;
-
-    if (!defender || !card) {
-      return;
-    }
-
-    if (message.activate) {
-      this.unshiftIntoZone(defender.zones.trash, card);
-      this.broadcastCardView(card);
-      this.addLog(
-        `${defender.displayName} active le Declenchement de ${card.name} et l'ecarte (effet a appliquer manuellement).`,
-      );
-    } else {
-      defender.zones.hand.push(card);
-      this.addLog(
-        `${defender.displayName} ajoute ${card.name} a sa main sans activer le Declenchement.`,
-      );
-    }
-
-    this.syncZoneCounts(defender);
-    combat.awaitingTriggerDecision = false;
-    this.pendingTriggerCard = null;
-    this.pendingTriggerOwnerSessionId = '';
     this.endCombat();
   }
 
@@ -1496,7 +1405,7 @@ export class DuelRoom extends Room<DuelState> {
     combat.step = 'declared';
     combat.counterPowerBonus = 0;
     combat.awaitingTriggerDecision = false;
-    this.effectEngine.clearCombatModifiers();
+    this.effectBoundary.clearCombatModifiers();
   }
 
   private handlePlayCard(client: Client, message: PlayCardMessage) {
@@ -1590,13 +1499,8 @@ export class DuelRoom extends Room<DuelState> {
       this.addLog(
         `${player.displayName} joue ${card.name} en zone Personnage.`,
       );
-      this.effectEngine.reapplyContinuousEffects();
-      this.effectEngine.handleEvent({
-        type: 'onPlay',
-        playerSessionId: player.sessionId,
-        sourceInstanceId: card.instanceId,
-        sourceCardId: card.cardId,
-      });
+      this.effectBoundary.reapplyContinuousEffects();
+      this.effectBoundary.emitPlayedCard(player.sessionId, card);
     } else if (card.type === 'Stage') {
       if (player.zones.stage.instanceId) {
         const discardedStage = player.zones.stage;
@@ -1610,29 +1514,13 @@ export class DuelRoom extends Room<DuelState> {
       player.zones.stage = card;
       this.broadcastCardView(card);
       this.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
-      this.effectEngine.reapplyContinuousEffects();
-      this.effectEngine.handleEvent({
-        type: 'onPlay',
-        playerSessionId: player.sessionId,
-        sourceInstanceId: card.instanceId,
-        sourceCardId: card.cardId,
-      });
+      this.effectBoundary.reapplyContinuousEffects();
+      this.effectBoundary.emitPlayedCard(player.sessionId, card);
     } else {
       this.unshiftIntoZone(player.zones.trash, card);
       this.broadcastCardView(card);
       this.addLog(`${player.displayName} active ${card.name}.`);
-      this.effectEngine.handleEvent({
-        type: 'activateMain',
-        playerSessionId: player.sessionId,
-        sourceInstanceId: card.instanceId,
-        sourceCardId: card.cardId,
-      });
-      this.effectEngine.handleEvent({
-        type: 'onEventActivated',
-        playerSessionId: player.sessionId,
-        sourceInstanceId: card.instanceId,
-        sourceCardId: card.cardId,
-      });
+      this.effectBoundary.emitPlayedCard(player.sessionId, card);
     }
 
     this.syncZoneCounts(player);
@@ -1733,7 +1621,7 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     message: ResolveEffectDecisionMessage,
   ) {
-    const decision = this.effectEngine.getPendingDecision();
+    const decision = this.effectBoundary.getPendingEffectDecision();
 
     if (!decision) {
       this.sendError(client, "Aucune decision d'effet n'est en attente.");
@@ -1745,12 +1633,12 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    this.effectEngine.answerDecision(message);
+    this.effectBoundary.answerEffectDecision(message);
 
     if (
       this.isCombatInProgress() &&
       this.state.combat.step === 'resolving' &&
-      !this.effectEngine.getPendingDecision()
+      !this.effectBoundary.hasPendingPlayerInteraction()
     ) {
       this.endCombat();
     }
@@ -1885,35 +1773,6 @@ export class DuelRoom extends Room<DuelState> {
       if (current && other) {
         cards[index] = other;
         cards[otherIndex] = current;
-      }
-    }
-  }
-
-  private emitWindowEffects(type: 'onTurnStart' | 'onTurnEnd') {
-    for (const player of this.state.players.values()) {
-      this.effectEngine.handleEvent({
-        type,
-        playerSessionId: player.sessionId,
-        sourceInstanceId: player.zones.leader.instanceId,
-        sourceCardId: player.zones.leader.cardId,
-      });
-
-      for (const character of player.zones.characters) {
-        this.effectEngine.handleEvent({
-          type,
-          playerSessionId: player.sessionId,
-          sourceInstanceId: character.instanceId,
-          sourceCardId: character.cardId,
-        });
-      }
-
-      if (player.zones.stage.instanceId) {
-        this.effectEngine.handleEvent({
-          type,
-          playerSessionId: player.sessionId,
-          sourceInstanceId: player.zones.stage.instanceId,
-          sourceCardId: player.zones.stage.cardId,
-        });
       }
     }
   }
@@ -2077,7 +1936,7 @@ export class DuelRoom extends Room<DuelState> {
 
     this.broadcastCardView(card);
     this.syncZoneCounts(destinationPlayer);
-    this.effectEngine.reapplyContinuousEffects();
+    this.effectBoundary.reapplyContinuousEffects();
   }
 
   private removeCardFromCurrentZone(instanceId: string): DuelCard | null {
@@ -2241,15 +2100,8 @@ export class DuelRoom extends Room<DuelState> {
       return false;
     }
 
-    if (
-      this.effectEngine.applyReplacement({
-        type: 'wouldKoCharacter',
-        playerSessionId,
-        sourceInstanceId: instanceId,
-        reason,
-      })
-    ) {
-      this.effectEngine.reapplyContinuousEffects();
+    if (this.effectBoundary.applyKoReplacement(playerSessionId, instanceId, reason)) {
+      this.effectBoundary.reapplyContinuousEffects();
       return false;
     }
 
