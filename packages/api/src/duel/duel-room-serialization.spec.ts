@@ -720,4 +720,210 @@ describe('DuelRoom per-viewpoint serialization', () => {
     const afterLeave = await listDescribedDuelRooms();
     expect(afterLeave.rooms.some((room) => room.roomId === roomId)).toBe(false);
   });
+
+  it('keeps public trash serialization stable when a prompted effect moves selected hand cards there over the wire (regression)', async () => {
+    const promptedTrashLeader: Card = {
+      id: 'OP03-001',
+      number: 'OP03-001',
+      name: 'Portgas.D.Ace',
+      type: 'Leader',
+      colors: ['Red'],
+      cost: null,
+      power: 5000,
+      life: 5,
+      counter: null,
+      attributes: [],
+      families: [],
+      text: '',
+      trigger: null,
+      imageUrl: null,
+      set: { id: 'OP03', name: 'Pillars of Strength' },
+      rarity: null,
+    };
+
+    configureDuelRoomServices({
+      decksService: {
+        getValidatedGameDeck: jest.fn((authUserId: string, deckId: string) =>
+          Promise.resolve({
+            id: deckId,
+            name: 'Prompted trash test deck',
+            ownerAuthUserId: authUserId,
+            leader: promptedTrashLeader,
+            cards: Array.from({ length: 50 }, (_, index) => ({
+              id: `ACE-${index + 1}`,
+              number: `ACE-${index + 1}`,
+              name: index % 2 === 0 ? `Event ${index + 1}` : `Stage ${index + 1}`,
+              type: index % 2 === 0 ? 'Event' : 'Stage',
+              colors: ['Red'],
+              cost: 1,
+              power: null,
+              life: null,
+              counter: null,
+              attributes: [],
+              families: [],
+              text: '',
+              trigger: null,
+              imageUrl: null,
+              set: { id: 'OP03', name: 'Pillars of Strength' },
+              rarity: null,
+            })),
+          }),
+        ),
+      } as never,
+    });
+
+    colyseus.sdk.auth.token = 'token-alice';
+    const alice = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Alice', deckId: 'deck-a' },
+      DuelState,
+    );
+    colyseus.sdk.auth.token = 'token-bob';
+    const bob = await colyseus.sdk.joinOrCreate(
+      'duel',
+      { displayName: 'Bob', deckId: 'deck-b' },
+      DuelState,
+    );
+
+    let alicePendingDecision: {
+      decisionId: string;
+      cardIds: string[];
+    } | null = null;
+    let bobPendingDecision: {
+      decisionId: string;
+      cardIds: string[];
+    } | null = null;
+
+    alice.onMessage('pendingEffectDecision', (decision: { id: string; prompt: { type: string } }) => {
+      if (decision.prompt.type !== 'selectCards') {
+        return;
+      }
+
+      alicePendingDecision = {
+        decisionId: decision.id,
+        cardIds:
+          Array.from(
+            alice.state.players.get(alice.sessionId)?.zones.hand ?? [],
+          )
+            .slice(0, 2)
+            .map((card) => card.instanceId),
+      };
+    });
+    bob.onMessage('pendingEffectDecision', (decision: { id: string; prompt: { type: string } }) => {
+      if (decision.prompt.type !== 'selectCards') {
+        return;
+      }
+
+      bobPendingDecision = {
+        decisionId: decision.id,
+        cardIds:
+          Array.from(
+            bob.state.players.get(bob.sessionId)?.zones.hand ?? [],
+          )
+            .slice(0, 2)
+            .map((card) => card.instanceId),
+      };
+    });
+
+    await waitUntil(() => alice.state.phase === 'mulligan');
+    await waitUntil(() => bob.state.phase === 'mulligan');
+
+    const startingSessionId = alice.state.startingPlayerSessionId;
+    const startingClient = startingSessionId === alice.sessionId ? alice : bob;
+    const otherClient = startingSessionId === alice.sessionId ? bob : alice;
+
+    startingClient.send('chooseFirstOrSecond', { choice: 'first' });
+    await waitUntil(() => !!alice.state.firstPlayerSessionId);
+    startingClient.send('mulligan', { mulligan: false });
+    otherClient.send('mulligan', { mulligan: false });
+
+    await waitUntil(() => alice.state.phase === 'refresh');
+
+    const attackerClient =
+      alice.state.activePlayerSessionId === alice.sessionId ? alice : bob;
+    const defenderClient = attackerClient === alice ? bob : alice;
+
+    attackerClient.send('endPhase', {});
+    attackerClient.send('endPhase', {});
+    attackerClient.send('endPhase', {});
+    await waitUntil(() => attackerClient.state.phase === 'main');
+    attackerClient.send('endPhase', {});
+    attackerClient.send('endPhase', {});
+
+    await waitUntil(
+      () =>
+        defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
+    );
+    defenderClient.send('endPhase', {});
+    defenderClient.send('endPhase', {});
+    defenderClient.send('endPhase', {});
+    await waitUntil(() => defenderClient.state.phase === 'main');
+    defenderClient.send('endPhase', {});
+    defenderClient.send('endPhase', {});
+
+    await waitUntil(
+      () =>
+        attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
+    );
+    attackerClient.send('endPhase', {});
+    attackerClient.send('endPhase', {});
+    attackerClient.send('endPhase', {});
+    await waitUntil(() => attackerClient.state.phase === 'main');
+
+    const attackerLeaderInstanceId = attackerClient.state.players.get(
+      attackerClient.sessionId,
+    )?.zones.leader.instanceId;
+    expect(attackerLeaderInstanceId).toBeTruthy();
+
+    attackerClient.send('declareAttack', {
+      attackerInstanceId: attackerLeaderInstanceId,
+      targetType: 'leader',
+    });
+
+    await waitUntil(() =>
+      attackerClient.sessionId === alice.sessionId
+        ? alicePendingDecision !== null
+        : bobPendingDecision !== null,
+    );
+
+    const pendingDecision =
+      attackerClient.sessionId === alice.sessionId
+        ? alicePendingDecision
+        : bobPendingDecision;
+
+    expect(pendingDecision?.cardIds).toHaveLength(2);
+
+    attackerClient.send('resolveEffectDecision', {
+      decisionId: pendingDecision?.decisionId ?? '',
+      selectedCardInstanceIds: pendingDecision?.cardIds ?? [],
+    });
+
+    await waitUntil(
+      () =>
+        (attackerClient.state.players.get(attackerClient.sessionId)?.zones.trash
+          .length ?? 0) >= 2,
+    );
+    await waitUntil(
+      () =>
+        (defenderClient.state.players.get(attackerClient.sessionId)?.zones.trash
+          .length ?? 0) >= 2,
+    );
+
+    const attackerTrash = Array.from(
+      attackerClient.state.players.get(attackerClient.sessionId)?.zones.trash ??
+        [],
+    );
+    const defenderViewOfAttackerTrash = Array.from(
+      defenderClient.state.players.get(attackerClient.sessionId)?.zones.trash ??
+        [],
+    );
+
+    expect(attackerTrash[0]?.name).toBeTruthy();
+    expect(attackerTrash[1]?.name).toBeTruthy();
+    expect(defenderViewOfAttackerTrash[0]?.name).toBeTruthy();
+    expect(defenderViewOfAttackerTrash[1]?.name).toBeTruthy();
+
+    await alice.leave();
+    await bob.leave();
+  });
 });

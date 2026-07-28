@@ -71,15 +71,15 @@ export class DuelZoneEngine {
 
       if (zone instanceof ArraySchema) {
         if (destinationZone === 'trash') {
-          zone.unshift(card);
+          this.unshiftIntoZone(zone, card);
         } else if (destinationZone === 'life' && options?.toBottom) {
           zone.push(card);
         } else if (destinationZone === 'life') {
-          zone.unshift(card);
+          this.unshiftIntoZone(zone, card);
         } else if (destinationZone === 'deck' && options?.toBottom) {
           zone.push(card);
         } else if (destinationZone === 'deck') {
-          zone.unshift(card);
+          this.unshiftIntoZone(zone, card);
         } else {
           zone.push(card);
         }
@@ -130,7 +130,7 @@ export class DuelZoneEngine {
       }
 
       card.faceDown = false;
-      player.zones.trash.unshift(card);
+      this.unshiftIntoZone(player.zones.trash, card);
       this.deps.broadcastCardView(card);
       moved.push(card);
     }
@@ -248,6 +248,19 @@ export class DuelZoneEngine {
     }
 
     return removed;
+  }
+
+  /**
+   * Inserts a card at the front of a Colyseus ArraySchema without detaching its
+   * change tree, which can happen with `ArraySchema#unshift()` on moved cards.
+   */
+  private unshiftIntoZone(zone: ArraySchema<DuelCard>, card: DuelCard): void {
+    zone.push(card);
+    zone.move(() => {
+      for (let index = zone.length - 1; index > 0; index -= 1) {
+        [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
+      }
+    });
   }
 
   private removeCardFromCurrentZone(instanceId: string): DuelCard | null {
