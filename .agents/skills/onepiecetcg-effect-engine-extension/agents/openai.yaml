@@ -1,0 +1,4 @@
+interface:
+  display_name: "OPTCG Effect Engine Extension"
+  short_description: "Extend support for new card effects"
+  default_prompt: "Use $onepiecetcg-effect-engine-extension to add support for a new unsupported One Piece TCG card effect in this repository."
