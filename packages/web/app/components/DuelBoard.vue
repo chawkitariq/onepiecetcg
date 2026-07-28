@@ -68,6 +68,21 @@ const {
   isSelfCharacterZoneFull,
   logs,
   errorMessage,
+  pendingEffectDecision,
+  activeDecision,
+  isAwaitingEffectDecision,
+  selectedEffectCardIds,
+  selectedEffectChoiceIds,
+  selectableDecisionCardIds,
+  selectableRevealedDecisionCardIds,
+  selectableEffectCards,
+  effectChoiceViews,
+  effectDecisionSubmitState,
+  toggleEffectCardSelection,
+  toggleEffectChoiceSelection,
+  submitEffectDecision,
+  declineEffectDecision,
+  cancelEffectDecisionSelection,
   endPhase,
   playCard,
   attachDon,
@@ -334,6 +349,7 @@ const selectableHandCardIds = computed(() => {
     )
     .map(card => card.instanceId)
 })
+const selectableEffectCardIdSet = computed(() => new Set(selectableDecisionCardIds.value))
 const selectableDonCardIds = computed(() =>
   self.value?.cost
     .filter(card => !card.rested)
@@ -363,7 +379,9 @@ const isChoosingCounterCard = computed(() => pendingCounterCardInstanceId.value 
 const targetableOpponentCharacterIds = computed(() =>
   isChoosingTarget.value
     ? (opponent.value?.characters.filter(character => character.rested).map(character => character.instanceId) ?? [])
-    : []
+    : opponent.value?.characters
+      .filter(character => selectableEffectCardIdSet.value.has(character.instanceId))
+      .map(character => character.instanceId) ?? []
 )
 const selectableSelfCharacterIds = computed(() => {
   if (!self.value) {
@@ -380,8 +398,20 @@ const selectableSelfCharacterIds = computed(() => {
       .map(character => character.instanceId)
   }
 
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    return self.value.characters
+      .filter(character => selectableEffectCardIdSet.value.has(character.instanceId))
+      .map(character => character.instanceId)
+  }
+
   return []
 })
+const selectableSelfLeader = computed(() =>
+  Boolean(self.value?.leader && selectableEffectCardIdSet.value.has(self.value.leader.instanceId))
+)
+const selectableOpponentLeader = computed(() =>
+  Boolean(opponent.value?.leader && selectableEffectCardIdSet.value.has(opponent.value.leader.instanceId))
+)
 const invalidSelfLeaderPulse = ref(false)
 const invalidOpponentLeaderPulse = ref(false)
 const invalidSelfCharacterIds = ref<string[]>([])
@@ -421,7 +451,56 @@ function dismissTransientErrorModal() {
   transientErrorModalState.value = null
 }
 
+const effectDecisionActionModalState = computed<DuelActionModalState | null>(() => {
+  const decision = activeDecision.value
+
+  if (!decision || decision.source !== 'effect') {
+    return null
+  }
+
+  const prompt = decision.pending.prompt
+
+  if (prompt.type === 'confirm') {
+    return {
+      tone: prompt.optional ? 'decision' : 'danger',
+      title: 'Décision d’effet',
+      description: undefined,
+      actions: [
+        { label: prompt.optional ? 'Activer' : 'Confirmer', color: 'primary', onSelect: submitEffectDecision },
+        { label: prompt.optional ? 'Ignorer' : 'Annuler', color: 'neutral', onSelect: declineEffectDecision }
+      ]
+    }
+  }
+
+  if (prompt.type === 'selectCards') {
+    return {
+      tone: 'decision',
+      title: 'Choix de cartes',
+      description: undefined,
+      allowBoardInteraction: true,
+      actions: [
+        { label: 'Valider', color: 'primary', onSelect: submitEffectDecision },
+        { label: 'Réinitialiser', color: 'neutral', onSelect: cancelEffectDecisionSelection }
+      ]
+    }
+  }
+
+  return {
+    tone: 'decision',
+    title: 'Choix',
+    description: undefined,
+    actions: [
+      { label: 'Valider', color: 'primary', onSelect: submitEffectDecision },
+      { label: 'Réinitialiser', color: 'neutral', onSelect: cancelEffectDecisionSelection }
+    ]
+  }
+})
+
 const decisionActionModalState = computed<DuelActionModalState | null>(() => {
+  if (effectDecisionActionModalState.value) {
+    return effectDecisionActionModalState.value
+  }
+
   if (isBlockingStep.value && isSelfDefender.value) {
     return {
       tone: 'decision',
@@ -571,6 +650,10 @@ const waitingToastText = computed(() => {
     return 'En attente de la décision de Déclenchement du défenseur...'
   }
 
+  if (isAwaitingEffectDecision.value && !pendingEffectDecision.value) {
+    return 'En attente de la résolution de l’effet par l’adversaire...'
+  }
+
   return null
 })
 
@@ -594,7 +677,7 @@ const turnButtonLabel = computed(() => {
 })
 
 const turnButtonColor = computed(() => (isSelfTurn.value ? 'primary' : 'neutral'))
-const turnButtonVariant = computed(() => (isSelfTurn.value ? 'solid' : 'solid'))
+const turnButtonVariant = 'solid' as const
 
 const resolvedHoveredCard = computed(() =>
   mergeHoveredDuelCardDetails(
@@ -2560,6 +2643,16 @@ function onSelfHandCardClick(instanceId: string, options: { ctrlKey: boolean }) 
 }
 
 function onSelfLeaderClick(_side: 0 | 1) {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards' && self.value?.leader) {
+    if (!selectableEffectCardIdSet.value.has(self.value.leader.instanceId)) {
+      pulseLeader(invalidSelfLeaderPulse)
+      return
+    }
+
+    toggleEffectCardSelection(self.value.leader.instanceId)
+    return
+  }
+
   if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
     attachDonToTarget('leader')
   }
@@ -2583,16 +2676,46 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     return
   }
 
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    if (!selectableEffectCardIdSet.value.has(instanceId)) {
+      pulseCharacter(invalidSelfCharacterIds, instanceId)
+      return
+    }
+
+    toggleEffectCardSelection(instanceId)
+    return
+  }
+
   if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
     attachDonToTarget('character', instanceId)
   }
 }
 
 function onOpponentLeaderClick() {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards' && opponent.value?.leader) {
+    if (!selectableEffectCardIdSet.value.has(opponent.value.leader.instanceId)) {
+      pulseLeader(invalidOpponentLeaderPulse)
+      return
+    }
+
+    toggleEffectCardSelection(opponent.value.leader.instanceId)
+    return
+  }
+
   onOpponentLeaderTargetClick()
 }
 
 function onOpponentCharacterClick(_side: 0 | 1, instanceId: string) {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    if (!selectableEffectCardIdSet.value.has(instanceId)) {
+      pulseCharacter(invalidOpponentCharacterIds, instanceId)
+      return
+    }
+
+    toggleEffectCardSelection(instanceId)
+    return
+  }
+
   onOpponentCharacterTargetClick(instanceId)
 }
 
@@ -3076,7 +3199,7 @@ defineShortcuts({
     <DuelActionModal :state="actionModalState">
       <template
         v-if="actionModalState?.slot === 'counter-input'"
-        #extra
+        #content
       >
         <UInputNumber
           v-model="counterPowerBonusInput"
@@ -3084,6 +3207,32 @@ defineShortcuts({
           :step="1000"
           size="lg"
           class="w-32"
+        />
+      </template>
+
+      <template
+        v-else-if="activeDecision?.source === 'effect' && pendingEffectDecision"
+        #content
+      >
+        <DuelDecisionConfirm
+          v-if="pendingEffectDecision.prompt.type === 'confirm'"
+          :message="pendingEffectDecision.prompt.message"
+        />
+        <DuelDecisionCardPicker
+          v-else-if="pendingEffectDecision.prompt.type === 'selectCards'"
+          :message="pendingEffectDecision.prompt.message"
+          :cards="selectableEffectCards"
+          :selected-card-ids="selectedEffectCardIds"
+          :revealed-card-ids="selectableRevealedDecisionCardIds"
+          :submit-disabled-reason="effectDecisionSubmitState.reason"
+          @toggle="toggleEffectCardSelection"
+        />
+        <DuelDecisionChoicePicker
+          v-else
+          :message="pendingEffectDecision.prompt.message"
+          :choices="effectChoiceViews"
+          :submit-disabled-reason="effectDecisionSubmitState.reason"
+          @toggle="toggleEffectChoiceSelection"
         />
       </template>
     </DuelActionModal>
@@ -3330,8 +3479,11 @@ defineShortcuts({
                 :deferred-cost-card-ids="opponentDeferredCostCardIds"
                 :deferred-trash-card-ids="opponentDeferredTrashCardIds"
                 :is-targetable="Boolean(opponent) && isChoosingTarget"
-                :targetable-leader="Boolean(opponent) && isChoosingTarget"
+                :is-selectable="selectableOpponentLeader || targetableOpponentCharacterIds.length > 0"
+                :targetable-leader="Boolean(opponent) && (isChoosingTarget || selectableOpponentLeader)"
                 :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+                :selectable-leader="selectableOpponentLeader"
+                :selectable-character-ids="opponent ? targetableOpponentCharacterIds : []"
                 :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
                 :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
                 @card-hover="hoveredCard = $event"
@@ -3362,9 +3514,10 @@ defineShortcuts({
                 :can-drop-don-on-character="canAttachDon"
                 :transition-ghosts="selfTransitionGhosts"
                 :attacker-id="combat && isSelfAttacker ? combat.attackerInstanceId : null"
-                :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+                :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender) || selectableSelfCharacterIds.length > 0 || selectableSelfLeader"
                 :attackable-leader="Boolean(self.leader && canDeclareAttack && !isCombatInProgress && isMainPhase && isSelfTurn && !self.leader.rested)"
                 :attackable-character-ids="self.characters.filter(character => canDeclareAttack && isMainPhase && isSelfTurn && !isCombatInProgress && !character.rested && !character.playedThisTurn).map(character => character.instanceId)"
+                :selectable-leader="selectableSelfLeader"
                 :selectable-character-ids="selectableSelfCharacterIds"
                 :invalid-leader-pulse="invalidSelfLeaderPulse"
                 :invalid-character-ids="invalidSelfCharacterIds"

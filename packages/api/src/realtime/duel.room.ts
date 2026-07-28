@@ -16,6 +16,7 @@ import {
   DuelState,
   type EffectDecisionResponse,
   type EffectTargetSelector,
+  type PendingEffectDecision,
   createDuelCard,
   type FirstOrSecondChoice,
   type GamePhase,
@@ -42,6 +43,10 @@ type ResolveTriggerMessage = {
 };
 
 type ResolveEffectDecisionMessage = EffectDecisionResponse;
+
+type EffectDecisionWaitingMessage = {
+  playerSessionId: string;
+};
 
 const RECONNECTION_SECONDS = 120;
 
@@ -145,6 +150,8 @@ export class DuelRoom extends Room<DuelState> {
     this.effectBoundary = new DuelRoomEffectBoundary({
       state: this.state,
       addLog: (message) => this.addLog(message),
+      onPendingEffectDecisionChange: (decision) =>
+        this.syncPendingEffectDecision(decision),
       getPlayer: (sessionId) => this.state.players.get(sessionId),
       getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
       getCard: (instanceId) => this.getCardByInstanceId(instanceId),
@@ -310,6 +317,7 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
+    this.sendPendingEffectDecisionToClient(client);
 
     if (this.state.players.size === this.maxClients) {
       this.initializeGame();
@@ -336,6 +344,7 @@ export class DuelRoom extends Room<DuelState> {
       await this.allowReconnection(client, RECONNECTION_SECONDS);
       player.connected = true;
       this.addLog(`${player.displayName} est reconnecte.`);
+      this.sendPendingEffectDecisionToClient(client);
     } catch {
       this.addLog(`${player.displayName} a perdu par forfait.`);
       this.removePlayer(client.sessionId);
@@ -578,6 +587,52 @@ export class DuelRoom extends Room<DuelState> {
 
   private sendError(client: Client, message: string) {
     client.send('actionError', { message });
+  }
+
+  /** Syncs the out-of-band effect-decision channel for the chooser and opponent. */
+  private syncPendingEffectDecision(decision: PendingEffectDecision | null): void {
+    for (const currentClient of this.clients) {
+      currentClient.send('clearPendingEffectDecision', {});
+    }
+
+    if (!decision) {
+      this.broadcast('clearEffectDecisionWaiting', {});
+      return;
+    }
+
+    const chooserClient = this.clients.find(
+      (currentClient) => currentClient.sessionId === decision.playerSessionId,
+    );
+    chooserClient?.send('pendingEffectDecision', decision);
+    this.broadcast('effectDecisionWaiting', {
+      playerSessionId: decision.playerSessionId,
+    } satisfies EffectDecisionWaitingMessage);
+  }
+
+  /** Replays the current pending effect decision state to a freshly joined/reconnected client. */
+  private sendPendingEffectDecisionToClient(client: Client): void {
+    if (typeof client.send !== 'function') {
+      return;
+    }
+
+    const decision = this.effectBoundary.getPendingEffectDecision();
+
+    if (!decision) {
+      client.send('clearPendingEffectDecision', {});
+      client.send('clearEffectDecisionWaiting', {});
+      return;
+    }
+
+    client.send('effectDecisionWaiting', {
+      playerSessionId: decision.playerSessionId,
+    } satisfies EffectDecisionWaitingMessage);
+
+    if (client.sessionId === decision.playerSessionId) {
+      client.send('pendingEffectDecision', decision);
+      return;
+    }
+
+    client.send('clearPendingEffectDecision', {});
   }
 
   private getActivePlayer(): DuelPlayer | undefined {

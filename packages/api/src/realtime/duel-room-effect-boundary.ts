@@ -3,6 +3,7 @@ import type {
   DuelPlayer,
   DuelState,
   EffectDecisionResponse,
+  PendingEffectDecision,
   EffectTargetSelector,
 } from '@onepiecetcg/shared';
 import {
@@ -20,6 +21,9 @@ type ManualTriggerFallbackState = {
 export type DuelRoomEffectBoundaryDeps = {
   state: DuelState;
   addLog: (message: string) => void;
+  onPendingEffectDecisionChange?: (
+    decision: PendingEffectDecision | null,
+  ) => void;
   getPlayer: (sessionId: string) => DuelPlayer | undefined;
   getOpponentSessionId: (sessionId: string) => string | null;
   getCard: (instanceId: string) => DuelCard | null;
@@ -54,6 +58,8 @@ export class DuelRoomEffectBoundary {
     this.engine = new EffectEngine(effectRegistry, {
       state: deps.state,
       addLog: deps.addLog,
+      onPendingDecisionChange: (decision) =>
+        deps.onPendingEffectDecisionChange?.(decision),
       getPlayer: deps.getPlayer,
       getOpponentSessionId: deps.getOpponentSessionId,
       getCard: deps.getCard,

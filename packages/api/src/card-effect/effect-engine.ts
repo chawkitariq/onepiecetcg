@@ -77,6 +77,7 @@ type EffectResolutionContext = {
 export interface EffectEngineHost {
   state: DuelState;
   addLog(message: string): void;
+  onPendingDecisionChange?(decision: PendingEffectDecision | null): void;
   getPlayer(sessionId: string): DuelPlayer | undefined;
   getOpponentSessionId(sessionId: string): string | null;
   getCard(instanceId: string): DuelCard | null;
@@ -315,7 +316,7 @@ export class EffectEngine {
     }
 
     const continuation = this.pendingDecisionState.continuation;
-    this.pendingDecisionState = null;
+    this.setPendingDecisionState(null);
     continuation(response);
     this.flushQueue();
   }
@@ -351,7 +352,7 @@ export class EffectEngine {
 
       if (queued.definition.trigger.optional) {
         const decisionId = `${queued.sourceInstanceId}:${queued.definition.id}:optional`;
-        this.pendingDecisionState = {
+        this.setPendingDecisionState({
           decision: {
             id: decisionId,
             effectId: queued.definition.id,
@@ -374,7 +375,7 @@ export class EffectEngine {
               );
             }
           },
-        };
+        });
         return;
       }
 
@@ -1007,7 +1008,7 @@ export class EffectEngine {
     const min = count.kind === 'exact' ? count.value : 0;
     const max = count.value;
 
-    this.pendingDecisionState = {
+    this.setPendingDecisionState({
       decision: {
         id: decisionId,
         effectId: decisionId,
@@ -1031,7 +1032,7 @@ export class EffectEngine {
             .filter((card) => selected.has(card.instanceId)),
         );
       },
-    };
+    });
   }
 
   private chooseChoices(
@@ -1043,7 +1044,7 @@ export class EffectEngine {
     max: number,
     resolve: (choiceIds: string[]) => void,
   ): void {
-    this.pendingDecisionState = {
+    this.setPendingDecisionState({
       decision: {
         id: decisionId,
         effectId: decisionId,
@@ -1062,7 +1063,13 @@ export class EffectEngine {
       continuation: (response) => {
         resolve(response.selectedChoiceIds ?? []);
       },
-    };
+    });
+  }
+
+  /** Updates the current pending decision and notifies the realtime host. */
+  private setPendingDecisionState(state: PendingDecisionState | null): void {
+    this.pendingDecisionState = state;
+    this.host.onPendingDecisionChange?.(state?.decision ?? null);
   }
 
   private arrangeDeckWindow(

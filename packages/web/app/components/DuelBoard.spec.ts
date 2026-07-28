@@ -1,4 +1,4 @@
-import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
+import type { DuelPlayerView, PendingEffectDecision, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import { mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { computed, defineComponent, h, ref } from 'vue'
@@ -14,6 +14,11 @@ const declareBlock = vi.fn()
 const declareCounter = vi.fn()
 const finishCounterStep = vi.fn()
 const resolveTrigger = vi.fn()
+const submitEffectDecision = vi.fn()
+const declineEffectDecision = vi.fn()
+const cancelEffectDecisionSelection = vi.fn()
+const toggleEffectCardSelection = vi.fn()
+const toggleEffectChoiceSelection = vi.fn()
 
 const phase = ref('main')
 const turn = ref(1)
@@ -29,6 +34,19 @@ const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
 const logs = ref<Array<{ id: string, message: string, createdAt: string }>>([])
 const errorMessage = ref<string | null>(null)
+const pendingEffectDecision = ref<PendingEffectDecision | null>(null)
+const activeDecision = ref<any>(null)
+const isAwaitingEffectDecision = ref(false)
+const selectedEffectCardIds = ref<string[]>([])
+const selectedEffectChoiceIds = ref<string[]>([])
+const selectableDecisionCardIds = ref<string[]>([])
+const selectableRevealedDecisionCardIds = ref<string[]>([])
+const selectableEffectCards = ref<PublicCard[]>([])
+const effectChoiceViews = ref<Array<{ id: string, label: string, selected: boolean, cardInstanceId?: string }>>([])
+const effectDecisionSubmitState = ref<{ canSubmit: boolean, reason: string | null }>({
+  canSubmit: true,
+  reason: null
+})
 const combat = ref<{
   attackerSessionId: string
   attackerInstanceId: string
@@ -131,6 +149,21 @@ mockNuxtImport('useDuelRoom', () => () => ({
   isSelfCharacterZoneFull: computed(() => (self.value?.characters.length ?? 0) >= 5),
   logs,
   errorMessage,
+  pendingEffectDecision,
+  activeDecision,
+  isAwaitingEffectDecision: computed(() => isAwaitingEffectDecision.value),
+  selectedEffectCardIds,
+  selectedEffectChoiceIds,
+  selectableDecisionCardIds,
+  selectableRevealedDecisionCardIds,
+  selectableEffectCards,
+  effectChoiceViews,
+  effectDecisionSubmitState,
+  toggleEffectCardSelection,
+  toggleEffectChoiceSelection,
+  submitEffectDecision,
+  declineEffectDecision,
+  cancelEffectDecisionSelection,
   endPhase,
   playCard,
   attachDon,
@@ -483,6 +516,16 @@ describe('DuelBoard drag and drop', () => {
     })
     logs.value = []
     errorMessage.value = null
+    pendingEffectDecision.value = null
+    activeDecision.value = null
+    isAwaitingEffectDecision.value = false
+    selectedEffectCardIds.value = []
+    selectedEffectChoiceIds.value = []
+    selectableDecisionCardIds.value = []
+    selectableRevealedDecisionCardIds.value = []
+    selectableEffectCards.value = []
+    effectChoiceViews.value = []
+    effectDecisionSubmitState.value = { canSubmit: true, reason: null }
     combat.value = null
     playCard.mockReset()
     endPhase.mockReset()
@@ -493,6 +536,11 @@ describe('DuelBoard drag and drop', () => {
     declareCounter.mockReset()
     finishCounterStep.mockReset()
     resolveTrigger.mockReset()
+    submitEffectDecision.mockReset()
+    declineEffectDecision.mockReset()
+    cancelEffectDecisionSelection.mockReset()
+    toggleEffectCardSelection.mockReset()
+    toggleEffectChoiceSelection.mockReset()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
       window.setTimeout(() => callback(performance.now()), 16)
     )
@@ -1831,6 +1879,9 @@ describe('DuelBoard leave to lobby', () => {
       characters: [createPublicCard('opponent-character-a', { rested: true })]
     })
     logs.value = []
+    pendingEffectDecision.value = null
+    activeDecision.value = null
+    isAwaitingEffectDecision.value = false
     leave.mockReset()
     confirm.mockReset()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
@@ -1870,6 +1921,41 @@ describe('DuelBoard leave to lobby', () => {
       }
     })
   }
+
+  it('renders a generic confirm prompt for an effect decision', () => {
+    pendingEffectDecision.value = {
+      id: 'decision-1',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'confirm',
+        message: 'Activer cet effet ?',
+        optional: true
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+
+    mountBoard({ attachToBody: true })
+
+    expect(document.body.textContent).toContain('Décision d’effet')
+    expect(document.body.textContent).toContain('Activer cet effet ?')
+    expect(document.body.textContent).toContain('Activer')
+    expect(document.body.textContent).toContain('Ignorer')
+  })
+
+  it('shows the opponent waiting toast while an effect decision is pending remotely', () => {
+    isAwaitingEffectDecision.value = true
+
+    const wrapper = mountBoard()
+
+    expect(wrapper.text()).toContain('En attente de la résolution de l’effet par l’adversaire')
+  })
 
   it('leaves the room and does not navigate away when the confirmation is dismissed', async () => {
     confirm.mockResolvedValue(false)
