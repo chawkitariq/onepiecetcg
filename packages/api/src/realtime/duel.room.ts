@@ -14,13 +14,13 @@ import {
   DuelPlayer,
   DuelState,
   type EffectDecisionResponse,
-  type PendingEffectDecision,
   type FirstOrSecondChoice,
 } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
 import { DuelCombatEngine } from './duel-combat-engine';
 import { DuelCardQueryEngine } from './duel-card-query-engine';
 import { DuelMainPhaseEngine } from './duel-main-phase-engine';
+import { DuelRoomClientNotifier } from './duel-room-client-notifier';
 import { DuelRoomLifecycle } from './duel-room-lifecycle';
 import { DuelRoomSeatBootstrap } from './duel-room-seat-bootstrap';
 import { DuelTurnEngine } from './duel-turn-engine';
@@ -46,10 +46,6 @@ type ResolveTriggerMessage = {
 };
 
 type ResolveEffectDecisionMessage = EffectDecisionResponse;
-
-type EffectDecisionWaitingMessage = {
-  playerSessionId: string;
-};
 
 const RECONNECTION_SECONDS = 120;
 
@@ -130,9 +126,7 @@ export class DuelRoom extends Room<DuelState> {
 
   private seatBootstrap!: DuelRoomSeatBootstrap;
 
-  private currentMainPhaseClient: Pick<Client, 'send'> | null = null;
-
-  private currentCombatClient: Pick<Client, 'send'> | null = null;
+  private notifier!: DuelRoomClientNotifier;
 
   maxClients = 2;
 
@@ -166,15 +160,21 @@ export class DuelRoom extends Room<DuelState> {
         this.logger.error('Failed to record match result', error);
       },
     });
+    this.notifier = new DuelRoomClientNotifier({
+      getClients: () => this.clients,
+      broadcast: (type, message) => this.broadcast(type, message),
+      getPendingEffectDecision: () =>
+        this.effectBoundary.getPendingEffectDecision(),
+    });
     this.seatBootstrap = new DuelRoomSeatBootstrap({
       syncZoneCounts: (player) => this.syncZoneCounts(player),
-      broadcastCardView: (card) => this.broadcastCardView(card),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
     });
     this.effectBoundary = new DuelRoomEffectBoundary({
       state: this.state,
       addLog: (message) => this.addLog(message),
       onPendingEffectDecisionChange: (decision) =>
-        this.syncPendingEffectDecision(decision),
+        this.notifier.syncPendingEffectDecision(decision),
       getPlayer: (sessionId) => this.state.players.get(sessionId),
       getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
       getCard: (instanceId) =>
@@ -219,7 +219,7 @@ export class DuelRoom extends Room<DuelState> {
           this.syncZoneCounts(player);
         }
       },
-      broadcastCardView: (card) => this.broadcastCardView(card),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
     });
     this.turnEngine = new DuelTurnEngine({
       state: this.state,
@@ -245,7 +245,7 @@ export class DuelRoom extends Room<DuelState> {
     this.zoneEngine = new DuelZoneEngine({
       state: this.state,
       effectBoundary: this.effectBoundary,
-      broadcastCardView: (card) => this.broadcastCardView(card),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
       syncZoneCounts: (player) => this.syncZoneCounts(player),
       findCardInZone: (player, zone, instanceId) =>
         this.findCardInZone(player, zone, instanceId),
@@ -256,12 +256,8 @@ export class DuelRoom extends Room<DuelState> {
       state: this.state,
       effectBoundary: this.effectBoundary,
       addLog: (message) => this.addLog(message),
-      sendError: (message) => {
-        if (this.currentMainPhaseClient) {
-          this.sendError(this.currentMainPhaseClient, message);
-        }
-      },
-      broadcastCardView: (card) => this.broadcastCardView(card),
+      sendError: (message) => this.notifier.sendMainPhaseError(message),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
       syncZoneCounts: (player) => this.syncZoneCounts(player),
       unshiftIntoTrash: (player, card) =>
         this.unshiftIntoZone(player.zones.trash, card),
@@ -276,12 +272,8 @@ export class DuelRoom extends Room<DuelState> {
       state: this.state,
       effectBoundary: this.effectBoundary,
       addLog: (message) => this.addLog(message),
-      sendError: (message) => {
-        if (this.currentCombatClient) {
-          this.sendError(this.currentCombatClient, message);
-        }
-      },
-      broadcastCardView: (card) => this.broadcastCardView(card),
+      sendError: (message) => this.notifier.sendCombatError(message),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
       syncZoneCounts: (player) => this.syncZoneCounts(player),
       unshiftIntoTrash: (player, card) =>
         this.unshiftIntoZone(player.zones.trash, card),
@@ -405,7 +397,7 @@ export class DuelRoom extends Room<DuelState> {
     );
 
     this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
-    this.sendPendingEffectDecisionToClient(client);
+    this.notifier.sendPendingEffectDecisionToClient(client);
 
     if (this.state.players.size === this.maxClients) {
       this.initializeGame();
@@ -432,25 +424,10 @@ export class DuelRoom extends Room<DuelState> {
       await this.allowReconnection(client, RECONNECTION_SECONDS);
       player.connected = true;
       this.addLog(`${player.displayName} est reconnecte.`);
-      this.sendPendingEffectDecisionToClient(client);
+      this.notifier.sendPendingEffectDecisionToClient(client);
     } catch {
       this.addLog(`${player.displayName} a perdu par forfait.`);
       this.lifecycle.removePlayer(client.sessionId);
-    }
-  }
-
-  /**
-   * Makes a card's `@view()`-tagged fields (name, imageUrl, power, ...)
-   * visible to every currently-connected client. Colyseus 0.16's `StateView`
-   * only serializes `@view()` fields for card instances explicitly added to
-   * a given client's view, so any card entering a publicly-visible zone
-   * (leader, characters, stage, cost, trash, DON!! deck) must be added here
-   * -- otherwise it renders blank for clients it wasn't added to, including
-   * its own owner.
-   */
-  private broadcastCardView(card: DuelCard) {
-    for (const otherClient of this.clients) {
-      otherClient.view?.add(card);
     }
   }
 
@@ -492,63 +469,11 @@ export class DuelRoom extends Room<DuelState> {
     this.turnEngine.handleMulligan(client.sessionId, message.mulligan);
   }
 
-  private sendError(client: Pick<Client, 'send'>, message: string) {
-    client.send('actionError', { message });
-  }
-
-  /** Syncs the out-of-band effect-decision channel for the chooser and opponent. */
-  private syncPendingEffectDecision(
-    decision: PendingEffectDecision | null,
-  ): void {
-    for (const currentClient of this.clients) {
-      currentClient.send('clearPendingEffectDecision', {});
-    }
-
-    if (!decision) {
-      this.broadcast('clearEffectDecisionWaiting', {});
-      return;
-    }
-
-    const chooserClient = this.clients.find(
-      (currentClient) => currentClient.sessionId === decision.playerSessionId,
-    );
-    chooserClient?.send('pendingEffectDecision', decision);
-    this.broadcast('effectDecisionWaiting', {
-      playerSessionId: decision.playerSessionId,
-    } satisfies EffectDecisionWaitingMessage);
-  }
-
-  /** Replays the current pending effect decision state to a freshly joined/reconnected client. */
-  private sendPendingEffectDecisionToClient(client: Client): void {
-    if (typeof client.send !== 'function') {
-      return;
-    }
-
-    const decision = this.effectBoundary.getPendingEffectDecision();
-
-    if (!decision) {
-      client.send('clearPendingEffectDecision', {});
-      client.send('clearEffectDecisionWaiting', {});
-      return;
-    }
-
-    client.send('effectDecisionWaiting', {
-      playerSessionId: decision.playerSessionId,
-    } satisfies EffectDecisionWaitingMessage);
-
-    if (client.sessionId === decision.playerSessionId) {
-      client.send('pendingEffectDecision', decision);
-      return;
-    }
-
-    client.send('clearPendingEffectDecision', {});
-  }
-
   private handleEndPhase(client: Client) {
     const error = this.turnEngine.handleEndPhase(client.sessionId);
 
     if (error) {
-      this.sendError(client, error);
+      this.notifier.sendActionError(client, error);
     }
   }
 
@@ -657,22 +582,22 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private handleDeclareAttack(client: Client, message: DeclareAttackMessage) {
-    this.bindCombatClient(client);
+    this.notifier.bindCombatClient(client);
     this.combatEngine.handleDeclareAttack(client.sessionId, message);
   }
 
   private handleDeclareBlock(client: Client, message: DeclareBlockMessage) {
-    this.bindCombatClient(client);
+    this.notifier.bindCombatClient(client);
     this.combatEngine.handleDeclareBlock(client.sessionId, message);
   }
 
   private handleDeclareCounter(client: Client, message: DeclareCounterMessage) {
-    this.bindCombatClient(client);
+    this.notifier.bindCombatClient(client);
     this.combatEngine.handleDeclareCounter(client.sessionId, message);
   }
 
   private handleFinishCounterStep(client: Client) {
-    this.bindCombatClient(client);
+    this.notifier.bindCombatClient(client);
     this.combatEngine.handleFinishCounterStep(client.sessionId);
   }
 
@@ -748,7 +673,7 @@ export class DuelRoom extends Room<DuelState> {
     );
 
     if (!result.ok) {
-      this.sendError(client, result.error);
+      this.notifier.sendActionError(client, result.error);
       return;
     }
 
@@ -756,21 +681,13 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private handlePlayCard(client: Client, message: PlayCardMessage) {
-    this.bindMainPhaseClient(client);
+    this.notifier.bindMainPhaseClient(client);
     this.mainPhaseEngine.handlePlayCard(client.sessionId, message);
   }
 
   private handleAttachDon(client: Client, message: AttachDonMessage) {
-    this.bindMainPhaseClient(client);
+    this.notifier.bindMainPhaseClient(client);
     this.mainPhaseEngine.handleAttachDon(client.sessionId, message);
-  }
-
-  private bindMainPhaseClient(client: Pick<Client, 'send'>): void {
-    this.currentMainPhaseClient = client;
-  }
-
-  private bindCombatClient(client: Pick<Client, 'send'>): void {
-    this.currentCombatClient = client;
   }
 
   private handleResolveEffectDecision(
@@ -780,12 +697,18 @@ export class DuelRoom extends Room<DuelState> {
     const decision = this.effectBoundary.getPendingEffectDecision();
 
     if (!decision) {
-      this.sendError(client, "Aucune decision d'effet n'est en attente.");
+      this.notifier.sendActionError(
+        client,
+        "Aucune decision d'effet n'est en attente.",
+      );
       return;
     }
 
     if (decision.playerSessionId !== client.sessionId) {
-      this.sendError(client, "Cette decision n'appartient pas a ce joueur.");
+      this.notifier.sendActionError(
+        client,
+        "Cette decision n'appartient pas a ce joueur.",
+      );
       return;
     }
 
