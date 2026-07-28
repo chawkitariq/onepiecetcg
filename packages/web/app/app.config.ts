@@ -4,6 +4,7 @@ export default defineAppConfig({
       base: 'duel-highlight',
       states: {
         interactive: 'duel-highlight--interactive',
+        preview: 'duel-highlight--preview',
         selected: 'duel-highlight--selected',
         source: 'duel-highlight--source',
         targetable: 'duel-highlight--targetable',

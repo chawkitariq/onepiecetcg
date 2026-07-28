@@ -197,6 +197,8 @@ const playZoneStub = defineComponent({
     draggedDonCardCount: { type: Number, default: 0 },
     attackerId: { type: String, default: undefined },
     isTargetable: { type: Boolean, default: false },
+    linkedPreviewInstanceId: { type: String, default: null },
+    linkedSelectedInstanceIds: { type: Array, default: () => [] },
     transitionGhosts: { type: Array, default: () => [] },
     deferredBoardCardIds: { type: Array, default: () => [] },
     deferredCostCardIds: { type: Array, default: () => [] },
@@ -228,7 +230,9 @@ const playZoneStub = defineComponent({
       'data-selected-don-card-ids': JSON.stringify(props.selectedDonCardIds),
       'data-dragged-don-card-count': String(props.draggedDonCardCount),
       'data-attacker-id': props.attackerId,
-      'data-is-targetable': String(props.isTargetable ?? false)
+      'data-is-targetable': String(props.isTargetable ?? false),
+      'data-linked-preview-instance-id': props.linkedPreviewInstanceId,
+      'data-linked-selected-instance-ids': JSON.stringify(props.linkedSelectedInstanceIds)
     }, [
       h('div', { 'data-life-side': props.side }, [
         h('div', { 'data-life-top': 'true' })
@@ -375,6 +379,8 @@ const duelHandStub = defineComponent({
     revealedHandCardIds: { type: Array, default: () => [] },
     deferredHandCardIds: { type: Array, default: () => [] },
     selectedHandCardIds: { type: Array, default: () => [] },
+    linkedPreviewInstanceId: { type: String, default: null },
+    linkedSelectedInstanceIds: { type: Array, default: () => [] },
     draggedHandCardCount: { type: Number, default: 0 }
   },
   emits: ['cardDragStart', 'cardDragEnd', 'cardClick'],
@@ -407,6 +413,8 @@ const duelHandStub = defineComponent({
       'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
       'data-revealed-hand-card-ids': JSON.stringify(props.revealedHandCardIds),
       'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
+      'data-linked-preview-instance-id': props.linkedPreviewInstanceId,
+      'data-linked-selected-instance-ids': JSON.stringify(props.linkedSelectedInstanceIds),
       'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
       ...(props.hidden ? hiddenCards : []),
@@ -2070,6 +2078,64 @@ describe('DuelBoard leave to lobby', () => {
     expect(document.body.textContent).toContain('Effect Card')
     expect(document.body.textContent).toContain('Prompt detail text')
     expect(toggleEffectCardSelection).toHaveBeenCalledWith('effect-card')
+  })
+
+  it('links effect prompt selection states back to matching board elements', async () => {
+    const effectCard = createPublicCard('effect-card', {
+      cardId: 'effect-card',
+      number: 'OP00-001',
+      name: 'Effect Card',
+      type: 'Character',
+      cost: 4,
+      power: 5000
+    })
+
+    self.value = createPlayer('self', {
+      characters: [effectCard]
+    })
+    pendingEffectDecision.value = {
+      id: 'decision-cards',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez une carte.',
+        selector: {
+          player: 'self',
+          zones: ['characters'],
+          count: { kind: 'upTo', value: 1 }
+        },
+        min: 0,
+        max: 1,
+        revealedCards: []
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+    selectableEffectCards.value = [effectCard]
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const promptButton = document.body.querySelector('[data-test="effect-decision-card-effect-card"]') as HTMLButtonElement | null
+
+    expect(promptButton).not.toBeNull()
+
+    const selfPlayZone = wrapper.findAllComponents(playZoneStub)[1]
+
+    expect(selfPlayZone.props('linkedSelectedInstanceIds')).toEqual([])
+
+    promptButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    selectedEffectCardIds.value = ['effect-card']
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAllComponents(playZoneStub)[1]?.props('linkedSelectedInstanceIds')).toEqual(['effect-card'])
   })
 
   it('reuses board hover details after an effect prompt description fetch fails', async () => {

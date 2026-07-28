@@ -1,6 +1,7 @@
 export type DuelHighlightState =
   | 'idle'
   | 'interactive'
+  | 'preview'
   | 'selected'
   | 'source'
   | 'targetable'
@@ -15,6 +16,7 @@ type DuelHighlightConfig = {
       base?: string
       states?: {
         interactive?: string
+        preview?: string
         selected?: string
         source?: string
         targetable?: string
@@ -48,6 +50,10 @@ export function resolveDuelHighlightState(
     return 'selected'
   }
 
+  if (flags.preview) {
+    return 'preview'
+  }
+
   if (flags.source) {
     return 'source'
   }
@@ -75,6 +81,7 @@ export function resolveDuelHighlightClasses(
   const states = config.duel?.highlight?.states
   const stateClass = {
     interactive: states?.interactive ?? 'duel-highlight--interactive',
+    preview: states?.preview ?? 'duel-highlight--preview',
     selected: states?.selected ?? 'duel-highlight--selected',
     source: states?.source ?? 'duel-highlight--source',
     targetable: states?.targetable ?? 'duel-highlight--targetable',

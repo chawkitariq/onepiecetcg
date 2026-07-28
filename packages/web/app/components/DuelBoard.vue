@@ -688,6 +688,18 @@ const inspectedCard = computed(() =>
   ?? selectedEffectPromptCard.value
 )
 
+const effectPromptLinkedPreviewInstanceId = computed(() =>
+  hoveredEffectPromptCard.value?.instanceId
+  ?? selectedEffectPromptCard.value?.instanceId
+  ?? null
+)
+
+const effectPromptLinkedSelectedInstanceIds = computed(() =>
+  pendingEffectDecision.value?.prompt.type === 'selectCards'
+    ? [...selectedEffectCardIds.value]
+    : []
+)
+
 const resolvedHoveredCard = computed(() =>
   mergeHoveredDuelCardDetails(
     inspectedCard.value,
@@ -3393,6 +3405,8 @@ defineShortcuts({
                 align="start"
                 :draggable-hand-card-ids="draggableHandCardIds"
                 :selected-hand-card-ids="selectedHandCardIds"
+                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
                 :dragged-hand-card-count="draggedHandCardCount"
                 :invalid-hand-card-ids="invalidHandCardIds"
                 :revealed-hand-card-ids="selfRevealedHandCardIds"
@@ -3541,6 +3555,8 @@ defineShortcuts({
                 :selectable-character-ids="opponent ? targetableOpponentCharacterIds : []"
                 :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
                 :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
+                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
                 @card-hover="hoveredCard = $event"
                 @trash-click="openTrashModal"
                 @leader-click="onOpponentLeaderClick"
@@ -3576,6 +3592,8 @@ defineShortcuts({
                 :selectable-character-ids="selectableSelfCharacterIds"
                 :invalid-leader-pulse="invalidSelfLeaderPulse"
                 :invalid-character-ids="invalidSelfCharacterIds"
+                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
                 :deferred-board-card-ids="selfDeferredBoardCardIds"
                 :deferred-cost-card-ids="selfDeferredCostCardIds"
                 :deferred-trash-card-ids="selfDeferredTrashCardIds"

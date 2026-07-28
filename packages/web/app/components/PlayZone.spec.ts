@@ -186,6 +186,26 @@ describe('PlayZone transitions', () => {
     expect(characterButton.classes()).toContain('duel-highlight--targetable')
   })
 
+  it('applies the shared preview highlight class to a board card linked from an effect prompt hover', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        linkedPreviewInstanceId: 'character-a'
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    expect(characterButton.classes()).toContain('duel-highlight')
+    expect(characterButton.classes()).toContain('duel-highlight--preview')
+  })
+
   it('renders ghosts for hidden-zone transitions from life, deck and DON!! deck', () => {
     const wrapper = mount(PlayZone, {
       props: {

@@ -218,6 +218,24 @@ describe('DuelHand', () => {
     expect(handCard?.classes()).toContain('duel-highlight--selected')
   })
 
+  it('applies the shared preview highlight class to a hand card linked from an effect prompt hover', () => {
+    const wrapper = mount(DuelHand, {
+      props: {
+        hand: [createPrivateCard('hand-a')],
+        linkedPreviewInstanceId: 'hand-a'
+      },
+      global: {
+        stubs: { UTooltip: tooltipStub, UChip: chipStub }
+      }
+    })
+
+    const handCard = wrapper.findAll('button')
+      .find(node => node.attributes('data-layout-id') === 'hand-a')
+
+    expect(handCard?.classes()).toContain('duel-highlight')
+    expect(handCard?.classes()).toContain('duel-highlight--preview')
+  })
+
   it('left-aligns the hand stack when requested by the board layout', () => {
     mount(DuelHand, {
       props: {

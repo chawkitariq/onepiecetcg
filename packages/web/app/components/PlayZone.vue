@@ -35,6 +35,8 @@ const props = defineProps<{
   selectableCharacterIds?: string[]
   invalidLeaderPulse?: boolean
   invalidCharacterIds?: string[]
+  linkedPreviewInstanceId?: string | null
+  linkedSelectedInstanceIds?: string[]
   selectedDonCardIds?: string[]
   draggedHandCardInstanceId?: string | null
   draggedDonCardInstanceId?: string | null
@@ -58,6 +60,8 @@ const {
   targetableLeader,
   selectableLeader,
   invalidLeaderPulse,
+  linkedPreviewInstanceId,
+  linkedSelectedInstanceIds,
   selectedDonCardIds,
   draggedHandCardInstanceId,
   draggedDonCardInstanceId,
@@ -343,6 +347,22 @@ function isCharacterInvalid(instanceId: string): boolean {
   return props.invalidCharacterIds?.includes(instanceId) ?? false
 }
 
+function isLinkedPreview(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return linkedPreviewInstanceId.value === instanceId
+}
+
+function isLinkedSelected(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return linkedSelectedInstanceIds.value?.includes(instanceId) ?? false
+}
+
 function isBoardCardDeferred(instanceId: string | null | undefined): boolean {
   if (!instanceId) {
     return false
@@ -372,7 +392,8 @@ function characterHighlightState(instanceId: string) {
     invalid: isCharacterInvalid(instanceId),
     'drop-target': isCharacterDonDropTargetActive(instanceId),
     targetable: isCharacterTargetable(instanceId),
-    selected: isCharacterSelectable(instanceId),
+    selected: isCharacterSelectable(instanceId) || isLinkedSelected(instanceId),
+    preview: isLinkedPreview(instanceId),
     source: attackerId.value === instanceId,
     interactive: isCharacterAttackable(instanceId)
   })
@@ -383,7 +404,8 @@ function leaderHighlightState() {
     invalid: props.invalidLeaderPulse,
     'drop-target': isLeaderDonDropTargetActive.value,
     targetable: props.targetableLeader,
-    selected: props.selectableLeader,
+    selected: props.selectableLeader || isLinkedSelected(props.player.leader?.instanceId),
+    preview: isLinkedPreview(props.player.leader?.instanceId),
     source: attackerId.value === props.player.leader?.instanceId,
     interactive: props.attackableLeader
   })
@@ -403,7 +425,23 @@ function stageZoneHighlightState() {
 
 function donCardHighlightState(instanceId: string) {
   return resolveDuelHighlightState({
-    selected: isDonCardSelected(instanceId)
+    selected: isDonCardSelected(instanceId) || isLinkedSelected(instanceId),
+    preview: isLinkedPreview(instanceId)
+  })
+}
+
+function stageHighlightState() {
+  return resolveDuelHighlightState({
+    'drop-target': isStageZoneDropTargetActive.value,
+    selected: isLinkedSelected(props.player.stage?.instanceId),
+    preview: isLinkedPreview(props.player.stage?.instanceId)
+  })
+}
+
+function trashHighlightState() {
+  return resolveDuelHighlightState({
+    selected: isLinkedSelected(visibleTrashCard.value?.instanceId),
+    preview: isLinkedPreview(visibleTrashCard.value?.instanceId)
   })
 }
 
@@ -893,7 +931,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           data-drop-zone="stage"
           class="duel-card-shell duel-layout-card relative z-20 h-full w-full rounded-lg transition-colors duration-150"
           :class="[
-            ...duelHighlightClasses(stageZoneHighlightState()),
+            ...duelHighlightClasses(stageHighlightState()),
             isBoardCardDeferred(player.stage.instanceId) ? 'pointer-events-none opacity-0' : ''
           ]"
           @click="emit('stageClick', side)"
@@ -1071,8 +1109,11 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             <div
               :data-layout-id="visibleLayoutId(visibleTrashCard.instanceId, isTrashCardDeferred(visibleTrashCard.instanceId))"
               :data-instance-id="visibleTrashCard.instanceId"
-              class="duel-layout-card h-full"
-              :class="isTrashCardDeferred(visibleTrashCard.instanceId) ? 'pointer-events-none opacity-0' : ''"
+              class="duel-layout-card h-full rounded-lg"
+              :class="[
+                ...duelHighlightClasses(trashHighlightState()),
+                isTrashCardDeferred(visibleTrashCard.instanceId) ? 'pointer-events-none opacity-0' : ''
+              ]"
             >
               <DuelCard :src="visibleTrashCard.imageUrl" />
             </div>

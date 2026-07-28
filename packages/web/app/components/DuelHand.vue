@@ -29,6 +29,8 @@ const props = defineProps<{
   revealedHandCardIds?: string[]
   deferredHandCardIds?: string[]
   selectedHandCardIds?: string[]
+  linkedPreviewInstanceId?: string | null
+  linkedSelectedInstanceIds?: string[]
   draggedHandCardCount?: number
   align?: 'start' | 'center'
 }>()
@@ -132,6 +134,14 @@ function isDeferredHandCard(instanceId: string): boolean {
   return props.deferredHandCardIds?.includes(instanceId) ?? false
 }
 
+function isLinkedPreview(instanceId: string): boolean {
+  return props.linkedPreviewInstanceId === instanceId
+}
+
+function isLinkedSelected(instanceId: string): boolean {
+  return props.linkedSelectedInstanceIds?.includes(instanceId) ?? false
+}
+
 const selectedHandCount = computed(() => props.selectedHandCardIds?.length ?? 0)
 
 function shouldShowSelectedHandCount(instanceId: string): boolean {
@@ -153,7 +163,8 @@ function duelHighlightClasses(state: DuelHighlightState) {
 function handCardHighlightState(instanceId: string) {
   return resolveDuelHighlightState({
     invalid: isHandCardInvalid(instanceId),
-    selected: isHandCardSelected(instanceId),
+    selected: isHandCardSelected(instanceId) || isLinkedSelected(instanceId),
+    preview: isLinkedPreview(instanceId),
     source: isHandCardDraggable(instanceId)
   })
 }

@@ -20,6 +20,8 @@
   --duel-highlight-border-width: 0.22rem;
   --duel-highlight-interactive-border: color-mix(in oklab, var(--ui-border) 92%, white 8%);
   --duel-highlight-interactive-bg: color-mix(in oklab, var(--ui-bg-elevated) 92%, white 8%);
+  --duel-highlight-preview-border: color-mix(in oklab, var(--ui-warning) 38%, white 62%);
+  --duel-highlight-preview-bg: color-mix(in oklab, var(--ui-warning) 10%, transparent);
   --duel-highlight-selected-border: color-mix(in oklab, var(--ui-info) 58%, white 42%);
   --duel-highlight-selected-bg: color-mix(in oklab, var(--ui-info) 16%, transparent);
   --duel-highlight-source-border: color-mix(in oklab, var(--ui-primary) 52%, white 48%);
@@ -53,6 +55,11 @@
 .duel-highlight--interactive {
   outline: var(--duel-highlight-border-width) solid var(--duel-highlight-interactive-border);
   background: var(--duel-highlight-interactive-bg);
+}
+
+.duel-highlight--preview {
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-preview-border);
+  background: var(--duel-highlight-preview-bg);
 }
 
 .duel-highlight--selected {
