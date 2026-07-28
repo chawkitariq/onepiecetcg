@@ -1,5 +1,4 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import type { CardEffectDefinition } from '@onepiecetcg/shared';
 import { buildEffectRegistry } from './effect-loader';
 import type {
   EffectSourceBundle,
@@ -12,39 +11,50 @@ describe('buildEffectRegistry', () => {
       generated: [
         {
           cardId: 'op01-001',
-          standard: [
+          standards: [
             {
-              id: 'generated-standard',
-              text: 'Generated',
-              trigger: { type: 'onPlay' },
-              actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              kind: 'standard',
+              effect: {
+                id: 'generated-standard',
+                text: 'Generated',
+                trigger: { type: 'onPlay' },
+                actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              },
             },
           ],
           continuous: [
             {
-              id: 'generated-continuous',
-              text: 'Generated continuous',
-              modifier: {
-                selector: { player: 'self', zones: ['characters'] },
-                power: 1000,
+              kind: 'continuous',
+              effect: {
+                id: 'generated-continuous',
+                text: 'Generated continuous',
+                modifier: {
+                  selector: { player: 'self', zones: ['characters'] },
+                  power: 1000,
+                },
               },
             },
           ],
         },
       ],
-      manual: [
+      overrides: [
         {
           cardId: 'OP01-001',
-          standard: [
+          standards: [
             {
-              id: 'manual-standard',
-              text: 'Manual',
-              trigger: { type: 'whenAttacking' },
-              actions: [{ type: 'draw', player: 'self', amount: 2 }],
+              kind: 'standard',
+              effect: {
+                id: 'manual-standard',
+                text: 'Manual',
+                trigger: { type: 'whenAttacking' },
+                actions: [{ type: 'draw', player: 'self', amount: 2 }],
+              },
             },
           ],
         },
       ],
+      replacementPrimitives: [],
+      continuousPrimitives: [],
       specialHandlers: [],
     };
 
@@ -54,9 +64,7 @@ describe('buildEffectRegistry', () => {
     expect(definition.standard?.map((effect) => effect.id)).toEqual([
       'manual-standard',
     ]);
-    expect(definition.continuous?.map((effect) => effect.id)).toEqual([
-      'generated-continuous',
-    ]);
+    expect(definition.continuous).toBeUndefined();
   });
 
   it('builds trigger and replacement indexes once at startup', () => {
@@ -64,32 +72,43 @@ describe('buildEffectRegistry', () => {
       generated: [
         {
           cardId: 'OP01-002',
-          standard: [
+          standards: [
             {
-              id: 'trigger-a',
-              text: 'A',
-              trigger: { type: 'onPlay' },
-              actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              kind: 'standard',
+              effect: {
+                id: 'trigger-a',
+                text: 'A',
+                trigger: { type: 'onPlay' },
+                actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              },
             },
             {
-              id: 'trigger-b',
-              text: 'B',
-              trigger: { type: 'trigger' },
-              actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              kind: 'standard',
+              effect: {
+                id: 'trigger-b',
+                text: 'B',
+                trigger: { type: 'trigger' },
+                actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              },
             },
           ],
           replacements: [
             {
-              id: 'replace-a',
-              text: 'Replace',
-              event: 'wouldKoCharacter',
-              replacement: [],
-              priority: 2,
+              kind: 'replacement',
+              effect: {
+                id: 'replace-a',
+                text: 'Replace',
+                event: 'wouldKoCharacter',
+                replacement: [],
+                priority: 2,
+              },
             },
           ],
         },
       ],
-      manual: [],
+      overrides: [],
+      replacementPrimitives: [],
+      continuousPrimitives: [],
       specialHandlers: [],
     };
 
@@ -109,8 +128,10 @@ describe('buildEffectRegistry', () => {
       resolve: jest.fn(),
     };
     const sources: EffectSourceBundle = {
-      generated: [{ cardId: 'OP99-001' } as CardEffectDefinition],
-      manual: [],
+      generated: [{ cardId: 'OP99-001' }],
+      overrides: [],
+      replacementPrimitives: [],
+      continuousPrimitives: [],
       specialHandlers: [handler],
     };
 
@@ -124,5 +145,64 @@ describe('buildEffectRegistry', () => {
       handler.resolve,
     );
     expect(registry.triggeredEffectsByTrigger.onPlay).toHaveLength(0);
+  });
+
+  it('resolves replacement and continuous primitive references during bootstrap', () => {
+    const sources: EffectSourceBundle = {
+      generated: [
+        {
+          cardId: 'OP01-003',
+          replacements: [
+            {
+              kind: 'replacement-ref',
+              primitiveId: 'replace-a',
+            },
+          ],
+          continuous: [
+            {
+              kind: 'continuous-ref',
+              primitiveId: 'continuous-a',
+            },
+          ],
+        },
+      ],
+      overrides: [],
+      replacementPrimitives: [
+        {
+          id: 'replace-a',
+          effect: {
+            id: 'replace-a',
+            text: 'Replace',
+            event: 'wouldKoCharacter',
+            replacement: [],
+          },
+        },
+      ],
+      continuousPrimitives: [
+        {
+          id: 'continuous-a',
+          effect: {
+            id: 'continuous-a',
+            text: 'Continuous',
+            modifier: {
+              selector: { player: 'self', zones: ['characters'] },
+              power: 1000,
+            },
+          },
+        },
+      ],
+      specialHandlers: [],
+    };
+
+    const registry = buildEffectRegistry(sources);
+
+    expect(registry.effectsByCardId['OP01-003']?.replacements?.[0]?.id).toBe(
+      'replace-a',
+    );
+    expect(registry.effectsByCardId['OP01-003']?.continuous?.[0]?.id).toBe(
+      'continuous-a',
+    );
+    expect(registry.replacementPrimitivesById['replace-a']).toBeDefined();
+    expect(registry.continuousPrimitivesById['continuous-a']).toBeDefined();
   });
 });
