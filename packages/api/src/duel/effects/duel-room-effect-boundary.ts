@@ -6,8 +6,8 @@ import type {
 import {
   EffectEngine,
   type EffectEventType,
-} from '../card-effect/effect-engine';
-import { effectRegistry } from '../card-effect/effect-registry';
+} from '../../card-effect/effect-engine';
+import { effectRegistry } from '../../card-effect/effect-registry';
 import {
   createDuelEffectEngineHost,
   type DuelEffectEngineHostDeps,

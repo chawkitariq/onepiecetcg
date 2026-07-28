@@ -16,16 +16,16 @@ import {
   type EffectDecisionResponse,
   type FirstOrSecondChoice,
 } from '@onepiecetcg/shared';
-import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
-import { DuelCombatEngine } from './duel-combat-engine';
-import { DuelCardQueryEngine } from './duel-card-query-engine';
-import { DuelMainPhaseEngine } from './duel-main-phase-engine';
-import { DuelRoomClientNotifier } from './duel-room-client-notifier';
-import { DuelRoomLifecycle } from './duel-room-lifecycle';
-import { DuelRoomRuntimeState } from './duel-room-runtime-state';
-import { DuelRoomSeatBootstrap } from './duel-room-seat-bootstrap';
-import { DuelTurnEngine } from './duel-turn-engine';
-import { DuelZoneEngine } from './duel-zone-engine';
+import { DuelRoomEffectBoundary } from './effects/duel-room-effect-boundary';
+import { DuelCombatEngine } from './game-engine/duel-combat-engine';
+import { DuelCardQueryEngine } from './game-engine/duel-card-query-engine';
+import { DuelMainPhaseEngine } from './game-engine/duel-main-phase-engine';
+import { DuelTurnEngine } from './game-engine/duel-turn-engine';
+import { DuelZoneEngine } from './game-engine/duel-zone-engine';
+import { DuelRoomClientNotifier } from './room/duel-room-client-notifier';
+import { DuelRoomLifecycle } from './room/duel-room-lifecycle';
+import { DuelRoomRuntimeState } from './room/duel-room-runtime-state';
+import { DuelRoomSeatBootstrap } from './room/duel-room-seat-bootstrap';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;

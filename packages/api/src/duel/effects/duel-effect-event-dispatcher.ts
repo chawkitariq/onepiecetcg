@@ -1,6 +1,6 @@
 import type { DuelCard, DuelState } from '@onepiecetcg/shared';
-import type { EffectEventType } from '../card-effect/effect-engine';
-import { effectRegistry } from '../card-effect/effect-registry';
+import type { EffectEventType } from '../../card-effect/effect-engine';
+import { effectRegistry } from '../../card-effect/effect-registry';
 
 /**
  * Dependencies required to translate duel gameplay windows into effect-engine

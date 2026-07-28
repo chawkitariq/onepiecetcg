@@ -1,7 +1,7 @@
 import { StateView } from '@colyseus/schema';
 import { DuelCard, DuelPlayer, createDuelCard } from '@onepiecetcg/shared';
 import type { Client } from 'colyseus';
-import type { ValidatedGameDeck } from '../deck/deck.service';
+import type { ValidatedGameDeck } from '../../deck/deck.service';
 
 type DuelJoinOptions = {
   displayName?: string;

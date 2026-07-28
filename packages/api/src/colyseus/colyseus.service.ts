@@ -10,7 +10,7 @@ import {
   DuelRoom,
   configureDuelRoomAuth,
   configureDuelRoomServices,
-} from './duel.room';
+} from '../duel/duel.room';
 
 @Injectable()
 export class ColyseusService implements OnModuleDestroy {

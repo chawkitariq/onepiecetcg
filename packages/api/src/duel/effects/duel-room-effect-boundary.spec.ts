@@ -3,8 +3,8 @@ import { DuelPlayer, DuelState, createDuelCard } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
 
 jest.mock('@onepiecetcg/shared', () => {
-  const sharedMock: typeof import('../deck/shared-test.mock') =
-    jest.requireActual('../deck/shared-test.mock');
+  const sharedMock: typeof import('../../deck/shared-test.mock') =
+    jest.requireActual('../../deck/shared-test.mock');
 
   return sharedMock;
 });
@@ -60,7 +60,11 @@ function createPlayer(sessionId: string, displayName: string): DuelPlayer {
   const player = new DuelPlayer();
   player.sessionId = sessionId;
   player.displayName = displayName;
-  player.zones.leader = createDuelCard(leader, `${sessionId}:leader`, sessionId);
+  player.zones.leader = createDuelCard(
+    leader,
+    `${sessionId}:leader`,
+    sessionId,
+  );
   return player;
 }
 
@@ -142,7 +146,10 @@ describe('DuelRoomEffectBoundary', () => {
       error: "Seul le defenseur peut decider d'activer ce Declenchement.",
     });
 
-    const resolved = boundary.resolveManualTriggerDecision(alice.sessionId, true);
+    const resolved = boundary.resolveManualTriggerDecision(
+      alice.sessionId,
+      true,
+    );
     expect(resolved).toEqual({ ok: true });
     expect(alice.zones.trash).toContain(revealedCard);
     expect(broadcasted).toEqual([revealedCard.instanceId]);

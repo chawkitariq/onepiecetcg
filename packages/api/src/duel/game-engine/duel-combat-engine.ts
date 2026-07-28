@@ -4,7 +4,7 @@ import type {
   DuelPlayer,
   DuelState,
 } from '@onepiecetcg/shared';
-import type { EffectEventType } from '../card-effect/runtime/effect-engine-types';
+import type { EffectEventType } from '../../card-effect/runtime/effect-engine-types';
 
 type CombatEffectBoundary = {
   emitCardEvent(

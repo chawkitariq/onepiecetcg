@@ -5,7 +5,7 @@ import type {
   PendingEffectDecision,
   EffectTargetSelector,
 } from '@onepiecetcg/shared';
-import type { EffectEngineHost } from '../card-effect/effect-engine';
+import type { EffectEngineHost } from '../../card-effect/effect-engine';
 
 /**
  * Runtime dependencies needed to build the authoritative effect-engine host

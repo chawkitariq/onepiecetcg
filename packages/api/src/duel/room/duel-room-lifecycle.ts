@@ -1,5 +1,5 @@
 import type { DuelEndReason, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import type { StatsService } from '../stats/stats.service';
+import type { StatsService } from '../../stats/stats.service';
 
 /**
  * Dependencies required to manage non-gameplay room lifecycle concerns such as

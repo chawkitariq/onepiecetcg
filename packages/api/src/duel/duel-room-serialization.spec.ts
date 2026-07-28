@@ -9,7 +9,7 @@ import {
   configureDuelRoomAuth,
   configureDuelRoomServices,
 } from './duel.room';
-import { listDescribedDuelRooms } from './lobby';
+import { listDescribedDuelRooms } from '../lobby/lobby';
 
 jest.mock('@onepiecetcg/shared', () => {
   const sharedMock: typeof import('../deck/shared-test.mock') =
