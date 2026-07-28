@@ -10,7 +10,6 @@ import type { DeckService, ValidatedGameDeck } from '../deck/deck.service';
 import type { StatsService } from '../stats/stats.service';
 import {
   DuelCard,
-  type DuelEndReason,
   DuelLog,
   DuelPlayer,
   DuelState,
@@ -23,6 +22,7 @@ import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
 import { DuelCombatEngine } from './duel-combat-engine';
 import { DuelCardQueryEngine } from './duel-card-query-engine';
 import { DuelMainPhaseEngine } from './duel-main-phase-engine';
+import { DuelRoomLifecycle } from './duel-room-lifecycle';
 import { DuelTurnEngine } from './duel-turn-engine';
 import { DuelZoneEngine } from './duel-zone-engine';
 
@@ -114,12 +114,6 @@ export function configureDuelRoomAuth(nextResolver: DuelSessionResolver) {
 export class DuelRoom extends Room<DuelState> {
   private readonly logger = new Logger(DuelRoom.name);
 
-  private readonly authUserIdBySession = new Map<string, string>();
-
-  private matchStartedAt: Date | null = null;
-
-  private matchResultRecorded = false;
-
   private effectBoundary!: DuelRoomEffectBoundary;
 
   private turnEngine!: DuelTurnEngine;
@@ -131,6 +125,8 @@ export class DuelRoom extends Room<DuelState> {
   private zoneEngine!: DuelZoneEngine;
 
   private cardQueryEngine!: DuelCardQueryEngine;
+
+  private lifecycle!: DuelRoomLifecycle;
 
   private currentMainPhaseClient: Pick<Client, 'send'> | null = null;
 
@@ -158,6 +154,16 @@ export class DuelRoom extends Room<DuelState> {
 
   async onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
+    this.lifecycle = new DuelRoomLifecycle({
+      state: this.state,
+      statsService: services?.statsService,
+      addLog: (message) => this.addLog(message),
+      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      disconnectRoom: () => this.disconnect(),
+      reportStatsError: (error) => {
+        this.logger.error('Failed to record match result', error);
+      },
+    });
     this.effectBoundary = new DuelRoomEffectBoundary({
       state: this.state,
       addLog: (message) => this.addLog(message),
@@ -221,11 +227,9 @@ export class DuelRoom extends Room<DuelState> {
       getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
       isCombatInProgress: () => this.isCombatInProgress(),
       finalizeMatch: (endReason, winnerSessionId) =>
-        this.finalizeMatch(endReason, winnerSessionId),
-      recordMatchResult: () => this.recordMatchResult(),
-      onMatchStarted: (startedAt) => {
-        this.matchStartedAt = startedAt;
-      },
+        this.lifecycle.finalizeMatch(endReason, winnerSessionId),
+      recordMatchResult: () => this.lifecycle.recordMatchResult(),
+      onMatchStarted: (startedAt) => this.lifecycle.markMatchStarted(startedAt),
     });
     this.cardQueryEngine = new DuelCardQueryEngine({
       state: this.state,
@@ -284,8 +288,8 @@ export class DuelRoom extends Room<DuelState> {
       isProtectedFromBattleKo: (defendingCard, attackerCard) =>
         this.isProtectedFromBattleKo(defendingCard, attackerCard),
       finalizeMatch: (endReason, winnerSessionId) =>
-        this.finalizeMatch(endReason, winnerSessionId),
-      recordMatchResult: () => this.recordMatchResult(),
+        this.lifecycle.finalizeMatch(endReason, winnerSessionId),
+      recordMatchResult: () => this.lifecycle.recordMatchResult(),
     });
 
     const description = options.description
@@ -377,7 +381,7 @@ export class DuelRoom extends Room<DuelState> {
       throw new BadRequestException('Utilisateur et deck requis');
     }
 
-    if (this.hasJoined(authUserId)) {
+    if (this.lifecycle.hasJoined(authUserId)) {
       throw new BadRequestException('Ce joueur est deja dans la room');
     }
 
@@ -387,7 +391,7 @@ export class DuelRoom extends Room<DuelState> {
     );
     client.view = new StateView();
     const player = this.createPlayer(client, options, gameDeck);
-    this.authUserIdBySession.set(client.sessionId, gameDeck.ownerAuthUserId);
+    this.lifecycle.registerPlayer(client.sessionId, gameDeck.ownerAuthUserId);
     this.state.players.set(client.sessionId, player);
 
     for (const card of player.zones.deck) {
@@ -436,8 +440,8 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(`${player.displayName} est deconnecte.`);
 
     if (consented) {
-      this.declareForfeitIfMatchInProgress(player);
-      this.removePlayer(client.sessionId);
+      this.lifecycle.declareForfeitIfMatchInProgress(player);
+      this.lifecycle.removePlayer(client.sessionId);
       return;
     }
 
@@ -448,7 +452,7 @@ export class DuelRoom extends Room<DuelState> {
       this.sendPendingEffectDecisionToClient(client);
     } catch {
       this.addLog(`${player.displayName} a perdu par forfait.`);
-      this.removePlayer(client.sessionId);
+      this.lifecycle.removePlayer(client.sessionId);
     }
   }
 
@@ -862,105 +866,6 @@ export class DuelRoom extends Room<DuelState> {
     }
   }
 
-  /**
-   * A player who consents to leave mid-match (the "Retourner au lobby"
-   * button, or any other clean `room.leave()`) forfeits: the opponent is
-   * declared the winner exactly as for a life-to-zero/deck-out ending. This
-   * only fires once the match has actually started (`matchStartedAt` set)
-   * and while an opponent is still present -- leaving during setup/mulligan,
-   * or when already alone in the room, ends the room without a recorded
-   * result. A disconnection-timeout forfeit (`onLeave`'s `consented: false`
-   * branch) is handled separately and is NOT covered by this method --
-   * see docs/spec.md §8, which explicitly excludes that case from stats.
-   */
-  private declareForfeitIfMatchInProgress(quittingPlayer: DuelPlayer) {
-    if (
-      this.state.phase === 'finished' ||
-      this.state.phase === 'setup' ||
-      this.state.phase === 'mulligan' ||
-      !this.matchStartedAt
-    ) {
-      return;
-    }
-
-    const winnerSessionId = this.getOpponentSessionId(quittingPlayer.sessionId);
-
-    if (!winnerSessionId) {
-      return;
-    }
-
-    this.finalizeMatch('forfeit', winnerSessionId);
-    this.addLog(`${quittingPlayer.displayName} abandonne la partie.`);
-    this.recordMatchResult();
-  }
-
-  /** Marks the duel finished and stamps the replicated end metadata exactly once. */
-  private finalizeMatch(endReason: DuelEndReason, winnerSessionId: string) {
-    this.state.phase = 'finished';
-    this.state.endReason = endReason;
-    this.state.winnerSessionId = winnerSessionId;
-    this.state.finishedAt = new Date().toISOString();
-  }
-
-  /**
-   * Persists a `MatchResult` for a clean structural game-end (life-to-zero,
-   * deck-out, or forfeit, docs/spec.md §8) -- never called from `onLeave`'s
-   * disconnection-timeout forfeit path, so that path leaves no stats trace.
-   */
-  private recordMatchResult() {
-    if (this.matchResultRecorded || !this.matchStartedAt) {
-      return;
-    }
-
-    const winnerSessionId = this.state.winnerSessionId;
-    const endReason = this.state.endReason;
-    const winner = this.state.players.get(winnerSessionId);
-    const loserSessionId = this.getOpponentSessionId(winnerSessionId);
-    const loser = loserSessionId
-      ? this.state.players.get(loserSessionId)
-      : undefined;
-    const winnerAuthUserId = this.authUserIdBySession.get(winnerSessionId);
-    const loserAuthUserId = loserSessionId
-      ? this.authUserIdBySession.get(loserSessionId)
-      : undefined;
-
-    if (
-      !services?.statsService ||
-      !winner ||
-      !loser ||
-      !winnerAuthUserId ||
-      !loserAuthUserId ||
-      (endReason !== 'life' &&
-        endReason !== 'deckOut' &&
-        endReason !== 'forfeit')
-    ) {
-      return;
-    }
-
-    this.matchResultRecorded = true;
-
-    void services.statsService
-      .recordMatchResult({
-        winnerAuthUserId,
-        loserAuthUserId,
-        winnerDeckId: winner.deckId || null,
-        loserDeckId: loser.deckId || null,
-        winnerLeaderCardId: winner.zones.leader.cardId,
-        loserLeaderCardId: loser.zones.leader.cardId,
-        winnerWentFirst: this.state.firstPlayerSessionId === winnerSessionId,
-        endReason,
-        startedAt: this.matchStartedAt ?? new Date(),
-        endedAt: new Date(),
-      })
-      .catch((error: unknown) => {
-        this.logger.error('Failed to record match result', error);
-      });
-  }
-
-  private hasJoined(authUserId: string): boolean {
-    return Array.from(this.authUserIdBySession.values()).includes(authUserId);
-  }
-
   private addLog(message: string) {
     const log = new DuelLog();
     log.id = `${Date.now()}:${this.state.logs.length}`;
@@ -968,15 +873,6 @@ export class DuelRoom extends Room<DuelState> {
     log.createdAt = new Date().toISOString();
     this.state.logs.push(log);
     this.logger.log(message);
-  }
-
-  private removePlayer(sessionId: string) {
-    this.state.players.delete(sessionId);
-    this.authUserIdBySession.delete(sessionId);
-
-    if (this.state.players.size === 0) {
-      void this.disconnect();
-    }
   }
 
   private shuffle(cards: {
