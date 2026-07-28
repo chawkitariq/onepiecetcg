@@ -12,11 +12,7 @@ import {
   type EffectEventType,
 } from '../card-effect/effect-engine';
 import { effectRegistry } from '../card-effect/effect-registry';
-
-type ManualTriggerFallbackState = {
-  card: DuelCard;
-  ownerSessionId: string;
-};
+import { DuelManualTriggerManager } from './duel-manual-trigger-manager';
 
 export type DuelRoomEffectBoundaryDeps = {
   state: DuelState;
@@ -56,7 +52,7 @@ export type DuelRoomEffectBoundaryDeps = {
 export class DuelRoomEffectBoundary {
   private readonly engine: EffectEngine;
 
-  private pendingManualTrigger: ManualTriggerFallbackState | null = null;
+  private readonly manualTriggers: DuelManualTriggerManager;
 
   public constructor(private readonly deps: DuelRoomEffectBoundaryDeps) {
     this.engine = new EffectEngine(effectRegistry, {
@@ -78,12 +74,19 @@ export class DuelRoomEffectBoundary {
       koCharacter: deps.koCharacter,
       syncPlayer: deps.syncPlayer,
     });
+    this.manualTriggers = new DuelManualTriggerManager({
+      state: deps.state,
+      addLog: deps.addLog,
+      getPlayer: deps.getPlayer,
+      syncPlayer: deps.syncPlayer,
+      broadcastCardView: deps.broadcastCardView,
+    });
   }
 
   public hasPendingPlayerInteraction(): boolean {
     return (
       this.getPendingEffectDecision() !== null ||
-      this.pendingManualTrigger !== null
+      this.manualTriggers.hasPendingInteraction()
     );
   }
 
@@ -105,7 +108,7 @@ export class DuelRoomEffectBoundary {
 
   public clearCombatModifiers(): void {
     this.engine.clearCombatModifiers();
-    this.clearManualTriggerFallback();
+    this.manualTriggers.clear();
   }
 
   public applyKoReplacement(
@@ -189,14 +192,14 @@ export class DuelRoomEffectBoundary {
     revealedCard: DuelCard,
   ): 'addedToHand' | 'engineTrigger' | 'manualFallback' {
     if (this.hasLocalTriggerDefinition(revealedCard.cardId)) {
-      this.unshiftIntoTrash(defender, revealedCard);
+      defender.zones.trash.unshift(revealedCard);
       this.deps.broadcastCardView(revealedCard);
       this.emitCardEvent('trigger', defender.sessionId, revealedCard);
       return 'engineTrigger';
     }
 
     if (revealedCard.trigger) {
-      this.queueManualTriggerFallback(
+      this.manualTriggers.queueFallback(
         defender.sessionId,
         revealedCard,
         defender.displayName,
@@ -216,64 +219,6 @@ export class DuelRoomEffectBoundary {
     playerSessionId: string,
     activate: boolean,
   ): { ok: true } | { ok: false; error: string } {
-    if (!this.pendingManualTrigger) {
-      return {
-        ok: false,
-        error: 'Aucune decision de Declenchement en attente.',
-      };
-    }
-
-    if (this.pendingManualTrigger.ownerSessionId !== playerSessionId) {
-      return {
-        ok: false,
-        error: "Seul le defenseur peut decider d'activer ce Declenchement.",
-      };
-    }
-
-    const defender = this.deps.getPlayer(playerSessionId);
-    const { card } = this.pendingManualTrigger;
-
-    if (!defender) {
-      this.clearManualTriggerFallback();
-      return { ok: true };
-    }
-
-    if (activate) {
-      this.unshiftIntoTrash(defender, card);
-      this.deps.broadcastCardView(card);
-      this.deps.addLog(
-        `${defender.displayName} active le Declenchement de ${card.name} et l'ecarte (effet a appliquer manuellement).`,
-      );
-    } else {
-      defender.zones.hand.push(card);
-      this.deps.addLog(
-        `${defender.displayName} ajoute ${card.name} a sa main sans activer le Declenchement.`,
-      );
-    }
-
-    this.deps.syncPlayer(defender.sessionId);
-    this.clearManualTriggerFallback();
-    return { ok: true };
-  }
-
-  private queueManualTriggerFallback(
-    ownerSessionId: string,
-    card: DuelCard,
-    defenderDisplayName: string,
-  ): void {
-    this.deps.state.combat.awaitingTriggerDecision = true;
-    this.pendingManualTrigger = { card, ownerSessionId };
-    this.deps.addLog(
-      `${defenderDisplayName} subit 1 degat et revele une carte avec [Declenchement] : decision en attente.`,
-    );
-  }
-
-  private clearManualTriggerFallback(): void {
-    this.deps.state.combat.awaitingTriggerDecision = false;
-    this.pendingManualTrigger = null;
-  }
-
-  private unshiftIntoTrash(player: DuelPlayer, card: DuelCard): void {
-    player.zones.trash.unshift(card);
+    return this.manualTriggers.resolveDecision(playerSessionId, activate);
   }
 }
