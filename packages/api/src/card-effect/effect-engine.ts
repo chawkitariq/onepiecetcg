@@ -295,7 +295,9 @@ export class EffectEngine {
       }
 
       this.host.addLog(`${source.name} applique un effet de remplacement.`);
-      this.resolveActions(effect.replacement, query.playerSessionId, source);
+      this.resolveActions(effect.replacement, query.playerSessionId, source, {
+        storedSelections: {},
+      });
       return true;
     }
 
