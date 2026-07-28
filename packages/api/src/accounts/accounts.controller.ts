@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { Request } from 'express';
 import { AccountsService, type AuthenticatedUser } from './accounts.service';
@@ -41,5 +41,12 @@ export class AccountsController {
   @Get('private/auth-check')
   getPrivateAuthCheck() {
     return { ok: true };
+  }
+
+  /** Permanently deletes the authenticated account and its owned data. */
+  @UseGuards(AuthGuard)
+  @Delete('me')
+  deleteCurrentAccount(@Req() request: AuthenticatedRequest) {
+    return this.accountsService.deleteAccountForAuthUser(request.user);
   }
 }

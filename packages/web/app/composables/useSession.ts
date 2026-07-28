@@ -27,6 +27,10 @@ export type DevFixtureAccount = {
   password: string
 }
 
+type DeleteAccountResponse = {
+  deleted: true
+}
+
 type AuthConfigResponse = {
   emailPasswordEnabled: boolean
   devFixtureAccounts: DevFixtureAccount[]
@@ -115,7 +119,24 @@ export function useSession() {
     }
   }
 
+  async function deleteAccount() {
+    loading.value = true
+    errorMessage.value = null
+
+    try {
+      await api<DeleteAccountResponse>('/me', { method: 'DELETE' })
+      profile.value = null
+      await navigateTo('/')
+    } catch (error) {
+      errorMessage.value = 'La suppression du compte a echoue.'
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
+    deleteAccount,
     errorMessage,
     loading,
     profile,

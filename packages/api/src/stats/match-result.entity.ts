@@ -27,19 +27,19 @@ export class MatchResult {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
-  winnerAccountId!: string;
+  @Column({ type: 'uuid', nullable: true })
+  winnerAccountId!: string | null;
 
-  @ManyToOne(() => PlayerAccount, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PlayerAccount, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'winnerAccountId' })
-  winnerAccount!: PlayerAccount;
+  winnerAccount!: PlayerAccount | null;
 
-  @Column({ type: 'uuid' })
-  loserAccountId!: string;
+  @Column({ type: 'uuid', nullable: true })
+  loserAccountId!: string | null;
 
-  @ManyToOne(() => PlayerAccount, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PlayerAccount, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'loserAccountId' })
-  loserAccount!: PlayerAccount;
+  loserAccount!: PlayerAccount | null;
 
   @Column({ type: 'uuid', nullable: true })
   winnerDeckId!: string | null;

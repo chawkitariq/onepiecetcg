@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, type EntityManager, Repository } from 'typeorm';
+import { BetterAuthAccount } from '../auth/better-auth-account.entity';
+import { BetterAuthSession } from '../auth/better-auth-session.entity';
+import { BetterAuthUser } from '../auth/better-auth-user.entity';
+import { BetterAuthVerification } from '../auth/better-auth-verification.entity';
 import { PlayerAccount } from './player-account.entity';
 
 export type AuthenticatedUser = {
@@ -15,6 +19,7 @@ export class AccountsService {
   constructor(
     @InjectRepository(PlayerAccount)
     private readonly accounts: Repository<PlayerAccount>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findOrCreateForAuthUser(
@@ -41,6 +46,47 @@ export class AccountsService {
     existing.image = user.image ?? null;
 
     return this.accounts.save(existing);
+  }
+
+  /**
+   * Deletes the authenticated account and all owned data in one transaction.
+   *
+   * Shared match-result rows are preserved for the surviving opponent by
+   * nulling the deleted side's foreign keys instead of cascading the entire
+   * record away.
+   */
+  async deleteAccountForAuthUser(
+    user: AuthenticatedUser,
+  ): Promise<{ deleted: true }> {
+    await this.dataSource.transaction(async (manager) => {
+      await this.deleteBetterAuthVerifications(manager, user);
+      await manager.delete(PlayerAccount, { authUserId: user.id });
+      await manager.delete(BetterAuthSession, { userId: user.id });
+      await manager.delete(BetterAuthAccount, { userId: user.id });
+      await manager.delete(BetterAuthUser, { id: user.id });
+    });
+
+    return { deleted: true };
+  }
+
+  private async deleteBetterAuthVerifications(
+    manager: EntityManager,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    const identifiers = [user.id, user.email?.trim()].filter(
+      (identifier): identifier is string => Boolean(identifier),
+    );
+
+    if (identifiers.length === 0) {
+      return;
+    }
+
+    await manager
+      .createQueryBuilder()
+      .delete()
+      .from(BetterAuthVerification)
+      .where('identifier IN (:...identifiers)', { identifiers })
+      .execute();
   }
 
   private toDisplayName(user: AuthenticatedUser): string {

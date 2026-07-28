@@ -1,6 +1,10 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import type { Repository } from 'typeorm';
+import { DataSource, type EntityManager, type Repository } from 'typeorm';
+import { BetterAuthAccount } from '../auth/better-auth-account.entity';
+import { BetterAuthSession } from '../auth/better-auth-session.entity';
+import { BetterAuthUser } from '../auth/better-auth-user.entity';
+import { BetterAuthVerification } from '../auth/better-auth-verification.entity';
 import { AccountsService } from './accounts.service';
 import { PlayerAccount } from './player-account.entity';
 
@@ -9,6 +13,16 @@ describe('AccountsService', () => {
   let repository: jest.Mocked<
     Pick<Repository<PlayerAccount>, 'create' | 'findOne' | 'save'>
   >;
+  let dataSource: jest.Mocked<Pick<DataSource, 'transaction'>>;
+  let manager: jest.Mocked<
+    Pick<EntityManager, 'delete' | 'createQueryBuilder'>
+  >;
+  let verificationDeleteBuilder: {
+    delete: jest.Mock;
+    from: jest.Mock;
+    where: jest.Mock;
+    execute: jest.Mock;
+  };
 
   beforeEach(async () => {
     repository = {
@@ -18,6 +32,22 @@ describe('AccountsService', () => {
       findOne: jest.fn(),
       save: jest.fn((account: PlayerAccount) => Promise.resolve(account)),
     };
+    verificationDeleteBuilder = {
+      delete: jest.fn().mockReturnThis(),
+      from: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue(undefined),
+    };
+    manager = {
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
+      createQueryBuilder: jest.fn(() => verificationDeleteBuilder),
+    };
+    dataSource = {
+      transaction: jest.fn(
+        async (callback: (entityManager: EntityManager) => Promise<unknown>) =>
+          await callback(manager as unknown as EntityManager),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -25,6 +55,10 @@ describe('AccountsService', () => {
         {
           provide: getRepositoryToken(PlayerAccount),
           useValue: repository,
+        },
+        {
+          provide: DataSource,
+          useValue: dataSource,
         },
       ],
     }).compile();
@@ -72,5 +106,36 @@ describe('AccountsService', () => {
     expect(repository.save).toHaveBeenCalledWith(existing);
     expect(account.displayName).toBe('Roronoa Zoro');
     expect(account.email).toBe('zoro@example.test');
+  });
+
+  it('deletes auth rows and the persistent account in one transaction', async () => {
+    await expect(
+      service.deleteAccountForAuthUser({
+        id: 'auth-user-1',
+        email: 'nami@example.test',
+      }),
+    ).resolves.toEqual({ deleted: true });
+
+    expect(dataSource.transaction).toHaveBeenCalledTimes(1);
+    expect(verificationDeleteBuilder.delete).toHaveBeenCalledTimes(1);
+    expect(verificationDeleteBuilder.from).toHaveBeenCalledWith(
+      BetterAuthVerification,
+    );
+    expect(verificationDeleteBuilder.where).toHaveBeenCalledWith(
+      'identifier IN (:...identifiers)',
+      { identifiers: ['auth-user-1', 'nami@example.test'] },
+    );
+    expect(manager.delete).toHaveBeenNthCalledWith(1, PlayerAccount, {
+      authUserId: 'auth-user-1',
+    });
+    expect(manager.delete).toHaveBeenNthCalledWith(2, BetterAuthSession, {
+      userId: 'auth-user-1',
+    });
+    expect(manager.delete).toHaveBeenNthCalledWith(3, BetterAuthAccount, {
+      userId: 'auth-user-1',
+    });
+    expect(manager.delete).toHaveBeenNthCalledWith(4, BetterAuthUser, {
+      id: 'auth-user-1',
+    });
   });
 });
