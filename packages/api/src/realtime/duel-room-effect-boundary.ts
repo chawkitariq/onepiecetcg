@@ -35,7 +35,11 @@ export type DuelRoomEffectBoundaryDeps = {
   shuffleDeck: (playerSessionId: string) => void;
   drawCard: (playerSessionId: string) => DuelCard | null;
   trashTopDeckCards: (playerSessionId: string, amount: number) => DuelCard[];
-  addDonToCost: (playerSessionId: string, amount: number, rested: boolean) => number;
+  addDonToCost: (
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ) => number;
   attachDon: EffectEngineHost['attachDon'];
   returnDonToDonDeck: (playerSessionId: string, amount: number) => number;
   koCharacter: EffectEngineHost['koCharacter'];
@@ -77,7 +81,10 @@ export class DuelRoomEffectBoundary {
   }
 
   public hasPendingPlayerInteraction(): boolean {
-    return this.getPendingEffectDecision() !== null || this.pendingManualTrigger !== null;
+    return (
+      this.getPendingEffectDecision() !== null ||
+      this.pendingManualTrigger !== null
+    );
   }
 
   public getPendingEffectDecision() {
@@ -189,7 +196,11 @@ export class DuelRoomEffectBoundary {
     }
 
     if (revealedCard.trigger) {
-      this.queueManualTriggerFallback(defender.sessionId, revealedCard, defender.displayName);
+      this.queueManualTriggerFallback(
+        defender.sessionId,
+        revealedCard,
+        defender.displayName,
+      );
       return 'manualFallback';
     }
 

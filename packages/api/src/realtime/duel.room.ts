@@ -15,13 +15,13 @@ import {
   DuelPlayer,
   DuelState,
   type EffectDecisionResponse,
-  type EffectTargetSelector,
   type PendingEffectDecision,
   createDuelCard,
   type FirstOrSecondChoice,
 } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
 import { DuelCombatEngine } from './duel-combat-engine';
+import { DuelCardQueryEngine } from './duel-card-query-engine';
 import { DuelMainPhaseEngine } from './duel-main-phase-engine';
 import { DuelTurnEngine } from './duel-turn-engine';
 import { DuelZoneEngine } from './duel-zone-engine';
@@ -130,6 +130,8 @@ export class DuelRoom extends Room<DuelState> {
 
   private zoneEngine!: DuelZoneEngine;
 
+  private cardQueryEngine!: DuelCardQueryEngine;
+
   private currentMainPhaseClient: Pick<Client, 'send'> | null = null;
 
   private currentCombatClient: Pick<Client, 'send'> | null = null;
@@ -163,9 +165,10 @@ export class DuelRoom extends Room<DuelState> {
         this.syncPendingEffectDecision(decision),
       getPlayer: (sessionId) => this.state.players.get(sessionId),
       getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
-      getCard: (instanceId) => this.getCardByInstanceId(instanceId),
+      getCard: (instanceId) =>
+        this.cardQueryEngine.getCardByInstanceId(instanceId),
       getCards: (selector, controllerSessionId) =>
-        this.getCardsForSelector(selector, controllerSessionId),
+        this.cardQueryEngine.getCardsForSelector(selector, controllerSessionId),
       moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
         this.zoneEngine.moveCardToZone(
           card,
@@ -223,6 +226,11 @@ export class DuelRoom extends Room<DuelState> {
       onMatchStarted: (startedAt) => {
         this.matchStartedAt = startedAt;
       },
+    });
+    this.cardQueryEngine = new DuelCardQueryEngine({
+      state: this.state,
+      getOpponentSessionId: (sessionId) => this.getOpponentSessionId(sessionId),
+      cardPower: (card) => this.cardPower(card),
     });
     this.zoneEngine = new DuelZoneEngine({
       state: this.state,
@@ -985,165 +993,6 @@ export class DuelRoom extends Room<DuelState> {
         cards[otherIndex] = current;
       }
     }
-  }
-
-  private getCardByInstanceId(instanceId: string): DuelCard | null {
-    for (const player of this.state.players.values()) {
-      if (player.zones.leader.instanceId === instanceId) {
-        return player.zones.leader;
-      }
-
-      if (player.zones.stage.instanceId === instanceId) {
-        return player.zones.stage;
-      }
-
-      for (const zone of [
-        'deck',
-        'donDeck',
-        'hand',
-        'life',
-        'characters',
-        'cost',
-        'trash',
-      ] as const) {
-        const found = player.zones[zone].find(
-          (card) => card.instanceId === instanceId,
-        );
-
-        if (found) {
-          return found;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private getCardsForSelector(
-    selector: EffectTargetSelector,
-    controllerSessionId: string,
-  ): DuelCard[] {
-    const sessionIds =
-      selector.player === 'self'
-        ? [controllerSessionId]
-        : selector.player === 'opponent'
-          ? [this.getOpponentSessionId(controllerSessionId)].filter(Boolean)
-          : Array.from(this.state.players.keys());
-
-    const matches: DuelCard[] = [];
-
-    for (const sessionId of sessionIds) {
-      const player = sessionId ? this.state.players.get(sessionId) : undefined;
-
-      if (!player) {
-        continue;
-      }
-
-      for (const zone of selector.zones) {
-        const cards =
-          zone === 'leader'
-            ? [player.zones.leader]
-            : zone === 'stage'
-              ? player.zones.stage.instanceId
-                ? [player.zones.stage]
-                : []
-              : Array.from(player.zones[zone] ?? []);
-
-        for (const card of cards) {
-          if (
-            this.cardMatchesSelectorFilter(
-              card,
-              selector.filter,
-              controllerSessionId,
-            )
-          ) {
-            matches.push(card);
-          }
-        }
-      }
-    }
-
-    return matches;
-  }
-
-  private cardMatchesSelectorFilter(
-    card: DuelCard,
-    filter: EffectTargetSelector['filter'],
-    controllerSessionId: string,
-  ) {
-    if (!filter) {
-      return true;
-    }
-
-    if (filter.cardCategory && !filter.cardCategory.includes(card.type)) {
-      return false;
-    }
-
-    if (typeof filter.costMax === 'number' && card.cost > filter.costMax) {
-      return false;
-    }
-
-    if (typeof filter.costMin === 'number' && card.cost < filter.costMin) {
-      return false;
-    }
-
-    if (
-      typeof filter.powerMax === 'number' &&
-      this.cardPower(card) > filter.powerMax
-    ) {
-      return false;
-    }
-
-    if (
-      typeof filter.powerMin === 'number' &&
-      this.cardPower(card) < filter.powerMin
-    ) {
-      return false;
-    }
-
-    if (
-      filter.color &&
-      !filter.color.some((color: string) =>
-        card.colors.includes(color as never),
-      )
-    ) {
-      return false;
-    }
-
-    if (
-      filter.trait &&
-      !filter.trait.some((trait: string) => card.families.includes(trait))
-    ) {
-      return false;
-    }
-
-    if (filter.name && !filter.name.includes(card.name)) {
-      return false;
-    }
-
-    if (filter.excludeName && filter.excludeName.includes(card.name)) {
-      return false;
-    }
-
-    if (typeof filter.rested === 'boolean' && card.rested !== filter.rested) {
-      return false;
-    }
-
-    if (
-      filter.owner === 'self' &&
-      card.ownerSessionId !== controllerSessionId
-    ) {
-      return false;
-    }
-
-    if (
-      filter.owner === 'opponent' &&
-      card.ownerSessionId === controllerSessionId
-    ) {
-      return false;
-    }
-
-    return true;
   }
 
   private knockOutCharacterById(
