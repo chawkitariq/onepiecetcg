@@ -5,6 +5,8 @@ import { op03EffectDefinitions } from './op03.effects';
 import { op04EffectDefinitions } from './op04.effects';
 import { op05EffectDefinitions } from './op05.effects';
 import { op06EffectDefinitions } from './op06.effects';
+import { op07EffectDefinitions } from './op07.effects';
+import { op08EffectDefinitions } from './op08.effects';
 
 export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   op01EffectDefinitions,
@@ -13,4 +15,6 @@ export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   op04EffectDefinitions,
   op05EffectDefinitions,
   op06EffectDefinitions,
+  op07EffectDefinitions,
+  op08EffectDefinitions,
 ];
