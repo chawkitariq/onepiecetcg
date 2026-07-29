@@ -1,0 +1,3186 @@
+{
+  "editionId": "OP04",
+  "cards": [
+    {
+      "id": "OP04-001",
+      "number": "OP04-001",
+      "name": "Nefeltari Vivi (001)",
+      "type": "Leader",
+      "colors": [
+        "Blue",
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "This Leader cannot attack. [Activate:Main] [Once Per Turn] (2) (You may rest the specified number of DON!! cards in your cost area.): Draw 1 card and up to 1 of your Characters gains [Rush] during this turn. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-001.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP04-002",
+      "number": "OP04-002",
+      "name": "Igaram",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[Activate:Main] You may rest this Character and give your 1 active Leader -5000 power during this turn: Look at 5 cards from the top of your deck; reveal up to 1 [Alabasta] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-002.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-003",
+      "number": "OP04-003",
+      "name": "Usopp",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "[On K.O.] K.O. up to 1 of your opponent's Characters with 5000 base power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-003.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-004",
+      "number": "OP04-004",
+      "name": "Karoo",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Alabasta"
+      ],
+      "text": "[Activate:Main] You may rest this Character: Give up to 1 rested DON!! card to each of your [Alabasta] type Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-004.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-005",
+      "number": "OP04-005",
+      "name": "Kung Fu Jugon",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Alabasta"
+      ],
+      "text": "If you have a [Kung Fu Jugon] other than this Character, this Character gains [Blocker]. (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-005.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-006",
+      "number": "OP04-006",
+      "name": "Koza",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[When Attacking] You may give your 1 active Leader -5000 power during this turn: This Character gains +2000 power until the start of your next turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-006.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-007",
+      "number": "OP04-007",
+      "name": "Sanji (007)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-007.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-008",
+      "number": "OP04-008",
+      "name": "Chaka",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[DON!! x1] [When Attacking] If your Leader is [Nefeltari Vivi], give up to 1 of your opponent's Characters -3000 power during this turn. Then, K.O. up to 1 of your opponent's Characters with 0 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-008.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-009",
+      "number": "OP04-009",
+      "name": "Super Spot-Billed Duck Troops",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Alabasta"
+      ],
+      "text": "[When Attacking] You may give your 1 active Leader -5000 power during this turn: Return this Character to the owner's hand at the end of this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-009.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-010",
+      "number": "OP04-010",
+      "name": "Tony Tony.Chopper",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Alabasta Straw Hat Crew"
+      ],
+      "text": "[On Play] Play up to 1 [Animal] type Character card with 3000 power or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-010.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-011",
+      "number": "OP04-011",
+      "name": "Nami",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "[When Attacking] Reveal 1 card from the top of your deck. If the revealed card is a Character card with 6000 power or more, this Character gains +3000 power during this turn. Then, place the revealed card at the bottom of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-011.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-012",
+      "number": "OP04-012",
+      "name": "Nefeltari Cobra",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[Your Turn] All of your [Alabasta] type Characters other than this Character gain +1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-012.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-013",
+      "number": "OP04-013",
+      "name": "Pell",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[DON!! x1] [When Attacking] K.O. up to 1 of your opponent's Characters with 4000 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-013.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-014",
+      "number": "OP04-014",
+      "name": "Monkey.D.Luffy (014)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 8,
+      "power": 9000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "[Banish] (When this card deals damage, the target card is trashed without activating its Trigger.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-014.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-015",
+      "number": "OP04-015",
+      "name": "Roronoa Zoro",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "[On Play] Give up to 1 of your opponent's Characters -2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-015.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-016",
+      "number": "OP04-016",
+      "name": "Bad Manners Kick Course",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 0,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "[Counter] You may trash 1 card from your hand: Up to 1 of your Leader or Character cards gains +3000 power during this battle. [Trigger] Give up to 1 of your opponent's Leader or Character cards -3000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-016.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-017",
+      "number": "OP04-017",
+      "name": "Happiness Punch",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Alabasta Straw Hat Crew"
+      ],
+      "text": "[Counter] Give up to 1 of your opponent's Leader or Character cards -2000 power during this turn. Then, if your Leader is active, give up to 1 of your opponent's Leader or Character cards -1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-017.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-018",
+      "number": "OP04-018",
+      "name": "Enchanting Vertigo Dance",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[Main] If your Leader has the [Alabasta] type, give up to 2 of your opponent's Characters -2000 power during this turn. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-018.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-019",
+      "number": "OP04-019",
+      "name": "Donquixote Doflamingo (019)",
+      "type": "Leader",
+      "colors": [
+        "Green",
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[End of Your Turn] Set up to 2 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-019.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP04-020",
+      "number": "OP04-020",
+      "name": "Issho",
+      "type": "Leader",
+      "colors": [
+        "Green",
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[DON!! x1] [Your Turn] Give all of your opponent's Characters -1 cost. [End of Your Turn] (1) (You may rest the specified number of DON!! cards in your cost area.): Set up to 1 of your Characters with a cost of 5 or less as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-020.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP04-021",
+      "number": "OP04-021",
+      "name": "Viola",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[On Your Opponent's Attack] (2) (You may rest the specified number of DON!! cards in your cost area.): Rest up to 1 of your opponent's DON!! cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-021.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-022",
+      "number": "OP04-022",
+      "name": "Eric",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[Activate:Main] You may rest this Character: Rest up to 1 of your opponent's Characters with a cost of 1 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-022.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-023",
+      "number": "OP04-023",
+      "name": "Kuro",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 6,
+      "power": 8000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue Black Cat Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-023.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-024",
+      "number": "OP04-024",
+      "name": "Sugar",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[Opponent's Turn] [Once Per Turn] When your opponent plays a Character, if your Leader has the [Donquixote Pirates] type, rest up to 1 of your opponent's Characters. Then, rest this Character. [On Play] Rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-024.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-025",
+      "number": "OP04-025",
+      "name": "Giolla",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[On Your Opponent's Attack] (2) (You may rest the specified number of DON!! cards in your cost area.): Rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-025.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-026",
+      "number": "OP04-026",
+      "name": "Senor Pink",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[When Attacking] (1) (You may rest the specified number of DON!! cards in your cost area.): If your Leader has the [Donquixote Pirates] type, rest up to 1 of your opponent's Characters with a cost of 4 or less. Then, set up to 1 of your DON!! cards as active at the end of this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-026.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-027",
+      "number": "OP04-027",
+      "name": "Daddy Masterson",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Former Navy East Blue"
+      ],
+      "text": "[DON!! x1] [End of Your Turn] Set this Character as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-027.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-028",
+      "number": "OP04-028",
+      "name": "Diamante",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [DON!! x1] [End of Your Turn] If you have 2 or more active DON!! cards, set this Character as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-028.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-029",
+      "number": "OP04-029",
+      "name": "Dellinger",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[End of Your Turn] Set up to 1 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-029.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-030",
+      "number": "OP04-030",
+      "name": "Trebol",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 6,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[On Play] K.O. up to 1 of your opponent's rested Characters with a cost of 5 or less. [On Your Opponent's Attack] (2) (You may rest the specified number of DON!! cards in your cost area.): Rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-030.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-031",
+      "number": "OP04-031",
+      "name": "Donquixote Doflamingo (031)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 10,
+      "power": 10000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[On Play] Up to a total of 3 of your opponent's rested Leader and Character cards will not become active in your opponent's next Refresh Phase.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-031.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-032",
+      "number": "OP04-032",
+      "name": "Baby 5",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[End of Your Turn] You may trash this Character: Set up to 2 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-032.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-033",
+      "number": "OP04-033",
+      "name": "Machvise",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[On Play] If your Leader has the [Donquixote Pirates] type, rest up to 1 of your opponent's Characters with a cost of 5 or less. Then, set up to 1 of your DON!! cards as active at the end of this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-033.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-034",
+      "number": "OP04-034",
+      "name": "Lao.G",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[End of Your Turn] If you have 3 or more active DON!! cards, K.O. up to 1 of your opponent's rested Characters with a cost of 3 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-034.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-035",
+      "number": "OP04-035",
+      "name": "Spiderweb",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, set up to 1 of your Characters as active. [Trigger] Up to 1 of your Leader gains +2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-035.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-036",
+      "number": "OP04-036",
+      "name": "Donquixote Family",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Donquixote Pirates"
+      ],
+      "text": "[Counter] Look at 5 cards from the top of your deck; reveal up to 1 [Donquixote Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order. [Trigger] Activate this card's [Counter] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-036.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-037",
+      "number": "OP04-037",
+      "name": "Flapping Thread",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[Counter] If your Leader has the [Donquixote Pirates] type, up to 1 of your Leader or Character cards gains +2000 power during this turn. [Trigger] K.O. up to 1 of your opponent's rested Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-037.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-038",
+      "number": "OP04-038",
+      "name": "The Weak Do Not Have the Right to Choose How They Die!!!",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[Main] / [Counter] Rest up to 1 of your opponent's Leader or Character cards. Then, K.O. up to 1 of your opponent's rested Characters with a cost of 6 or less. [Trigger] Set up to 5 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-038.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-039",
+      "number": "OP04-039",
+      "name": "Rebecca (039)",
+      "type": "Leader",
+      "colors": [
+        "Blue",
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "This Leader cannot attack. [Activate:Main] [Once Per Turn] (1) (You may rest the specified number of DON!! cards in your cost area.): If you have 6 or less cards in your hand, look at 2 cards from the top of your deck; reveal up to 1 [Dressrosa] type card and add it to your hand. Then, trash the rest.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-039.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP04-040",
+      "number": "OP04-040",
+      "name": "Queen (040)",
+      "type": "Leader",
+      "colors": [
+        "Blue",
+        "Yellow"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] If you have a total of 4 or less cards in your Life area and hand, draw 1 card. If you have a Character with a cost of 8 or more, you may add up to 1 card from the top of your deck to the top of your Life cards instead of drawing 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-040.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP04-041",
+      "number": "OP04-041",
+      "name": "Apis",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[On Play] You may trash 2 cards from your hand: Look at 5 cards from the top of your deck; reveal up to 1 [East Blue] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-041.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-042",
+      "number": "OP04-042",
+      "name": "Ipponmatsu",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[On Play] Up to 1 of your \"Slash\" attribute Characters gains +3000 power during this turn. Then, trash 1 card from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-042.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-043",
+      "number": "OP04-043",
+      "name": "Ulti",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] Return up to 1 Character with a cost of 2 or less to the owner's hand or the bottom of their deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-043.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-044",
+      "number": "OP04-044",
+      "name": "Kaido",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 10,
+      "power": 12000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[On Play] Return up to 1 Character with a cost of 8 or less and up to 1 Character with a cost of 3 or less to the owner's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-044.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-045",
+      "number": "OP04-045",
+      "name": "King",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 7,
+      "power": 8000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-045.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-046",
+      "number": "OP04-046",
+      "name": "Queen (046)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] If your Leader has the [Animal Kingdom Pirates] type, look at 7 cards from the top of your deck; reveal a total of 2 [Plague Rounds] or [Ice Oni] cards and add them to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-046.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-047",
+      "number": "OP04-047",
+      "name": "Ice Oni",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 8,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Plague"
+      ],
+      "text": "[Your Turn] At the end of a battle in which this Character battles your opponent's Character with a cost of 5 or less, place the opponent's Character you battled with at the bottom of the owner's deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-047.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-048",
+      "number": "OP04-048",
+      "name": "Sasaki",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] Return all cards in your hand to your deck and shuffle your deck. Then, draw cards equal to the number you returned to your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-048.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-049",
+      "number": "OP04-049",
+      "name": "Jack",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On K.O.] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-049.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-050",
+      "number": "OP04-050",
+      "name": "Hanger",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[Activate:Main] You may trash 1 card from your hand and rest this Character: Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-050.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-051",
+      "number": "OP04-051",
+      "name": "Who's.Who",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 [Animal Kingdom Pirates] type card other than [Who's.Who] and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-051.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-052",
+      "number": "OP04-052",
+      "name": "Black Maria",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Activate:Main] (2) (You may rest the specified number of DON!! cards in your cost area.) You may rest this Character: Draw 1 card. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-052.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-053",
+      "number": "OP04-053",
+      "name": "Page One",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[DON!! x1] [Once Per Turn] When you activate an Event, draw 1 card. Then, place 1 card from your hand at the bottom of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-053.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-054",
+      "number": "OP04-054",
+      "name": "Rokki",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Giant"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-054.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-055",
+      "number": "OP04-055",
+      "name": "Plague Rounds",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Main] You may trash 1 [Ice Oni] from your hand and place 1 Character with a cost of 4 or less at the bottom of the owner's deck: Play 1 [Ice Oni] from your trash. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-055.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-056",
+      "number": "OP04-056",
+      "name": "Gum-Gum Red Roc",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 6,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Main] Place up to 1 Character at the bottom of the owner's deck. [Trigger] Place up to 1 Character with a cost of 4 or less at the bottom of the owner's deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-056.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-057",
+      "number": "OP04-057",
+      "name": "Dragon Twister Demolition Breath",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, place up to 1 Character with a cost of 1 or less at the bottom of the owner's deck. [Trigger] Return up to 1 Character with a cost of 6 or less to the owner's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-057.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-058",
+      "number": "OP04-058",
+      "name": "Crocodile (058)",
+      "type": "Leader",
+      "colors": [
+        "Purple",
+        "Yellow"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[Opponent's Turn] [Once Per Turn] When a DON!! card on your field is returned to your DON!! deck by your effect, add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-058.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP04-059",
+      "number": "OP04-059",
+      "name": "Iceburg",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[On Your Opponent's Attack] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): If your Leader has the [Water Seven] type, this Character gains [Blocker] during this turn. (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-059.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-060",
+      "number": "OP04-060",
+      "name": "Crocodile (060)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 8,
+      "power": 9000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[On Play] DON!! -2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): If your Leader's type includes \"Baroque Works\", add up to 1 card from the top of your deck to the top of your Life cards. [On Your Opponent's Attack] [Once Per Turn] DON!! -1: Draw 1 card and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-060.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-061",
+      "number": "OP04-061",
+      "name": "Tom",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Fish-Man Water Seven"
+      ],
+      "text": "[Activate:Main] You may trash this Character: If your Leader has the [Water Seven] type, add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-061.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-062",
+      "number": "OP04-062",
+      "name": "Bananagator",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-062.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-063",
+      "number": "OP04-063",
+      "name": "Franky",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Water Seven The Franky Family"
+      ],
+      "text": "[On Your Opponent's Attack] [Once Per Turn] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): If your Leader has the [Water Seven] type, up to 1 of your Leader or Character cards gains +1000 power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-063.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-064",
+      "number": "OP04-064",
+      "name": "Ms. All Sunday",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Play] Add up to 1 DON!! card from your DON!! deck and rest it. Then, if you have 6 or more DON!! cards on your field, draw 1 card. [Trigger] DON!! -2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-064.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-065",
+      "number": "OP04-065",
+      "name": "Miss.Goldenweek(Marianne)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Play] If your Leader's type includes \"Baroque Works\", up to 1 of your opponent's Characters with a cost of 5 or less cannot attack until the start of your next turn. [Trigger] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-065.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-066",
+      "number": "OP04-066",
+      "name": "Miss.Valentine(Mikita)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 card with a type including \"Baroque Works\" and add it to your hand. Then, place the rest at the bottom of your deck in any order. [Trigger] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-066.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-067",
+      "number": "OP04-067",
+      "name": "Miss.MerryChristmas(Drophy)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [Trigger] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-067.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-068",
+      "number": "OP04-068",
+      "name": "Yokozuna",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Water Seven"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Your Opponent's Attack] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Return up to 1 of your opponent's Characters with a cost of 2 or less to the owner's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-068.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-069",
+      "number": "OP04-069",
+      "name": "Mr.2.Bon.Kurei (Bentham)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Your Opponent's Attack] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character's base power becomes the same as the power of your opponent's attacking Leader or Character during this turn. [Trigger] DON!! -1: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-069.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-070",
+      "number": "OP04-070",
+      "name": "Mr.3 (Galdino)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Your Opponent's Attack] [Once Per Turn] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Give up to 1 of your opponent's Characters -1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-070.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-071",
+      "number": "OP04-071",
+      "name": "Mr.4 (Babe)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Your Opponent's Attack] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character gains [Blocker] and +1000 power during this battle. (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-071.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-072",
+      "number": "OP04-072",
+      "name": "Mr.5 (Gem) (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 7,
+      "power": 8000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Your Opponent's Attack] [Once Per Turn] DON!! -2 (You may return the specified number of DON!! cards from your field to your DON!! deck.) You may rest this Character: K.O. up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-072_p1.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-073",
+      "number": "OP04-073",
+      "name": "Mr.13 & Ms.Friday",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 1000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Animal Baroque Works"
+      ],
+      "text": "[Activate:Main] You may trash this Character and 1 of your Characters with a type including \"Baroque Works\": Add up to 1 DON!! card from your DON!! deck and set it as active. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-073.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-074",
+      "number": "OP04-074",
+      "name": "Colors Trap",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[Counter] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Up to 1 of your Leader or Character cards gains +1000 power during this battle. Then, rest up to 1 of your opponent's Characters with a cost of 4 or less. [Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-074.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-075",
+      "number": "OP04-075",
+      "name": "Nez-Palm Cannon",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +6000 power during this battle. Then, if you have 2 or less Life cards, add up to 1 DON!! card from your DON!! deck and rest it. [Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-075.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-076",
+      "number": "OP04-076",
+      "name": "Weakness...Is an Unforgivable Sin.",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[Counter] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Up to 1 of your Leader or Character cards gains +1000 power during this turn. [Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-076.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-077",
+      "number": "OP04-077",
+      "name": "Ideo",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-077.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-078",
+      "number": "OP04-078",
+      "name": "Oimo & Kashii",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 6,
+      "power": 8000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Giant World Government"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-078.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-079",
+      "number": "OP04-079",
+      "name": "Orlumbus",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Dressrosa Yonta Maria Fleet"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] Give up to 1 of your opponent's Characters -4 cost during this turn and trash 2 cards from the top of your deck. Then, K.O. 1 of your [Dressrosa] type Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-079.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-080",
+      "number": "OP04-080",
+      "name": "Gyats",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "[On Play] Up to 1 of your [Dressrosa] type Characters can also attack active Characters during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-080.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-081",
+      "number": "OP04-081",
+      "name": "Cavendish",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Beautiful Pirates Dressrosa"
+      ],
+      "text": "[DON!! x1] This Character can also attack active Characters. [When Attacking] You may rest your Leader: K.O. up to 1 of your opponent's Characters with a cost of 1 or less. Then, trash 2 cards from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-081.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-082",
+      "number": "OP04-082",
+      "name": "Kyros",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "If this Character would be K.O.'d, you may rest your Leader or 1 [Corrida Coliseum] instead. [On Play] If your Leader is [Rebecca], K.O. up to 1 of your opponent's Characters with a cost of 1 or less. Then, trash 1 card from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-082.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-083",
+      "number": "OP04-083",
+      "name": "Sabo",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Revolutionary Army Dressrosa"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] None of your Characters can be K.O.'d by effects until the start of your next turn. Then, draw 2 cards and trash 2 cards from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-083.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-084",
+      "number": "OP04-084",
+      "name": "Stussy",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "CP0"
+      ],
+      "text": "[On Play] Look at 3 cards from the top of your deck and play up to 1 Character card with a type including \"CP\" other than [Stussy] and a cost of 2 or less. Then, trash the rest.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-084.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-085",
+      "number": "OP04-085",
+      "name": "Suleiman",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "[On Play] [When Attacking] If your Leader has the [Dressrosa] type, give up to 1 of your opponent's Characters -2 cost during this turn. Then, trash 1 card from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-085.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-086",
+      "number": "OP04-086",
+      "name": "Chinjao",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Happosui Army Dressrosa"
+      ],
+      "text": "[DON!! x1] When this Character battles and K.O.'s your opponent's Character, draw 2 cards and trash 2 cards from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-086.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-087",
+      "number": "OP04-087",
+      "name": "Trafalgar Law",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Heart Pirates Dressrosa"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-087.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-088",
+      "number": "OP04-088",
+      "name": "Hajrudin",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Giant New Giant Pirate Crew Dressrosa"
+      ],
+      "text": "[Activate:Main] You may rest your 1 Leader: Give up to 1 of your opponent's Characters -4 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-088.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-089",
+      "number": "OP04-089",
+      "name": "Bartolomeo",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Dressrosa Barto Club"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-089.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-090",
+      "number": "OP04-090",
+      "name": "Monkey.D.Luffy (090)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Dressrosa"
+      ],
+      "text": "This Character can also attack active Characters. [Activate:Main] [Once Per Turn] You may return 7 cards from your trash to the bottom of your deck in any order: Set this Character as active. Then, this Character will not become active in your next Refresh Phase.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-090.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-091",
+      "number": "OP04-091",
+      "name": "Leo",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Dressrosa The Tontattas"
+      ],
+      "text": "[On Play] You may rest your 1 Leader: If your Leader has the [Dressrosa] type, K.O. up to 1 of your opponent's Characters with a cost of 1 or less. Then, trash 2 cards from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-091.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-092",
+      "number": "OP04-092",
+      "name": "Rebecca (092)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "[On Play] Look at 3 cards from the top of your deck; reveal up to 1 [Dressrosa] type card other than [Rebecca] and add it to your hand. Then, trash the rest.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-092.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-093",
+      "number": "OP04-093",
+      "name": "Gum-Gum King Kong Gun",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew Dressrosa"
+      ],
+      "text": "[Main] Up to 1 of your [Dressrosa] type Characters gains +6000 power during this turn. Then, if you have 15 or more cards in your trash, that card gains [Double Attack] during this turn. (This card deals 2 damage.) [Trigger] Draw 3 cards and trash 2 cards from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-093.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-094",
+      "number": "OP04-094",
+      "name": "Trueno Bastardo",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "[Main] Choose up to 1 of your opponent's Characters with a cost of 4 or less and K.O. it. If you have 15 or more cards in your trash, choose up to 1 of your opponent's Characters with a cost of 6 or less instead of a Character with a cost of 4 or less. [Trigger] You may rest your Leader: K.O. up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-094.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-095",
+      "number": "OP04-095",
+      "name": "Barrier!!",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Dressrosa Barto Club"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, if you have 15 or more cards in your trash, that card gains an additional +2000 power during this battle. [Trigger] Draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-095.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-096",
+      "number": "OP04-096",
+      "name": "Corrida Coliseum",
+      "type": "Stage",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "If your Leader has the [Dressrosa] type, your [Dressrosa] type Characters can attack Characters on the turn in which they are played.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-096.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-097",
+      "number": "OP04-097",
+      "name": "Otama",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[On Play] Add up to 1 of your opponent's [Animal] or [SMILE] type Characters with a cost of 3 or less to the top of your opponent's Life cards face-up.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-097.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-098",
+      "number": "OP04-098",
+      "name": "Toko",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[On Play] You may trash 2 [Land of Wano] type cards from your hand: If you have 1 or less Life cards, add 1 card from the top of your deck to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-098.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-099",
+      "number": "OP04-099",
+      "name": "Olin",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Land of Wano The Four Emperors Big Mom Pirates"
+      ],
+      "text": "Also treat this card's name as [Charlotte Linlin] according to the rules. [Trigger] If you have 1 or less Life cards, play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-099.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-100",
+      "number": "OP04-100",
+      "name": "Capone\"Gang\"Bege",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Firetank Pirates"
+      ],
+      "text": "[Trigger] Up to 1 of your opponent's Leader or Character cards cannot attack during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-100.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-101",
+      "number": "OP04-101",
+      "name": "Carmel",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "The House of Lambs"
+      ],
+      "text": "[Your Turn] [On Play] Draw 1 card. [Trigger] Play this card. Then, K.O. up to 1 of your opponent's Characters with a cost of 2 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-101.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-102",
+      "number": "OP04-102",
+      "name": "Kin'emon",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 6,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] (1) (You may rest the specified number of DON!! cards in your cost area.) You may add 1 card from the top or bottom of your Life cards to your hand: Set this Character as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-102.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-103",
+      "number": "OP04-103",
+      "name": "Kouzuki Hiyori",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[On Play] Up to 1 of your [Land of Wano] type Leader or Character cards gains +1000 power during this turn. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-103.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-104",
+      "number": "OP04-104",
+      "name": "Sanji (104)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "The Vinsmoke Family"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [Trigger] You may trash 1 card from your hand: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-104.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-105",
+      "number": "OP04-105",
+      "name": "Charlotte Amande",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] You may trash 1 card with a [Trigger] from your hand: Rest up to 1 of your opponent's Characters with a cost of 2 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-105.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-106",
+      "number": "OP04-106",
+      "name": "Charlotte Bavarois",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[DON!! x1] If you have less Life cards than your opponent, this Character gains +1000 power. [Trigger] You may trash 1 card from your hand: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-106.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-107",
+      "number": "OP04-107",
+      "name": "Charlotte Perospero",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 6,
+      "power": 8000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-107.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-108",
+      "number": "OP04-108",
+      "name": "Charlotte Moscato",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[DON!! x1] This Character gains [Banish]. (When this card deals damage, the target card is trashed without activating its Trigger.) [Trigger] You may trash 1 card from your hand: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-108.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-109",
+      "number": "OP04-109",
+      "name": "Tonoyasu",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[Activate:Main] You may trash this Character: Up to 1 of your [Land of Wano] type Leader or Character cards gains +3000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-109.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-110",
+      "number": "OP04-110",
+      "name": "Pound",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Whole Cake Island"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On K.O.] Add up to 1 of your opponent's Characters with a cost of 3 or less to the top or bottom of your opponent's Life cards face-up.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-110.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-111",
+      "number": "OP04-111",
+      "name": "Hera",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 5,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates Homies"
+      ],
+      "text": "[Activate:Main] You may trash 1 of your [Homies] type Characters other than this Character and rest this Character: Set up to 1 of your [Charlotte Linlin] Characters as active. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-111.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-112",
+      "number": "OP04-112",
+      "name": "Yamato",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 9,
+      "power": 9000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[On Play] K.O. up to 1 of your opponent's Characters with a cost equal to or less than the total of your and your opponent's Life cards. Then, if you have 1 or less Life cards, add up to 1 card from the top of your deck to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-112.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP04-113",
+      "number": "OP04-113",
+      "name": "Rabiyan",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates Homies"
+      ],
+      "text": "[Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-113.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-114",
+      "number": "OP04-114",
+      "name": "Randolph",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates Homies"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-114.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-115",
+      "number": "OP04-115",
+      "name": "Gun Modoki",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[Main] You may add 1 card from the top or bottom of your Life cards to your hand: Up to 1 of your [Land of Wano] type Characters gains [Double Attack] during this turn. (This card deals 2 damage.) [Trigger] Up to 1 of your Leader or Character cards gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-115.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP04-116",
+      "number": "OP04-116",
+      "name": "Diable Jambe Joue Shot",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "The Vinsmoke Family"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +6000 power during this battle. Then, if you and your opponent have a total of 4 or less Life cards, K.O. up to 1 of your opponent's Characters with a cost of 2 or less. [Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-116.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP04-117",
+      "number": "OP04-117",
+      "name": "Heavenly Fire",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "The Four Emperors Big Mom Pirates"
+      ],
+      "text": "[Main] Add up to 1 of your opponent's Characters with a cost of 3 or less to the top or bottom of your opponent's Life cards face-up. [Trigger] You may add 1 card from the top or bottom of your Life cards to your hand: Add up to 1 card from your hand to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-117.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP04-118",
+      "number": "OP04-118",
+      "name": "Nefeltari Vivi (118)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 7,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "All of your red Characters with a cost of 3 or more other than this Character gain [Rush]. (This card can attack on the turn in which it is played.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-118.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SEC"
+    },
+    {
+      "id": "OP04-119",
+      "number": "OP04-119",
+      "name": "Donquixote Rosinante",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 8,
+      "power": 8000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates Navy"
+      ],
+      "text": "[Opponent's Turn] If this Character is rested, your active Characters with a base cost of 5 cannot be K.O.'d by effects. [On Play] You may rest this Character: Play up to 1 green Character card with a cost of 5 from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP04-119.jpg",
+      "set": {
+        "id": "OP-04",
+        "name": "Kingdoms of Intrigue"
+      },
+      "rarity": "SEC"
+    }
+  ]
+}

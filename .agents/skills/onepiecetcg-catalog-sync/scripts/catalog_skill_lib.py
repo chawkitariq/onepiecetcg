@@ -181,6 +181,13 @@ def extract_cards(payload: Any) -> list[CatalogCard]:
     return cards
 
 
+def _has_valid_colors(card: CatalogCard) -> bool:
+    """Check whether at least one color is recognized."""
+    if not card.colors:
+        return False
+    return any(color in ALLOWED_CARD_COLORS for color in card.colors)
+
+
 def fetch_live_catalog() -> list[CatalogCard]:
     """Fetch and merge the current OPTCG catalog from the upstream API."""
 
@@ -196,7 +203,11 @@ def fetch_live_catalog() -> list[CatalogCard]:
             continue
 
         for card in extract_cards(payload):
-            by_id[card.id] = card
+            existing = by_id.get(card.id)
+            if existing is None:
+                by_id[card.id] = card
+            elif not _has_valid_colors(existing) and _has_valid_colors(card):
+                by_id[card.id] = card
 
     if not by_id:
         raise RuntimeError("Unable to fetch any OPTCG catalog cards.\n" + "\n".join(errors))

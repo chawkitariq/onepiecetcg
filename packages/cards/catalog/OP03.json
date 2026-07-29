@@ -1,0 +1,3285 @@
+{
+  "editionId": "OP03",
+  "cards": [
+    {
+      "id": "OP03-001",
+      "number": "OP03-001",
+      "name": "Portgas.D.Ace (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "When this Leader attacks or is attacked, you may trash any number of Event or Stage cards from your hand. This Leader gains +1000 power during this battle for every card trashed.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-001_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-002",
+      "number": "OP03-002",
+      "name": "Adio",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "ODYSSEY"
+      ],
+      "text": "[DON!! x1] [When Attacking] Your opponent cannot activate a [Blocker] Character that has 2000 or less power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-002.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-003",
+      "number": "OP03-003",
+      "name": "Izo",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Land of Wano Whitebeard Pirates"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 card with a type including \"Whitebeard Pirates\" other than [Izo] and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-003_K1VGqSd.jpg",
+      "set": {
+        "id": "ST-15",
+        "name": "Starter Deck 15: RED Edward.Newgate"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-004",
+      "number": "OP03-004",
+      "name": "Curiel",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "This Character cannot attack a Leader on the turn in which it is played. [DON!! x1] This Character gains [Rush]. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-004.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-005",
+      "number": "OP03-005",
+      "name": "Thatch",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] This Character gains +2000 power during this turn. Then, trash this Character at the end of this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-005.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-006",
+      "number": "OP03-006",
+      "name": "Speed Jil",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-006_3yphD6n.jpg",
+      "set": {
+        "id": "ST-15",
+        "name": "Starter Deck 15: RED Edward.Newgate"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-007",
+      "number": "OP03-007",
+      "name": "Namule",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Whitebeard Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-007_MiElukV.jpg",
+      "set": {
+        "id": "ST-15",
+        "name": "Starter Deck 15: RED Edward.Newgate"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-008",
+      "number": "OP03-008",
+      "name": "Buggy - OP03-008 (Reprint)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Buggy Pirates"
+      ],
+      "text": "This Character cannot be K.O.'d in battle by \"Slash\" attribute cards.[On Play] Look at 5 cards from the top of your deck; reveal up to 1 red Event and add it to your hand. Then, place the rest at the bottom of your deck in any order.Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include \"EN\" at the end of the copyright) and the Artist Credit (Note: there is no pencil design on top of the artist name).",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-008_r1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-009",
+      "number": "OP03-009",
+      "name": "Haruta",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] Give up to 1 rested DON!! card to your Leader or 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-009.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-010",
+      "number": "OP03-010",
+      "name": "Fossa",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-010_tKEVok1.jpg",
+      "set": {
+        "id": "ST-15",
+        "name": "Starter Deck 15: RED Edward.Newgate"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-011",
+      "number": "OP03-011",
+      "name": "Blamenco",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] Give up to 1 of your opponent's Characters -2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-011.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-012",
+      "number": "OP03-012",
+      "name": "Marshall.D.Teach",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[When Attacking] You may trash 1 of your red Characters with 4000 power or more: Draw 1 card. Then, this Character gains +1000 power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-012.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-013",
+      "number": "OP03-013",
+      "name": "Marco (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Your Turn] [On Play] K.O. up to 1 of your opponent's Characters with 3000 power or less. [On K.O.] You may trash 1 Event from your hand",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-013_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-014",
+      "number": "OP03-014",
+      "name": "Monkey.D.Garp",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[When Attacking] Play up to 1 red Character card with a cost of 1 from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-014.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-015",
+      "number": "OP03-015",
+      "name": "Lim",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 2000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "ODYSSEY"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-015.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-016",
+      "number": "OP03-016",
+      "name": "Flame Emperor",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 7,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Main] If your Leader is [Portgas.D.Ace], K.O. up to 1 of your opponent's Characters with 8000 power or less, and your Leader gains [Double Attack] and +3000 power during this turn. (This card deals 2 damage.) [Trigger] K.O. up to 1 of your opponent's Characters with 6000 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-016.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-017",
+      "number": "OP03-017",
+      "name": "Cross Fire",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Main] / [Counter] If your Leader's type includes \"Whitebeard Pirates\", give up to 1 of your opponent's Characters -4000 power during this turn. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-017.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-018",
+      "number": "OP03-018",
+      "name": "Fire Fist (Alternate Art)",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Main] You may trash 1 Event from your hand: K.O. up to 1 of your opponent's Characters with 5000 power or less and up to 1 of your opponent's Characters with 4000 power or less. [Trigger] K.O. up to 1 of your opponent's Characters with 5000 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-018_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-019",
+      "number": "OP03-019",
+      "name": "Fiery Doll",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Main] Your Leader gains +4000 power during this turn. [Trigger] Give up to 1 of your opponent's Leader or Character cards -10000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-019.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-020",
+      "number": "OP03-020",
+      "name": "Striker",
+      "type": "Stage",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Activate:Main] (2) (You may rest the specified number of DON!! cards in your cost area.) You may rest this Stage: If your Leader is [Portgas.D.Ace], look at 5 cards from the top of your deck; reveal up to 1 Event and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-020.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-021",
+      "number": "OP03-021",
+      "name": "Kuro (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Green"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue Black Cat Pirates"
+      ],
+      "text": "[Activate:Main] (3) (You may rest the specified number of DON!! cards in your cost area.) You may rest 2 of your [East Blue] type Characters: Set this Leader as active, and rest up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-021_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-022",
+      "number": "OP03-022",
+      "name": "Arlong (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Green",
+        "Yellow"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Fish-Man Arlong Pirates East Blue"
+      ],
+      "text": "[DON!! x2] [When Attacking (1) (You may rest the specified number of DON!! cards in your cost area.): Play up to 1 Character card with a cost of 4 or less and a [Trigger] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-022_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-023",
+      "number": "OP03-023",
+      "name": "Alvida",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "East Blue Alvida Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-023.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-024",
+      "number": "OP03-024",
+      "name": "Gin (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Krieg Pirates East Blue"
+      ],
+      "text": "[On Play] If your Leader has the [East Blue] type, rest up to 2 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-024_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-025",
+      "number": "OP03-025",
+      "name": "Krieg (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Krieg Pirates East Blue"
+      ],
+      "text": "[On Play] You may trash 1 card from your hand: K.O. up to 2 of your opponent's rested Characters with a cost of 4 or less. [DON!! x1] This Character gains [Double Attack]. (This card deals 2 damage.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-025_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-026",
+      "number": "OP03-026",
+      "name": "Kuroobi",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Arlong Pirates East Blue"
+      ],
+      "text": "[On Play] If your Leader has the [East Blue] type, rest up to 1 of your opponent's Characters. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-026.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-027",
+      "number": "OP03-027",
+      "name": "Sham",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue Black Cat Pirates"
+      ],
+      "text": "[On Play] If your Leader has the [East Blue] type, rest up to 1 of your opponent's Characters with a cost of 2 or less and, if you don't have [Buchi], play up to 1 [Buchi] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-027.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-028",
+      "number": "OP03-028",
+      "name": "Jango",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "East Blue Black Cat Pirates"
+      ],
+      "text": "[On Play] Choose one: • Set up to 1 of your [East Blue] type Leader or Character cards with a cost of 6 or less as active. • Rest this Character and up to 1 of your opponent's Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-028.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-029",
+      "number": "OP03-029",
+      "name": "Chew",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Fish-Man Arlong Pirates East Blue"
+      ],
+      "text": "[On Play] K.O. up to 1 of your opponent's rested Characters with a cost of 4 or less. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-029.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-030",
+      "number": "OP03-030",
+      "name": "Nami (030)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Arlong Pirates East Blue"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 green [East Blue] type card other than [Nami] and add it to your hand. Then, place the rest at the bottom of your deck in any order. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-030.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-031",
+      "number": "OP03-031",
+      "name": "Pearl",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Krieg Pirates East Blue"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-031.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-032",
+      "number": "OP03-032",
+      "name": "Buggy (032)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Buggy Pirates East Blue"
+      ],
+      "text": "This Character cannot be K.O.'d in battle by \"Slash\" attribute cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-032_EIda3bg.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-033",
+      "number": "OP03-033",
+      "name": "Hatchan",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Fish-Man Arlong Pirates East Blue"
+      ],
+      "text": "[Trigger] If your Leader has the [East Blue] type, play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-033.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-034",
+      "number": "OP03-034",
+      "name": "Buchi",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue Black Cat Pirates"
+      ],
+      "text": "[On Play] K.O. up to 1 of your opponent's rested Characters with a cost of 2 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-034.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-035",
+      "number": "OP03-035",
+      "name": "Momoo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal East Blue"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-035.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-036",
+      "number": "OP03-036",
+      "name": "Out-of-the-Bag",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "NULL"
+      ],
+      "text": "[Main] You may rest 1 of your [East Blue] type Characters: Set up to 1 of your [Kuro] cards as active. [Trigger] K.O. up to 1 of your opponent's rested Characters with a cost of 3 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-036.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-037",
+      "number": "OP03-037",
+      "name": "Tooth Attack",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Fish-Man Arlong Pirates East Blue"
+      ],
+      "text": "[Main] You may rest 1 of your [East Blue] type Characters: K.O. up to 1 of your opponent's rested Characters with a cost of 3 or less. [Trigger] Play up to 1 Character card with a cost of 4 or less and a [Trigger] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-037.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-038",
+      "number": "OP03-038",
+      "name": "Deathly Poison Gas Bomb MH5",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "NULL"
+      ],
+      "text": "[Main] Rest up to 2 of your opponent's Characters with a cost of 2 or less. [Trigger] Rest up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-038.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-039",
+      "number": "OP03-039",
+      "name": "One, Two, Jango",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "East Blue Black Cat Pirates"
+      ],
+      "text": "[Main] Rest up to 1 of your opponent's Characters with a cost of 1 or less. Then, up to 1 of your Characters gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-039.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-040",
+      "number": "OP03-040",
+      "name": "Nami (040) (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Blue"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "When your deck is reduced to 0, you win the game instead of losing, according to the rules. [DON!! x1] When this Leader's attack deals damage to your opponent's Life, you may trash 1 card from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-040_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-041",
+      "number": "OP03-041",
+      "name": "Usopp (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[Rush] (This card can attack on the turn in which it is played.) [DON!! x1] When this Character's attack deals damage to your opponent's Life, you may trash 7 cards from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-041_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-042",
+      "number": "OP03-042",
+      "name": "Usopp's Pirate Crew",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[On Play] Add up to 1 blue [Usopp from your trash to your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-042.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-043",
+      "number": "OP03-043",
+      "name": "Gaimon",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "When you deal damage to your opponent's Life, you may trash 3 cards from the top of your deck. If you do, trash this Character.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-043.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-044",
+      "number": "OP03-044",
+      "name": "Kaya (Reprint)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[On Play] Draw 2 cards and trash 2 cards from your hand.Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include \"EN\" at the end of the copyright) and the Artist Credit (Note: there is no pencil design on top of the artist name).",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-044_r1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-045",
+      "number": "OP03-045",
+      "name": "Carne",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [Opponent's Turn] If you have 20 or less cards in your deck, this Character gains +3000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-045.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-046",
+      "number": "OP03-046",
+      "name": "Genzo",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-046.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-047",
+      "number": "OP03-047",
+      "name": "Zeff (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[DON!! x1] When this Character's attack deals damage to your opponent's Life, you may trash 7 cards from the top of your deck. [On Play] Return up to 1 Character with a cost of 3 or less to the owner's hand, and you may trash 2 cards from the top of your deck.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-047_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-048",
+      "number": "OP03-048",
+      "name": "Nojiko (Reprint)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[On Play] If your Leader is [Nami], return up to 1 of your opponent's Characters with a cost of 5 or less to the owner's hand.Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include \"EN\" at the end of the copyright) and the Artist Credit (Note: there is no pencil design on top of the artist name).",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-048_r1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-049",
+      "number": "OP03-049",
+      "name": "Patty",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[On Play] If you have 20 or less cards in your deck, return up to 1 Character with a cost of 3 or less to the owner's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-049.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-050",
+      "number": "OP03-050",
+      "name": "Boodle",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On K.O.] You may trash 1 card from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-050_aRpUUzt.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-051",
+      "number": "OP03-051",
+      "name": "Bell-mere",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Former Navy East Blue"
+      ],
+      "text": "[DON!! x1] When this Character's attack deals damage to your opponent's Life, you may trash 7 cards from the top of your deck. [On K.O.] You may trash 3 cards from the top of your deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-051.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-052",
+      "number": "OP03-052",
+      "name": "Merry",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-052.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-053",
+      "number": "OP03-053",
+      "name": "Yosaku & Johnny",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[DON!! x1] If you have 20 or less cards in your deck, this Character gains +2000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-053.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-054",
+      "number": "OP03-054",
+      "name": "Usopp's Rubber Band of Doom!!!",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew East Blue"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, you may trash 1 card from the top of your deck. [Trigger] Draw 1 card and you may trash 1 card from the top of your deck.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-054.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-055",
+      "number": "OP03-055",
+      "name": "Gum-Gum Giant Gavel",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "East Blue",
+        "Straw Hat Crew"
+      ],
+      "text": "[Counter] You may trash 1 card from your hand: Up to 1 of your Leader gains +4000 power during this battle. Then, you may trash 2 cards from the top of your deck. [Trigger] Return up to 1 Character with a cost of 4 or less to the owner's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-055_r1.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-056",
+      "number": "OP03-056",
+      "name": "Sanji's Pilaf",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[Main] Draw 2 cards.   [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-056_r1.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-057",
+      "number": "OP03-057",
+      "name": "Three Thousand Worlds",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "East Blue",
+        "Straw Hat Crew"
+      ],
+      "text": "[Main] Place up to 1 Character with a cost of 5 or less at the bottom of the owner's deck.   [Trigger] Place up to 1 Character with a cost of 3 or less at the bottom of the owner's deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-057_r1.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-058",
+      "number": "OP03-058",
+      "name": "Iceburg (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "This Leader cannot attack. [Activate:Main] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.) You may rest this Leader: Play up to 1 [Galley-La Company] type Character card with a cost of 5 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-058_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-059",
+      "number": "OP03-059",
+      "name": "Kaku (059)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[When Attacking] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character gains [Banish] during this battle. (When this card deals damage, the target card is trashed without activating its Trigger.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-059.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-060",
+      "number": "OP03-060",
+      "name": "Kalifa (Jolly Roger Foil)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[When Attacking] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-060_p2.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-061",
+      "number": "OP03-061",
+      "name": "Kiwi & Mozu",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Water Seven The Franky Family"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-061.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-062",
+      "number": "OP03-062",
+      "name": "Kokoro",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Water Seven Merfolk"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 [Water Seven] type card other than [Kokoro] and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-062.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-063",
+      "number": "OP03-063",
+      "name": "Zambai",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 2000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Water Seven The Franky Family"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): If your Leader has the [Water Seven] type, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-063.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-064",
+      "number": "OP03-064",
+      "name": "Tilestone",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[On K.O.] If your Leader has the [Galley-La Company] type, add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-064.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-065",
+      "number": "OP03-065",
+      "name": "Chimney & Gonbe",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Animal Water Seven"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-065.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-066",
+      "number": "OP03-066",
+      "name": "Paulie (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[On Play] (2) (You may rest the specified number of DON!! cards in your cost area.): Add up to 1 DON!! card from your DON!! deck and set it as active. Then, if you have 8 or more DON!! cards on your field, K.O. up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-066_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-067",
+      "number": "OP03-067",
+      "name": "Peepley Lulu",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[DON!! x1] [When Attacking] If your Leader has the [Galley-La Company] type, add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-067.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-068",
+      "number": "OP03-068",
+      "name": "Minozebra",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Impel Down Jailer Beast"
+      ],
+      "text": "[Banish] (When this card deals damage, the target card is trashed without activating its Trigger.) [On K.O.] If your Leader has the [Impel Down] type, add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-068.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-069",
+      "number": "OP03-069",
+      "name": "Minorhinoceros",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Impel Down Jailer Beast"
+      ],
+      "text": "[On K.O.] If your Leader has the [Impel Down] type, draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-069.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-070",
+      "number": "OP03-070",
+      "name": "Monkey.D.Luffy",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Water Seven"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.) You may trash 1 Character card with a cost of 5 from your hand: This Character gains [Rush] during this turn. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-070_3BQJvDU.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-071",
+      "number": "OP03-071",
+      "name": "Rob Lucci (071)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[When Attacking] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Rest up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-071.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-072",
+      "number": "OP03-072",
+      "name": "Gum-Gum Jet Gatling (Alternate Art)",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 0,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew Water Seven"
+      ],
+      "text": "[Counter] You may trash 1 card from your hand: Up to 1 of your Leader or Character cards gains +3000 power during this battle.[Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-072_p1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-073",
+      "number": "OP03-073",
+      "name": "Hull Dismantler Slash",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Water Seven The Franky Family"
+      ],
+      "text": "[Main] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): If your Leader has the [Water Seven] type, K.O. up to 1 of your opponent's Characters with a cost of 2 or less. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-073.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-074",
+      "number": "OP03-074",
+      "name": "Top Knot",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[Main] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Place up to 1 of your opponent's Characters with a cost of 4 or less at the bottom of the owner's deck. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-074.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-075",
+      "number": "OP03-075",
+      "name": "Galley-La Company",
+      "type": "Stage",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "Galley-La Company Water Seven"
+      ],
+      "text": "[Activate:Main] You may rest this Stage: If your Leader is [Iceburg], add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-075.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-076",
+      "number": "OP03-076",
+      "name": "Rob Lucci (076) (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "[Your Turn] [Once Per Turn] You may trash 2 cards from your hand: When your opponent's Character is K.O.'d, set this Leader as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-076_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-077",
+      "number": "OP03-077",
+      "name": "Charlotte Linlin (077) (Alternate Art)",
+      "type": "Leader",
+      "colors": [
+        "Yellow",
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "The Four Emperors Big Mom Pirates"
+      ],
+      "text": "[DON!! x2] [When Attacking] (2) (You may rest the specified number of DON!! cards in your cost area.) You may trash 1 card from your hand: If you have 1 or less Life cards, add up to 1 card from the top of your deck to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-077_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-078",
+      "number": "OP03-078",
+      "name": "Issho (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 8,
+      "power": 9000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[DON!! x1] [Your Turn] Give all of your opponent's Characters -3 cost. [On Play] If your opponent has 6 or more cards in their hand, trash 2 cards from your opponent's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-078_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-079",
+      "number": "OP03-079",
+      "name": "Vergo",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Donquixote Pirates Navy"
+      ],
+      "text": "[DON!! x1] This Character cannot be K.O.'d in battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-079_r1.jpg",
+      "set": {
+        "id": "ST-19",
+        "name": "Starter Deck 19: BLACK Smoker"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-080",
+      "number": "OP03-080",
+      "name": "Kaku (080) (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "[On Play] You may place 2 cards with a type including \"CP\" from your trash at the bottom of your deck in any order: K.O. up to 1 of your opponent's Characters with a cost of 3 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-080_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-081",
+      "number": "OP03-081",
+      "name": "Kalifa (081) (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "[On Play] Draw 2 cards and trash 2 cards from your hand. Then, give up to 1 of your opponent's Characters -2 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-081_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-082",
+      "number": "OP03-082",
+      "name": "Kumadori",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-082.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-083",
+      "number": "OP03-083",
+      "name": "Corgy",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "World Government"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck and trash up to 2 cards. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-083.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-084",
+      "number": "OP03-084",
+      "name": "Jerry",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP6"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-084.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-085",
+      "number": "OP03-085",
+      "name": "Jabra",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-085.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-086",
+      "number": "OP03-086",
+      "name": "Spandam (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "[On Play] If your Leader's type include \"CP\", look at 3 cards from the top of your deck; reveal up to 1 card with a type including \"CP\" other than [Spandam] and add it to your hand. Then, trash the rest.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-086_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-087",
+      "number": "OP03-087",
+      "name": "Nero",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-087.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-088",
+      "number": "OP03-088",
+      "name": "Fukurou",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "This Character cannot be K.O.'d by effects. [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-088.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-089",
+      "number": "OP03-089",
+      "name": "Brannew",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] Look at 3 cards from the top of your deck; reveal up to 1 \"Navy\" type card other than [Brannew] and add it to your hand. Then, trash the rest.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-089_r1.jpg",
+      "set": {
+        "id": "ST-19",
+        "name": "Starter Deck 19: BLACK Smoker"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-090",
+      "number": "OP03-090",
+      "name": "Blueno",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "[DON!! x1] [This Character gains [Blocker]. (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On K.O.] Play up to 1 Character card with a type including \"CP\" and a cost of 4 or less from your trash rested.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-090.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-091",
+      "number": "OP03-091",
+      "name": "Helmeppo",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] Set the cost of up to 1 of your opponent's Characters with no base effect to 0 during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-091.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-092",
+      "number": "OP03-092",
+      "name": "Rob Lucci (092) (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9"
+      ],
+      "text": "[On Play] You may place 2 cards with a type including \"CP\" from your trash at the bottom of your deck in any order: This Character gains [Rush] during this turn. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-092_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-093",
+      "number": "OP03-093",
+      "name": "Wanze",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "CP7"
+      ],
+      "text": "[On Play] You may trash 1 card from your hand: If your Leader's type includes \"CP\", K.O. up to 1 of your opponent's Characters with a cost of 1 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-093.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-094",
+      "number": "OP03-094",
+      "name": "Air Door",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "CP9"
+      ],
+      "text": "[Main] If your Leader's type includes \"CP\", look at 5 cards from the top of your deck; play up to 1 Character card with a type including \"CP\" and a cost of 5 or less. Then, trash the rest. [Trigger] Play up to 1 black Character card with a cost of 3 or less from your trash.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-094_r1.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-095",
+      "number": "OP03-095",
+      "name": "Soap Sheep",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "CP9"
+      ],
+      "text": "[Main] Give up to 2 of your opponent's Characters -2 cost during this turn. [Trigger] Your opponent trashes 1 card from their hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-095.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-096",
+      "number": "OP03-096",
+      "name": "Tempest Kick Sky Slicer",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "CP9"
+      ],
+      "text": "[Main] K.O. up to 1 of your opponent's Characters with a cost of 0 or your opponent's Stages with a cost of 3 or less. [Trigger] Draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-096.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-097",
+      "number": "OP03-097",
+      "name": "Six King Pistol (Reprint)",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 0,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "CP9"
+      ],
+      "text": "[Counter] You may trash 1 card from your hand: Up to 1 of your Leader or Character cards gains +3000 power during this battle.[Trigger] Draw 1 card. Then, K.O. up to 1 of your opponent's Characters with a cost of 1 or less.Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include \"EN\" at the end of the copyright).",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-097_r1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-098",
+      "number": "OP03-098",
+      "name": "Enies Lobby",
+      "type": "Stage",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "World Government"
+      ],
+      "text": "[Activate:Main] You may rest this Stage: If your Leader's type includes \"CP\", give up to 1 of your opponent's Characters -2 cost during this turn. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-098.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-099",
+      "number": "OP03-099",
+      "name": "Charlotte Katakuri (OP03-099)",
+      "type": "Leader",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] Look at up to 1 card from the top of your or your opponent's Life cards, and place it at the top or bottom of the Life cards. Then, this Leader gains +1000 power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-099_p2.jpg",
+      "set": {
+        "id": "ST-20",
+        "name": "Starter Deck 20: YELLOW Charlotte Katakuri"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP03-100",
+      "number": "OP03-100",
+      "name": "Kingbaum",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Big Mom Pirates Homies"
+      ],
+      "text": "[Trigger] You may trash 1 card from the top or bottom of your Life cards: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-100.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-101",
+      "number": "OP03-101",
+      "name": "Camie",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Merfolk"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-101.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-102",
+      "number": "OP03-102",
+      "name": "Sanji",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "The Vinsmoke Family"
+      ],
+      "text": "[DON!! x2] [When Attacking] You may add 1 card from the top or bottom of your Life cards to your hand: Add up to 1 card from the top of your deck to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-102.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-103",
+      "number": "OP03-103",
+      "name": "Bobbin the Disposer",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-103.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-104",
+      "number": "OP03-104",
+      "name": "Shirley",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Merfolk"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] Look at up to 1 card from the top of your or your opponent's Life cards, and place it at the top or bottom of the Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-104.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-105",
+      "number": "OP03-105",
+      "name": "Charlotte Oven",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] You may trash 1 card with a [Trigger] from your hand: This Character gains +3000 power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-105.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-106",
+      "number": "OP03-106",
+      "name": "Charlotte Opera",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-106_r1.jpg",
+      "set": {
+        "id": "ST-20",
+        "name": "Starter Deck 20: YELLOW Charlotte Katakuri"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-107",
+      "number": "OP03-107",
+      "name": "Charlotte Galette",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-107_r1.jpg",
+      "set": {
+        "id": "ST-20",
+        "name": "Starter Deck 20: YELLOW Charlotte Katakuri"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-108",
+      "number": "OP03-108",
+      "name": "Charlotte Cracker (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[DON!! x1] If you have less Life cards than your opponent, this Character gains [Double Attack] and +1000 power. (This card deals 2 damage.)[Trigger] You may trash 1 card from your hand: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-108_p3.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-109",
+      "number": "OP03-109",
+      "name": "Charlotte Chiffon",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[On Play] You may trash 1 card from the top or bottom of your Life cards: Add up to 1 card from the top of your deck to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-109.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-110",
+      "number": "OP03-110",
+      "name": "Charlotte Smoothie",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[When Attacking] You may add 1 card from the top or bottom of your Life cards to your hand: This Character gains +2000 power during this battle.\n\n[Trigger] You may trash 1 card from your hand: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-110_r1.jpg",
+      "set": {
+        "id": "ST-20",
+        "name": "Starter Deck 20: YELLOW Charlotte Katakuri"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-111",
+      "number": "OP03-111",
+      "name": "Charlotte Praline",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "The Sun Pirates Merfolk"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-111.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-112",
+      "number": "OP03-112",
+      "name": "Charlotte Pudding (OP03-112)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[On Play] Look at 4 cards from the top of your deck; reveal up to 1 [Sanji] or \"Big Mom Pirates\" type card other than [Charlotte Pudding] and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-112_r1.jpg",
+      "set": {
+        "id": "ST-20",
+        "name": "Starter Deck 20: YELLOW Charlotte Katakuri"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-113",
+      "number": "OP03-113",
+      "name": "Charlotte Perospero (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[On K.O.] Look at 3 cards from the top of your deck; reveal up to 1 [Big Mom Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.[Trigger] You may trash 1 card from your hand: Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-113_p3.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-114",
+      "number": "OP03-114",
+      "name": "Charlotte Linlin (SP)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 10,
+      "power": 12000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "The Four Emperors Big Mom Pirates"
+      ],
+      "text": "[On Play] If your Leader has the [Big Mom Pirates] type, add up to 1 card from the top of your deck to the top of your Life cards. Then, trash up to 1 card from the top of your opponent's Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-114_p2.jpg",
+      "set": {
+        "id": "OP-06",
+        "name": "Wings of the Captain"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP03-115",
+      "number": "OP03-115",
+      "name": "Streusen",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[On Play] You may trash 1 card with a [Trigger] from your hand: K.O. up to 1 of your opponent's Characters with a cost of 1 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-115.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-116",
+      "number": "OP03-116",
+      "name": "Shirahoshi (OP03-116) (Reprint)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 5,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Merfolk"
+      ],
+      "text": "[On Play] Draw 3 cards and trash 2 cards from your hand.[Trigger] Play this card.Disclaimer: This card was reprinted from the original set with changes to the artist credit (note the lack of pen symbol next to the artist name).",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-116_r1.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-117",
+      "number": "OP03-117",
+      "name": "Napoleon",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Big Mom Pirates Homies"
+      ],
+      "text": "[Activate:Main] You may rest this Character: Up to 1 of your [Charlotte Linlin] cards gains +1000 power until the start of your next turn. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-117.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-118",
+      "number": "OP03-118",
+      "name": "Ikoku Sovereignty",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "The Four Emperors Big Mom Pirates"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +5000 power during this battle. [Trigger] You may trash 2 cards from your hand: Add up to 1 card from the top of your deck to the top of your Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-118.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP03-119",
+      "number": "OP03-119",
+      "name": "Buzz Cut Mochi",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[Main] If you have less Life cards than your opponent, K.O. up to 1 of your opponent's Characters with a cost of 4 or less. [Trigger] Play up to 1 Character card with a cost of 4 or less and a [Trigger] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-119.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP03-120",
+      "number": "OP03-120",
+      "name": "Tropical Torment",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[Main] If your opponent has 4 or more Life cards, trash up to 1 card from the top of your opponent's Life cards. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-120.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-121",
+      "number": "OP03-121",
+      "name": "Thunder Bolt",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "The Four Emperors",
+        "Big Mom Pirates"
+      ],
+      "text": "[Main] You may trash 1 card from the top of your Life cards: K.O. up to 1 of your opponent's Characters with a cost of 5 or less.   [Trigger] K.O. up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-121_r2.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP03-122",
+      "number": "OP03-122",
+      "name": "Sogeking (Manga)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 7,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Sniper Island"
+      ],
+      "text": "Also treat this card's name as [Usopp] according to the rules.[On Play] Return up to 1 Character with a cost of 6 or less to the owner's hand. Then, draw 2 cards and trash 2 cards from your hand.Disclaimer: This card was reprinted from the original set without the original textured foil.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-122_r1.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "SEC"
+    },
+    {
+      "id": "OP03-123",
+      "number": "OP03-123",
+      "name": "Charlotte Katakuri (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 8,
+      "power": 8000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[On Play] Add up to 1 Character with a cost of 8 or less to the top or bottom of the owner's Life cards face-up.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP03-123_p4.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "SEC"
+    }
+  ]
+}
