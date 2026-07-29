@@ -399,9 +399,14 @@ export class DuelTurnEngine {
     this.deps.effectBoundary.clearTurnModifiers();
 
     const sessionIds = Array.from(this.deps.state.players.keys());
-    const nextSessionId = sessionIds.find(
-      (sessionId) => sessionId !== this.deps.state.activePlayerSessionId,
-    );
+    const pendingExtraTurnSessionId = this.deps.state.pendingExtraTurnSessionId;
+    this.deps.state.pendingExtraTurnSessionId = '';
+    const nextSessionId =
+      pendingExtraTurnSessionId === endingPlayer?.sessionId
+        ? endingPlayer.sessionId
+        : sessionIds.find(
+            (sessionId) => sessionId !== this.deps.state.activePlayerSessionId,
+          );
 
     if (!nextSessionId) {
       return;

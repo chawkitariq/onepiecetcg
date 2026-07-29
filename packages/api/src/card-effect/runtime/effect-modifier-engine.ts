@@ -64,6 +64,7 @@ export class EffectModifierEngine {
         card.cannotBeKoedByStrikeInBattle = false;
         card.winOnDeckOut = false;
         card.cannotBeRemovedByOpponentEffects = false;
+        card.skipNextRefreshPhases = 0;
       }
     }
 
@@ -114,6 +115,13 @@ export class EffectModifierEngine {
 
           if (continuous.modifier.keywords) {
             this.applyKeywords(target, continuous.modifier.keywords);
+          }
+
+          if (continuous.modifier.skipNextRefreshPhases) {
+            target.skipNextRefreshPhases = Math.max(
+              target.skipNextRefreshPhases,
+              continuous.modifier.skipNextRefreshPhases,
+            );
           }
         }
       }

@@ -6,6 +6,12 @@ type FindCardResult = { card: DuelCard; index: number } | null;
 
 type ZoneEngineEffectBoundary = {
   reapplyContinuousEffects(): void;
+  applyMoveReplacement(
+    playerSessionId: string,
+    sourceInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+  ): boolean;
 };
 
 /**
@@ -45,6 +51,17 @@ export class DuelZoneEngine {
     destinationZone: string,
     options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
   ): void {
+    if (
+      this.deps.effectBoundary.applyMoveReplacement(
+        card.ownerSessionId,
+        card.instanceId,
+        destinationPlayerSessionId,
+        destinationZone,
+      )
+    ) {
+      return;
+    }
+
     this.removeCardFromCurrentZone(card.instanceId);
     const destinationPlayer = this.deps.state.players.get(
       destinationPlayerSessionId,

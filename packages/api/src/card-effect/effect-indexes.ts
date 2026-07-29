@@ -18,6 +18,7 @@ const triggerTypes = [
   'onDonReturned',
   'onBattleKo',
   'onLifeDamageDealt',
+  'onCardDrawn',
   'whenAttacking',
   'onAttacked',
   'onKo',

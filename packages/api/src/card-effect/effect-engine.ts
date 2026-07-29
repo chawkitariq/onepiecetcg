@@ -80,6 +80,14 @@ export class EffectEngine {
           );
         }
       },
+      (type, playerSessionId, source) => {
+        this.handleEvent({
+          type,
+          playerSessionId,
+          sourceInstanceId: source.instanceId,
+          sourceCardId: source.cardId,
+        });
+      },
     );
   }
 
@@ -164,6 +172,15 @@ export class EffectEngine {
 
     for (const { effect } of effects) {
       if (
+        effect.oncePerTurn &&
+        this.resolvedOncePerTurnKeys.has(
+          this.getOncePerTurnKey(source.instanceId, effect.id),
+        )
+      ) {
+        continue;
+      }
+
+      if (
         !this.conditions.conditionsPass(
           effect.conditions ?? [],
           query.playerSessionId,
@@ -184,6 +201,11 @@ export class EffectEngine {
           storedSelections: {},
         },
       );
+      if (effect.oncePerTurn) {
+        this.resolvedOncePerTurnKeys.add(
+          this.getOncePerTurnKey(source.instanceId, effect.id),
+        );
+      }
       return true;
     }
 
@@ -319,6 +341,7 @@ export class EffectEngine {
       type === 'onDonReturned' ||
       type === 'onBattleKo' ||
       type === 'onLifeDamageDealt' ||
+      type === 'onCardDrawn' ||
       type === 'onTurnStart' ||
       type === 'onTurnEnd' ||
       type === 'onKo'

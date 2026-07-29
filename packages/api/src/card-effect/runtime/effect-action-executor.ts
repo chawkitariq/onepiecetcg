@@ -16,6 +16,12 @@ type QueueEffectFn = (
   effectId: string,
 ) => void;
 
+type EmitEffectEventFn = (
+  type: import('./effect-engine-types').EffectEventType,
+  playerSessionId: string,
+  source: DuelCard,
+) => void;
+
 /**
  * Interprets authored `EffectAction[]` against the authoritative duel state.
  */
@@ -27,6 +33,7 @@ export class EffectActionExecutor {
     private readonly decisions: EffectDecisionManager,
     private readonly modifiers: EffectModifierEngine,
     private readonly queueEffect: QueueEffectFn,
+    private readonly emitEffectEvent: EmitEffectEventFn,
   ) {}
 
   /** Resolves an authored action list sequentially, pausing for decisions when needed. */
@@ -69,7 +76,11 @@ export class EffectActionExecutor {
 
         if (playerId) {
           for (let index = 0; index < action.amount; index += 1) {
-            this.host.drawCard(playerId);
+            const drawn = this.host.drawCard(playerId);
+
+            if (drawn) {
+              this.emitEffectEvent('onCardDrawn', playerId, source);
+            }
           }
 
           this.host.syncPlayer(playerId);
@@ -89,7 +100,11 @@ export class EffectActionExecutor {
           const missing = Math.max(0, action.size - player.zones.hand.length);
 
           for (let index = 0; index < missing; index += 1) {
-            this.host.drawCard(playerId);
+            const drawn = this.host.drawCard(playerId);
+
+            if (drawn) {
+              this.emitEffectEvent('onCardDrawn', playerId, source);
+            }
           }
 
           this.host.syncPlayer(playerId);

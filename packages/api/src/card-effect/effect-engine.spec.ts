@@ -514,6 +514,130 @@ describe('EffectEngine', () => {
     expect(host.logs.at(-1)).toContain('effet de remplacement');
   });
 
+  it('replaces a move from the field by trashing the top life card for Enel', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([
+        {
+          editionId: 'OP05',
+          cards: [
+            {
+              cardId: 'OP05-100',
+              effects: [
+                {
+                  kind: 'replacement',
+                  effect: {
+                    id: 'enel-would-leave-field-trash-top-life',
+                    text: 'If this Character would leave the field, trash 1 card from the top of your Life cards instead.',
+                    event: 'wouldMoveCard',
+                    oncePerTurn: true,
+                    conditions: [
+                      { type: 'cardInZone', zone: 'characters' },
+                      {
+                        type: 'targetExists',
+                        selector: {
+                          player: 'self',
+                          zones: ['life'],
+                          count: { kind: 'exact', value: 1 },
+                        },
+                      },
+                      {
+                        type: 'targetCountAtMost',
+                        selector: {
+                          player: 'either',
+                          zones: ['characters'],
+                          filter: {
+                            cardCategory: ['Character'],
+                            name: ['Monkey.D.Luffy'],
+                          },
+                        },
+                        value: 0,
+                      },
+                    ],
+                    replacement: [
+                      {
+                        type: 'moveFirstCard',
+                        selector: {
+                          player: 'self',
+                          zones: ['life'],
+                          count: { kind: 'exact', value: 1 },
+                        },
+                        destinationPlayer: 'self',
+                        destinationZone: 'trash',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ], []),
+      host,
+    );
+
+    const enel = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP05-100',
+        number: 'OP05-100',
+        name: 'Enel',
+        type: 'Character',
+      }),
+      'enel',
+    );
+    const lifeCard = host.addCardToZone(
+      'p1',
+      'life',
+      makeCard({
+        id: 'OP99-LIFE',
+        number: 'OP99-LIFE',
+        name: 'Life Card',
+        type: 'Character',
+      }),
+      'life',
+    );
+
+    const replaced = engine.applyReplacement({
+      type: 'wouldMoveCard',
+      playerSessionId: 'p1',
+      sourceInstanceId: enel.instanceId,
+      destinationPlayerSessionId: 'p1',
+      destinationZone: 'trash',
+    });
+
+    expect(replaced).toBe(true);
+    expect(host.getPlayer('p1')?.zones.characters).toContain(enel);
+    expect(host.getPlayer('p1')?.zones.life).not.toContain(lifeCard);
+    expect(host.getPlayer('p1')?.zones.trash).toContain(lifeCard);
+
+    const secondLifeCard = host.addCardToZone(
+      'p1',
+      'life',
+      makeCard({
+        id: 'OP99-LIFE-2',
+        number: 'OP99-LIFE-2',
+        name: 'Life Card 2',
+        type: 'Character',
+      }),
+      'life-2',
+    );
+
+    const secondReplacement = engine.applyReplacement({
+      type: 'wouldMoveCard',
+      playerSessionId: 'p1',
+      sourceInstanceId: enel.instanceId,
+      destinationPlayerSessionId: 'p1',
+      destinationZone: 'trash',
+    });
+
+    expect(secondReplacement).toBe(false);
+    expect(host.getPlayer('p1')?.zones.life).toContain(secondLifeCard);
+  });
+
 
   it('supports trigger effects via local definitions', () => {
     const triggerDefinition = {

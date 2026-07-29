@@ -83,6 +83,21 @@ export class EffectConditionEvaluator {
             this.selectors.countTotalDonOnField(playerId) >= condition.value
           );
         }
+        case 'playerHasOnlyCharactersWithTrait': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          const characters = player?.zones.characters ?? [];
+
+          return (
+            characters.length > 0 &&
+            characters.every((character) =>
+              character.families.includes(condition.trait),
+            )
+          );
+        }
         case 'eventPlayerIs': {
           if (!event) {
             return false;

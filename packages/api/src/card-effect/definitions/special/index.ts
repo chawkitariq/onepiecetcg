@@ -3,10 +3,44 @@ import { op04040SpecialHandler } from './op04-040.special';
 import { op04047SpecialHandler } from './op04-047.special';
 import { op04048SpecialHandler } from './op04-048.special';
 import { op04116SpecialHandler } from './op04-116.special';
+import { op05016SpecialHandler } from './op05-016.special';
+import { op05011SpecialHandler } from './op05-011.special';
+import { op05060SpecialHandler } from './op05-060.special';
+import { op05071SpecialHandler } from './op05-071.special';
+import { op05114SpecialHandler } from './op05-114.special';
+import { op05102SpecialHandler } from './op05-102.special';
+import { op05116SpecialHandler } from './op05-116.special';
+import { op05069SpecialHandler } from './op05-069.special';
+import { op05059SpecialHandler } from './op05-059.special';
+import { op05017SpecialHandler } from './op05-017.special';
+import { op05007SpecialHandler } from './op05-007.special';
+import { op05043SpecialHandler } from './op05-043.special';
+import { op05019SpecialHandler } from './op05-019.special';
+import { op05002SpecialHandler } from './op05-002.special';
+import { op05058SpecialHandler } from './op05-058.special';
+import { op05099SpecialHandler } from './op05-099.special';
+import { op05119SpecialHandler } from './op05-119.special';
 
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op04040SpecialHandler,
   op04047SpecialHandler,
   op04048SpecialHandler,
   op04116SpecialHandler,
+  op05016SpecialHandler,
+  op05011SpecialHandler,
+  op05060SpecialHandler,
+  op05071SpecialHandler,
+  op05114SpecialHandler,
+  op05102SpecialHandler,
+  op05116SpecialHandler,
+  op05069SpecialHandler,
+  op05059SpecialHandler,
+  op05017SpecialHandler,
+  op05007SpecialHandler,
+  op05043SpecialHandler,
+  op05019SpecialHandler,
+  op05002SpecialHandler,
+  op05058SpecialHandler,
+  op05099SpecialHandler,
+  op05119SpecialHandler,
 ] as const;

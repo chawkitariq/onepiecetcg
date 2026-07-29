@@ -10,6 +10,7 @@ export type EffectTriggerType =
   | 'onDonReturned'
   | 'onBattleKo'
   | 'onLifeDamageDealt'
+  | 'onCardDrawn'
   | 'whenAttacking'
   | 'onAttacked'
   | 'onKo'
@@ -48,6 +49,7 @@ export type EffectCondition =
   | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasOnlyCharactersWithTrait'; player: EffectOwnerSelector; trait: string }
   | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
   | { type: 'eventReasonIs'; value: 'battle' | 'effect' }
   | { type: 'eventSourceHasNoBaseEffect' }
@@ -397,6 +399,7 @@ export type ContinuousEffectDefinition = {
         }
       | undefined;
     keywords?: EffectKeyword[];
+    skipNextRefreshPhases?: number;
   };
 };
 
@@ -405,6 +408,7 @@ export type ReplacementEffectDefinition = {
   text: string;
   event: 'wouldKoCharacter' | 'wouldMoveCard';
   optional?: boolean;
+  oncePerTurn?: boolean;
   conditions?: EffectCondition[];
   replacement: EffectAction[];
   priority?: number;

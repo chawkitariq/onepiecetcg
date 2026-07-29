@@ -19,6 +19,7 @@ export type EffectEventType =
   | 'onDonReturned'
   | 'onBattleKo'
   | 'onLifeDamageDealt'
+  | 'onCardDrawn'
   | 'whenAttacking'
   | 'onAttacked'
   | 'onKo'
@@ -42,10 +43,12 @@ export type EffectEvent = {
  * Replacement hook queries emitted by structural gameplay resolution.
  */
 export type ReplacementQuery = {
-  type: 'wouldKoCharacter';
+  type: 'wouldKoCharacter' | 'wouldMoveCard';
   playerSessionId: string;
   sourceInstanceId: string;
-  reason: 'battle' | 'effect';
+  destinationPlayerSessionId?: string;
+  destinationZone?: string;
+  reason?: 'battle' | 'effect';
 };
 
 export type RuntimeModifier = {

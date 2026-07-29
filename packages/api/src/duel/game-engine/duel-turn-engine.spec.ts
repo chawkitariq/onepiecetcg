@@ -77,6 +77,7 @@ function createDeps(): {
   const effectBoundary = {
     emitWindowEffects,
     clearTurnModifiers: jest.fn(),
+    clearTurnStartModifiers: jest.fn(),
     reapplyContinuousEffects: jest.fn(),
     hasPendingPlayerInteraction: jest.fn(() => false),
   };
@@ -171,5 +172,25 @@ describe('DuelTurnEngine', () => {
     expect(result).toBeNull();
     expect(deps.finalizeMatch).toHaveBeenCalledWith('deckOut', 'session-a');
     expect(deps.recordMatchResult).toHaveBeenCalledTimes(1);
+  });
+
+  it('grants the same player an extra turn when one is pending at end of turn', () => {
+    const { deps, state, effectBoundary } = createDeps();
+    const engine = new DuelTurnEngine(deps);
+
+    state.activePlayerSessionId = 'session-a';
+    state.phase = 'end';
+    state.turn = 4;
+    state.pendingExtraTurnSessionId = 'session-a';
+
+    const result = engine.handleEndPhase('session-a');
+
+    expect(result).toBeNull();
+    expect(state.pendingExtraTurnSessionId).toBe('');
+    expect(state.activePlayerSessionId).toBe('session-a');
+    expect(state.turn).toBe(5);
+    expect(state.phase).toBe('refresh');
+    expect(effectBoundary.reapplyContinuousEffects).toHaveBeenCalledTimes(1);
+    expect(effectBoundary.emitWindowEffects).toHaveBeenCalledWith('onTurnStart');
   });
 });

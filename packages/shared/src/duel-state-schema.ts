@@ -301,6 +301,10 @@ export class DuelState extends Schema {
   @type('string')
   firstPlayerSessionId = '';
 
+  /** Session id that should immediately take an extra turn after the current one ends. */
+  @type('string')
+  pendingExtraTurnSessionId = '';
+
   @type({ map: DuelPlayer })
   players = new MapSchema<DuelPlayer>();
 

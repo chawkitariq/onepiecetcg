@@ -114,6 +114,24 @@ export class DuelRoomEffectBoundary {
     });
   }
 
+  /**
+   * Applies a replacement effect before a card moves from one zone to another.
+   */
+  public applyMoveReplacement(
+    playerSessionId: string,
+    sourceInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+  ): boolean {
+    return this.engine.applyReplacement({
+      type: 'wouldMoveCard',
+      playerSessionId,
+      sourceInstanceId,
+      destinationPlayerSessionId,
+      destinationZone,
+    });
+  }
+
   public emitCardEvent(
     type: EffectEventType,
     playerSessionId: string,
