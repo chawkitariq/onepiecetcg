@@ -12,6 +12,9 @@ import { op10EffectDefinitions } from './op10.effects';
 import { op11EffectDefinitions } from './op11.effects';
 import { op12EffectDefinitions } from './op12.effects';
 import { op13EffectDefinitions } from './op13.effects';
+import { op14EffectDefinitions } from './op14.effects';
+import { op15EffectDefinitions } from './op15.effects';
+import { op16EffectDefinitions } from './op16.effects';
 
 export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   op01EffectDefinitions,
@@ -27,4 +30,7 @@ export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   op11EffectDefinitions,
   op12EffectDefinitions,
   op13EffectDefinitions,
+  op14EffectDefinitions,
+  op15EffectDefinitions,
+  op16EffectDefinitions,
 ];

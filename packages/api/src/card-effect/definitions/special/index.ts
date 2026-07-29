@@ -29,7 +29,6 @@ import { op08096SpecialHandler } from './op08-096.special';
 import { op08098SpecialHandler } from './op08-098.special';
 import { op08118SpecialHandler } from './op08-118.special';
 import { op08119SpecialHandler } from './op08-119.special';
-
 import { op09018SpecialHandler } from './op09-018.special';
 import { op09022SpecialHandler } from './op09-022.special';
 import { op09052SpecialHandler } from './op09-052.special';
@@ -41,7 +40,6 @@ import { op09093SpecialHandler } from './op09-093.special';
 import { op09098SpecialHandler } from './op09-098.special';
 import { op09101SpecialHandler } from './op09-101.special';
 import { op09118SpecialHandler } from './op09-118.special';
-
 import { op10022SpecialHandler } from './op10-022.special';
 import { op10026SpecialHandler } from './op10-026.special';
 import { op10027SpecialHandler } from './op10-027.special';
@@ -66,7 +64,6 @@ import { op10115SpecialHandler } from './op10-115.special';
 import { op10116SpecialHandler } from './op10-116.special';
 import { op10118SpecialHandler } from './op10-118.special';
 import { op10119SpecialHandler } from './op10-119.special';
-
 import { op11001SpecialHandler } from './op11-001.special';
 import { op11022SpecialHandler } from './op11-022.special';
 import { op11023SpecialHandler } from './op11-023.special';
@@ -79,6 +76,14 @@ import { op11074SpecialHandler } from './op11-074.special';
 import { op11079SpecialHandler } from './op11-079.special';
 import { op11081SpecialHandler } from './op11-081.special';
 import { op11101SpecialHandler } from './op11-101.special';
+import { op12016SpecialHandler } from './op12-016.special';
+import { op12017SpecialHandler } from './op12-017.special';
+import { op12020SpecialHandler } from './op12-020.special';
+import { op12040SpecialHandler } from './op12-040.special';
+import { op12041SpecialHandler } from './op12-041.special';
+import { op12081SpecialHandler } from './op12-081.special';
+import { op12096SpecialHandler } from './op12-096.special';
+import { op12102SpecialHandler } from './op12-102.special';
 import { op13001SpecialHandler } from './op13-001.special';
 import { op13002SpecialHandler } from './op13-002.special';
 import { op13003SpecialHandler } from './op13-003.special';
@@ -107,15 +112,62 @@ import { op13114SpecialHandler } from './op13-114.special';
 import { op13117SpecialHandler } from './op13-117.special';
 import { op13118SpecialHandler } from './op13-118.special';
 import { op13119SpecialHandler } from './op13-119.special';
+import { op15001SpecialHandler } from './op15-001.special';
+import { op15002SpecialHandler } from './op15-002.special';
+import { op15008SpecialHandler } from './op15-008.special';
+import { op15014SpecialHandler } from './op15-014.special';
+import { op15020SpecialHandler } from './op15-020.special';
+import { op15029SpecialHandler } from './op15-029.special';
+import { op15031SpecialHandler } from './op15-031.special';
+import { op15046SpecialHandler } from './op15-046.special';
+import { op15058SpecialHandler } from './op15-058.special';
+import { op15059SpecialHandler } from './op15-059.special';
+import { op15070SpecialHandler } from './op15-070.special';
+import { op15071SpecialHandler } from './op15-071.special';
+import { op15086SpecialHandler } from './op15-086.special';
+import { op15092SpecialHandler } from './op15-092.special';
+import { op15119SpecialHandler } from './op15-119.special';
+import { op16032SpecialHandler } from './op16-032.special';
+import { op16041SpecialHandler } from './op16-041.special';
+import { op16079SpecialHandler } from './op16-079.special';
+import { op16080SpecialHandler } from './op16-080.special';
+import { op16084SpecialHandler } from './op16-084.special';
+import { op16115SpecialHandler } from './op16-115.special';
+import { op16118SpecialHandler } from './op16-118.special';
+import { op16119SpecialHandler } from './op16-119.special';
+import { op14001SpecialHandler } from './op14-001.special';
+import { op14009SpecialHandler } from './op14-009.special';
+import { op14011SpecialHandler } from './op14-011.special';
+import { op14016SpecialHandler } from './op14-016.special';
+import { op14017SpecialHandler } from './op14-017.special';
+import { op14020SpecialHandler } from './op14-020.special';
+import { op14021SpecialHandler } from './op14-021.special';
+import { op14027SpecialHandler } from './op14-027.special';
+import { op14028SpecialHandler } from './op14-028.special';
+import { op14032SpecialHandler } from './op14-032.special';
+import { op14033SpecialHandler } from './op14-033.special';
+import { op14034SpecialHandler } from './op14-034.special';
+import { op14035SpecialHandler } from './op14-035.special';
+import { op14041SpecialHandler } from './op14-041.special';
+import { op14044SpecialHandler } from './op14-044.special';
+import { op14045SpecialHandler } from './op14-045.special';
+import { op14049SpecialHandler } from './op14-049.special';
+import { op14053SpecialHandler } from './op14-053.special';
+import { op14056SpecialHandler } from './op14-056.special';
+import { op14060SpecialHandler } from './op14-060.special';
+import { op14061SpecialHandler } from './op14-061.special';
+import { op14062SpecialHandler } from './op14-062.special';
+import { op14069SpecialHandler } from './op14-069.special';
+import { op14070SpecialHandler } from './op14-070.special';
+import { op14079SpecialHandler } from './op14-079.special';
+import { op14096SpecialHandler } from './op14-096.special';
+import { op14103SpecialHandler } from './op14-103.special';
+import { op14104SpecialHandler } from './op14-104.special';
+import { op14105SpecialHandler } from './op14-105.special';
+import { op14111SpecialHandler } from './op14-111.special';
+import { op14115SpecialHandler } from './op14-115.special';
+import { op14119SpecialHandler } from './op14-119.special';
 
-import { op12016SpecialHandler } from './op12-016.special';
-import { op12017SpecialHandler } from './op12-017.special';
-import { op12020SpecialHandler } from './op12-020.special';
-import { op12040SpecialHandler } from './op12-040.special';
-import { op12041SpecialHandler } from './op12-041.special';
-import { op12081SpecialHandler } from './op12-081.special';
-import { op12096SpecialHandler } from './op12-096.special';
-import { op12102SpecialHandler } from './op12-102.special';
 
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op04040SpecialHandler,
@@ -148,7 +200,6 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op08098SpecialHandler,
   op08118SpecialHandler,
   op08119SpecialHandler,
-
   op09018SpecialHandler,
   op09022SpecialHandler,
   op09052SpecialHandler,
@@ -160,7 +211,6 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op09098SpecialHandler,
   op09101SpecialHandler,
   op09118SpecialHandler,
-
   op10022SpecialHandler,
   op10026SpecialHandler,
   op10027SpecialHandler,
@@ -185,7 +235,6 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op10116SpecialHandler,
   op10118SpecialHandler,
   op10119SpecialHandler,
-
   op11001SpecialHandler,
   op11022SpecialHandler,
   op11023SpecialHandler,
@@ -198,7 +247,6 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op11079SpecialHandler,
   op11081SpecialHandler,
   op11101SpecialHandler,
-
   op12016SpecialHandler,
   op12017SpecialHandler,
   op12020SpecialHandler,
@@ -207,7 +255,6 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op12081SpecialHandler,
   op12096SpecialHandler,
   op12102SpecialHandler,
-
   op13001SpecialHandler,
   op13002SpecialHandler,
   op13003SpecialHandler,
@@ -236,4 +283,60 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op13117SpecialHandler,
   op13118SpecialHandler,
   op13119SpecialHandler,
+  op15001SpecialHandler,
+  op15002SpecialHandler,
+  op15008SpecialHandler,
+  op15014SpecialHandler,
+  op15020SpecialHandler,
+  op15029SpecialHandler,
+  op15031SpecialHandler,
+  op15046SpecialHandler,
+  op15058SpecialHandler,
+  op15059SpecialHandler,
+  op15070SpecialHandler,
+  op15071SpecialHandler,
+  op15086SpecialHandler,
+  op15092SpecialHandler,
+  op15119SpecialHandler,
+  op16032SpecialHandler,
+  op16041SpecialHandler,
+  op16079SpecialHandler,
+  op16080SpecialHandler,
+  op16084SpecialHandler,
+  op16115SpecialHandler,
+  op16118SpecialHandler,
+  op16119SpecialHandler,
+
+  op14001SpecialHandler,
+  op14009SpecialHandler,
+  op14011SpecialHandler,
+  op14016SpecialHandler,
+  op14017SpecialHandler,
+  op14020SpecialHandler,
+  op14021SpecialHandler,
+  op14027SpecialHandler,
+  op14028SpecialHandler,
+  op14032SpecialHandler,
+  op14033SpecialHandler,
+  op14034SpecialHandler,
+  op14035SpecialHandler,
+  op14041SpecialHandler,
+  op14044SpecialHandler,
+  op14045SpecialHandler,
+  op14049SpecialHandler,
+  op14053SpecialHandler,
+  op14056SpecialHandler,
+  op14060SpecialHandler,
+  op14061SpecialHandler,
+  op14062SpecialHandler,
+  op14069SpecialHandler,
+  op14070SpecialHandler,
+  op14079SpecialHandler,
+  op14096SpecialHandler,
+  op14103SpecialHandler,
+  op14104SpecialHandler,
+  op14105SpecialHandler,
+  op14111SpecialHandler,
+  op14115SpecialHandler,
+  op14119SpecialHandler,
 ] as const;
