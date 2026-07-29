@@ -14,6 +14,7 @@ from typing import Any
 
 ALLOWED_CARD_TYPES = {'Leader', 'Character', 'Event', 'Stage', 'DON!!'}
 ALLOWED_CARD_COLORS = {'Red', 'Green', 'Blue', 'Purple', 'Black', 'Yellow'}
+SPECIAL_EDITION_IDS = {'DON', 'PROMOS'}
 
 
 CATALOG_ENDPOINTS = (
@@ -22,6 +23,9 @@ CATALOG_ENDPOINTS = (
     ("promos", "https://optcgapi.com/api/allPromoCards/"),
     ("don", "https://optcgapi.com/api/allDonCards/"),
 )
+
+DON_ENDPOINT = "https://optcgapi.com/api/allDonCards/"
+PROMO_ENDPOINT = "https://optcgapi.com/api/allPromoCards/"
 
 EDITION_ENDPOINT = "https://optcgapi.com/api/allSets/"
 
@@ -103,6 +107,42 @@ def parse_int(value: Any) -> int | None:
         return int(str(value).replace(",", "").strip())
     except ValueError:
         return None
+
+
+def normalize_don_card(payload: dict[str, Any]) -> CatalogCard | None:
+    """Normalize one DON!! card payload into the shared snapshot shape."""
+
+    raw_id = first_value(payload, "card_image_id", "don_id", "id", "number")
+    name = first_value(payload, "card_name", "optcg_don_name", "name")
+    if raw_id is None or not name:
+        card_image_id = payload.get("card_image_id")
+        if card_image_id and name:
+            raw_id = card_image_id
+
+    if raw_id is None or not name:
+        return None
+
+    card_id = normalize_card_id(str(raw_id))
+    return CatalogCard(
+        id=card_id,
+        number=card_id,
+        name=str(name).strip(),
+        type=str(first_value(payload, "card_type", "type") or "DON!!").strip(),
+        colors=[],
+        cost=None,
+        power=None,
+        life=None,
+        counter=None,
+        attributes=[],
+        families=[],
+        text=str(first_value(payload, "card_text", "text") or "").strip(),
+        trigger=None,
+        imageUrl=(
+            str(first_value(payload, "card_image", "image") or "").strip() or None
+        ),
+        set={"id": "DON", "name": "DON!! Cards"},
+        rarity=str(first_value(payload, "rarity") or "DON!!").strip() or None,
+    )
 
 
 def normalize_card(payload: dict[str, Any]) -> CatalogCard | None:
@@ -366,6 +406,99 @@ def write_edition_snapshots(
     return written
 
 
+def fetch_special_cards(url: str, normalize_fn: callable) -> list[CatalogCard]:
+    """Fetch cards from a special endpoint (DON or PROMO) and normalize them."""
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError) as error:
+        raise RuntimeError(f"Unable to fetch cards from {url}: {error}") from error
+
+    raw_cards: list[Any]
+    if isinstance(payload, list):
+        raw_cards = payload
+    elif isinstance(payload, dict):
+        for key in ("cards", "results", "data"):
+            if isinstance(payload.get(key), list):
+                raw_cards = payload[key]
+                break
+        else:
+            raw_cards = []
+    else:
+        raw_cards = []
+
+    cards: list[CatalogCard] = []
+    for raw_card in raw_cards:
+        if isinstance(raw_card, dict):
+            normalized = normalize_fn(raw_card)
+            if normalized is not None:
+                cards.append(normalized)
+    return cards
+
+
+def fetch_don_cards() -> list[CatalogCard]:
+    """Fetch and normalize all DON!! cards from the upstream API."""
+
+    return fetch_special_cards(DON_ENDPOINT, normalize_don_card)
+
+
+def fetch_promo_cards() -> list[CatalogCard]:
+    """Fetch and normalize all promo cards from the upstream API."""
+
+    return fetch_special_cards(PROMO_ENDPOINT, normalize_card)
+
+
+def write_special_snapshot(
+    cards: list[CatalogCard],
+    edition_id: str,
+    edition_name: str,
+    output_dir: Path,
+) -> Path:
+    """Write one special-edition snapshot (DON or PROMO) and return the path."""
+
+    family_prefix = edition_id
+    output_path = output_dir / family_prefix / f"{edition_id}.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    cards_sorted = sorted(cards, key=lambda card: card.id)
+
+    output_path.write_text(
+        json.dumps(
+            {
+                "editionId": edition_id,
+                "name": edition_name,
+                "cards": [
+                    {
+                        "id": card.id,
+                        "number": card.number,
+                        "name": card.name,
+                        "type": card.type,
+                        "colors": card.colors,
+                        "cost": card.cost,
+                        "power": card.power,
+                        "life": card.life,
+                        "counter": card.counter,
+                        "attributes": card.attributes,
+                        "families": card.families,
+                        "text": card.text,
+                        "trigger": card.trigger,
+                        "imageUrl": card.imageUrl,
+                        "set": card.set,
+                        "rarity": card.rarity,
+                    }
+                    for card in cards_sorted
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return output_path
+
+
 def build_download_parser() -> argparse.ArgumentParser:
     """Build the CLI parser used by the download script."""
 
@@ -552,11 +685,12 @@ def validate_snapshot_document(path: Path) -> list[str]:
 
         if normalized_id != card_id:
             issues.append(f'{card_label}: id must be uppercase and normalized')
-        card_edition_id = get_card_edition_id(normalized_id)
-        if card_edition_id is None:
-            issues.append(f'{card_label}: id {normalized_id} is not a valid edition card id')
-        elif card_edition_id != edition_id:
-            issues.append(f'{card_label}: id {normalized_id} does not belong to edition {edition_id}')
+        if edition_id not in SPECIAL_EDITION_IDS:
+            card_edition_id = get_card_edition_id(normalized_id)
+            if card_edition_id is None:
+                issues.append(f'{card_label}: id {normalized_id} is not a valid edition card id')
+            elif card_edition_id != edition_id:
+                issues.append(f'{card_label}: id {normalized_id} does not belong to edition {edition_id}')
 
         if not isinstance(number, str) or normalize_card_id(number) != normalized_id:
             issues.append(f'{card_label}: number must match id')
