@@ -21,6 +21,7 @@ Generate and validate the effect-definition files used by this repository's back
    - Generate from live card metadata: run `scripts/run-generate-effects.sh --edition OP01`.
    - Generate from a local metadata snapshot: run `scripts/run-generate-effects.sh --edition OP01 --source-file /abs/path/cards.json`.
    - Refine generated placeholders into authored effects in `packages/api/src/card-effect/definitions/`.
+   - If you need to generate effects for multiple editions in one task, split the work by edition and use sub-agents so each edition can be generated and validated independently.
 9. After generating a skeleton, implement the full DSL for every generated card entry in that edition before considering the work complete.
 10. Add or update the smallest useful mix of tests for the authored effects touched in scope:
    - engine or rules tests for reusable runtime behavior
@@ -36,6 +37,7 @@ Generate and validate the effect-definition files used by this repository's back
    - add or refine missing tests until the touched behavior is covered at the right layer and demonstrably matches the authored card text
    - rerun validation
    - repeat until validation passes, the generated edition has no unfinished generated placeholders left, and every touched effect has focused tests
+   - When multiple editions are in scope, run this loop per edition rather than mixing their outputs in a single pass.
 12. Keep changes declarative by default. Only use `definitions/special/` when a card cannot be represented safely or clearly by the DSL.
 13. After the validation loop is clean, run the most focused repo checks that cover the touched area.
 
