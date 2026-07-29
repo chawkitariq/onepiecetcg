@@ -29,7 +29,7 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const topCards = Array.from(player.zones.deck).slice(0, 3);
+    const topCards = Array.from(player.zones.deck).slice(0, 3) as DuelCard[];
     const topCardIds = new Set(topCards.map((card) => card.instanceId));
     const decisions = anyEngine.decisions;
 
