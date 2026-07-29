@@ -44,6 +44,13 @@ Prefer these source fields when present:
 - Write valid JSON only, with no wrapper object unless the downstream consumer explicitly expects one.
 - Support filtering to one edition or several editions in the same run when the caller passes explicit edition ids.
 
+## Validation
+
+- Validate every downloaded snapshot before reusing it.
+- Check the top-level `editionId` and `cards` structure.
+- Ensure each card keeps the shared schema shape and stays inside the edition file that owns it.
+- Reject duplicate card ids, invalid card types, invalid colors, and malformed nested `set` objects.
+
 ## Handoff to effect generation
 
 When you need effect-definition work, point `onepiecetcg-effect-generation` at the generated snapshot with `--source-file`.

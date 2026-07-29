@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+ALLOWED_CARD_TYPES = {'Leader', 'Character', 'Event', 'Stage', 'DON!!'}
+ALLOWED_CARD_COLORS = {'Red', 'Green', 'Blue', 'Purple', 'Black', 'Yellow'}
+
 
 CATALOG_ENDPOINTS = (
     ("sets", "https://optcgapi.com/api/allSetCards/"),
@@ -262,7 +265,7 @@ def write_edition_snapshots(cards: list[CatalogCard], output_dir: Path) -> list[
     return written
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_download_parser() -> argparse.ArgumentParser:
     """Build the CLI parser used by the download script."""
 
     parser = argparse.ArgumentParser(
@@ -286,10 +289,163 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_validation_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser used by the validation script."""
+
+    parser = argparse.ArgumentParser(
+        description="Validate OPTCG catalog snapshot files."
+    )
+    parser.add_argument(
+        "--source-file",
+        type=Path,
+        help="Validate one local JSON snapshot instead of a directory of snapshots.",
+    )
+    parser.add_argument(
+        "--input-dir",
+        type=Path,
+        help="Directory containing edition snapshots to validate.",
+    )
+    parser.add_argument(
+        "--edition",
+        "-e",
+        help="Comma-separated edition ids to validate, for example OP01 or OP01,OP02.",
+    )
+    return parser
+
+
 def parse_edition_filter(value: str | None) -> set[str] | None:
     """Parse an optional edition filter."""
 
     if value is None:
         return None
-    editions = {normalize_card_id(item.split("-", 1)[0]) for item in value.split(",") if item.strip()}
+    editions = {
+        normalize_card_id(item.split("-", 1)[0])
+        for item in value.split(",")
+        if item.strip()
+    }
     return editions or None
+
+
+def load_snapshot_document(path: Path) -> dict[str, Any]:
+    """Load one snapshot document from disk."""
+
+    payload = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(payload, dict):
+        raise ValueError(f'{path}: snapshot must be a JSON object')
+    return payload
+
+
+def validate_snapshot_document(path: Path) -> list[str]:
+    """Validate the structure of one downloaded snapshot."""
+
+    issues: list[str] = []
+
+    try:
+        payload = load_snapshot_document(path)
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        return [f'{path}: {error}']
+
+    edition_id = payload.get('editionId')
+    if not isinstance(edition_id, str) or not edition_id.strip():
+        issues.append(f'{path}: missing or invalid editionId')
+        edition_id = path.stem
+    else:
+        edition_id = normalize_card_id(edition_id)
+
+    if normalize_card_id(path.stem) != edition_id:
+        issues.append(
+            f'{path}: editionId {edition_id!r} does not match file name {path.stem!r}'
+        )
+
+    cards = payload.get('cards')
+    if not isinstance(cards, list):
+        issues.append(f'{path}: cards must be an array')
+        return issues
+    if not cards:
+        issues.append(f'{path}: cards array must not be empty')
+        return issues
+
+    seen_ids: set[str] = set()
+    for index, card in enumerate(cards, start=1):
+        card_label = f'{path} card #{index}'
+        if not isinstance(card, dict):
+            issues.append(f'{card_label}: card must be an object')
+            continue
+
+        card_id = card.get('id')
+        number = card.get('number')
+        name = card.get('name')
+        card_type = card.get('type')
+        colors = card.get('colors')
+        cost = card.get('cost')
+        power = card.get('power')
+        life = card.get('life')
+        counter = card.get('counter')
+        attributes = card.get('attributes')
+        families = card.get('families')
+        text = card.get('text')
+        trigger = card.get('trigger')
+        image_url = card.get('imageUrl')
+        set_info = card.get('set')
+        rarity = card.get('rarity')
+
+        if not isinstance(card_id, str) or not card_id.strip():
+            issues.append(f'{card_label}: missing or invalid id')
+            continue
+
+        normalized_id = normalize_card_id(card_id)
+        if normalized_id in seen_ids:
+            issues.append(f'{card_label}: duplicate card id {normalized_id}')
+        seen_ids.add(normalized_id)
+
+        if normalized_id != card_id:
+            issues.append(f'{card_label}: id must be uppercase and normalized')
+        if not normalized_id.startswith(f'{edition_id}-'):
+            issues.append(f'{card_label}: id {normalized_id} does not belong to edition {edition_id}')
+
+        if not isinstance(number, str) or normalize_card_id(number) != normalized_id:
+            issues.append(f'{card_label}: number must match id')
+        if not isinstance(name, str) or not name.strip():
+            issues.append(f'{card_label}: missing or invalid name')
+
+        if not isinstance(card_type, str) or card_type not in ALLOWED_CARD_TYPES:
+            issues.append(f'{card_label}: invalid type {card_type!r}')
+
+        if not isinstance(colors, list) or any(
+            not isinstance(color, str) or color not in ALLOWED_CARD_COLORS
+            for color in colors
+        ):
+            issues.append(f'{card_label}: colors must be a list of valid card colors')
+
+        for field_name, value in (
+            ('cost', cost),
+            ('power', power),
+            ('life', life),
+            ('counter', counter),
+        ):
+            if value is not None and not isinstance(value, int):
+                issues.append(f'{card_label}: {field_name} must be an integer or null')
+
+        for field_name, value in (('attributes', attributes), ('families', families)):
+            if not isinstance(value, list) or any(not isinstance(entry, str) or not entry.strip() for entry in value):
+                issues.append(f'{card_label}: {field_name} must be a list of non-empty strings')
+
+        if not isinstance(text, str):
+            issues.append(f'{card_label}: text must be a string')
+        if trigger is not None and not isinstance(trigger, str):
+            issues.append(f'{card_label}: trigger must be a string or null')
+        if image_url is not None and not isinstance(image_url, str):
+            issues.append(f'{card_label}: imageUrl must be a string or null')
+        if not isinstance(set_info, dict):
+            issues.append(f'{card_label}: set must be an object')
+        else:
+            set_id = set_info.get('id')
+            set_name = set_info.get('name')
+            if not isinstance(set_id, str) or not set_id.strip():
+                issues.append(f'{card_label}: set.id must be a non-empty string')
+            if not isinstance(set_name, str) or not set_name.strip():
+                issues.append(f'{card_label}: set.name must be a non-empty string')
+        if rarity is not None and not isinstance(rarity, str):
+            issues.append(f'{card_label}: rarity must be a string or null')
+
+    return issues

@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from catalog_skill_lib import (
-    build_parser,
+    build_download_parser,
     detect_repo_root,
     fetch_live_catalog,
     load_cards_from_snapshot,
@@ -18,7 +18,7 @@ from catalog_skill_lib import (
 def main() -> int:
     """Run the catalog download workflow."""
 
-    parser = build_parser()
+    parser = build_download_parser()
     args = parser.parse_args()
 
     repo_root = detect_repo_root()
