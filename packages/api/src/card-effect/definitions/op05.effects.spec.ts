@@ -14,16 +14,8 @@ import type {
   SpecialHandlerDefinition,
 } from '../types/effect-registry';
 import { op05EffectDefinitions } from './op05.effects';
-import { op05071SpecialHandler } from './special/op05-071.special';
-import { op05016SpecialHandler } from './special/op05-016.special';
-import { op05011SpecialHandler } from './special/op05-011.special';
 import { op05060SpecialHandler } from './special/op05-060.special';
 import { op05114SpecialHandler } from './special/op05-114.special';
-import { op05102SpecialHandler } from './special/op05-102.special';
-import { op05116SpecialHandler } from './special/op05-116.special';
-import { op05069SpecialHandler } from './special/op05-069.special';
-import { op05059SpecialHandler } from './special/op05-059.special';
-import { op05017SpecialHandler } from './special/op05-017.special';
 import { op05007SpecialHandler } from './special/op05-007.special';
 import { op05043SpecialHandler } from './special/op05-043.special';
 import { op05019SpecialHandler } from './special/op05-019.special';
@@ -495,10 +487,7 @@ describe('op05EffectDefinitions', () => {
       families: ['Revolutionary Army'],
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05116SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const koala = host.addCardToZone(
       'p1',
@@ -1101,10 +1090,7 @@ describe('op05EffectDefinitions', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05116SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const hinoBirdZap = host.addCardToZone(
       'p1',
@@ -1168,10 +1154,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05069SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const law = host.addCardToZone(
       'p1',
@@ -1267,10 +1250,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05059SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const eventCard = host.addCardToZone(
       'p1',
@@ -1323,10 +1303,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05059SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const eventCard = host.addCardToZone(
       'p1',
@@ -2130,10 +2107,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05059SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const mozambia = host.addCardToZone(
       'p1',
@@ -2354,10 +2328,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05017SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const lindbergh = host.addCardToZone(
       'p1',
@@ -2411,10 +2382,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05017SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const lindbergh = host.addCardToZone(
       'p1',
@@ -2956,10 +2924,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05011SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const kuma = host.addCardToZone(
       'p1',
@@ -3011,10 +2976,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05011SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const kuma = host.addCardToZone(
       'p1',
@@ -3043,10 +3005,7 @@ describe('op05EffectDefinitions', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05016SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const morley = host.addCardToZone(
       'p1',
@@ -3089,10 +3048,7 @@ describe('op05EffectDefinitions', () => {
       name: 'Multicolor Leader',
     });
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05016SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const morley = host.addCardToZone(
       'p1',
@@ -3201,10 +3157,7 @@ describe('op05EffectDefinitions', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05071SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const bepo = host.addCardToZone(
       'p1',
@@ -3510,7 +3463,7 @@ describe('op05EffectDefinitions', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(createRegistry([op05EffectDefinitions], [op05102SpecialHandler]), host);
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const gedatsu = host.addCardToZone(
       'p1',

@@ -44,10 +44,13 @@ export type EffectCount =
 export type EffectCondition =
   | { type: 'controllerTurn'; value: boolean }
   | { type: 'sourceHasAttachedDonAtLeast'; value: number }
+  | { type: 'sourcePowerAtLeast'; value: number }
   | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
   | { type: 'playerHasLessLifeThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
+  | { type: 'playerHasMoreTotalDonThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
   | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasLeaderColorsAtLeast'; player: EffectOwnerSelector; value: number }
   | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
   | { type: 'playerHasOnlyCharactersWithTrait'; player: EffectOwnerSelector; trait: string }
   | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
@@ -62,6 +65,7 @@ export type EffectCondition =
 export type EffectCardFilter = {
   cardCategory?: CardType[];
   costMax?: number;
+  costMaxFromLifeOf?: EffectOwnerSelector;
   costMin?: number;
   baseCostMax?: number;
   baseCostMin?: number;

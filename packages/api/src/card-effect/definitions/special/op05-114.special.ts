@@ -2,8 +2,8 @@ import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
 /**
- * Handles El Thor's trigger because the KO threshold depends on the opponent's
- * current Life count, which is not expressible with the current DSL.
+ * Handles El Thor because the counter branch needs to stack both power boosts
+ * onto the same chosen card, and the trigger branch reads a dynamic life cap.
  */
 export const op05114SpecialHandler: SpecialHandlerDefinition = {
   id: 'op05-114-special',

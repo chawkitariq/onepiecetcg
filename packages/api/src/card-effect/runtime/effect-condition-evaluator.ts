@@ -29,6 +29,8 @@ export class EffectConditionEvaluator {
           );
         case 'sourceHasAttachedDonAtLeast':
           return source.attachedDon >= condition.value;
+        case 'sourcePowerAtLeast':
+          return source.power >= condition.value;
         case 'playerHasLifeAtMost': {
           const playerId = this.selectors.resolvePlayer(
             condition.player,
@@ -56,6 +58,20 @@ export class EffectConditionEvaluator {
             (thanPlayer?.zones.life.length ?? 0)
           );
         }
+        case 'playerHasMoreTotalDonThan': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const thanPlayerId = this.selectors.resolvePlayer(
+            condition.thanPlayer,
+            controllerSessionId,
+          );
+          return (
+            this.selectors.countTotalDonOnField(playerId) >
+            this.selectors.countTotalDonOnField(thanPlayerId)
+          );
+        }
         case 'playerHasLeaderName': {
           const playerId = this.selectors.resolvePlayer(
             condition.player,
@@ -73,6 +89,14 @@ export class EffectConditionEvaluator {
           return (
             player?.zones.leader.families.includes(condition.value) ?? false
           );
+        }
+        case 'playerHasLeaderColorsAtLeast': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          return (player?.zones.leader.colors.length ?? 0) >= condition.value;
         }
         case 'playerHasTotalDonAtLeast': {
           const playerId = this.selectors.resolvePlayer(

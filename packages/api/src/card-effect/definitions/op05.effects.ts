@@ -449,8 +449,27 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-102',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-102-special',
+          kind: 'standard',
+          effect: {
+            id: 'gedatsu-102-on-play-ko-cost-up-to-opponent-life',
+            text: "[On Play] K.O. up to 1 of your opponent's Characters with a cost equal to or less than the number of your opponent's Life cards.",
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMaxFromLifeOf: 'opponent',
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
         },
       ],
     },
@@ -460,8 +479,58 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-017',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-017-special',
+          kind: 'standard',
+          effect: {
+            id: 'lindbergh-017-when-attacking-if-power-7000-ko-power-3000-or-less',
+            text: "[When Attacking] If this Character has 7000 power or more, K.O. up to 1 of your opponent's Characters with 3000 power or less.",
+            trigger: { type: 'whenAttacking' },
+            conditions: [{ type: 'sourcePowerAtLeast', value: 7000 }],
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 3000 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'lindbergh-017-trigger-trash-1-play-this-card-if-multicolored-leader',
+            text: '[Trigger] You may trash 1 card from your hand: If your Leader is multicolored, play this card.',
+            trigger: { type: 'trigger', optional: true },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+            ],
+            costs: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['trash'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                destination: 'characters',
+              },
+            ],
+          },
         },
       ],
     },
@@ -537,8 +606,33 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-069',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-069-special',
+          kind: 'standard',
+          effect: {
+            id: 'trafalgar-law-069-when-attacking-if-multicolored-and-opponent-has-more-don-search-heart-pirates',
+            text: "[When Attacking] If your Leader is multicolored and your opponent has more DON!! cards on their field than you, look at 5 cards from the top of your deck; reveal up to 1 [Heart Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+            trigger: { type: 'whenAttacking' },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasMoreTotalDonThan',
+                player: 'opponent',
+                thanPlayer: 'self',
+              },
+            ],
+            actions: [
+              {
+                type: 'search',
+                player: 'self',
+                sourceZone: 'deck',
+                amount: 5,
+                filter: { trait: ['Heart Pirates'] },
+                count: { kind: 'upTo', value: 1 },
+                destination: 'hand',
+                restDestination: 'deck',
+                restToBottom: true,
+              },
+            ],
+          },
         },
       ],
     },
@@ -773,8 +867,58 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-016',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-016-special',
+          kind: 'standard',
+          effect: {
+            id: 'morley-016-when-attacking-if-power-7000-opponent-cannot-block',
+            text: "If this Character has 7000 power or more, your opponent cannot activate [Blocker] during this battle.",
+            trigger: { type: 'whenAttacking' },
+            conditions: [{ type: 'sourcePowerAtLeast', value: 7000 }],
+            actions: [
+              {
+                type: 'grantKeywords',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                },
+                keywords: ['cannotBlock'],
+                duration: { type: 'untilEndOfBattle' },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'morley-016-trigger-trash-1-play-this-card-if-multicolored-leader',
+            text: '[Trigger] You may trash 1 card from your hand: If your Leader is multicolored, play this card.',
+            trigger: { type: 'trigger', optional: true },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+            ],
+            costs: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['trash'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                destination: 'characters',
+              },
+            ],
+          },
         },
       ],
     },
@@ -1028,8 +1172,50 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-011',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-011-special',
+          kind: 'standard',
+          effect: {
+            id: 'bartholomew-kuma-011-on-play-if-multicolored-leader-ko-power-2000-or-less',
+            text: "[On Play] If your Leader is multicolored, K.O. up to 1 of your opponent's Characters with 2000 power or less.",
+            trigger: { type: 'onPlay' },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+            ],
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 2000 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'bartholomew-kuma-011-trigger-play-this-card-if-multicolored-leader',
+            text: '[Trigger] If your Leader is multicolored, play this card.',
+            trigger: { type: 'trigger' },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+            ],
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['trash'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                destination: 'characters',
+              },
+            ],
+          },
         },
       ],
     },
@@ -1762,8 +1948,42 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-116',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-116-special',
+          kind: 'standard',
+          effect: {
+            id: 'hino-bird-zap-116-main-ko-cost-up-to-opponent-life',
+            text: "[Main] K.O. up to 1 of your opponent's Characters with a cost equal to or less than the number of your opponent's Life cards.",
+            trigger: { type: 'activateMain' },
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMaxFromLifeOf: 'opponent',
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'hino-bird-zap-116-trigger-activate-main',
+            text: "[Trigger] Activate this card's [Main] effect.",
+            trigger: { type: 'trigger' },
+            actions: [
+              {
+                type: 'activateEffect',
+                cardId: 'OP05-116',
+                effectId: 'hino-bird-zap-116-main-ko-cost-up-to-opponent-life',
+              },
+            ],
+          },
         },
       ],
     },
@@ -1981,8 +2201,32 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-071',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-071-special',
+          kind: 'standard',
+          effect: {
+            id: 'bepo-071-when-attacking-if-opponent-has-more-don-minus-2000',
+            text: "[When Attacking] If your opponent has more DON!! cards on their field than you, give up to 1 of your opponent's Characters -2000 power during this turn.",
+            trigger: { type: 'whenAttacking' },
+            conditions: [
+              {
+                type: 'playerHasMoreTotalDonThan',
+                player: 'opponent',
+                thanPlayer: 'self',
+              },
+            ],
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                amount: -2000,
+                duration: { type: 'untilEndOfTurn' },
+              },
+            ],
+          },
         },
       ],
     },
@@ -3538,8 +3782,41 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-059',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-059-special',
+          kind: 'standard',
+          effect: {
+            id: 'let-us-begin-the-world-of-violence-059-main-if-multicolored-draw-1-return-cost-5-or-less',
+            text: "[Main] If your Leader is multicolored, draw 1 card. Then, return up to 1 Character with a cost of 5 or less to the owner's hand.",
+            trigger: { type: 'activateMain' },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+            ],
+            actions: [
+              { type: 'draw', player: 'self', amount: 1 },
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'either',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 5 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'hand',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'let-us-begin-the-world-of-violence-059-trigger-if-multicolored-draw-2',
+            text: '[Trigger] If your Leader is multicolored, draw 2 cards.',
+            trigger: { type: 'trigger' },
+            conditions: [
+              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 2 }],
+          },
         },
       ],
     },

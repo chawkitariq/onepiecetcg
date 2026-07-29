@@ -92,6 +92,19 @@ export class EffectSelectorResolver {
       return false;
     }
 
+    if (filter.costMaxFromLifeOf) {
+      const playerId = this.resolvePlayer(
+        filter.costMaxFromLifeOf,
+        controllerSessionId,
+      );
+      const player = playerId ? this.host.getPlayer(playerId) : undefined;
+      const maxCost = player?.zones.life.length ?? -1;
+
+      if (card.cost > maxCost) {
+        return false;
+      }
+    }
+
     if (typeof filter.costMin === 'number' && card.cost < filter.costMin) {
       return false;
     }
