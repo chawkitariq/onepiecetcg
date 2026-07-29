@@ -4,6 +4,7 @@
 
 Use the OPTCG API families already documented in the repository:
 
+- `/allSets/`
 - `/allSetCards/`
 - `/allSTCards/`
 - `/allPromoCards/`
@@ -42,12 +43,14 @@ Prefer these source fields when present:
 - Use a stable ordering inside each edition file.
 - Keep the same edition grouping on every run.
 - Write valid JSON only, with no wrapper object unless the downstream consumer explicitly expects one.
-- Support filtering to one edition or several editions in the same run when the caller passes explicit edition ids.
+- Support filtering to one edition or several editions in the same run when the caller passes explicit edition ids such as `OP-01,EB-01`.
+- Store each edition file in a folder named after its family prefix, such as `OP`, `EB`, or `ST`.
 
 ## Validation
 
 - Validate every downloaded snapshot before reusing it.
-- Check the top-level `editionId` and `cards` structure.
+- Check the top-level `editionId`, `name`, and `cards` structure.
+- Ensure the parent folder matches the edition family prefix.
 - Ensure each card keeps the shared schema shape and stays inside the edition file that owns it.
 - Reject duplicate card ids, invalid card types, invalid colors, and malformed nested `set` objects.
 

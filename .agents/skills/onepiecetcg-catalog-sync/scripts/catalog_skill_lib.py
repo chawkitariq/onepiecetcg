@@ -23,6 +23,8 @@ CATALOG_ENDPOINTS = (
     ("don", "https://optcgapi.com/api/allDonCards/"),
 )
 
+EDITION_ENDPOINT = "https://optcgapi.com/api/allSets/"
+
 
 @dataclass(frozen=True)
 class CatalogCard:
@@ -44,6 +46,14 @@ class CatalogCard:
     imageUrl: str | None
     set: dict[str, str]
     rarity: str | None
+
+
+@dataclass(frozen=True)
+class EditionMetadata:
+    """Normalized edition metadata used by the catalog-sync skill."""
+
+    id: str
+    name: str
 
 
 def detect_repo_root(start: Path | None = None) -> Path:
@@ -181,6 +191,38 @@ def extract_cards(payload: Any) -> list[CatalogCard]:
     return cards
 
 
+def extract_editions(payload: Any) -> list[EditionMetadata]:
+    """Extract normalized edition metadata from a raw payload."""
+
+    raw_editions: list[Any]
+    if isinstance(payload, list):
+        raw_editions = payload
+    elif isinstance(payload, dict):
+        for key in ("sets", "results", "data"):
+            if isinstance(payload.get(key), list):
+                raw_editions = payload[key]
+                break
+        else:
+            raw_editions = []
+    else:
+        raw_editions = []
+
+    editions: list[EditionMetadata] = []
+    for raw_edition in raw_editions:
+        if not isinstance(raw_edition, dict):
+            continue
+        raw_id = first_value(raw_edition, "set_id", "setId", "id")
+        raw_name = first_value(raw_edition, "set_name", "setName", "name")
+        if raw_id is None or raw_name is None:
+            continue
+        edition_id = normalize_edition_id(str(raw_id))
+        edition_name = str(raw_name).strip()
+        if not edition_name:
+            continue
+        editions.append(EditionMetadata(id=edition_id, name=edition_name))
+    return editions
+
+
 def _has_valid_colors(card: CatalogCard) -> bool:
     """Check whether at least one color is recognized."""
     if not card.colors:
@@ -215,6 +257,24 @@ def fetch_live_catalog() -> list[CatalogCard]:
     return list(by_id.values())
 
 
+def fetch_live_edition_metadata() -> dict[str, str]:
+    """Fetch the current edition name map from the upstream API."""
+
+    try:
+        with urllib.request.urlopen(EDITION_ENDPOINT) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError) as error:
+        raise RuntimeError(f"Unable to fetch edition metadata: {error}") from error
+
+    editions = {
+        edition.id: edition.name
+        for edition in extract_editions(payload)
+    }
+    if not editions:
+        raise RuntimeError("Unable to fetch any OPTCG edition metadata.")
+    return editions
+
+
 def load_cards_from_snapshot(path: Path) -> list[CatalogCard]:
     """Load cards from a local JSON snapshot."""
 
@@ -222,31 +282,57 @@ def load_cards_from_snapshot(path: Path) -> list[CatalogCard]:
     return extract_cards(payload)
 
 
+def infer_edition_names(cards: list[CatalogCard]) -> dict[str, str]:
+    """Infer edition names from the card payloads when no edition map exists."""
+
+    names: dict[str, str] = {}
+    for card in cards:
+        edition_id = get_card_edition_id(card.id)
+        if edition_id is None or edition_id in names:
+            continue
+        set_name = card.set.get("name", "").strip()
+        if set_name:
+            names[edition_id] = set_name
+    return names
+
+
 def group_cards_by_edition(cards: list[CatalogCard]) -> dict[str, list[CatalogCard]]:
     """Group cards by edition prefix."""
 
     grouped: dict[str, list[CatalogCard]] = defaultdict(list)
     for card in cards:
-        if "-" not in card.id:
+        edition_id = get_card_edition_id(card.id)
+        if edition_id is None:
             continue
-        edition_id = normalize_card_id(card.id.split("-", 1)[0])
         grouped[edition_id].append(card)
     return dict(grouped)
 
 
-def write_edition_snapshots(cards: list[CatalogCard], output_dir: Path) -> list[Path]:
+def write_edition_snapshots(
+    cards: list[CatalogCard],
+    output_dir: Path,
+    edition_names: dict[str, str] | None = None,
+) -> list[Path]:
     """Write one snapshot file per edition and return the written paths."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
+    edition_names = edition_names or {}
 
     for edition_id, edition_cards in sorted(group_cards_by_edition(cards).items()):
         edition_cards = sorted(edition_cards, key=lambda card: card.id)
-        path = output_dir / f"{edition_id}.json"
+        path = resolve_edition_snapshot_path(output_dir, edition_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        edition_name = edition_names.get(edition_id)
+        if not edition_name and edition_cards:
+            edition_name = edition_cards[0].set.get("name", "").strip() or edition_id
+        if not edition_name:
+            edition_name = edition_id
         path.write_text(
             json.dumps(
                 {
                     "editionId": edition_id,
+                    "name": edition_name,
                     "cards": [
                         {
                             "id": card.id,
@@ -299,7 +385,7 @@ def build_download_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--edition",
         "-e",
-        help="Comma-separated edition ids to write, for example OP01 or OP01,OP02. If omitted, write every edition found in the source data.",
+        help="Comma-separated edition ids to write, for example OP-01 or OP-01,EB-01. If omitted, write every edition found in the source data.",
     )
     return parser
 
@@ -323,7 +409,7 @@ def build_validation_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--edition",
         "-e",
-        help="Comma-separated edition ids to validate, for example OP01 or OP01,OP02.",
+        help="Comma-separated edition ids to validate, for example OP-01 or OP-01,EB-01.",
     )
     return parser
 
@@ -334,11 +420,49 @@ def parse_edition_filter(value: str | None) -> set[str] | None:
     if value is None:
         return None
     editions = {
-        normalize_card_id(item.split("-", 1)[0])
+        normalize_edition_id(item)
         for item in value.split(",")
         if item.strip()
     }
     return editions or None
+
+
+def normalize_edition_id(value: str) -> str:
+    """Normalize an edition id to the hyphenated snapshot format."""
+
+    normalized = normalize_card_id(value)
+    match = re.match(r"^([A-Z]+)(\d{2})$", normalized)
+    if match is not None:
+        return f"{match.group(1)}-{match.group(2)}"
+    return normalized
+
+
+def get_edition_family_prefix(edition_id: str) -> str:
+    """Return the folder name used for one edition family."""
+
+    normalized = normalize_edition_id(edition_id)
+    match = re.match(r"^([A-Z]+)", normalized)
+    if match is None:
+        raise ValueError(f"Invalid edition id: {edition_id!r}")
+    return match.group(1)
+
+
+def resolve_edition_snapshot_path(output_dir: Path, edition_id: str) -> Path:
+    """Return the path for one edition snapshot."""
+
+    normalized = normalize_edition_id(edition_id)
+    family_prefix = get_edition_family_prefix(normalized)
+    return output_dir / family_prefix / f"{normalized}.json"
+
+
+def get_card_edition_id(card_id: str) -> str | None:
+    """Extract the edition id from a normalized card id."""
+
+    normalized = normalize_card_id(card_id)
+    match = re.match(r"^([A-Z]+-?\d{2})-[A-Z0-9]+$", normalized)
+    if match is None:
+        return None
+    return normalize_edition_id(match.group(1))
 
 
 def load_snapshot_document(path: Path) -> dict[str, Any]:
@@ -367,9 +491,22 @@ def validate_snapshot_document(path: Path) -> list[str]:
     else:
         edition_id = normalize_card_id(edition_id)
 
+    edition_name = payload.get('name')
+    if not isinstance(edition_name, str) or not edition_name.strip():
+        issues.append(f'{path}: missing or invalid name')
+
     if normalize_card_id(path.stem) != edition_id:
         issues.append(
             f'{path}: editionId {edition_id!r} does not match file name {path.stem!r}'
+        )
+    try:
+        expected_prefix = get_edition_family_prefix(edition_id)
+    except ValueError as error:
+        issues.append(f'{path}: {error}')
+        expected_prefix = ''
+    if expected_prefix and normalize_card_id(path.parent.name) != expected_prefix:
+        issues.append(
+            f'{path}: parent folder {path.parent.name!r} does not match edition prefix {expected_prefix!r}'
         )
 
     cards = payload.get('cards')
@@ -415,7 +552,10 @@ def validate_snapshot_document(path: Path) -> list[str]:
 
         if normalized_id != card_id:
             issues.append(f'{card_label}: id must be uppercase and normalized')
-        if not normalized_id.startswith(f'{edition_id}-'):
+        card_edition_id = get_card_edition_id(normalized_id)
+        if card_edition_id is None:
+            issues.append(f'{card_label}: id {normalized_id} is not a valid edition card id')
+        elif card_edition_id != edition_id:
             issues.append(f'{card_label}: id {normalized_id} does not belong to edition {edition_id}')
 
         if not isinstance(number, str) or normalize_card_id(number) != normalized_id:

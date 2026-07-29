@@ -11,8 +11,10 @@ The main consumer is `onepiecetcg-effect-generation`, which can read a snapshot 
 ## Intended snapshot layout
 
 - One JSON file per edition.
-- Filename equals the edition id, for example `OP01.json`.
+- Filename equals the edition id, for example `OP-01.json`.
+- Put each edition file in a folder named after the edition family prefix, for example `packages/cards/catalog/OP/OP-01.json` and `packages/cards/catalog/EB/EB-01.json`.
 - File contents are the normalized cards for that edition only.
+- Snapshot metadata includes both `editionId` and `name`, with the name sourced from `allSets`.
 - Output should live under `packages/cards/catalog/` when that snapshot store is present in the repo.
 
 ## Shared schema target

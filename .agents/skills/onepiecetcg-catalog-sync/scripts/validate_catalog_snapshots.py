@@ -8,6 +8,7 @@ import sys
 from catalog_skill_lib import (
     build_validation_parser,
     detect_repo_root,
+    normalize_edition_id,
     parse_edition_filter,
     validate_snapshot_document,
 )
@@ -30,11 +31,13 @@ def main() -> int:
     if args.source_file is not None:
         candidate_files = [args.source_file.resolve()]
     else:
-        candidate_files = sorted(input_dir.glob('*.json'))
+        candidate_files = sorted(input_dir.rglob('*.json'))
 
     if requested_editions is not None:
         candidate_files = [
-            path for path in candidate_files if path.stem.upper() in requested_editions
+            path
+            for path in candidate_files
+            if normalize_edition_id(path.stem) in requested_editions
         ]
 
     if not candidate_files:
