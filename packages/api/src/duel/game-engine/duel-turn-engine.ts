@@ -226,17 +226,29 @@ export class DuelTurnEngine {
       returnedDonCount += player.zones.leader.attachedDon;
       player.zones.leader.attachedDon = 0;
     }
-    player.zones.leader.rested = false;
+    if (player.zones.leader.skipNextRefreshPhases > 0) {
+      player.zones.leader.skipNextRefreshPhases -= 1;
+    } else {
+      player.zones.leader.rested = false;
+    }
 
     for (const character of player.zones.characters) {
       returnedDonCount += character.attachedDon;
       character.attachedDon = 0;
-      character.rested = false;
+      if (character.skipNextRefreshPhases > 0) {
+        character.skipNextRefreshPhases -= 1;
+      } else {
+        character.rested = false;
+      }
       character.playedThisTurn = false;
     }
 
     if (player.zones.stage.instanceId) {
-      player.zones.stage.rested = false;
+      if (player.zones.stage.skipNextRefreshPhases > 0) {
+        player.zones.stage.skipNextRefreshPhases -= 1;
+      } else {
+        player.zones.stage.rested = false;
+      }
     }
 
     for (const donCard of player.zones.cost) {

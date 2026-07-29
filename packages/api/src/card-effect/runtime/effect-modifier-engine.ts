@@ -59,6 +59,7 @@ export class EffectModifierEngine {
         card.cannotAttackLeaderOnTurnPlayed = false;
         card.cannotBlock = false;
         card.cannotBeKoedInBattle = false;
+        card.cannotBeKoedByEffects = false;
         card.cannotBeKoedBySlashInBattle = false;
         card.cannotBeKoedByStrikeInBattle = false;
         card.winOnDeckOut = false;
@@ -458,6 +459,7 @@ export class EffectModifierEngine {
       cannotAttackLeaderOnTurnPlayed: boolean;
       cannotBlock: boolean;
       cannotBeKoedInBattle: boolean;
+      cannotBeKoedByEffects: boolean;
       cannotBeKoedBySlashInBattle: boolean;
       cannotBeKoedByStrikeInBattle: boolean;
       winOnDeckOut: boolean;
@@ -493,6 +495,9 @@ export class EffectModifierEngine {
           break;
         case 'cannotBeKoedInBattle':
           card.cannotBeKoedInBattle = true;
+          break;
+        case 'cannotBeKoedByEffects':
+          card.cannotBeKoedByEffects = true;
           break;
         case 'cannotBeKoedBySlashInBattle':
           card.cannotBeKoedBySlashInBattle = true;

@@ -96,6 +96,20 @@ export class EffectSelectorResolver {
       return false;
     }
 
+    if (
+      typeof filter.baseCostMax === 'number' &&
+      card.baseCost > filter.baseCostMax
+    ) {
+      return false;
+    }
+
+    if (
+      typeof filter.baseCostMin === 'number' &&
+      card.baseCost < filter.baseCostMin
+    ) {
+      return false;
+    }
+
     if (typeof filter.powerMax === 'number' && card.power > filter.powerMax) {
       return false;
     }
@@ -105,8 +119,29 @@ export class EffectSelectorResolver {
     }
 
     if (
+      typeof filter.basePowerMax === 'number' &&
+      card.basePower > filter.basePowerMax
+    ) {
+      return false;
+    }
+
+    if (
+      typeof filter.basePowerMin === 'number' &&
+      card.basePower < filter.basePowerMin
+    ) {
+      return false;
+    }
+
+    if (
       filter.color &&
       !filter.color.some((color) => card.colors.includes(color))
+    ) {
+      return false;
+    }
+
+    if (
+      filter.attribute &&
+      !filter.attribute.some((attribute) => card.attributes.includes(attribute))
     ) {
       return false;
     }

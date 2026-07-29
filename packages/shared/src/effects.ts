@@ -30,6 +30,7 @@ export type EffectKeyword =
   | 'cannotAttackLeaderOnTurnPlayed'
   | 'cannotBlock'
   | 'cannotBeKoedInBattle'
+  | 'cannotBeKoedByEffects'
   | 'cannotBeKoedBySlashInBattle'
   | 'cannotBeKoedByStrikeInBattle'
   | 'cannotBeRemovedByOpponentEffects'
@@ -60,9 +61,14 @@ export type EffectCardFilter = {
   cardCategory?: CardType[];
   costMax?: number;
   costMin?: number;
+  baseCostMax?: number;
+  baseCostMin?: number;
   powerMax?: number;
   powerMin?: number;
+  basePowerMax?: number;
+  basePowerMin?: number;
   color?: CardColor[];
+  attribute?: string[];
   differentColorThanStoredSelection?: string;
   trait?: string[];
   name?: string[];
@@ -337,6 +343,11 @@ export type EffectAction =
       faceDown?: boolean;
       rested?: boolean;
       toBottom?: boolean;
+    }
+  | {
+      type: 'skipNextRefreshPhases';
+      selector: EffectTargetSelector;
+      amount: number;
     }
   | {
       type: 'ifStoredSelectionMatches';

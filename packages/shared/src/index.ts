@@ -205,10 +205,12 @@ export type PublicCard = {
   cannotAttackLeaderOnTurnPlayed: boolean;
   cannotBlock: boolean;
   cannotBeKoedInBattle: boolean;
+  cannotBeKoedByEffects: boolean;
   cannotBeKoedBySlashInBattle: boolean;
   cannotBeKoedByStrikeInBattle: boolean;
   winOnDeckOut: boolean;
   cannotAttackUntilTurn: number;
+  skipNextRefreshPhases: number;
 };
 
 export type PrivateCard = PublicCard & {

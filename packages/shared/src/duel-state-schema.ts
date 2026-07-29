@@ -137,6 +137,10 @@ export class DuelCard extends Schema {
 
   @view()
   @type('boolean')
+  cannotBeKoedByEffects = false;
+
+  @view()
+  @type('boolean')
   cannotBeKoedBySlashInBattle = false;
 
   @view()
@@ -154,6 +158,10 @@ export class DuelCard extends Schema {
   @view()
   @type('number')
   cannotAttackUntilTurn = 0;
+
+  @view()
+  @type('number')
+  skipNextRefreshPhases = 0;
 }
 
 export class DuelZones extends Schema {

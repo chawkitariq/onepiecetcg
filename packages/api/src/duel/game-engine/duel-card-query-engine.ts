@@ -132,6 +132,20 @@ export class DuelCardQueryEngine {
     }
 
     if (
+      typeof filter.baseCostMax === 'number' &&
+      card.baseCost > filter.baseCostMax
+    ) {
+      return false;
+    }
+
+    if (
+      typeof filter.baseCostMin === 'number' &&
+      card.baseCost < filter.baseCostMin
+    ) {
+      return false;
+    }
+
+    if (
       typeof filter.powerMax === 'number' &&
       this.deps.cardPower(card) > filter.powerMax
     ) {
@@ -146,9 +160,32 @@ export class DuelCardQueryEngine {
     }
 
     if (
+      typeof filter.basePowerMax === 'number' &&
+      card.basePower > filter.basePowerMax
+    ) {
+      return false;
+    }
+
+    if (
+      typeof filter.basePowerMin === 'number' &&
+      card.basePower < filter.basePowerMin
+    ) {
+      return false;
+    }
+
+    if (
       filter.color &&
       !filter.color.some((color: string) =>
         card.colors.includes(color as never),
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      filter.attribute &&
+      !filter.attribute.some((attribute: string) =>
+        card.attributes.includes(attribute as never),
       )
     ) {
       return false;

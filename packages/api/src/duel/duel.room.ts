@@ -519,6 +519,11 @@ export class DuelRoom extends Room<DuelState> {
     reason: 'battle' | 'effect' = 'battle',
     skipReplacement = false,
   ) {
+    if (reason === 'effect' && card.cannotBeKoedByEffects) {
+      this.effectBoundary.reapplyContinuousEffects();
+      return;
+    }
+
     if (
       !skipReplacement &&
       this.effectBoundary.applyKoReplacement(
@@ -661,6 +666,11 @@ export class DuelRoom extends Room<DuelState> {
       : null;
 
     if (!player || !found) {
+      return false;
+    }
+
+    if (reason === 'effect' && found.card.cannotBeKoedByEffects) {
+      this.effectBoundary.reapplyContinuousEffects();
       return false;
     }
 

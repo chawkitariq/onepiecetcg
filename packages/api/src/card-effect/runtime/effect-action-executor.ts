@@ -594,6 +594,26 @@ export class EffectActionExecutor {
         );
         return;
       }
+      case 'skipNextRefreshPhases': {
+        this.forSelectedCards(
+          action.selector,
+          controllerSessionId,
+          context,
+          this.createDecisionId(source.instanceId, action.type),
+          'Choisissez la carte qui ne deviendra pas active lors de sa prochaine phase de Recharge.',
+          (cards) => {
+            for (const card of cards) {
+              card.skipNextRefreshPhases = Math.max(
+                card.skipNextRefreshPhases,
+                action.amount,
+              );
+            }
+
+            next();
+          },
+        );
+        return;
+      }
       case 'shuffleDeck': {
         const playerId = this.selectors.resolvePlayer(
           action.player,
@@ -1008,6 +1028,7 @@ export class EffectActionExecutor {
       case 'moveCard':
       case 'moveFirstCard':
       case 'scheduleMoveAtEndOfBattle':
+      case 'skipNextRefreshPhases':
       case 'attachDon':
       case 'play':
       case 'ko':
