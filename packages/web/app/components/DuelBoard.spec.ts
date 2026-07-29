@@ -667,6 +667,22 @@ describe('DuelBoard drag and drop', () => {
     expect(findTurnButton().text()).toContain('Tour adverse')
   })
 
+  it('shows a centered "Votre tour" feedback only when the turn comes back to the player', async () => {
+    isSelfTurn.value = false
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    expect(wrapper.find('[data-test="turn-feedback"]').exists()).toBe(false)
+    expect(document.body.textContent).not.toContain('Votre tour')
+
+    isSelfTurn.value = true
+    await wrapper.vm.$nextTick()
+
+    const feedback = wrapper.get('[data-test="turn-feedback"]')
+
+    expect(feedback.text()).toContain('Votre tour')
+  })
+
   it('shows the opponent hidden hand lane during setup and mulligan while the owner hand waits for mulligan', () => {
     phase.value = 'setup'
 

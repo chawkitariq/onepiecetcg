@@ -945,9 +945,11 @@ type FloatingNumberInstance = {
 const floatingNumbers = ref<FloatingNumberInstance[]>([])
 const cardFeedbacks = ref<CardFeedbackInstance[]>([])
 const bannerFeedbacks = ref<BannerFeedbackInstance[]>([])
+const isTurnFeedbackVisible = ref(false)
 let floatingNumberKey = 0
 let cardFeedbackKey = 0
 let bannerFeedbackKey = 0
+let turnFeedbackTimeoutHandle: number | null = null
 
 function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeLoss: number) {
   if (!leaderInstanceId || lifeLoss <= 0) {
@@ -1065,6 +1067,22 @@ function spawnBannerFeedback(message: string, family: DuelBannerFeedbackFamily) 
 function removeBannerFeedback(key: number) {
   bannerFeedbackElements.delete(key)
   bannerFeedbacks.value = bannerFeedbacks.value.filter(entry => entry.key !== key)
+}
+
+function clearTurnFeedbackTimeout() {
+  if (turnFeedbackTimeoutHandle !== null) {
+    window.clearTimeout(turnFeedbackTimeoutHandle)
+    turnFeedbackTimeoutHandle = null
+  }
+}
+
+function showTurnFeedback() {
+  clearTurnFeedbackTimeout()
+  isTurnFeedbackVisible.value = true
+  turnFeedbackTimeoutHandle = window.setTimeout(() => {
+    isTurnFeedbackVisible.value = false
+    turnFeedbackTimeoutHandle = null
+  }, reducedMotion.value === 'reduce' ? 720 : 980)
 }
 
 function cardFeedbackClasses(family: DuelCardFeedbackFamily) {
@@ -2213,6 +2231,18 @@ watch(
   },
   { immediate: true }
 )
+
+watch(isSelfTurn, (selfTurn, previousSelfTurn) => {
+  if (!selfTurn || previousSelfTurn || phase.value === 'finished') {
+    return
+  }
+
+  showTurnFeedback()
+})
+
+onBeforeUnmount(() => {
+  clearTurnFeedbackTimeout()
+})
 
 watch(
   [phase, isSelfTurn, isCombatInProgress],
@@ -3449,6 +3479,24 @@ defineShortcuts({
                   {{ entry.message }}
                 </div>
               </div>
+              <div class="pointer-events-none absolute inset-0 z-[137] flex items-center justify-center">
+                <Transition
+                  enter-active-class="transition duration-250 ease-out"
+                  enter-from-class="opacity-0 translate-y-3 scale-95"
+                  enter-to-class="opacity-100 translate-y-0 scale-100"
+                  leave-active-class="transition duration-200 ease-in"
+                  leave-from-class="opacity-100 translate-y-0 scale-100"
+                  leave-to-class="opacity-0 -translate-y-2 scale-[0.98]"
+                >
+                  <div
+                    v-if="isTurnFeedbackVisible"
+                    data-test="turn-feedback"
+                    class="duel-turn-feedback text-center"
+                  >
+                    Votre tour
+                  </div>
+                </Transition>
+              </div>
               <DuelAttackArrow
                 v-if="shouldRenderAttackArrow"
                 :from-instance-id="attackArrowFromInstanceId"
@@ -3626,6 +3674,18 @@ defineShortcuts({
   will-change: transform, opacity;
 }
 
+.duel-turn-feedback {
+  color: color-mix(in oklab, var(--ui-success) 68%, white 32%);
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 0.7),
+    0 3px 10px rgb(15 23 42 / 0.3),
+    0 12px 28px rgb(15 23 42 / 0.16);
+  font-size: clamp(1.75rem, 2vw + 1rem, 2.75rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .duel-trash-modal-card {
   animation: duel-trash-modal-card-appear 220ms ease-out both;
   animation-delay: calc(var(--trash-card-index, 0) * 35ms);
@@ -3647,7 +3707,8 @@ defineShortcuts({
 @media (prefers-reduced-motion: reduce) {
   .duel-trash-modal-card,
   .duel-card-feedback,
-  .duel-banner-feedback {
+  .duel-banner-feedback,
+  .duel-turn-feedback {
     animation: none;
     will-change: auto;
   }
