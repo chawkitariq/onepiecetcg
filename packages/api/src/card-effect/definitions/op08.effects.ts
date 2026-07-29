@@ -105,7 +105,7 @@ export const op08EffectDefinitions: EditionEffectDefinitions = {
                 message: 'Choose one:',
                 choices: [
                   {
-                    id: 'rest-don',
+                    id: 'op08-rest-don',
                     label: "Rest up to 1 of your opponent's DON!! cards",
                     actions: [
                       {

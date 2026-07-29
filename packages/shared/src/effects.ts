@@ -384,7 +384,7 @@ export type EffectAction =
         label: string;
         actions: EffectAction[];
       }>;
-    };
+    }
   | {
       type: 'scheduleActionsAtTurnEnd';
       actions: EffectAction[];
