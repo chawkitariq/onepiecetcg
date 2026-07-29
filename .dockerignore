@@ -1,0 +1,15 @@
+.git
+.gitignore
+.DS_Store
+node_modules
+**/node_modules
+.nuxt
+**/.nuxt
+dist
+**/dist
+coverage
+**/coverage
+.output
+**/.output
+packages/api/.env
+packages/web/.env

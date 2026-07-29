@@ -43,6 +43,12 @@ Start Postgres:
 docker compose up -d
 ```
 
+Start the full local production stack (Postgres + API + Nuxt preview):
+
+```bash
+docker compose -f docker-compose.prod-local.yml up --build
+```
+
 Install dependencies (this also builds `packages/shared` via its `postinstall` script):
 
 ```bash
