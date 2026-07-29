@@ -1,0 +1,458 @@
+{
+  "editionId": "ST04",
+  "cards": [
+    {
+      "id": "ST04-001",
+      "number": "ST04-001",
+      "name": "Kaido (001)",
+      "type": "Leader",
+      "colors": [
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[Activate: Main] [Once Per Turn] DON!! -7 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Trash up to 1 of your opponent's Life cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-001.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "ST04-002",
+      "number": "ST04-002",
+      "name": "Ulti",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Play up to 1 [Page One] card with a cost of 4 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-002.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-003",
+      "number": "ST04-003",
+      "name": "Kaido (Wanted Poster)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 9,
+      "power": 10000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[On Play] DON!! -5 (You may return the specified number of DON!! cards from your field to your DON!! deck.): K.O. up to 1 of your opponent's Characters with a cost of 6 or less. This Character gains [Rush] during this turn. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-003_p1.jpg",
+      "set": {
+        "id": "OP-03",
+        "name": "Pillars of Strength"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST04-004",
+      "number": "ST04-004",
+      "name": "King",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): K.O. up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-004.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST04-005",
+      "number": "ST04-005",
+      "name": "Queen (SP)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] DON!! 1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-005_p1.jpg",
+      "set": {
+        "id": "OP-08",
+        "name": "Two Legends"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-006",
+      "number": "ST04-006",
+      "name": "Sasaki",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-006.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-007",
+      "number": "ST04-007",
+      "name": "Sheepshead",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-007.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-008",
+      "number": "ST04-008",
+      "name": "Jack",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] You may trash 1 card from your hand: Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-008.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-009",
+      "number": "ST04-009",
+      "name": "Ginrummy",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-009.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-010",
+      "number": "ST04-010",
+      "name": "Who's.Who",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Smile"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): K.O. up to 1 of your opponent's Characters with a cost of 3 or less. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-010.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-011",
+      "number": "ST04-011",
+      "name": "Black Maria",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-011.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-012",
+      "number": "ST04-012",
+      "name": "Page One",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-012.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-013",
+      "number": "ST04-013",
+      "name": "X.Drake",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Drake Pirates Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-013.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-014",
+      "number": "ST04-014",
+      "name": "Lead Performer \"Disaster\"",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Main] Draw 1 card, then add up to 1 DON!! card from your DON!! deck and set it as active. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-014.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-015",
+      "number": "ST04-015",
+      "name": "Brachio Bomber",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 6,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Main] K.O. up to 1 of your opponent's Characters with a cost of 6 or less, then add up to 1 DON!! card from your DON!! deck and set it as active. [Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-015.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-016",
+      "number": "ST04-016",
+      "name": "Blast Breath (Jolly Roger Foil)",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[Counter] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Up to 1 of your Leader or Character cards gains +4000 power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-016_p2.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST04-017",
+      "number": "ST04-017",
+      "name": "Onigashima Island",
+      "type": "Stage",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Activate: Main] You may rest this Stage: If your Leader has the {Animal Kingdom Pirates} type, add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST04-017.jpg",
+      "set": {
+        "id": "ST-04",
+        "name": "Starter Deck 4: Animal Kingdom Pirates"
+      },
+      "rarity": "C"
+    }
+  ]
+}

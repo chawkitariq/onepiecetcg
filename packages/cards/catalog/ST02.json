@@ -1,0 +1,458 @@
+{
+  "editionId": "ST02",
+  "cards": [
+    {
+      "id": "ST02-001",
+      "number": "ST02-001",
+      "name": "Eustass\"Captain\"Kid (001)",
+      "type": "Leader",
+      "colors": [
+        "Green"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[Activate: Main] [Once Per Turn] (3) (You may rest the specified number of DON!! cards in your cost area.) You may trash 1 card from your hand: Set this Leader as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-001.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "ST02-002",
+      "number": "ST02-002",
+      "name": "Vito",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Firetank Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-002.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-003",
+      "number": "ST02-003",
+      "name": "Urouge",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fallen Monk Pirates Supernovas"
+      ],
+      "text": "[DON!! x1] If you have 3 or more Characters, this card gains +2000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-003.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-004",
+      "number": "ST02-004",
+      "name": "Capone\"Gang\"Bege (ST02-004) (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Firetank Pirates Supernovas"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-004_p4_M22zdUX.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-005",
+      "number": "ST02-005",
+      "name": "Killer",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[On Play] K.O. up to 1 of your opponent's rested Characters with a cost of 3 or less. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-005.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-006",
+      "number": "ST02-006",
+      "name": "Koby",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-006.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-007",
+      "number": "ST02-007",
+      "name": "Jewelry Bonney (SP)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Bonney Pirates Supernovas"
+      ],
+      "text": "[Activate: Main] (1) (You may rest the specified number of DON!! cards in your cost area.) You may rest this Character: Look at 5 cards from the top of your deck; reveal up to 1 {Supernovas} type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-007_p2.jpg",
+      "set": {
+        "id": "OP-08",
+        "name": "Two Legends"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-008",
+      "number": "ST02-008",
+      "name": "Scratchmen Apoo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "On-Air Pirates Supernovas"
+      ],
+      "text": "[DON!! x1] [When Attacking] Rest up to 1 of your opponent's DON!! cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-008.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-009",
+      "number": "ST02-009",
+      "name": "Trafalgar Law",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Heart Pirates Supernovas"
+      ],
+      "text": "[On Play] Set up to 1 of your \"Supernovas\" or \"Heart Pirates\" type rested Characters with a cost of 5 or less as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-009.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST02-010",
+      "number": "ST02-010",
+      "name": "Basil Hawkins",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Hawkins Pirates Supernovas"
+      ],
+      "text": "[DON!! x1] [Once Per Turn] [Your Turn] If this Character battles your opponent's Character, set this card as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-010.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-011",
+      "number": "ST02-011",
+      "name": "Heat",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kid Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-011.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-012",
+      "number": "ST02-012",
+      "name": "Bepo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates Minks"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-012.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-013",
+      "number": "ST02-013",
+      "name": "Eustass\"Captain\"Kid (013)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [DON!! x1] [End of Your Turn] Set this card as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-013.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST02-014",
+      "number": "ST02-014",
+      "name": "X.Drake",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Drake Pirates Navy Supernovas"
+      ],
+      "text": "[DON!! x1] [Your Turn] If this Character is rested, your \"Supernovas\" or \"Navy\" type Leaders and Characters gain +1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-014.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-015",
+      "number": "ST02-015",
+      "name": "Scalpel",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Heart Pirates Supernovas"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, set up to 1 of your DON!! cards as active. [Trigger] Set up to 2 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-015.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-016",
+      "number": "ST02-016",
+      "name": "Repel",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, set up to 1 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-016.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST02-017",
+      "number": "ST02-017",
+      "name": "Straw Sword",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Hawkins Pirates Supernovas"
+      ],
+      "text": "[Main] Rest up to 1 of your opponent's Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST02-017.jpg",
+      "set": {
+        "id": "ST-02",
+        "name": "Starter Deck 2: Worst Generation"
+      },
+      "rarity": "C"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "editionId": "ST27",
+  "cards": [
+    {
+      "id": "ST27-001",
+      "number": "ST27-001",
+      "name": "Avalo Pizarro",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] You may rest 1 of your [Fullalead] cards: If your Leader has the \"Blackbeard Pirates\" type, this Character gains +4000 power during this turn.\n[On K.O.] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST27-001.jpg",
+      "set": {
+        "id": "ST-27",
+        "name": "Starter Deck 27: BLACK Marshall.D.Teach"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST27-002",
+      "number": "ST27-002",
+      "name": "Catarina Devon",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate:Main] You may trash this Character: If your Leader has the \"Blackbeard Pirates\" type, give up to 1 of your opponent's Characters -1 cost during this turn.\n[On K.O.] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST27-002.jpg",
+      "set": {
+        "id": "ST-27",
+        "name": "Starter Deck 27: BLACK Marshall.D.Teach"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST27-003",
+      "number": "ST27-003",
+      "name": "Kuzan",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 6,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates Former Navy"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On K.O.] Play up to 1 \"Blackbeard Pirates\" type Character card with a cost of 5 or less from your trash rested.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST27-003.jpg",
+      "set": {
+        "id": "ST-27",
+        "name": "Starter Deck 27: BLACK Marshall.D.Teach"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST27-004",
+      "number": "ST27-004",
+      "name": "Sanjuan.Wolf",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Blackbeard Pirates Giant"
+      ],
+      "text": "If your Leader has the \"Blackbeard Pirates\" type, this Character gains [Blocker] and +1 cost for every 4 cards in your trash.\n(After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Play] Trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST27-004.jpg",
+      "set": {
+        "id": "ST-27",
+        "name": "Starter Deck 27: BLACK Marshall.D.Teach"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST27-005",
+      "number": "ST27-005",
+      "name": "Marshall.D.Teach (ST27-005)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 7,
+      "power": 8000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates The Four Emperors"
+      ],
+      "text": "[Activate:Main] You may rest this Character: K.O. up to 1 Character with a cost of 3 or less.\n[On K.O.] Add up to 1 black card from your trash to your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST27-005.jpg",
+      "set": {
+        "id": "ST-27",
+        "name": "Starter Deck 27: BLACK Marshall.D.Teach"
+      },
+      "rarity": "SR"
+    }
+  ]
+}

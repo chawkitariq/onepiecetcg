@@ -1,0 +1,460 @@
+{
+  "editionId": "ST21",
+  "cards": [
+    {
+      "id": "ST21-001",
+      "number": "ST21-001",
+      "name": "Monkey.D.Luffy (001)",
+      "type": "Leader",
+      "colors": [
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[DON!! x1] [Activate: Main] [Once Per Turn] Give up to 2 rested DON!! cards to 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-001.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "ST21-002",
+      "number": "ST21-002",
+      "name": "Usopp (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x2] [Opponent's Turn] This Character gains +2000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-002_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-003",
+      "number": "ST21-003",
+      "name": "Sanji - ST21-003 (Pirate Foil)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] Select up to 1 of your {Straw Hat Crew} type Characters with 6000 power or more. If the selected Character attacks during this turn, your opponent cannot activate [Blocker].",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-003_p2.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-004",
+      "number": "ST21-004",
+      "name": "Jewelry Bonney (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Bonney Pirates Egghead"
+      ],
+      "text": "[DON!! x2] [On K.O.] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-004_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-005",
+      "number": "ST21-005",
+      "name": "Jinbe (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Straw Hat Crew"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-005_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-006",
+      "number": "ST21-006",
+      "name": "Stussy (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Egghead"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-006_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-007",
+      "number": "ST21-007",
+      "name": "Sentomaru (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy Egghead"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-007_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-008",
+      "number": "ST21-008",
+      "name": "Tony Tony.Chopper",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Animal Straw Hat Crew"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-008.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-009",
+      "number": "ST21-009",
+      "name": "Nami",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Activate: Main] [Once Per Turn] Give up to 2 rested DON!! cards to 1 of your {Straw Hat Crew} type Leader or Character cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-009.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-010",
+      "number": "ST21-010",
+      "name": "Nico Robin",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x2] [When Attacking] K.O. up to 1 of your opponent's Characters with 4000 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-010.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-011",
+      "number": "ST21-011",
+      "name": "Franky (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x2] [Opponent's Turn] All of your {Straw Hat Crew} type Characters with 4000 base power or less gain +1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-011_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-012",
+      "number": "ST21-012",
+      "name": "Brook",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[When Attacking] Give up to 2 rested DON!! cards to your Leader or 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-012.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-013",
+      "number": "ST21-013",
+      "name": "Vegapunk (Parallel)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Scientist Egghead"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-013_p1.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-014",
+      "number": "ST21-014",
+      "name": "Monkey.D.Luffy (014)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[Rush] (This card can attack on the turn in which it is played.)\n[When Attacking] Give up to 1 rested DON!! card to your Leader or 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-014.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST21-015",
+      "number": "ST21-015",
+      "name": "Roronoa Zoro",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x2] This Character gains [Rush].\n[On K.O.] Play up to 1 red Character card with 6000 power or less other than [Roronoa Zoro] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-015.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST21-016",
+      "number": "ST21-016",
+      "name": "Gum-Gum Dawn Whip",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[Main] Up to 1 of your Leader or Character cards gains +1000 power during this turn. Then, up to 1 of your opponent's Characters with 4000 power or less cannot activate [Blocker] during this turn.\n[Trigger] K.O. up to 1 of your opponent's Characters with 4000 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-016.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST21-017",
+      "number": "ST21-017",
+      "name": "Gum-Gum Mole Pistol",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[Main] Give up to 1 of your opponent's Characters 5000 power during this turn. Then, if you have a Character with 6000 power or more, K.O. up to 1 of your opponent's Characters with 2000 power or less.\n[Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST21-017.jpg",
+      "set": {
+        "id": "ST-21",
+        "name": "Starter Deck EX: Gear 5"
+      },
+      "rarity": "C"
+    }
+  ]
+}

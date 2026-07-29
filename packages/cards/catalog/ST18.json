@@ -1,0 +1,140 @@
+{
+  "editionId": "ST18",
+  "cards": [
+    {
+      "id": "ST18-001",
+      "number": "ST18-001",
+      "name": "Uso-Hachi (SP)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] If you have 8 or more DON!! cards on your field, rest up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST18-001_p1.jpg",
+      "set": {
+        "id": "OP-10",
+        "name": "Royal Blood"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST18-002",
+      "number": "ST18-002",
+      "name": "O-Nami (Pirate Foil)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)[On Play] If you have 8 or more DON!! cards on your field, trash 1 card from your hand and draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST18-002_p1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST18-003",
+      "number": "ST18-003",
+      "name": "San-Gorou (Pirate Foil)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[When Attacking] [Once Per Turn] If you have 8 or more DON!! cards on your field, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST18-003_p2.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST18-004",
+      "number": "ST18-004",
+      "name": "Zoro-Juurou (ST18-004)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 purple \"Straw Hat Crew\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST18-004_p1.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST18-005",
+      "number": "ST18-005",
+      "name": "Luffy-Tarou (SP)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 7,
+      "power": 8000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] DON!! 1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Play up to 1 purple \"Straw Hat Crew\" type Character card with a cost of 5 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST18-005_p1.jpg",
+      "set": {
+        "id": "OP-11",
+        "name": "A Fist of Divine Speed"
+      },
+      "rarity": "SR"
+    }
+  ]
+}
