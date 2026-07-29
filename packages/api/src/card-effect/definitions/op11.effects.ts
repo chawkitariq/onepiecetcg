@@ -800,16 +800,17 @@ export const op11EffectDefinitions: EditionEffectDefinitions = {
             ],
             actions: [
               {
-                type: 'search',
-                player: 'self',
-                sourceZone: 'hand',
-                amount: 99,
-                filter: {
-                  cardCategory: ['Character'],
-                  trait: ['Fish-Man', 'Merfolk'],
-                  costMax: 6,
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Fish-Man', 'Merfolk'],
+                    costMax: 6,
+                  },
+                  count: { kind: 'upTo', value: 1 },
                 },
-                count: { kind: 'upTo', value: 1 },
                 destination: 'characters',
               },
             ],
