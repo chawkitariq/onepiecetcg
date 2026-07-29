@@ -106,6 +106,7 @@ export type QueuedEffect = {
   controllerSessionId: string;
   sourceInstanceId: string;
   sourceCardId: string;
+  sourceCard?: DuelCard;
   definition: StandardEffectDefinition;
 };
 

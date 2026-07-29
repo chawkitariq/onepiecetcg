@@ -858,6 +858,106 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p2')?.zones.characters).not.toContain(enemy);
   });
 
+  it('schedules actions for turn end and resolves the DON!! return primitive', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const scheduleDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'SCHEDULE-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'schedule-don-return',
+                text: 'At the end of this turn, return DON!! cards until you have the same number as your opponent.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'scheduleActionsAtTurnEnd' as const,
+                    actions: [
+                      {
+                        type: 'returnDonToDonDeckMatchingOpponentCount' as const,
+                        player: 'self' as const,
+                        referencePlayer: 'opponent' as const,
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, scheduleDefinition]),
+      host,
+    );
+    const source = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'SCHEDULE-001',
+        number: 'SCHEDULE-001',
+        name: 'Schedule Test',
+        type: 'Character',
+      }),
+      'schedule-source',
+    );
+
+    for (let index = 0; index < 5; index += 1) {
+      host.addCardToZone(
+        'p1',
+        'cost',
+        makeCard({
+          id: `DON-P1-${index}`,
+          number: `DON-P1-${index}`,
+          name: `DON!! ${index}`,
+          type: 'DON!!',
+        }),
+        `don-p1-${index}`,
+      );
+    }
+
+    for (let index = 0; index < 3; index += 1) {
+      host.addCardToZone(
+        'p2',
+        'cost',
+        makeCard({
+          id: `DON-P2-${index}`,
+          number: `DON-P2-${index}`,
+          name: `DON!! ${index}`,
+          type: 'DON!!',
+        }),
+        `don-p2-${index}`,
+      );
+    }
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(5);
+    expect(host.getPlayer('p1')?.zones.donDeck).toHaveLength(0);
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(3);
+    expect(host.getPlayer('p1')?.zones.donDeck).toHaveLength(2);
+    expect(host.getPlayer('p2')?.zones.cost).toHaveLength(3);
+  });
+
   it('applies temporary cost modifiers until end of turn', () => {
     const host = new TestHost();
     host.addPlayer('p1');

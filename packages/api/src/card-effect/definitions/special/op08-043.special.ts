@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
 export const op08043SpecialHandler: SpecialHandlerDefinition = {
@@ -12,7 +13,7 @@ export const op08043SpecialHandler: SpecialHandlerDefinition = {
     const leader = player.leader;
     if (
       !leader ||
-      !leader.types?.some((t: string) => t.includes('Whitebeard Piratess'))
+      !leader.types?.some((t: string) => t.includes('Whitebeard Pirates'))
     )
       return;
     const life = host.getCards(
@@ -32,7 +33,6 @@ export const op08043SpecialHandler: SpecialHandlerDefinition = {
       engine.reapplyContinuousEffects();
       return;
     }
-    const instanceIds = opponentChars.map((c: any) => c.instanceId);
     anyEngine.decisions.chooseCards(
       `${event.sourceInstanceId}:op08-043:select-all`,
       event.playerSessionId,

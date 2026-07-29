@@ -385,6 +385,15 @@ export type EffectAction =
         actions: EffectAction[];
       }>;
     };
+  | {
+      type: 'scheduleActionsAtTurnEnd';
+      actions: EffectAction[];
+    }
+  | {
+      type: 'returnDonToDonDeckMatchingOpponentCount';
+      player: EffectOwnerSelector;
+      referencePlayer: EffectOwnerSelector;
+    };
 
 export type StandardEffectDefinition = {
   id: string;

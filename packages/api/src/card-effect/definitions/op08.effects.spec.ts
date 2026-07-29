@@ -58,6 +58,34 @@ describe('OP08 Effect Definitions', () => {
         }
       }
     });
+
+    it('should keep converted cards on the standard DSL path', () => {
+      const blackMaria = op08EffectDefinitions.cards.find(
+        (card) => card.cardId === 'OP08-074',
+      );
+      const charlotteAngel = op08EffectDefinitions.cards.find(
+        (card) => card.cardId === 'OP08-101',
+      );
+
+      expect(
+        blackMaria?.effects?.some(
+          (entry) =>
+            entry.kind === 'standard' &&
+            entry.effect.actions.some(
+              (action) => action.type === 'scheduleActionsAtTurnEnd',
+            ),
+        ),
+      ).toBe(true);
+      expect(
+        charlotteAngel?.effects?.some(
+          (entry) =>
+            entry.kind === 'standard' &&
+            entry.effect.actions.some(
+              (action) => action.type === 'scheduleActionsAtTurnEnd',
+            ),
+        ),
+      ).toBe(true);
+    });
   });
 
   describe('continuous effects', () => {
@@ -189,7 +217,7 @@ describe('OP08 Effect Definitions', () => {
       const specialRefCards = op08EffectDefinitions.cards.filter((c) =>
         c.effects?.some((e) => e.kind === 'special-ref'),
       );
-      expect(specialRefCards.length).toBe(11);
+      expect(specialRefCards.length).toBe(9);
     });
   });
 });

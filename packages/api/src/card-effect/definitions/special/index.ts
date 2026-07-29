@@ -20,11 +20,9 @@ import { op08043SpecialHandler } from './op08-043.special';
 import { op08046SpecialHandler } from './op08-046.special';
 import { op08062SpecialHandler } from './op08-062.special';
 import { op08069SpecialHandler } from './op08-069.special';
-import { op08074SpecialHandler } from './op08-074.special';
 import { op08079SpecialHandler } from './op08-079.special';
 import { op08096SpecialHandler } from './op08-096.special';
 import { op08098SpecialHandler } from './op08-098.special';
-import { op08101SpecialHandler } from './op08-101.special';
 import { op08118SpecialHandler } from './op08-118.special';
 import { op08119SpecialHandler } from './op08-119.special';
 import { op07029SpecialHandler } from './op07-029.special';
@@ -54,11 +52,9 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op08046SpecialHandler,
   op08062SpecialHandler,
   op08069SpecialHandler,
-  op08074SpecialHandler,
   op08079SpecialHandler,
   op08096SpecialHandler,
   op08098SpecialHandler,
-  op08101SpecialHandler,
   op08118SpecialHandler,
   op08119SpecialHandler,
   op07029SpecialHandler,

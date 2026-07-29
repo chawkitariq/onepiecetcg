@@ -16,6 +16,12 @@ type QueueEffectFn = (
   effectId: string,
 ) => void;
 
+type ScheduleTurnEndActionsFn = (
+  controllerSessionId: string,
+  source: DuelCard,
+  actions: EffectAction[],
+) => void;
+
 type EmitEffectEventFn = (
   type: import('./effect-engine-types').EffectEventType,
   playerSessionId: string,
@@ -33,6 +39,7 @@ export class EffectActionExecutor {
     private readonly decisions: EffectDecisionManager,
     private readonly modifiers: EffectModifierEngine,
     private readonly queueEffect: QueueEffectFn,
+    private readonly scheduleTurnEndActions: ScheduleTurnEndActionsFn,
     private readonly emitEffectEvent: EmitEffectEventFn,
   ) {}
 
@@ -237,6 +244,42 @@ export class EffectActionExecutor {
 
         if (playerId) {
           this.host.returnDonToDonDeck(playerId, action.amount);
+        }
+
+        next();
+        return;
+      }
+      case 'returnDonToDonDeckMatchingOpponentCount': {
+        const playerId = this.selectors.resolvePlayer(
+          action.player,
+          controllerSessionId,
+        );
+        const referencePlayerId = this.selectors.resolvePlayer(
+          action.referencePlayer,
+          controllerSessionId,
+        );
+
+        if (playerId && referencePlayerId) {
+          const player = this.host.getPlayer(playerId);
+          const referencePlayer = this.host.getPlayer(referencePlayerId);
+
+          if (player && referencePlayer) {
+            const playerDonCount =
+              this.selectors.countTotalDonOnField(playerId);
+            const referenceDonCount =
+              this.selectors.countTotalDonOnField(referencePlayerId);
+            const amount = Math.max(
+              0,
+              Math.min(
+                playerDonCount - referenceDonCount,
+                player.zones.cost.length,
+              ),
+            );
+
+            if (amount > 0) {
+              this.host.returnDonToDonDeck(playerId, amount);
+            }
+          }
         }
 
         next();
@@ -869,6 +912,15 @@ export class EffectActionExecutor {
         );
         return;
       }
+      case 'scheduleActionsAtTurnEnd': {
+        this.scheduleTurnEndActions(
+          controllerSessionId,
+          source,
+          action.actions,
+        );
+        next();
+        return;
+      }
     }
   }
 
@@ -1079,6 +1131,8 @@ export class EffectActionExecutor {
       case 'drawUntilHandSize':
       case 'preventOwnEffectLifeToHand':
       case 'registerNextPlayCostModifier':
+      case 'scheduleActionsAtTurnEnd':
+      case 'returnDonToDonDeckMatchingOpponentCount':
         return true;
       case 'chooseActionBranch':
         return true;

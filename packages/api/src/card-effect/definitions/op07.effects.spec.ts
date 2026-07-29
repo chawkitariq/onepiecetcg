@@ -1,7 +1,4 @@
-import type {
-  CardEffectSource,
-  EditionEffectDefinitions,
-} from '../types/effect-definition-source';
+import type { CardEffectSource } from '../types/effect-definition-source';
 import { op07EffectDefinitions } from './op07.effects';
 
 describe('OP07 effect definitions', () => {
@@ -107,12 +104,8 @@ describe('OP07 effect definitions', () => {
       const std = card?.effects?.[0];
       expect(std?.kind).toBe('standard');
       if (std?.kind === 'standard') {
-        expect(std.effect.conditions).toBeDefined();
-        expect(
-          std.effect.conditions?.some(
-            (c: any) => c.type === 'sourceHasAttachedDonAtLeast',
-          ),
-        ).toBe(true);
+        const condition = std.effect.conditions?.[0];
+        expect(condition?.type).toBe('sourceHasAttachedDonAtLeast');
       }
     });
 
@@ -121,9 +114,7 @@ describe('OP07 effect definitions', () => {
       for (const cid of triggerToMain) {
         const card = findCard(cid);
         const triggerEffect = card?.effects?.find(
-          (e) =>
-            e.kind === 'standard' &&
-            (e as any).effect?.trigger?.type === 'trigger',
+          (e) => e.kind === 'standard' && e.effect.trigger.type === 'trigger',
         );
         expect(triggerEffect).toBeDefined();
       }
@@ -131,9 +122,6 @@ describe('OP07 effect definitions', () => {
   });
 
   describe('continuous condition patterns', () => {
-    const findCard = (cardId: string) =>
-      op07EffectDefinitions.cards.find((c) => c.cardId === c.cardId);
-
     it('OP07-031 Bartolomeo requires controller turn', () => {
       const card = op07EffectDefinitions.cards.find(
         (c) => c.cardId === 'OP07-031',

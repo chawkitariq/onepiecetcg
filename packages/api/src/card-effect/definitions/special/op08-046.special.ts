@@ -1,4 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
+import {
+  hasResolvedOncePerTurn,
+  markResolvedOncePerTurn,
+} from './special-handler-utils';
 
 export const op08046SpecialHandler: SpecialHandlerDefinition = {
   id: 'op08-046-special',
@@ -9,8 +14,6 @@ export const op08046SpecialHandler: SpecialHandlerDefinition = {
     const host = anyEngine.host;
     const source = host.getCard(event.sourceInstanceId);
     if (!source) return;
-    const oncePerTurnKey = `${event.sourceInstanceId}:op08-046:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
     const player = host.getPlayer(event.playerSessionId);
     if (!player) return;
     const isYourTurn = host.state.turnPlayer === event.playerSessionId;
@@ -20,7 +23,22 @@ export const op08046SpecialHandler: SpecialHandlerDefinition = {
       event.playerSessionId,
     );
     if (opponentHand.length < 5) return;
-    anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+    if (
+      hasResolvedOncePerTurn(
+        anyEngine,
+        event.sourceInstanceId,
+        'op08-046',
+        host.state.turn,
+      )
+    ) {
+      return;
+    }
+    markResolvedOncePerTurn(
+      anyEngine,
+      event.sourceInstanceId,
+      'op08-046',
+      host.state.turn,
+    );
     anyEngine.decisions.chooseCards(
       `${event.sourceInstanceId}:op08-046:bottom-card`,
       event.playerSessionId,

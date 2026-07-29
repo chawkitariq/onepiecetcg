@@ -30,6 +30,8 @@ export type {
 export class EffectEngine {
   private readonly queue: QueuedEffect[] = [];
 
+  private readonly delayedTurnEndQueue: QueuedEffect[] = [];
+
   private readonly resolvedOncePerTurnKeys = new Set<string>();
 
   private readonly selectors: EffectSelectorResolver;
@@ -79,6 +81,9 @@ export class EffectEngine {
             definition,
           );
         }
+      },
+      (controllerSessionId, source, actions) => {
+        this.scheduleTurnEndActions(controllerSessionId, source, actions);
       },
       (type, playerSessionId, source) => {
         this.handleEvent({
@@ -154,6 +159,10 @@ export class EffectEngine {
       event,
       this,
     );
+
+    if (event.type === 'onTurnEnd') {
+      this.flushDelayedTurnEndEffects();
+    }
 
     this.flushQueue();
   }
@@ -233,6 +242,26 @@ export class EffectEngine {
     });
   }
 
+  /** Queues authored actions to resolve at the end of the current turn. */
+  public scheduleTurnEndActions(
+    controllerSessionId: string,
+    source: DuelCard,
+    actions: StandardEffectDefinition['actions'],
+  ): void {
+    this.delayedTurnEndQueue.push({
+      controllerSessionId,
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+      sourceCard: source,
+      definition: {
+        id: `${source.instanceId}:${source.cardId}:scheduled-turn-end:${this.delayedTurnEndQueue.length}`,
+        text: '',
+        trigger: { type: 'onTurnEnd' },
+        actions,
+      },
+    });
+  }
+
   private flushQueue(): void {
     while (this.queue.length > 0 && !this.decisions.hasPendingDecision()) {
       const queued = this.queue.shift();
@@ -241,7 +270,8 @@ export class EffectEngine {
         continue;
       }
 
-      const source = this.host.getCard(queued.sourceInstanceId);
+      const source =
+        queued.sourceCard ?? this.host.getCard(queued.sourceInstanceId);
 
       if (!source) {
         continue;
@@ -326,6 +356,21 @@ export class EffectEngine {
       0,
       runActions,
     );
+  }
+
+  private flushDelayedTurnEndEffects(): void {
+    while (
+      this.delayedTurnEndQueue.length > 0 &&
+      !this.decisions.hasPendingDecision()
+    ) {
+      const queued = this.delayedTurnEndQueue.shift();
+
+      if (!queued) {
+        continue;
+      }
+
+      this.queue.push(queued);
+    }
   }
 
   /**

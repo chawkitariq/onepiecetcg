@@ -223,8 +223,42 @@ export const op08EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP08-074',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op08-074-special',
+          kind: 'standard',
+          effect: {
+            id: 'black-maria-074-activate-main-add-don-and-schedule-return',
+            text: '[Activate:Main] [Once Per Turn] If you have no other [Black Maria] Characters, add up to 5 DON!! cards from your DON!! deck and rest them. Then, at the end of this turn, return DON!! cards from your field to your DON!! deck until you have the same number of DON!! cards on your field as your opponent.',
+            trigger: { type: 'activateMain', oncePerTurn: true },
+            conditions: [
+              {
+                type: 'targetCountAtMost',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Black Maria'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+                value: 1,
+              },
+            ],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 5,
+                rested: true,
+              },
+              {
+                type: 'scheduleActionsAtTurnEnd',
+                actions: [
+                  {
+                    type: 'returnDonToDonDeckMatchingOpponentCount',
+                    player: 'self',
+                    referencePlayer: 'opponent',
+                  },
+                ],
+              },
+            ],
+          },
         },
       ],
     },
@@ -232,8 +266,49 @@ export const op08EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP08-101',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op08-101-special',
+          kind: 'standard',
+          effect: {
+            id: 'charlotte-angel-101-activate-main-trash-life-and-schedule',
+            text: '[Activate:Main] [Once Per Turn] You may trash 1 card from the top of your Life cards: If your Leader has the [Big Mom Pirates] type, add 1 card from the top of your deck to the top of your Life cards at the end of this turn.',
+            trigger: { type: 'activateMain', oncePerTurn: true },
+            conditions: [
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Big Mom Pirates',
+              },
+            ],
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'trash',
+              },
+            ],
+            actions: [
+              {
+                type: 'scheduleActionsAtTurnEnd',
+                actions: [
+                  {
+                    type: 'addToLife',
+                    player: 'self',
+                    selector: {
+                      player: 'self',
+                      zones: ['deck'],
+                      filter: { zonePosition: 'top' },
+                      count: { kind: 'exact', value: 1 },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
         },
       ],
     },
