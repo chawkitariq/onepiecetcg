@@ -1,0 +1,4 @@
+interface:
+  display_name: "OPTCG Catalog Sync"
+  short_description: "Download and normalize OPTCG catalog snapshots"
+  default_prompt: "Use $onepiecetcg-catalog-sync to download OPTCG API cards, normalize them to the shared Card schema, and write edition JSON snapshots."
