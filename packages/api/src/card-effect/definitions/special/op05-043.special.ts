@@ -1,3 +1,5 @@
+import type { DuelCard } from '@onepiecetcg/shared';
+
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
 /**
@@ -27,7 +29,7 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const topCards = Array.from(player.zones.deck).slice(0, 3);
+    const topCards = (Array.from(player.zones.deck) as DuelCard[]).slice(0, 3);
     const topCardIds = new Set(topCards.map((card) => card.instanceId));
     const decisions = anyEngine.decisions;
 
@@ -47,7 +49,9 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
       },
       topCards.map((card) => card.name),
       (cards) => {
-        const selected = cards.find((card) => topCardIds.has(card.instanceId));
+        const selected = (cards as DuelCard[]).find((card) =>
+          topCardIds.has(card.instanceId),
+        );
 
         if (selected) {
           host.moveCard(selected, event.playerSessionId, 'hand');

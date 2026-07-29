@@ -1,3 +1,5 @@
+import type { DuelCard } from '@onepiecetcg/shared';
+
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
 /**
@@ -27,7 +29,9 @@ export const op05119SpecialHandler: SpecialHandlerDefinition = {
 
     host.returnDonToDonDeck(event.playerSessionId, 10);
 
-    for (const target of Array.from(player.zones.characters)) {
+    const characters: DuelCard[] = Array.from(player.zones.characters);
+
+    for (const target of characters) {
       if (target.instanceId === source.instanceId) {
         continue;
       }
