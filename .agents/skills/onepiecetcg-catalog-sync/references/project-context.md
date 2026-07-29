@@ -16,6 +16,8 @@ The main consumer is `onepiecetcg-effect-generation`, which can read a snapshot 
 - File contents are the normalized cards for that edition only.
 - Snapshot metadata includes both `editionId` and `name`, with the name sourced from `allSets`.
 - Output should live under `packages/cards/catalog/` when that snapshot store is present in the repo.
+- Promo snapshots live at `packages/cards/catalog/PROMOS/PROMOS.json` and should mirror `allPromos` exactly.
+- DON!! snapshots live at `packages/cards/catalog/DON/DON.json` and should mirror `allDonCards` exactly.
 
 ## Shared schema target
 

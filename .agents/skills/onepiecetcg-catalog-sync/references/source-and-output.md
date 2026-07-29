@@ -15,6 +15,7 @@ Use the OPTCG API families already documented in the repository:
 - Keep cards that can be normalized into the shared schema.
 - Skip entries that do not have a stable card number and name.
 - Deduplicate repeated cards that appear in more than one source family.
+- Treat promo and DON!! endpoints as complete mirrors: keep every card returned by the source endpoint and do not add or remove entries.
 
 ## Normalization
 
@@ -45,6 +46,8 @@ Prefer these source fields when present:
 - Write valid JSON only, with no wrapper object unless the downstream consumer explicitly expects one.
 - Support filtering to one edition or several editions in the same run when the caller passes explicit edition ids such as `OP-01,EB-01`.
 - Store each edition file in a folder named after its family prefix, such as `OP`, `EB`, or `ST`.
+- Store promo cards in `packages/cards/catalog/PROMOS/PROMOS.json`.
+- Store DON!! cards in `packages/cards/catalog/DON/DON.json`.
 
 ## Validation
 

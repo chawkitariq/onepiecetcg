@@ -7,7 +7,7 @@ description: Download OPTCG API card data into local edition JSON snapshots and 
 
 Download card metadata from the OPTCG API, normalize it to the shared card schema, validate the downloaded snapshots, and write one deterministic JSON snapshot per edition family.
 
-Use this skill when you need an offline catalog snapshot for effect generation, fixture generation, or local inspection of all cards in an edition.
+Use this skill when you need an offline catalog snapshot for effect generation, fixture generation, or local inspection of all cards in an edition, including promo cards and DON!! cards.
 
 ## Workflow
 
@@ -18,8 +18,10 @@ Use this skill when you need an offline catalog snapshot for effect generation, 
 5. Use `scripts/run-validate-catalog.sh` to validate the downloaded snapshots before reusing them.
 6. Normalize each card to the `@onepiecetcg/shared` `Card` shape.
 7. Group cards by edition family prefix and write each edition into its matching folder, for example `packages/cards/catalog/OP/OP-01.json` or `packages/cards/catalog/EB/EB-01.json`.
-8. Keep the output deterministic: stable ordering, stable ids, and no duplicate cards inside the same edition file.
-9. When the snapshot is ready, pass it to `onepiecetcg-effect-generation` with `--source-file` if you need to generate or refresh effect definitions without hitting the network.
+8. For promo cards, write every card returned by `https://www.optcgapi.com/api/allPromos/` into `packages/cards/catalog/PROMOS/PROMOS.json` without removing or adding entries.
+9. For DON!! cards, write every card returned by `https://www.optcgapi.com/api/allDonCards/` into `packages/cards/catalog/DON/DON.json` without removing or adding entries.
+10. Keep the output deterministic: stable ordering, stable ids, and no duplicate cards inside the same edition file.
+11. When the snapshot is ready, pass it to `onepiecetcg-effect-generation` with `--source-file` if you need to generate or refresh effect definitions without hitting the network.
 
 ## Working Rules
 
@@ -29,6 +31,7 @@ Use this skill when you need an offline catalog snapshot for effect generation, 
 - Write all cards for the same edition into the same file, nested in the folder named after the edition prefix (`OP`, `EB`, `ST`, and so on).
 - Use the edition id and edition name returned by `https://www.optcgapi.com/api/allSets/` when writing snapshot metadata.
 - Use this skill as the bridge between live OPTCG API data and effect-generation workflows.
+- Treat promo and DON!! snapshots as complete endpoint mirrors: keep every returned card, preserve their upstream identifiers, and do not filter them down to edition families.
 
 ## Typical Triggers
 
