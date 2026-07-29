@@ -1,0 +1,459 @@
+{
+  "editionId": "ST-06",
+  "name": "Starter Deck 6: Absolute Justice",
+  "cards": [
+    {
+      "id": "ST06-001",
+      "number": "ST06-001",
+      "name": "Sakazuki",
+      "type": "Leader",
+      "colors": [
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] (3) (You may rest the specified number of DON!! cards in your cost area.) You may trash 1 card from your hand: K.O. up to 1 of your opponent's Characters with a cost of 0.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-001.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "ST06-002",
+      "number": "ST06-002",
+      "name": "Koby",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] You may trash 1 card from your hand: K.O. up to 1 of your opponent's Characters with a cost of 0.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-002.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-003",
+      "number": "ST06-003",
+      "name": "Jango",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-003.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-004",
+      "number": "ST06-004",
+      "name": "Smoker",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "This Character cannot be K.O.'d by effects. [DON!! x1] If there is a Character with a cost of 0, this Character gains [Double Attack]. (This card deals 2 damage.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-004.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST06-005",
+      "number": "ST06-005",
+      "name": "Sengoku",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[When Attacking] Give up to 1 of your opponent's Characters -4 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-005.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-006",
+      "number": "ST06-006",
+      "name": "Tashigi (SP)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Activate:Main] You may rest this Character: Give up to 1 of your opponent's Characters 2 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-006_p2.jpg",
+      "set": {
+        "id": "OP-08",
+        "name": "Two Legends"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-007",
+      "number": "ST06-007",
+      "name": "Tsuru",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-007.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-008",
+      "number": "ST06-008",
+      "name": "Hina (Reprint)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] Give up to 1 of your opponent's Characters -4 cost during this turn.Disclaimer: This card was reprinted from the original set with changes to the copyright information (Note: the original print did not include \"EN\" at the end of the copyright).",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-008_r1.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-009",
+      "number": "ST06-009",
+      "name": "Fullbody",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-009.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-010",
+      "number": "ST06-010",
+      "name": "Helmeppo (Full Art)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] Give up to 1 of your opponent's Characters -3 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-010_p3.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-011",
+      "number": "ST06-011",
+      "name": "Momonga",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-011.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-012",
+      "number": "ST06-012",
+      "name": "Monkey.D.Garp",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Activate:Main] You may trash 1 card from your hand and rest this Character: K.O. up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-012.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST06-013",
+      "number": "ST06-013",
+      "name": "T-Bone",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-013.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-014",
+      "number": "ST06-014",
+      "name": "Shockwave (Jolly Roger Foil)",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, K.O. up to 1 of your opponent's active Characters with a cost of 3 or less.[Trigger] K.O. up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-014_p2.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-015",
+      "number": "ST06-015",
+      "name": "Great Eruption",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Main] Draw 1 card. Then, give up to 1 of your opponent's Characters -2 cost during this turn. [Trigger] Your opponent chooses 1 card from their hand and trashes it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-015.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-016",
+      "number": "ST06-016",
+      "name": "White Out",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. [Trigger] Draw 1 card and none of your Characters can be K.O.'d during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-016.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST06-017",
+      "number": "ST06-017",
+      "name": "Navy HQ",
+      "type": "Stage",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] Give up to 1 of your opponent's Characters -1 cost during this turn. [Activate:Main] You may rest this Stage: If your Leader has the [Navy] type, give up to 1 of your opponent's Characters -1 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST06-017.jpg",
+      "set": {
+        "id": "ST-06",
+        "name": "Starter Deck 6: Absolute Justice"
+      },
+      "rarity": "C"
+    }
+  ]
+}

@@ -1,0 +1,407 @@
+{
+  "editionId": "ST-08",
+  "name": "Starter Deck 8: Monkey.D.Luffy",
+  "cards": [
+    {
+      "id": "ST08-001",
+      "number": "ST08-001",
+      "name": "Monkey.D.Luffy (001)",
+      "type": "Leader",
+      "colors": [
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Your Turn] When a Character is K.O.'d, give up to 1 rested DON!! card to this Leader.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-001.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "ST08-002",
+      "number": "ST08-002",
+      "name": "Uta",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "FILM"
+      ],
+      "text": "This Character cannot be K.O.'d in battle by Leaders. [Activate:Main] You may rest this Character: Give up to 1 of your opponent's Characters -2 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-002.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST08-003",
+      "number": "ST08-003",
+      "name": "Gaimon",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-003.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-004",
+      "number": "ST08-004",
+      "name": "Koby",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Activate:Main] You may rest this Character: K.O. up to 1 of your opponent's Characters with a cost of 2 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-004.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-005",
+      "number": "ST08-005",
+      "name": "Shanks",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 9,
+      "power": 10000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[On Play] You may trash 1 card from your hand: K.O. all Characters with a cost of 1 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-005.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST08-006",
+      "number": "ST08-006",
+      "name": "Shirahoshi",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Merfolk"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] Give up to 1 of your opponent's Characters -4 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-006.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-007",
+      "number": "ST08-007",
+      "name": "Nefeltari Vivi",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-007.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-008",
+      "number": "ST08-008",
+      "name": "Higuma",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Mountain Bandits"
+      ],
+      "text": "[On Play] Give up to 1 of your opponent's Characters -2 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-008.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-009",
+      "number": "ST08-009",
+      "name": "Makino",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Windmill Village"
+      ],
+      "text": "[On Play] If there is a Character with a cost of 0, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-009.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-010",
+      "number": "ST08-010",
+      "name": "Monkey.D.Garp",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-010.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-011",
+      "number": "ST08-011",
+      "name": "Monkey.D.Luffy (011)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-011.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-012",
+      "number": "ST08-012",
+      "name": "Laboon",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-012.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-013",
+      "number": "ST08-013",
+      "name": "Mr.2.Bon.Kurei (Bentham)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Former Baroque Works"
+      ],
+      "text": "[DON!! x1] At the end of a battle in which this Character battles your opponent's Character, you may K.O. the opponent's Character you battled with. If you do, K.O. this Character.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-013.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-014",
+      "number": "ST08-014",
+      "name": "Gum-Gum Bell",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Main] You may add 1 card from the top of your Life cards to your hand: Give up to 1 of your opponent's Characters -7 cost during this turn. [Trigger] Add up to 1 black Character card with a cost of 2 or less from your trash to your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-014.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST08-015",
+      "number": "ST08-015",
+      "name": "Gum-Gum Pistol",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Main] K.O. up to 1 of your opponent's Characters with a cost of 2 or less. [Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST08-015.jpg",
+      "set": {
+        "id": "ST-08",
+        "name": "Starter Deck 8: Monkey.D.Luffy"
+      },
+      "rarity": "C"
+    }
+  ]
+}

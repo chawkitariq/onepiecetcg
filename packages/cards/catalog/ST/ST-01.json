@@ -1,0 +1,459 @@
+{
+  "editionId": "ST-01",
+  "name": "Starter Deck 1: Straw Hat Crew",
+  "cards": [
+    {
+      "id": "ST01-001",
+      "number": "ST01-001",
+      "name": "Monkey.D.Luffy (001)",
+      "type": "Leader",
+      "colors": [
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[Activate: Main] [Once Per Turn] Give this Leader or 1 of your Characters up to 1 rested DON!! card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-001.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "ST01-002",
+      "number": "ST01-002",
+      "name": "Usopp",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x2] [When Attacking] Your opponent cannot activate a [Blocker] Character that has 5000 or more power during this battle. [Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-002.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-003",
+      "number": "ST01-003",
+      "name": "Karoo",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Alabasta"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-003.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-004",
+      "number": "ST01-004",
+      "name": "Sanji",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x2] This Character gains [Rush]. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-004.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-005",
+      "number": "ST01-005",
+      "name": "Jinbe",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Straw Hat Crew"
+      ],
+      "text": "[DON!! x1] [When Attacking] Up to 1 of your Leader or Character cards other than this card gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-005.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-006",
+      "number": "ST01-006",
+      "name": "Tony Tony.Chopper (ST01-006) (Jolly Roger Foil)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Straw Hat Crew"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-006_p6.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-007",
+      "number": "ST01-007",
+      "name": "Nami (TR)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Activate:Main][Once Per Turn] Give up to 1 rested DON!! card to your Leader or 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-007_p3.jpg",
+      "set": {
+        "id": "OP-06",
+        "name": "Wings of the Captain"
+      },
+      "rarity": "TR"
+    },
+    {
+      "id": "ST01-008",
+      "number": "ST01-008",
+      "name": "Nico Robin",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-008.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-009",
+      "number": "ST01-009",
+      "name": "Nefeltari Vivi",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Alabasta"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-009.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-010",
+      "number": "ST01-010",
+      "name": "Franky",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-010.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-011",
+      "number": "ST01-011",
+      "name": "Brook - ST01-011 (Pirate Foil)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] Give up to 2 rested DON!! cards to your Leader or 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-011_p4.jpg",
+      "set": {
+        "id": "PRB-02",
+        "name": "Premium Booster -The Best- Vol. 2"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-012",
+      "number": "ST01-012",
+      "name": "Monkey.D.Luffy (012) (Alternate Art)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[Rush] (This card can attack on the turn in which it is played.) [DON!! x2][When Attacking] Your opponent cannot activate [Blocker] during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-012_p2.jpg",
+      "set": {
+        "id": "OP-05",
+        "name": "Awakening of the New Era"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST01-013",
+      "number": "ST01-013",
+      "name": "Roronoa Zoro",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[DON!! x1] This Character gains +1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-013.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST01-014",
+      "number": "ST01-014",
+      "name": "Guard Point (Jolly Roger Foil)",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Straw Hat Crew"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +3000 power during this battle.[Trigger] Up to 1 of your Leader or Character cards gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-014_p2.jpg",
+      "set": {
+        "id": "PRB-01",
+        "name": "Premium Booster -The Best-"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-015",
+      "number": "ST01-015",
+      "name": "Gum-Gum Jet Pistol",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[Main] K.O. up to 1 of your opponent's Characters with 6000 power or less. [Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-015.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-016",
+      "number": "ST01-016",
+      "name": "Diable Jambe",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Main] Select up to 1 of your {Straw Hat Crew} type Leader or Character cards. Your opponent cannot activate [Blocker] if that Leader or Character attacks during this turn. [Trigger] K.O. up to 1 of your opponent's [Blocker] Characters with a cost of 3 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-016.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST01-017",
+      "number": "ST01-017",
+      "name": "Thousand Sunny",
+      "type": "Stage",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "NULL"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Activate: Main] You may rest this Stage: Up to 1 {Straw Hat Crew} type Leader or Character card on your field gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST01-017.jpg",
+      "set": {
+        "id": "ST-01",
+        "name": "Starter Deck 1: Straw Hat Crew"
+      },
+      "rarity": "C"
+    }
+  ]
+}

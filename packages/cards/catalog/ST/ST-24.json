@@ -1,0 +1,141 @@
+{
+  "editionId": "ST-24",
+  "name": "Starter Deck 24: GREEN Jewelry Bonney",
+  "cards": [
+    {
+      "id": "ST24-001",
+      "number": "ST24-001",
+      "name": "Capone\"Gang\"Bege",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Firetank Pirates Supernovas"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Play] If you have 6 or more rested cards, draw 1 card and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST24-001.jpg",
+      "set": {
+        "id": "ST-24",
+        "name": "Starter Deck 24: GREEN Jewelry Bonney"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST24-002",
+      "number": "ST24-002",
+      "name": "Kid & Killer",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash Special"
+      ],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 \"Supernovas\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.\n[On Your Opponent's Attack] You may trash this Character: Set up to 1 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST24-002.jpg",
+      "set": {
+        "id": "ST-24",
+        "name": "Starter Deck 24: GREEN Jewelry Bonney"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST24-003",
+      "number": "ST24-003",
+      "name": "Basil Hawkins",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Hawkins Pirates Supernovas"
+      ],
+      "text": "[End of Your Turn] Set up to 1 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST24-003.jpg",
+      "set": {
+        "id": "ST-24",
+        "name": "Starter Deck 24: GREEN Jewelry Bonney"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "ST24-004",
+      "number": "ST24-004",
+      "name": "Law & Bepo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 10,
+      "power": 11000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash Strike"
+      ],
+      "families": [
+        "Heart Pirates Minks Supernovas"
+      ],
+      "text": "[On Play] Rest up to 1 of your opponent's Characters and that Character will not become active in your opponent's next Refresh Phase. Then, if your opponent has 2 or more rested Characters, your Leader gains +2000 power until the end of your opponent's next End Phase.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST24-004.jpg",
+      "set": {
+        "id": "ST-24",
+        "name": "Starter Deck 24: GREEN Jewelry Bonney"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "ST24-005",
+      "number": "ST24-005",
+      "name": "X.Drake",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Drake Pirates Navy Supernovas"
+      ],
+      "text": "[On Play] If your Leader has the \"Supernovas\" type, rest up to 1 of your opponent's Characters with a cost of 5 or less. Then, set up to 1 of your DON!! cards as active at the end of this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/ST24-005.jpg",
+      "set": {
+        "id": "ST-24",
+        "name": "Starter Deck 24: GREEN Jewelry Bonney"
+      },
+      "rarity": "C"
+    }
+  ]
+}
