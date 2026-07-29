@@ -188,7 +188,10 @@ export class EffectSelectorResolver {
       return false;
     }
 
-    if (filter.hasNoBaseEffect === true && (card.text.length > 0 || card.trigger.length > 0)) {
+    if (
+      filter.hasNoBaseEffect === true &&
+      (card.text.length > 0 || card.trigger.length > 0)
+    ) {
       return false;
     }
 
@@ -225,9 +228,8 @@ export class EffectSelectorResolver {
         return false;
       }
 
-      const zoneCards = located.player.zones[
-        located.zone as keyof typeof located.player.zones
-      ];
+      const zoneCards =
+        located.player.zones[located.zone as keyof typeof located.player.zones];
 
       if (
         !zoneCards ||

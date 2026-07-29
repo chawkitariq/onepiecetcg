@@ -29,7 +29,7 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const topCards = (Array.from(player.zones.deck) as DuelCard[]).slice(0, 3);
+    const topCards = Array.from(player.zones.deck).slice(0, 3);
     const topCardIds = new Set(topCards.map((card) => card.instanceId));
     const decisions = anyEngine.decisions;
 
@@ -41,7 +41,7 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
         storedSelections: {},
       },
       event.playerSessionId,
-      'Choisissez jusqu\'a 1 carte parmi les 3 cartes du dessus du deck.',
+      "Choisissez jusqu'a 1 carte parmi les 3 cartes du dessus du deck.",
       {
         player: 'self',
         zones: ['deck'],
@@ -65,7 +65,13 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
         }
 
         anyEngine.actions.resolveActions(
-          [{ type: 'arrangeDeckWindow', player: 'self', amount: remainingCount }],
+          [
+            {
+              type: 'arrangeDeckWindow',
+              player: 'self',
+              amount: remainingCount,
+            },
+          ],
           event.playerSessionId,
           source,
           {

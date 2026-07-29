@@ -54,10 +54,16 @@ const createRegistry = (
             resolved.standard = [...(resolved.standard ?? []), entry.effect];
             break;
           case 'continuous':
-            resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
+            resolved.continuous = [
+              ...(resolved.continuous ?? []),
+              entry.effect,
+            ];
             break;
           case 'replacement':
-            resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+            resolved.replacements = [
+              ...(resolved.replacements ?? []),
+              entry.effect,
+            ];
             break;
           case 'special-ref':
             resolved.specialHandlerId = entry.specialHandlerId;
@@ -129,7 +135,10 @@ class TestHost implements EffectEngineHost {
   }
 
   public getOpponentSessionId(sessionId: string): string | null {
-    return Array.from(this.state.players.keys()).find((id) => id !== sessionId) ?? null;
+    return (
+      Array.from(this.state.players.keys()).find((id) => id !== sessionId) ??
+      null
+    );
   }
 
   public getCard(instanceId: string): DuelCard | null {
@@ -142,8 +151,18 @@ class TestHost implements EffectEngineHost {
         return player.zones.stage;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const found = player.zones[zone].find(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (found) {
           return found;
@@ -189,17 +208,25 @@ class TestHost implements EffectEngineHost {
             continue;
           }
 
-          if (selector.filter?.costMax != null && card.cost > selector.filter.costMax) {
+          if (
+            selector.filter?.costMax != null &&
+            card.cost > selector.filter.costMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.costMin != null && card.cost < selector.filter.costMin) {
+          if (
+            selector.filter?.costMin != null &&
+            card.cost < selector.filter.costMin
+          ) {
             continue;
           }
 
           if (
             selector.filter?.trait &&
-            !selector.filter.trait.some((trait: string) => card.families.includes(trait))
+            !selector.filter.trait.some((trait: string) =>
+              card.families.includes(trait),
+            )
           ) {
             continue;
           }
@@ -220,12 +247,15 @@ class TestHost implements EffectEngineHost {
 
           if (
             selector.filter?.hasTrigger != null &&
-            (!!card.trigger ? true : false) !== selector.filter.hasTrigger
+            (card.trigger ? true : false) !== selector.filter.hasTrigger
           ) {
             continue;
           }
 
-          if (selector.filter?.rested != null && card.rested !== selector.filter.rested) {
+          if (
+            selector.filter?.rested != null &&
+            card.rested !== selector.filter.rested
+          ) {
             continue;
           }
 
@@ -287,7 +317,10 @@ class TestHost implements EffectEngineHost {
     return card;
   }
 
-  public trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
+  public trashTopDeckCards(
+    playerSessionId: string,
+    amount: number,
+  ): DuelCard[] {
     const player = this.getPlayer(playerSessionId);
     const moved: DuelCard[] = [];
 
@@ -309,7 +342,11 @@ class TestHost implements EffectEngineHost {
     return moved;
   }
 
-  public addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
+  public addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number {
     const player = this.getPlayer(playerSessionId);
 
     if (!player) {
@@ -366,7 +403,10 @@ class TestHost implements EffectEngineHost {
     _reason: 'battle' | 'effect',
   ): boolean {
     const player = this.getPlayer(playerSessionId);
-    const index = player?.zones.characters.findIndex((card) => card.instanceId === instanceId) ?? -1;
+    const index =
+      player?.zones.characters.findIndex(
+        (card) => card.instanceId === instanceId,
+      ) ?? -1;
 
     if (!player || index < 0) {
       return false;
@@ -386,11 +426,16 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
+    zone:
+      'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
-    const duelCard = createDuelCard(card, `${playerSessionId}:${instanceSuffix}`, playerSessionId);
+    const duelCard = createDuelCard(
+      card,
+      `${playerSessionId}:${instanceSuffix}`,
+      playerSessionId,
+    );
     this.getPlayer(playerSessionId)?.zones[zone].push(duelCard);
     return duelCard;
   }
@@ -402,8 +447,18 @@ class TestHost implements EffectEngineHost {
         return;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const index = player.zones[zone].findIndex(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (index >= 0) {
           player.zones[zone].splice(index, 1);
@@ -423,7 +478,12 @@ describe('op04EffectDefinitions', () => {
     const gyats = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP04-080', number: 'OP04-080', name: 'Gyats', type: 'Character' }),
+      makeCard({
+        id: 'OP04-080',
+        number: 'OP04-080',
+        name: 'Gyats',
+        type: 'Character',
+      }),
       'gyats',
     );
     const target = host.addCardToZone(
@@ -503,25 +563,51 @@ describe('op04EffectDefinitions', () => {
     host.addCardToZone(
       'p1',
       'cost',
-      makeCard({ id: 'DON-1', number: 'DON-1', name: 'DON!! 1', type: 'DON!!', cost: null, power: null, counter: null }),
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!! 1',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
       'don-1',
     );
     host.addCardToZone(
       'p1',
       'cost',
-      makeCard({ id: 'DON-2', number: 'DON-2', name: 'DON!! 2', type: 'DON!!', cost: null, power: null, counter: null }),
+      makeCard({
+        id: 'DON-2',
+        number: 'DON-2',
+        name: 'DON!! 2',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
       'don-2',
     );
     host.addCardToZone(
       'p1',
       'deck',
-      makeCard({ id: 'DRAW-1', number: 'DRAW-1', name: 'Draw 1', type: 'Character' }),
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw 1',
+        type: 'Character',
+      }),
       'draw-1',
     );
     const target = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'ALLY-1', number: 'ALLY-1', name: 'Ally', type: 'Character' }),
+      makeCard({
+        id: 'ALLY-1',
+        number: 'ALLY-1',
+        name: 'Ally',
+        type: 'Character',
+      }),
       'ally',
     );
 
@@ -555,7 +641,12 @@ describe('op04EffectDefinitions', () => {
     const sasaki = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP04-048', number: 'OP04-048', name: 'Sasaki', type: 'Character' }),
+      makeCard({
+        id: 'OP04-048',
+        number: 'OP04-048',
+        name: 'Sasaki',
+        type: 'Character',
+      }),
       'sasaki',
     );
     host.addCardToZone(
@@ -605,13 +696,24 @@ describe('op04EffectDefinitions', () => {
     const iceOni = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP04-047', number: 'OP04-047', name: 'Ice Oni', type: 'Character' }),
+      makeCard({
+        id: 'OP04-047',
+        number: 'OP04-047',
+        name: 'Ice Oni',
+        type: 'Character',
+      }),
       'ice-oni',
     );
     const target = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'T1', number: 'T1', name: 'Target', type: 'Character', cost: 5 }),
+      makeCard({
+        id: 'T1',
+        number: 'T1',
+        name: 'Target',
+        type: 'Character',
+        cost: 5,
+      }),
       'target',
     );
 
@@ -639,7 +741,12 @@ describe('op04EffectDefinitions', () => {
     const doflamingo = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP04-031', number: 'OP04-031', name: 'Donquixote Doflamingo', type: 'Character' }),
+      makeCard({
+        id: 'OP04-031',
+        number: 'OP04-031',
+        name: 'Donquixote Doflamingo',
+        type: 'Character',
+      }),
       'doflamingo',
     );
     const targetA = host.addCardToZone(
@@ -683,7 +790,12 @@ describe('op04EffectDefinitions', () => {
     const sabo = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP04-083', number: 'OP04-083', name: 'Sabo', type: 'Character' }),
+      makeCard({
+        id: 'OP04-083',
+        number: 'OP04-083',
+        name: 'Sabo',
+        type: 'Character',
+      }),
       'sabo',
     );
     const ally = host.addCardToZone(
@@ -736,7 +848,10 @@ describe('op04EffectDefinitions', () => {
     expect(decision?.prompt.type).toBe('selectCards');
     engine.answerDecision({
       decisionId: decision?.id ?? '',
-      selectedCardInstanceIds: host.getPlayer('p1')!.zones.hand.map((card) => card.instanceId).slice(0, 2),
+      selectedCardInstanceIds: host
+        .getPlayer('p1')!
+        .zones.hand.map((card) => card.instanceId)
+        .slice(0, 2),
     });
 
     expect(ally.cannotBeKoedByEffects).toBe(true);

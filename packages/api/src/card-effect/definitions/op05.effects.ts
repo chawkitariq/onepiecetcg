@@ -50,7 +50,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'ohm-101-if-life-2-or-less-plus-1000',
             text: 'If you have 2 or less Life cards, this Character gains +1000 power.',
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 2 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 2 },
+            ],
             modifier: {
               selector: {
                 player: 'self',
@@ -293,7 +295,7 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'koala-006-on-play-if-revolutionary-army-minus-3000',
-            text: '[On Play] If your Leader has the [Revolutionary Army] type, give up to 1 of your opponent\'s Characters -3000 power during this turn.',
+            text: "[On Play] If your Leader has the [Revolutionary Army] type, give up to 1 of your opponent's Characters -3000 power during this turn.",
             trigger: { type: 'onPlay' },
             conditions: [
               {
@@ -506,7 +508,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] You may trash 1 card from your hand: If your Leader is multicolored, play this card.',
             trigger: { type: 'trigger', optional: true },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
             ],
             costs: [
               {
@@ -609,10 +615,14 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'trafalgar-law-069-when-attacking-if-multicolored-and-opponent-has-more-don-search-heart-pirates',
-            text: "[When Attacking] If your Leader is multicolored and your opponent has more DON!! cards on their field than you, look at 5 cards from the top of your deck; reveal up to 1 [Heart Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+            text: '[When Attacking] If your Leader is multicolored and your opponent has more DON!! cards on their field than you, look at 5 cards from the top of your deck; reveal up to 1 [Heart Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.',
             trigger: { type: 'whenAttacking' },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
               {
                 type: 'playerHasMoreTotalDonThan',
                 player: 'opponent',
@@ -647,7 +657,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             id: 'kaido-118-on-play-if-opponent-life-3-or-less-draw-4',
             text: '[On Play] Draw 4 cards if your opponent has 3 or less Life cards.',
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'opponent', value: 3 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'opponent', value: 3 },
+            ],
             actions: [{ type: 'draw', player: 'self', amount: 4 }],
           },
         },
@@ -684,7 +696,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             id: 'two-hundred-million-volts-amaru-115-main-if-life-1-or-less-rest-cost-4-or-less',
             text: "Then, if you have 1 or less Life cards, rest up to 1 of your opponent's Characters with a cost of 4 or less.",
             trigger: { type: 'activateMain' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 1 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 1 },
+            ],
             actions: [
               {
                 type: 'rest',
@@ -870,7 +884,7 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'morley-016-when-attacking-if-power-7000-opponent-cannot-block',
-            text: "If this Character has 7000 power or more, your opponent cannot activate [Blocker] during this battle.",
+            text: 'If this Character has 7000 power or more, your opponent cannot activate [Blocker] during this battle.',
             trigger: { type: 'whenAttacking' },
             conditions: [{ type: 'sourcePowerAtLeast', value: 7000 }],
             actions: [
@@ -894,7 +908,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] You may trash 1 card from your hand: If your Leader is multicolored, play this card.',
             trigger: { type: 'trigger', optional: true },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
             ],
             costs: [
               {
@@ -964,7 +982,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             id: 'zoro-juurou-067-when-attacking-if-life-3-or-less-add-active-don',
             text: '[When Attacking] If you have 3 or less Life cards, add up to 1 DON!! card from your DON!! deck and set it as active.',
             trigger: { type: 'whenAttacking' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 3 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 3 },
+            ],
             actions: [{ type: 'addDon', player: 'self', amount: 1 }],
           },
         },
@@ -1072,7 +1092,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
                 },
               },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
         {
@@ -1178,7 +1200,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             text: "[On Play] If your Leader is multicolored, K.O. up to 1 of your opponent's Characters with 2000 power or less.",
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
             ],
             actions: [
               {
@@ -1201,7 +1227,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] If your Leader is multicolored, play this card.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
             ],
             actions: [
               {
@@ -1876,7 +1906,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'chaka-008-don-1-activate-main-once-attach-up-to-2-rested-don',
             text: '[DON!! x1][Activate:Main][Once Per Turn] Give up to 2 rested DON!! cards to your Leader or 1 of your Characters.',
-            trigger: { type: 'activateMain', oncePerTurn: true, optional: true },
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
             conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
             actions: [
               {
@@ -1905,7 +1939,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'sakazuki-041-activate-main-trash-1-draw-1',
             text: '[Activate:Main][Once Per Turn] You may trash 1 card from your hand: Draw 1 card.',
-            trigger: { type: 'activateMain', optional: true, oncePerTurn: true },
+            trigger: {
+              type: 'activateMain',
+              optional: true,
+              oncePerTurn: true,
+            },
             costs: [
               {
                 type: 'trashFromHand',
@@ -2594,7 +2632,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
                 selector: {
                   player: 'opponent',
                   zones: ['characters'],
-                  filter: { cardCategory: ['Character'], costMin: 0, costMax: 0 },
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMin: 0,
+                    costMax: 0,
+                  },
                   count: { kind: 'upTo', value: 1 },
                 },
                 amount: 1,
@@ -2663,7 +2705,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'sarquiss-026-don-1-when-attacking-rest-1-cost-3-or-more-unrest-self',
             text: '[DON!! x1][When Attacking][Once Per Turn] You may rest 1 of your Characters with a cost of 3 or more: Set this Character as active.',
-            trigger: { type: 'whenAttacking', optional: true, oncePerTurn: true },
+            trigger: {
+              type: 'whenAttacking',
+              optional: true,
+              oncePerTurn: true,
+            },
             conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
             costs: [
               {
@@ -2874,7 +2920,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             id: 'o-robi-063-on-play-if-total-don-8-or-more-ko-cost-3-or-less',
             text: "[On Play] If you have 8 or more DON!! cards on your field, K.O. up to 1 of your opponent's Characters with a cost of 3 or less.",
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 }],
+            conditions: [
+              { type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 },
+            ],
             actions: [
               {
                 type: 'ko',
@@ -3289,7 +3337,10 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
                 selector: {
                   player: 'self',
                   zones: ['characters'],
-                  filter: { cardCategory: ['Character'], trait: ['Celestial Dragons'] },
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Celestial Dragons'],
+                  },
                   count: { kind: 'exact', value: 1 },
                 },
               },
@@ -3401,7 +3452,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'elizabello-ii-080-when-attacking-once-return-20-trash-and-shuffle-plus-10000',
             text: '[When Attacking][Once Per Turn] You may return 20 cards from your trash to your deck and shuffle it: This Character gains +10000 power during this battle.',
-            trigger: { type: 'whenAttacking', optional: true, oncePerTurn: true },
+            trigger: {
+              type: 'whenAttacking',
+              optional: true,
+              oncePerTurn: true,
+            },
             costs: [
               {
                 type: 'moveCard',
@@ -3471,7 +3526,7 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'four-thousand-brick-fist-trigger-plus-1000',
-            text: "[Trigger] Up to 1 of your Leader or Character cards gains +1000 power during this turn.",
+            text: '[Trigger] Up to 1 of your Leader or Character cards gains +1000 power during this turn.',
             trigger: { type: 'trigger' },
             actions: [
               {
@@ -3687,7 +3742,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             id: 'chopa-emon-068-on-play-if-total-don-8-or-more-unrest-purple-straw-hat-6000-or-less',
             text: '[On Play] If you have 8 or more DON!! cards on your field, set up to 1 of your purple "Straw Hat Crew" type Characters with 6000 power or less as active.',
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 }],
+            conditions: [
+              { type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 },
+            ],
             actions: [
               {
                 type: 'unrest',
@@ -3788,7 +3845,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             text: "[Main] If your Leader is multicolored, draw 1 card. Then, return up to 1 Character with a cost of 5 or less to the owner's hand.",
             trigger: { type: 'activateMain' },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
             ],
             actions: [
               { type: 'draw', player: 'self', amount: 1 },
@@ -3813,7 +3874,11 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] If your Leader is multicolored, draw 2 cards.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasLeaderColorsAtLeast', player: 'self', value: 2 },
+              {
+                type: 'playerHasLeaderColorsAtLeast',
+                player: 'self',
+                value: 2,
+              },
             ],
             actions: [{ type: 'draw', player: 'self', amount: 2 }],
           },
@@ -3831,7 +3896,9 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
             id: 'hone-kichi-072-on-play-if-total-don-8-or-more-minus-2000',
             text: "[On Play] If you have 8 or more DON!! cards on your field, give up to 2 of your opponent's Characters 2000 power during this turn.",
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 }],
+            conditions: [
+              { type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 },
+            ],
             actions: [
               {
                 type: 'modifyPower',

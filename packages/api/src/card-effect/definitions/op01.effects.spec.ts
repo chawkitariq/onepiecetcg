@@ -15,7 +15,9 @@ import type {
 } from '../types/effect-registry';
 import { op01EffectDefinitions } from './op01.effects';
 
-const makeCard = (overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>): Card => ({
+const makeCard = (
+  overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>,
+): Card => ({
   id: overrides.id,
   number: overrides.number,
   name: overrides.name,
@@ -51,10 +53,16 @@ const createRegistry = (
             resolved.standard = [...(resolved.standard ?? []), entry.effect];
             break;
           case 'continuous':
-            resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
+            resolved.continuous = [
+              ...(resolved.continuous ?? []),
+              entry.effect,
+            ];
             break;
           case 'replacement':
-            resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+            resolved.replacements = [
+              ...(resolved.replacements ?? []),
+              entry.effect,
+            ];
             break;
           case 'special-ref':
             resolved.specialHandlerId = entry.specialHandlerId;
@@ -89,7 +97,10 @@ class TestHost implements EffectEngineHost {
     this.state.activePlayerSessionId = 'p1';
   }
 
-  public addPlayer(sessionId: string, leaderCardId = `L-${sessionId}`): DuelPlayer {
+  public addPlayer(
+    sessionId: string,
+    leaderCardId = `L-${sessionId}`,
+  ): DuelPlayer {
     const player = new DuelPlayer();
     player.sessionId = sessionId;
     player.displayName = sessionId;
@@ -128,7 +139,10 @@ class TestHost implements EffectEngineHost {
   }
 
   public getOpponentSessionId(sessionId: string): string | null {
-    return Array.from(this.state.players.keys()).find((id) => id !== sessionId) ?? null;
+    return (
+      Array.from(this.state.players.keys()).find((id) => id !== sessionId) ??
+      null
+    );
   }
 
   public getCard(instanceId: string): DuelCard | null {
@@ -137,8 +151,18 @@ class TestHost implements EffectEngineHost {
         return player.zones.leader;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const found = player.zones[zone].find(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (found) {
           return found;
@@ -184,36 +208,55 @@ class TestHost implements EffectEngineHost {
             continue;
           }
 
-          if (selector.filter?.costMax != null && card.cost > selector.filter.costMax) {
+          if (
+            selector.filter?.costMax != null &&
+            card.cost > selector.filter.costMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.costMin != null && card.cost < selector.filter.costMin) {
+          if (
+            selector.filter?.costMin != null &&
+            card.cost < selector.filter.costMin
+          ) {
             continue;
           }
 
-          if (selector.filter?.powerMax != null && card.power > selector.filter.powerMax) {
+          if (
+            selector.filter?.powerMax != null &&
+            card.power > selector.filter.powerMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.powerMin != null && card.power < selector.filter.powerMin) {
+          if (
+            selector.filter?.powerMin != null &&
+            card.power < selector.filter.powerMin
+          ) {
             continue;
           }
 
           if (
             selector.filter?.color &&
-            !selector.filter.color.some((color: string) => card.colors.includes(color))
+            !selector.filter.color.some((color: string) =>
+              card.colors.includes(color),
+            )
           ) {
             continue;
           }
 
-          if (selector.filter?.rested != null && card.rested !== selector.filter.rested) {
+          if (
+            selector.filter?.rested != null &&
+            card.rested !== selector.filter.rested
+          ) {
             continue;
           }
 
           if (
             selector.filter?.trait &&
-            !selector.filter.trait.some((trait: string) => card.families.includes(trait))
+            !selector.filter.trait.some((trait: string) =>
+              card.families.includes(trait),
+            )
           ) {
             continue;
           }
@@ -305,7 +348,10 @@ class TestHost implements EffectEngineHost {
     return card;
   }
 
-  public trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
+  public trashTopDeckCards(
+    playerSessionId: string,
+    amount: number,
+  ): DuelCard[] {
     const player = this.getPlayer(playerSessionId);
     const moved: DuelCard[] = [];
 
@@ -327,7 +373,11 @@ class TestHost implements EffectEngineHost {
     return moved;
   }
 
-  public addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
+  public addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number {
     const player = this.getPlayer(playerSessionId);
 
     if (!player) {
@@ -361,7 +411,9 @@ class TestHost implements EffectEngineHost {
     const target =
       player?.zones.leader.instanceId === targetInstanceId
         ? player.zones.leader
-        : player?.zones.characters.find((card) => card.instanceId === targetInstanceId);
+        : player?.zones.characters.find(
+            (card) => card.instanceId === targetInstanceId,
+          );
 
     if (!player || !target) {
       return 0;
@@ -413,7 +465,10 @@ class TestHost implements EffectEngineHost {
     _reason: 'battle' | 'effect',
   ): boolean {
     const player = this.getPlayer(playerSessionId);
-    const index = player?.zones.characters.findIndex((card) => card.instanceId === instanceId) ?? -1;
+    const index =
+      player?.zones.characters.findIndex(
+        (card) => card.instanceId === instanceId,
+      ) ?? -1;
 
     if (!player || index < 0) {
       return false;
@@ -433,19 +488,34 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
+    zone:
+      'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
-    const duelCard = createDuelCard(card, `${playerSessionId}:${instanceSuffix}`, playerSessionId);
+    const duelCard = createDuelCard(
+      card,
+      `${playerSessionId}:${instanceSuffix}`,
+      playerSessionId,
+    );
     this.getPlayer(playerSessionId)?.zones[zone].push(duelCard);
     return duelCard;
   }
 
   private removeCard(instanceId: string): void {
     for (const player of this.state.players.values()) {
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const index = player.zones[zone].findIndex(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (index >= 0) {
           player.zones[zone].splice(index, 1);
@@ -824,8 +894,8 @@ describe('op01EffectDefinitions', () => {
     });
   });
 
-  describe("OP01-117 sheeps-horn-main-don-minus-1-rest-cost-6-or-less", () => {
-    it("spends 1 DON to rest up to 1 opponent character with cost 6 or less", () => {
+  describe('OP01-117 sheeps-horn-main-don-minus-1-rest-cost-6-or-less', () => {
+    it('spends 1 DON to rest up to 1 opponent character with cost 6 or less', () => {
       const host = new TestHost();
       host.addPlayer('p1');
       host.addPlayer('p2');
@@ -943,7 +1013,7 @@ describe('op01EffectDefinitions', () => {
   });
 
   describe('OP01-006 otama-on-play', () => {
-    it("gives up to 1 opponent character -2000 power during this turn", () => {
+    it('gives up to 1 opponent character -2000 power during this turn', () => {
       const host = new TestHost();
       host.addPlayer('p1');
       host.addPlayer('p2');
@@ -952,13 +1022,25 @@ describe('op01EffectDefinitions', () => {
       const otama = host.addCardToZone(
         'p1',
         'characters',
-        makeCard({ id: 'OP01-006', number: 'OP01-006', name: 'Otama', type: 'Character', power: 2000 }),
+        makeCard({
+          id: 'OP01-006',
+          number: 'OP01-006',
+          name: 'Otama',
+          type: 'Character',
+          power: 2000,
+        }),
         'otama',
       );
       const target = host.addCardToZone(
         'p2',
         'characters',
-        makeCard({ id: 'TEST-ENEMY', number: 'TEST-ENEMY', name: 'Enemy', type: 'Character', power: 5000 }),
+        makeCard({
+          id: 'TEST-ENEMY',
+          number: 'TEST-ENEMY',
+          name: 'Enemy',
+          type: 'Character',
+          power: 5000,
+        }),
         'enemy',
       );
 
@@ -1313,7 +1395,9 @@ describe('op01EffectDefinitions', () => {
       expect(firstDecision).not.toBeNull();
       engine.answerDecision({
         decisionId: firstDecision?.id ?? '',
-        selectedCardInstanceIds: [host.getPlayer('p1')?.zones.leader.instanceId ?? ''],
+        selectedCardInstanceIds: [
+          host.getPlayer('p1')?.zones.leader.instanceId ?? '',
+        ],
       });
 
       expect(host.getPlayer('p1')?.zones.leader.power).toBe(9000);
@@ -1463,37 +1547,67 @@ describe('op01EffectDefinitions', () => {
       const top1 = host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'TOP-1', number: 'TOP-1', name: 'Top 1', type: 'Character' }),
+        makeCard({
+          id: 'TOP-1',
+          number: 'TOP-1',
+          name: 'Top 1',
+          type: 'Character',
+        }),
         'top-1',
       );
       const top2 = host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'TOP-2', number: 'TOP-2', name: 'Top 2', type: 'Character' }),
+        makeCard({
+          id: 'TOP-2',
+          number: 'TOP-2',
+          name: 'Top 2',
+          type: 'Character',
+        }),
         'top-2',
       );
       const top3 = host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'TOP-3', number: 'TOP-3', name: 'Top 3', type: 'Character' }),
+        makeCard({
+          id: 'TOP-3',
+          number: 'TOP-3',
+          name: 'Top 3',
+          type: 'Character',
+        }),
         'top-3',
       );
       const top4 = host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'TOP-4', number: 'TOP-4', name: 'Top 4', type: 'Character' }),
+        makeCard({
+          id: 'TOP-4',
+          number: 'TOP-4',
+          name: 'Top 4',
+          type: 'Character',
+        }),
         'top-4',
       );
       const top5 = host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'TOP-5', number: 'TOP-5', name: 'Top 5', type: 'Character' }),
+        makeCard({
+          id: 'TOP-5',
+          number: 'TOP-5',
+          name: 'Top 5',
+          type: 'Character',
+        }),
         'top-5',
       );
       const nextTop = host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'TOP-6', number: 'TOP-6', name: 'Next Top', type: 'Character' }),
+        makeCard({
+          id: 'TOP-6',
+          number: 'TOP-6',
+          name: 'Next Top',
+          type: 'Character',
+        }),
         'top-6',
       );
 
@@ -2571,7 +2685,9 @@ describe('op01EffectDefinitions', () => {
 
       expect(host.getPlayer('p1')?.zones.hand).toContain(returnedCharacter);
       expect(host.getPlayer('p1')?.zones.characters).toContain(blueCharacter);
-      expect(host.getPlayer('p1')?.zones.characters).not.toContain(redCharacter);
+      expect(host.getPlayer('p1')?.zones.characters).not.toContain(
+        redCharacter,
+      );
     });
   });
 
@@ -2650,7 +2766,9 @@ describe('op01EffectDefinitions', () => {
         selectedCardInstanceIds: [lifeCard.instanceId],
       });
 
-      expect(host.logs.some((log) => log.includes('Opponent Event'))).toBe(true);
+      expect(host.logs.some((log) => log.includes('Opponent Event'))).toBe(
+        true,
+      );
       expect(host.getPlayer('p2')?.zones.deck).toContain(lifeCard);
       expect(host.getPlayer('p2')?.zones.life).not.toContain(lifeCard);
       expect(arlong.rested).toBe(true);
@@ -2808,7 +2926,7 @@ describe('op01EffectDefinitions', () => {
   });
 
   describe('OP01-033 izo-on-play-rest-cost-4-or-less', () => {
-    it("rests up to 1 opponent character with cost 4 or less on play", () => {
+    it('rests up to 1 opponent character with cost 4 or less on play', () => {
       const host = new TestHost();
       host.addPlayer('p1');
       host.addPlayer('p2');
@@ -2849,7 +2967,7 @@ describe('op01EffectDefinitions', () => {
   });
 
   describe('OP01-054 x-drake-on-play-ko-rested-cost-4-or-less', () => {
-    it("K.O.s up to 1 opponent rested character with cost 4 or less on play", () => {
+    it('K.O.s up to 1 opponent rested character with cost 4 or less on play', () => {
       const host = new TestHost();
       host.addPlayer('p1');
       host.addPlayer('p2');

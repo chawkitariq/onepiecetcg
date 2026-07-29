@@ -752,7 +752,8 @@ describe('DuelRoom per-viewpoint serialization', () => {
             cards: Array.from({ length: 50 }, (_, index) => ({
               id: `ACE-${index + 1}`,
               number: `ACE-${index + 1}`,
-              name: index % 2 === 0 ? `Event ${index + 1}` : `Stage ${index + 1}`,
+              name:
+                index % 2 === 0 ? `Event ${index + 1}` : `Stage ${index + 1}`,
               type: index % 2 === 0 ? 'Event' : 'Stage',
               colors: ['Red'],
               cost: 1,
@@ -794,36 +795,40 @@ describe('DuelRoom per-viewpoint serialization', () => {
       cardIds: string[];
     } | null = null;
 
-    alice.onMessage('pendingEffectDecision', (decision: { id: string; prompt: { type: string } }) => {
-      if (decision.prompt.type !== 'selectCards') {
-        return;
-      }
+    alice.onMessage(
+      'pendingEffectDecision',
+      (decision: { id: string; prompt: { type: string } }) => {
+        if (decision.prompt.type !== 'selectCards') {
+          return;
+        }
 
-      alicePendingDecision = {
-        decisionId: decision.id,
-        cardIds:
-          Array.from(
+        alicePendingDecision = {
+          decisionId: decision.id,
+          cardIds: Array.from(
             alice.state.players.get(alice.sessionId)?.zones.hand ?? [],
           )
             .slice(0, 2)
             .map((card) => card.instanceId),
-      };
-    });
-    bob.onMessage('pendingEffectDecision', (decision: { id: string; prompt: { type: string } }) => {
-      if (decision.prompt.type !== 'selectCards') {
-        return;
-      }
+        };
+      },
+    );
+    bob.onMessage(
+      'pendingEffectDecision',
+      (decision: { id: string; prompt: { type: string } }) => {
+        if (decision.prompt.type !== 'selectCards') {
+          return;
+        }
 
-      bobPendingDecision = {
-        decisionId: decision.id,
-        cardIds:
-          Array.from(
+        bobPendingDecision = {
+          decisionId: decision.id,
+          cardIds: Array.from(
             bob.state.players.get(bob.sessionId)?.zones.hand ?? [],
           )
             .slice(0, 2)
             .map((card) => card.instanceId),
-      };
-    });
+        };
+      },
+    );
 
     await waitUntil(() => alice.state.phase === 'mulligan');
     await waitUntil(() => bob.state.phase === 'mulligan');

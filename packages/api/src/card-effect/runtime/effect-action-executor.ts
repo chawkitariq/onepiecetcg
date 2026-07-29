@@ -1094,8 +1094,7 @@ export class EffectActionExecutor {
     controllerSessionId: string,
     source: DuelCard,
     destinationPlayer:
-      | import('@onepiecetcg/shared').EffectOwnerSelector
-      | 'selectedCardOwner',
+      import('@onepiecetcg/shared').EffectOwnerSelector | 'selectedCardOwner',
     destinationZone: string,
     options: {
       faceDown?: boolean;
@@ -1113,9 +1112,7 @@ export class EffectActionExecutor {
 
     const card = cards[index];
 
-    if (
-      !this.canMoveCardByEffect(card, controllerSessionId, destinationZone)
-    ) {
+    if (!this.canMoveCardByEffect(card, controllerSessionId, destinationZone)) {
       this.moveCardsWithOptionalDestinationChoice(
         cards,
         controllerSessionId,

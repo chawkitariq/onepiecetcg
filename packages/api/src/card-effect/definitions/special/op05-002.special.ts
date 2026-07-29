@@ -107,7 +107,7 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
                 storedSelections: {},
               },
               event.playerSessionId,
-              '[Belo Betty] Choisissez jusqu\'a 3 Characters a qui donner +3000 puissance.',
+              "[Belo Betty] Choisissez jusqu'a 3 Characters a qui donner +3000 puissance.",
               {
                 player: 'self',
                 zones: ['characters'],

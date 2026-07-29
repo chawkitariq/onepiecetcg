@@ -185,7 +185,7 @@ export class DuelCardQueryEngine {
     if (
       filter.attribute &&
       !filter.attribute.some((attribute: string) =>
-        card.attributes.includes(attribute as never),
+        card.attributes.includes(attribute),
       )
     ) {
       return false;

@@ -843,7 +843,9 @@ describe('DuelRoom structural combat (stage 8)', () => {
       targetType: 'leader',
     });
 
-    expect(room.state.combat.attackerInstanceId).toBe(attackerCharacterInstanceId);
+    expect(room.state.combat.attackerInstanceId).toBe(
+      attackerCharacterInstanceId,
+    );
 
     await disposeRoom(room);
   });
@@ -890,8 +892,8 @@ describe('DuelRoom structural combat (stage 8)', () => {
     const attacker = room.state.players.get(firstSessionId);
     attacker!.zones.leader.hasDoubleAttack = true;
     const defender = room.state.players.get(secondSessionId);
-    defender!.zones.life[0]!.trigger = '';
-    defender!.zones.life[1]!.trigger = '';
+    defender!.zones.life[0].trigger = '';
+    defender!.zones.life[1].trigger = '';
     const lifeBefore = defender!.zones.life.length;
 
     access.handleDeclareAttack(fakeClient(firstSessionId), {
@@ -932,7 +934,11 @@ describe('DuelRoom structural combat (stage 8)', () => {
 
     expect(defender!.zones.life.length).toBe(lifeBefore - 1);
     expect(defender!.zones.hand.length).toBe(handBefore);
-    expect(defender!.zones.trash.some((card) => card.instanceId === topLifeCard.instanceId)).toBe(true);
+    expect(
+      defender!.zones.trash.some(
+        (card) => card.instanceId === topLifeCard.instanceId,
+      ),
+    ).toBe(true);
 
     await disposeRoom(room);
   });
@@ -1006,7 +1012,8 @@ describe('DuelRoom structural combat (stage 8)', () => {
     blocker.cannotBlock = true;
 
     access.handleDeclareAttack(fakeClient(firstSessionId), {
-      attackerInstanceId: room.state.players.get(firstSessionId)!.zones.leader.instanceId,
+      attackerInstanceId:
+        room.state.players.get(firstSessionId)!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
@@ -1025,7 +1032,11 @@ describe('DuelRoom structural combat (stage 8)', () => {
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    const attackerCharacterInstanceId = putCharacterInPlay(attacker, 'C-002', false);
+    const attackerCharacterInstanceId = putCharacterInPlay(
+      attacker,
+      'C-002',
+      false,
+    );
     const attackerCharacter = attacker!.zones.characters.find(
       (card) => card.instanceId === attackerCharacterInstanceId,
     )!;
@@ -1050,12 +1061,16 @@ describe('DuelRoom structural combat (stage 8)', () => {
     });
     access.handleFinishCounterStep(fakeClient(secondSessionId));
 
-    expect(defender!.zones.characters.some((card) => card.instanceId === targetInstanceId)).toBe(
-      true,
-    );
-    expect(defender!.zones.trash.some((card) => card.instanceId === targetInstanceId)).toBe(
-      false,
-    );
+    expect(
+      defender!.zones.characters.some(
+        (card) => card.instanceId === targetInstanceId,
+      ),
+    ).toBe(true);
+    expect(
+      defender!.zones.trash.some(
+        (card) => card.instanceId === targetInstanceId,
+      ),
+    ).toBe(false);
 
     await disposeRoom(room);
   });
@@ -1067,7 +1082,11 @@ describe('DuelRoom structural combat (stage 8)', () => {
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    const attackerCharacterInstanceId = putCharacterInPlay(attacker, 'C-002', false);
+    const attackerCharacterInstanceId = putCharacterInPlay(
+      attacker,
+      'C-002',
+      false,
+    );
     const attackerCharacter = attacker!.zones.characters.find(
       (card) => card.instanceId === attackerCharacterInstanceId,
     )!;
@@ -1091,9 +1110,11 @@ describe('DuelRoom structural combat (stage 8)', () => {
     });
     access.handleFinishCounterStep(fakeClient(secondSessionId));
 
-    expect(defender!.zones.characters.some((card) => card.instanceId === targetInstanceId)).toBe(
-      true,
-    );
+    expect(
+      defender!.zones.characters.some(
+        (card) => card.instanceId === targetInstanceId,
+      ),
+    ).toBe(true);
 
     await disposeRoom(room);
   });

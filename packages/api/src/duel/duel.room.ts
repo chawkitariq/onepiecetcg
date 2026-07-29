@@ -224,7 +224,10 @@ export class DuelRoom extends Room<DuelState> {
         const player = this.state.players.get(playerSessionId);
 
         if (returned > 0 && player) {
-          this.effectBoundary.emitDonReturned(playerSessionId, player.zones.leader);
+          this.effectBoundary.emitDonReturned(
+            playerSessionId,
+            player.zones.leader,
+          );
         }
 
         return returned;
@@ -568,8 +571,8 @@ export class DuelRoom extends Room<DuelState> {
     return (
       (defendingCard.cannotBeKoedBySlashInBattle &&
         attackerCard.attributes.includes('Slash')) ||
-      defendingCard.cannotBeKoedByStrikeInBattle &&
-      attackerCard.attributes.includes('Strike')
+      (defendingCard.cannotBeKoedByStrikeInBattle &&
+        attackerCard.attributes.includes('Strike'))
     );
   }
 

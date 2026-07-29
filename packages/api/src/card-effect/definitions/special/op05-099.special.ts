@@ -33,7 +33,7 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
         createdAt: new Date().toISOString(),
         prompt: {
           type: 'confirm',
-          message: "[Amazon] Voulez-vous reposer cette carte ?",
+          message: '[Amazon] Voulez-vous reposer cette carte ?',
           optional: true,
         },
       },
@@ -48,7 +48,7 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
           anyEngine.decisions.chooseChoices(
             `${event.sourceInstanceId}:op05-099:opponent-life`,
             opponent.sessionId,
-            "[Amazon] Votre adversaire peut defausser 1 carte du dessus de sa Vie.",
+            '[Amazon] Votre adversaire peut defausser 1 carte du dessus de sa Vie.',
             [
               { id: 'trash-life', label: 'Defausser la Vie' },
               { id: 'no-trash', label: 'Ne pas defausser' },

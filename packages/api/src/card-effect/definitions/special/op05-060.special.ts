@@ -28,7 +28,10 @@ export const op05060SpecialHandler: SpecialHandlerDefinition = {
     ];
     const totalDon =
       player.zones.cost.length +
-      inPlayCards.reduce((sum: number, card: { attachedDon: number }) => sum + card.attachedDon, 0);
+      inPlayCards.reduce(
+        (sum: number, card: { attachedDon: number }) => sum + card.attachedDon,
+        0,
+      );
 
     const definition: StandardEffectDefinition = {
       id: 'monkey-d-luffy-060-activate-main-life-to-hand-add-don-if-0-or-3-more',

@@ -177,7 +177,10 @@ export class DuelMainPhaseEngine {
 
       if (attachedCount > 0) {
         player.zones.leader.attachedDon += attachedCount;
-        this.deps.effectBoundary.emitDonAttached(player.sessionId, player.zones.leader);
+        this.deps.effectBoundary.emitDonAttached(
+          player.sessionId,
+          player.zones.leader,
+        );
       }
 
       this.deps.addLog(

@@ -112,9 +112,9 @@ describe('buildEffectRegistry', () => {
 
     expect(registry.triggeredEffectsByTrigger.onPlay).toHaveLength(1);
     expect(registry.triggeredEffectsByTrigger.trigger).toHaveLength(1);
-    expect(registry.replacementEffectsByEventType.wouldKoCharacter).toHaveLength(
-      1,
-    );
+    expect(
+      registry.replacementEffectsByEventType.wouldKoCharacter,
+    ).toHaveLength(1);
   });
 
   it('registers special handlers by cardId and keeps them separate from normal indexes', () => {

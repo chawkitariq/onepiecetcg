@@ -66,7 +66,7 @@ export const op05058SpecialHandler: SpecialHandlerDefinition = {
           storedSelections: {},
         },
         sessionId,
-        '[It\'s a Waste of Human Life!!] Choisissez des cartes de votre main a defausser jusqu\'a 5 cartes en main.',
+        "[It's a Waste of Human Life!!] Choisissez des cartes de votre main a defausser jusqu'a 5 cartes en main.",
         {
           player: 'self',
           zones: ['hand'],

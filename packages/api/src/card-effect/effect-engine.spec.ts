@@ -15,7 +15,9 @@ import type {
   SpecialHandlerDefinition,
 } from './types/effect-registry';
 
-const makeCard = (overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>): Card => ({
+const makeCard = (
+  overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>,
+): Card => ({
   id: overrides.id,
   number: overrides.number,
   name: overrides.name,
@@ -51,10 +53,16 @@ const createRegistry = (
             resolved.standard = [...(resolved.standard ?? []), entry.effect];
             break;
           case 'continuous':
-            resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
+            resolved.continuous = [
+              ...(resolved.continuous ?? []),
+              entry.effect,
+            ];
             break;
           case 'replacement':
-            resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+            resolved.replacements = [
+              ...(resolved.replacements ?? []),
+              entry.effect,
+            ];
             break;
           case 'special-ref':
             resolved.specialHandlerId = entry.specialHandlerId;
@@ -89,7 +97,10 @@ class TestHost implements EffectEngineHost {
     this.state.activePlayerSessionId = 'p1';
   }
 
-  public addPlayer(sessionId: string, leaderCardId = `L-${sessionId}`): DuelPlayer {
+  public addPlayer(
+    sessionId: string,
+    leaderCardId = `L-${sessionId}`,
+  ): DuelPlayer {
     const player = new DuelPlayer();
     player.sessionId = sessionId;
     player.displayName = sessionId;
@@ -128,7 +139,10 @@ class TestHost implements EffectEngineHost {
   }
 
   public getOpponentSessionId(sessionId: string): string | null {
-    return Array.from(this.state.players.keys()).find((id) => id !== sessionId) ?? null;
+    return (
+      Array.from(this.state.players.keys()).find((id) => id !== sessionId) ??
+      null
+    );
   }
 
   public getCard(instanceId: string): DuelCard | null {
@@ -137,8 +151,18 @@ class TestHost implements EffectEngineHost {
         return player.zones.leader;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const found = player.zones[zone].find(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (found) {
           return found;
@@ -184,36 +208,55 @@ class TestHost implements EffectEngineHost {
             continue;
           }
 
-          if (selector.filter?.costMax != null && card.cost > selector.filter.costMax) {
+          if (
+            selector.filter?.costMax != null &&
+            card.cost > selector.filter.costMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.costMin != null && card.cost < selector.filter.costMin) {
+          if (
+            selector.filter?.costMin != null &&
+            card.cost < selector.filter.costMin
+          ) {
             continue;
           }
 
-          if (selector.filter?.powerMax != null && card.power > selector.filter.powerMax) {
+          if (
+            selector.filter?.powerMax != null &&
+            card.power > selector.filter.powerMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.powerMin != null && card.power < selector.filter.powerMin) {
+          if (
+            selector.filter?.powerMin != null &&
+            card.power < selector.filter.powerMin
+          ) {
             continue;
           }
 
           if (
             selector.filter?.color &&
-            !selector.filter.color.some((color: string) => card.colors.includes(color))
+            !selector.filter.color.some((color: string) =>
+              card.colors.includes(color),
+            )
           ) {
             continue;
           }
 
-          if (selector.filter?.rested != null && card.rested !== selector.filter.rested) {
+          if (
+            selector.filter?.rested != null &&
+            card.rested !== selector.filter.rested
+          ) {
             continue;
           }
 
           if (
             selector.filter?.trait &&
-            !selector.filter.trait.some((trait: string) => card.families.includes(trait))
+            !selector.filter.trait.some((trait: string) =>
+              card.families.includes(trait),
+            )
           ) {
             continue;
           }
@@ -307,7 +350,10 @@ class TestHost implements EffectEngineHost {
     return card;
   }
 
-  public trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
+  public trashTopDeckCards(
+    playerSessionId: string,
+    amount: number,
+  ): DuelCard[] {
     const player = this.getPlayer(playerSessionId);
     const moved: DuelCard[] = [];
 
@@ -329,7 +375,11 @@ class TestHost implements EffectEngineHost {
     return moved;
   }
 
-  public addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
+  public addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number {
     const player = this.getPlayer(playerSessionId);
 
     if (!player) {
@@ -363,7 +413,9 @@ class TestHost implements EffectEngineHost {
     const target =
       player?.zones.leader.instanceId === targetInstanceId
         ? player.zones.leader
-        : player?.zones.characters.find((card) => card.instanceId === targetInstanceId);
+        : player?.zones.characters.find(
+            (card) => card.instanceId === targetInstanceId,
+          );
 
     if (!player || !target) {
       return 0;
@@ -415,7 +467,10 @@ class TestHost implements EffectEngineHost {
     _reason: 'battle' | 'effect',
   ): boolean {
     const player = this.getPlayer(playerSessionId);
-    const index = player?.zones.characters.findIndex((card) => card.instanceId === instanceId) ?? -1;
+    const index =
+      player?.zones.characters.findIndex(
+        (card) => card.instanceId === instanceId,
+      ) ?? -1;
 
     if (!player || index < 0) {
       return false;
@@ -435,19 +490,34 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
+    zone:
+      'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
-    const duelCard = createDuelCard(card, `${playerSessionId}:${instanceSuffix}`, playerSessionId);
+    const duelCard = createDuelCard(
+      card,
+      `${playerSessionId}:${instanceSuffix}`,
+      playerSessionId,
+    );
     this.getPlayer(playerSessionId)?.zones[zone].push(duelCard);
     return duelCard;
   }
 
   private removeCard(instanceId: string): void {
     for (const player of this.state.players.values()) {
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const index = player.zones[zone].findIndex(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (index >= 0) {
           player.zones[zone].splice(index, 1);
@@ -459,33 +529,35 @@ class TestHost implements EffectEngineHost {
 }
 
 describe('EffectEngine', () => {
-
   it('applies replacement effects before a KO is resolved', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
     const engine = new EffectEngine(
-      createRegistry([
-        {
-          editionId: 'OP05',
-          cards: [
-            {
-              cardId: 'OP05-051',
-              effects: [
-                {
-                  kind: 'replacement',
-                  effect: {
-                    id: 'borsalino-cannot-be-ko-by-effects',
-                    text: "This Character can't be KO'd by your opponent's effects.",
-                    event: 'wouldKoCharacter',
-                    replacement: [],
+      createRegistry(
+        [
+          {
+            editionId: 'OP05',
+            cards: [
+              {
+                cardId: 'OP05-051',
+                effects: [
+                  {
+                    kind: 'replacement',
+                    effect: {
+                      id: 'borsalino-cannot-be-ko-by-effects',
+                      text: "This Character can't be KO'd by your opponent's effects.",
+                      event: 'wouldKoCharacter',
+                      replacement: [],
+                    },
                   },
-                },
-              ],
-            },
-          ],
-        },
-      ], []),
+                ],
+              },
+            ],
+          },
+        ],
+        [],
+      ),
       host,
     );
 
@@ -519,62 +591,65 @@ describe('EffectEngine', () => {
     host.addPlayer('p1');
     host.addPlayer('p2');
     const engine = new EffectEngine(
-      createRegistry([
-        {
-          editionId: 'OP05',
-          cards: [
-            {
-              cardId: 'OP05-100',
-              effects: [
-                {
-                  kind: 'replacement',
-                  effect: {
-                    id: 'enel-would-leave-field-trash-top-life',
-                    text: 'If this Character would leave the field, trash 1 card from the top of your Life cards instead.',
-                    event: 'wouldMoveCard',
-                    oncePerTurn: true,
-                    conditions: [
-                      { type: 'cardInZone', zone: 'characters' },
-                      {
-                        type: 'targetExists',
-                        selector: {
-                          player: 'self',
-                          zones: ['life'],
-                          count: { kind: 'exact', value: 1 },
-                        },
-                      },
-                      {
-                        type: 'targetCountAtMost',
-                        selector: {
-                          player: 'either',
-                          zones: ['characters'],
-                          filter: {
-                            cardCategory: ['Character'],
-                            name: ['Monkey.D.Luffy'],
+      createRegistry(
+        [
+          {
+            editionId: 'OP05',
+            cards: [
+              {
+                cardId: 'OP05-100',
+                effects: [
+                  {
+                    kind: 'replacement',
+                    effect: {
+                      id: 'enel-would-leave-field-trash-top-life',
+                      text: 'If this Character would leave the field, trash 1 card from the top of your Life cards instead.',
+                      event: 'wouldMoveCard',
+                      oncePerTurn: true,
+                      conditions: [
+                        { type: 'cardInZone', zone: 'characters' },
+                        {
+                          type: 'targetExists',
+                          selector: {
+                            player: 'self',
+                            zones: ['life'],
+                            count: { kind: 'exact', value: 1 },
                           },
                         },
-                        value: 0,
-                      },
-                    ],
-                    replacement: [
-                      {
-                        type: 'moveFirstCard',
-                        selector: {
-                          player: 'self',
-                          zones: ['life'],
-                          count: { kind: 'exact', value: 1 },
+                        {
+                          type: 'targetCountAtMost',
+                          selector: {
+                            player: 'either',
+                            zones: ['characters'],
+                            filter: {
+                              cardCategory: ['Character'],
+                              name: ['Monkey.D.Luffy'],
+                            },
+                          },
+                          value: 0,
                         },
-                        destinationPlayer: 'self',
-                        destinationZone: 'trash',
-                      },
-                    ],
+                      ],
+                      replacement: [
+                        {
+                          type: 'moveFirstCard',
+                          selector: {
+                            player: 'self',
+                            zones: ['life'],
+                            count: { kind: 'exact', value: 1 },
+                          },
+                          destinationPlayer: 'self',
+                          destinationZone: 'trash',
+                        },
+                      ],
+                    },
                   },
-                },
-              ],
-            },
-          ],
-        },
-      ], []),
+                ],
+              },
+            ],
+          },
+        ],
+        [],
+      ),
       host,
     );
 
@@ -638,7 +713,6 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.life).toContain(secondLifeCard);
   });
 
-
   it('supports trigger effects via local definitions', () => {
     const triggerDefinition = {
       editionId: 'TEST',
@@ -699,11 +773,6 @@ describe('EffectEngine', () => {
 
     expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
   });
-
-
-
-
-
 
   it('supports wiping all characters except the source with a declarative action', () => {
     const host = new TestHost();
@@ -1190,8 +1259,4 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.deck[0]).toBe(existingTop);
     expect(host.getPlayer('p1')?.zones.deck.at(-1)).toBe(source);
   });
-
-
-
-
 });

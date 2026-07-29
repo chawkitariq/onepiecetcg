@@ -53,10 +53,16 @@ const createRegistry = (
             resolved.standard = [...(resolved.standard ?? []), entry.effect];
             break;
           case 'continuous':
-            resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
+            resolved.continuous = [
+              ...(resolved.continuous ?? []),
+              entry.effect,
+            ];
             break;
           case 'replacement':
-            resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+            resolved.replacements = [
+              ...(resolved.replacements ?? []),
+              entry.effect,
+            ];
             break;
           case 'special-ref':
             resolved.specialHandlerId = entry.specialHandlerId;
@@ -128,7 +134,10 @@ class TestHost implements EffectEngineHost {
   }
 
   public getOpponentSessionId(sessionId: string): string | null {
-    return Array.from(this.state.players.keys()).find((id) => id !== sessionId) ?? null;
+    return (
+      Array.from(this.state.players.keys()).find((id) => id !== sessionId) ??
+      null
+    );
   }
 
   public getCard(instanceId: string): DuelCard | null {
@@ -141,8 +150,18 @@ class TestHost implements EffectEngineHost {
         return player.zones.stage;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const found = player.zones[zone].find(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (found) {
           return found;
@@ -188,28 +207,41 @@ class TestHost implements EffectEngineHost {
             continue;
           }
 
-          if (selector.filter?.costMax != null && card.cost > selector.filter.costMax) {
+          if (
+            selector.filter?.costMax != null &&
+            card.cost > selector.filter.costMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.costMin != null && card.cost < selector.filter.costMin) {
+          if (
+            selector.filter?.costMin != null &&
+            card.cost < selector.filter.costMin
+          ) {
             continue;
           }
 
-          if (selector.filter?.powerMax != null && card.power > selector.filter.powerMax) {
+          if (
+            selector.filter?.powerMax != null &&
+            card.power > selector.filter.powerMax
+          ) {
             continue;
           }
 
           if (
             selector.filter?.color &&
-            !selector.filter.color.some((color: string) => card.colors.includes(color))
+            !selector.filter.color.some((color: string) =>
+              card.colors.includes(color),
+            )
           ) {
             continue;
           }
 
           if (
             selector.filter?.trait &&
-            !selector.filter.trait.some((trait: string) => card.families.includes(trait))
+            !selector.filter.trait.some((trait: string) =>
+              card.families.includes(trait),
+            )
           ) {
             continue;
           }
@@ -228,7 +260,10 @@ class TestHost implements EffectEngineHost {
             continue;
           }
 
-          if (selector.filter?.rested != null && card.rested !== selector.filter.rested) {
+          if (
+            selector.filter?.rested != null &&
+            card.rested !== selector.filter.rested
+          ) {
             continue;
           }
 
@@ -290,7 +325,10 @@ class TestHost implements EffectEngineHost {
     return card;
   }
 
-  public trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
+  public trashTopDeckCards(
+    playerSessionId: string,
+    amount: number,
+  ): DuelCard[] {
     const player = this.getPlayer(playerSessionId);
     const moved: DuelCard[] = [];
 
@@ -312,7 +350,11 @@ class TestHost implements EffectEngineHost {
     return moved;
   }
 
-  public addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
+  public addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number {
     const player = this.getPlayer(playerSessionId);
 
     if (!player) {
@@ -369,7 +411,10 @@ class TestHost implements EffectEngineHost {
     _reason: 'battle' | 'effect',
   ): boolean {
     const player = this.getPlayer(playerSessionId);
-    const index = player?.zones.characters.findIndex((card) => card.instanceId === instanceId) ?? -1;
+    const index =
+      player?.zones.characters.findIndex(
+        (card) => card.instanceId === instanceId,
+      ) ?? -1;
 
     if (!player || index < 0) {
       return false;
@@ -389,11 +434,16 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
+    zone:
+      'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
-    const duelCard = createDuelCard(card, `${playerSessionId}:${instanceSuffix}`, playerSessionId);
+    const duelCard = createDuelCard(
+      card,
+      `${playerSessionId}:${instanceSuffix}`,
+      playerSessionId,
+    );
     this.getPlayer(playerSessionId)?.zones[zone].push(duelCard);
     return duelCard;
   }
@@ -405,8 +455,18 @@ class TestHost implements EffectEngineHost {
         return;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const index = player.zones[zone].findIndex(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (index >= 0) {
           player.zones[zone].splice(index, 1);
@@ -444,13 +504,25 @@ describe('op02EffectDefinitions', () => {
     const targetA = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'A', number: 'A', name: 'Target A', type: 'Character', power: 4000 }),
+      makeCard({
+        id: 'A',
+        number: 'A',
+        name: 'Target A',
+        type: 'Character',
+        power: 4000,
+      }),
       'target-a',
     );
     const targetB = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'B', number: 'B', name: 'Target B', type: 'Character', power: 5000 }),
+      makeCard({
+        id: 'B',
+        number: 'B',
+        name: 'Target B',
+        type: 'Character',
+        power: 5000,
+      }),
       'target-b',
     );
 
@@ -494,7 +566,12 @@ describe('op02EffectDefinitions', () => {
     const mobyDick = host.addCardToZone(
       'p1',
       'trash',
-      makeCard({ id: 'OP02-024', number: 'OP02-024', name: 'Moby Dick', type: 'Stage' }),
+      makeCard({
+        id: 'OP02-024',
+        number: 'OP02-024',
+        name: 'Moby Dick',
+        type: 'Stage',
+      }),
       'moby-dick',
     );
     const whitebeardPirate = host.addCardToZone(
@@ -513,7 +590,13 @@ describe('op02EffectDefinitions', () => {
     const otherCharacter = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OTHER', number: 'OTHER', name: 'Other', type: 'Character', power: 5000 }),
+      makeCard({
+        id: 'OTHER',
+        number: 'OTHER',
+        name: 'Other',
+        type: 'Character',
+        power: 5000,
+      }),
       'other',
     );
 
@@ -539,7 +622,12 @@ describe('op02EffectDefinitions', () => {
     const luffy = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP02-062', number: 'OP02-062', name: 'Monkey.D.Luffy', type: 'Character' }),
+      makeCard({
+        id: 'OP02-062',
+        number: 'OP02-062',
+        name: 'Monkey.D.Luffy',
+        type: 'Character',
+      }),
       'luffy',
     );
     const fodderA = host.addCardToZone(
@@ -557,7 +645,13 @@ describe('op02EffectDefinitions', () => {
     const target = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'T', number: 'T', name: 'Target', type: 'Character', cost: 4 }),
+      makeCard({
+        id: 'T',
+        number: 'T',
+        name: 'Target',
+        type: 'Character',
+        cost: 4,
+      }),
       'target',
     );
 
@@ -593,7 +687,12 @@ describe('op02EffectDefinitions', () => {
     const venomRoad = host.addCardToZone(
       'p1',
       'trash',
-      makeCard({ id: 'OP02-091', number: 'OP02-091', name: 'Venom Road', type: 'Event' }),
+      makeCard({
+        id: 'OP02-091',
+        number: 'OP02-091',
+        name: 'Venom Road',
+        type: 'Event',
+      }),
       'venom-road',
     );
 
@@ -601,7 +700,12 @@ describe('op02EffectDefinitions', () => {
       host.addCardToZone(
         'p2',
         'cost',
-        makeCard({ id: `DON-${index}`, number: `DON-${index}`, name: `Don ${index}`, type: 'DON!!' }),
+        makeCard({
+          id: `DON-${index}`,
+          number: `DON-${index}`,
+          name: `Don ${index}`,
+          type: 'DON!!',
+        }),
         `don-${index}`,
       );
     }

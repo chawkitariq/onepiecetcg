@@ -74,7 +74,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
                 selector: {
                   player: 'self',
                   zones: ['hand'],
-                  filter: { cardCategory: ['Character'], costMin: 5, costMax: 5 },
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMin: 5,
+                    costMax: 5,
+                  },
                   count: { kind: 'exact', value: 1 },
                 },
               },
@@ -219,7 +223,7 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'issho-on-play-if-opponent-hand-6-or-more-trash-2',
-            text: '[On Play] If your opponent has 6 or more cards in their hand, trash 2 cards from your opponent\'s hand.',
+            text: "[On Play] If your opponent has 6 or more cards in their hand, trash 2 cards from your opponent's hand.",
             trigger: { type: 'onPlay' },
             conditions: [
               {
@@ -1402,7 +1406,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             text: "[On Play] If your Leader has the [East Blue] type, rest up to 1 of your opponent's Characters.",
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'East Blue' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'East Blue',
+              },
             ],
             actions: [
               {
@@ -1525,7 +1533,7 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'zeff-047-on-play-may-trash-top-2',
-            text: "[On Play] ... and you may trash 2 cards from the top of your deck.",
+            text: '[On Play] ... and you may trash 2 cards from the top of your deck.',
             trigger: { type: 'onPlay', optional: true },
             actions: [{ type: 'trashFromDeck', player: 'self', amount: 2 }],
           },
@@ -1629,7 +1637,8 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP03-017',
-                effectId: 'cross-fire-main-minus-4000-if-whitebeard-pirates-leader',
+                effectId:
+                  'cross-fire-main-minus-4000-if-whitebeard-pirates-leader',
               },
             ],
           },
@@ -1648,7 +1657,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] If your Leader has the [East Blue] type, play this card.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'East Blue' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'East Blue',
+              },
             ],
             actions: [
               {
@@ -2216,7 +2229,8 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP03-120',
-                effectId: 'tropical-torment-main-if-opponent-life-4-or-more-trash-top-life',
+                effectId:
+                  'tropical-torment-main-if-opponent-life-4-or-more-trash-top-life',
               },
             ],
           },
@@ -2676,9 +2690,15 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             trigger: { type: 'onKo' },
             conditions: [
               { type: 'eventPlayerIs', player: 'self' },
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Impel Down' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Impel Down',
+              },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],
@@ -2917,7 +2937,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             text: "[On Play] If your Leader has the [East Blue] type, rest up to 2 of your opponent's Characters with a cost of 4 or less.",
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'East Blue' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'East Blue',
+              },
             ],
             actions: [
               {
@@ -2947,7 +2971,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             trigger: { type: 'onKo' },
             conditions: [
               { type: 'eventPlayerIs', player: 'self' },
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Impel Down' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Impel Down',
+              },
             ],
             actions: [
               { type: 'draw', player: 'self', amount: 2 },
@@ -3106,7 +3134,9 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             conditions: [
               { type: 'playerHasLeaderName', player: 'self', value: 'Iceburg' },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],
@@ -3414,9 +3444,15 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             trigger: { type: 'onKo' },
             conditions: [
               { type: 'eventPlayerIs', player: 'self' },
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Galley-La Company' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Galley-La Company',
+              },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],
@@ -3497,7 +3533,10 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
                 selector: {
                   player: 'opponent',
                   zones: ['characters'],
-                  filter: { cardCategory: ['Character'], hasNoBaseEffect: true },
+                  filter: {
+                    cardCategory: ['Character'],
+                    hasNoBaseEffect: true,
+                  },
                   count: { kind: 'upTo', value: 1 },
                 },
                 amount: -99,
@@ -3521,7 +3560,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             trigger: { type: 'onPlay' },
             costs: [{ type: 'removeDon', player: 'self', amount: 1 }],
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Water Seven' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Water Seven',
+              },
             ],
             actions: [{ type: 'draw', player: 'self', amount: 1 }],
           },
@@ -3572,9 +3615,15 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             trigger: { type: 'whenAttacking' },
             conditions: [
               { type: 'sourceHasAttachedDonAtLeast', value: 1 },
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Galley-La Company' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Galley-La Company',
+              },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],
@@ -3661,7 +3710,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             text: "[On Play] If your Leader has the [East Blue] type, rest up to 1 of your opponent's Characters with a cost of 2 or less.",
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'East Blue' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'East Blue',
+              },
             ],
             actions: [
               {
@@ -3683,7 +3736,11 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
             text: "And, if you don't have [Buchi], play up to 1 [Buchi] from your hand.",
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'East Blue' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'East Blue',
+              },
               {
                 type: 'targetCountAtMost',
                 selector: {
@@ -3871,7 +3928,7 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'patty-on-play-if-deck-20-or-less-bounce-cost-3-or-less',
-            text: '[On Play] If you have 20 or less cards in your deck, return up to 1 Character with a cost of 3 or less to the owner\'s hand.',
+            text: "[On Play] If you have 20 or less cards in your deck, return up to 1 Character with a cost of 3 or less to the owner's hand.",
             trigger: { type: 'onPlay' },
             conditions: [
               {
@@ -3906,11 +3963,15 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'hull-dismantler-slash-main-remove-1-if-water-seven-ko-cost-2-or-less',
-            text: '[Main] DON!! -1 If your Leader has the [Water Seven] type, K.O. up to 1 of your opponent\'s Characters with a cost of 2 or less.',
+            text: "[Main] DON!! -1 If your Leader has the [Water Seven] type, K.O. up to 1 of your opponent's Characters with a cost of 2 or less.",
             trigger: { type: 'activateMain' },
             costs: [{ type: 'removeDon', player: 'self', amount: 1 }],
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Water Seven' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Water Seven',
+              },
             ],
             actions: [
               {
@@ -3936,7 +3997,8 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP03-073',
-                effectId: 'hull-dismantler-slash-main-remove-1-if-water-seven-ko-cost-2-or-less',
+                effectId:
+                  'hull-dismantler-slash-main-remove-1-if-water-seven-ko-cost-2-or-less',
               },
             ],
           },
@@ -4291,7 +4353,7 @@ export const op03EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'kuro-activate-main-pay-3-rest-2-east-blue-unrest-leader-rest-cost-5-or-less',
-            text: '[Activate:Main] (3) You may rest 2 of your [East Blue] type Characters: Set this Leader as active, and rest up to 1 of your opponent\'s Characters with a cost of 5 or less.',
+            text: "[Activate:Main] (3) You may rest 2 of your [East Blue] type Characters: Set this Leader as active, and rest up to 1 of your opponent's Characters with a cost of 5 or less.",
             trigger: { type: 'activateMain', optional: true },
             costs: [
               { type: 'removeDon', player: 'self', amount: 3 },

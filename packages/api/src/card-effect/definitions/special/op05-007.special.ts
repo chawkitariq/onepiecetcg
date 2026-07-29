@@ -37,7 +37,10 @@ export const op05007SpecialHandler: SpecialHandlerDefinition = {
       },
       undefined,
       (cards) => {
-        const totalPower = cards.reduce((sum: number, card: { power: number }) => sum + card.power, 0);
+        const totalPower = cards.reduce(
+          (sum: number, card: { power: number }) => sum + card.power,
+          0,
+        );
 
         if (totalPower > 4000) {
           return;

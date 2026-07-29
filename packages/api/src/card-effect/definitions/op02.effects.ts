@@ -102,7 +102,7 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'magellan-085-on-play-remove-1-opponent-remove-1-don',
-            text: "[On Play] DON!! -1: Your opponent returns 1 DON!! card from their field to their DON!! deck.",
+            text: '[On Play] DON!! -1: Your opponent returns 1 DON!! card from their field to their DON!! deck.',
             trigger: { type: 'onPlay' },
             costs: [{ type: 'removeDon', player: 'self', amount: 1 }],
             actions: [{ type: 'removeDon', player: 'opponent', amount: 1 }],
@@ -112,7 +112,7 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'magellan-085-opponents-turn-on-ko-opponent-remove-2-don',
-            text: "[Opponents Turn] When this Character is K.O.d, your opponent returns 2 DON!! cards from their field to their DON!! deck.",
+            text: '[Opponents Turn] When this Character is K.O.d, your opponent returns 2 DON!! cards from their field to their DON!! deck.',
             trigger: { type: 'onKo' },
             conditions: [
               { type: 'controllerTurn', value: false },
@@ -633,7 +633,7 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'death-wink-trigger-return-cost-7-or-less',
-            text: "[Trigger] Return up to 1 Character with a cost of 7 or less to the owners hand.",
+            text: '[Trigger] Return up to 1 Character with a cost of 7 or less to the owners hand.',
             trigger: { type: 'trigger' },
             actions: [
               {
@@ -774,7 +774,11 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] If your opponent has 6 or more DON!! cards on their field, your opponent returns 1 DON!! card from their field to their DON!! deck.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasTotalDonAtLeast', player: 'opponent', value: 6 },
+              {
+                type: 'playerHasTotalDonAtLeast',
+                player: 'opponent',
+                value: 6,
+              },
             ],
             actions: [{ type: 'removeDon', player: 'opponent', amount: 1 }],
           },
@@ -888,17 +892,23 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
             id: 'venom-road-main-add-active-don',
             text: '[Main] Add up to 1 DON!! card from your DON!! deck and set it as active.',
             trigger: { type: 'onEventActivated' },
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: false }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: false },
+            ],
           },
         },
         {
           kind: 'standard',
           effect: {
             id: 'venom-road-trigger-opponent-remove-1-don',
-            text: "[Trigger] If your opponent has 6 or more DON!! cards on their field, your opponent returns 1 DON!! card from their field to their DON!! deck.",
+            text: '[Trigger] If your opponent has 6 or more DON!! cards on their field, your opponent returns 1 DON!! card from their field to their DON!! deck.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasTotalDonAtLeast', player: 'opponent', value: 6 },
+              {
+                type: 'playerHasTotalDonAtLeast',
+                player: 'opponent',
+                value: 6,
+              },
             ],
             actions: [{ type: 'removeDon', player: 'opponent', amount: 1 }],
           },
@@ -1003,7 +1013,7 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'three-sword-style-oni-giri-trigger-rest-cost-5-or-less',
-            text: "[Trigger] Rest up to 1 of your opponents Leader or Character cards with a cost of 5 or less.",
+            text: '[Trigger] Rest up to 1 of your opponents Leader or Character cards with a cost of 5 or less.',
             trigger: { type: 'trigger' },
             actions: [
               {
@@ -1031,7 +1041,9 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
             id: 'you-may-be-a-fool-main-if-life-3-or-less-prevent-own-life-to-hand',
             text: '[Main] If you have 3 or less Life cards, you cannot add Life cards to your hand using your own effects during this turn.',
             trigger: { type: 'onEventActivated' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 3 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 3 },
+            ],
             actions: [
               {
                 type: 'preventOwnEffectLifeToHand',
@@ -1156,7 +1168,11 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] If your opponent has 6 or more DON!! cards on their field, your opponent returns 1 DON!! card from their field to their DON!! deck.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasTotalDonAtLeast', player: 'opponent', value: 6 },
+              {
+                type: 'playerHasTotalDonAtLeast',
+                player: 'opponent',
+                value: 6,
+              },
             ],
             actions: [{ type: 'removeDon', player: 'opponent', amount: 1 }],
           },
@@ -2212,7 +2228,7 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'monkey-d-luffy-on-play-trash-2-return-cost-4-or-less-gain-double-attack',
-            text: '[On Play] You may trash 2 cards from your hand: Return up to 1 Character with a cost of 4 or less to the owner\'s hand. Then, this Character gains [Double Attack] during this turn.',
+            text: "[On Play] You may trash 2 cards from your hand: Return up to 1 Character with a cost of 4 or less to the owner's hand. Then, this Character gains [Double Attack] during this turn.",
             trigger: { type: 'onPlay', optional: true },
             costs: [
               {
@@ -2254,7 +2270,7 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'monkey-d-luffy-when-attacking-trash-2-return-cost-4-or-less-gain-double-attack',
-            text: '[When Attacking] You may trash 2 cards from your hand: Return up to 1 Character with a cost of 4 or less to the owner\'s hand. Then, this Character gains [Double Attack] during this turn.',
+            text: "[When Attacking] You may trash 2 cards from your hand: Return up to 1 Character with a cost of 4 or less to the owner's hand. Then, this Character gains [Double Attack] during this turn.",
             trigger: { type: 'whenAttacking', optional: true },
             costs: [
               {
@@ -2647,7 +2663,9 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
             id: 'marco-on-ko-trash-whitebeard-pirates-if-life-2-or-less-play-self-rested',
             text: '[On K.O.] You may trash 1 card with a type including "Whitebeard Pirates" from your hand: If you have 2 or less Life cards, play this Character card from your trash rested.',
             trigger: { type: 'onKo', optional: true },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 2 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 2 },
+            ],
             costs: [
               {
                 type: 'trashFromHand',
@@ -3586,7 +3604,9 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
                 value: 'Impel Down',
               },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],
@@ -3638,7 +3658,9 @@ export const op02EffectDefinitions: EditionEffectDefinitions = {
                 value: 'Impel Down',
               },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],

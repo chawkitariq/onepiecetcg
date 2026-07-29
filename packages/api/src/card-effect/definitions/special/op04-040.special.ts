@@ -36,8 +36,7 @@ export const op04040SpecialHandler: SpecialHandlerDefinition = {
         event.playerSessionId,
       ).length > 0;
 
-    const canAddLife =
-      hasCost8OrMoreCharacter && player.zones.deck.length > 0;
+    const canAddLife = hasCost8OrMoreCharacter && player.zones.deck.length > 0;
 
     const definition: StandardEffectDefinition = canAddLife
       ? {
@@ -47,7 +46,8 @@ export const op04040SpecialHandler: SpecialHandlerDefinition = {
           actions: [
             {
               type: 'chooseActionBranch',
-              message: 'Choisissez entre piocher 1 carte ou ajouter la carte du dessus du deck a la Vie.',
+              message:
+                'Choisissez entre piocher 1 carte ou ajouter la carte du dessus du deck a la Vie.',
               choices: [
                 {
                   id: 'draw-1',

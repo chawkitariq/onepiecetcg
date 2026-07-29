@@ -65,7 +65,7 @@ export const op04116SpecialHandler: SpecialHandlerDefinition = {
 
     const definition: StandardEffectDefinition = {
       id: 'diable-jambe-joue-shot-counter-special',
-      text: '[Counter] Up to 1 of your Leader or Character cards gains +6000 power during this battle. Then, if you and your opponent have a total of 4 or less Life cards, K.O. up to 1 of your opponent\'s Characters with a cost of 2 or less.',
+      text: "[Counter] Up to 1 of your Leader or Character cards gains +6000 power during this battle. Then, if you and your opponent have a total of 4 or less Life cards, K.O. up to 1 of your opponent's Characters with a cost of 2 or less.",
       trigger: { type: 'activateCounter' },
       actions,
     };

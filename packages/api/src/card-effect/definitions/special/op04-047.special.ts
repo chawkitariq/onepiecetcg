@@ -22,7 +22,11 @@ export const op04047SpecialHandler: SpecialHandlerDefinition = {
 
     const target = host.getCard(combat.targetInstanceId);
 
-    if (!target || target.ownerSessionId === event.playerSessionId || target.cost > 5) {
+    if (
+      !target ||
+      target.ownerSessionId === event.playerSessionId ||
+      target.cost > 5
+    ) {
       return;
     }
 

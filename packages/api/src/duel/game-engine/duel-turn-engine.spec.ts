@@ -191,6 +191,8 @@ describe('DuelTurnEngine', () => {
     expect(state.turn).toBe(5);
     expect(state.phase).toBe('refresh');
     expect(effectBoundary.reapplyContinuousEffects).toHaveBeenCalledTimes(1);
-    expect(effectBoundary.emitWindowEffects).toHaveBeenCalledWith('onTurnStart');
+    expect(effectBoundary.emitWindowEffects).toHaveBeenCalledWith(
+      'onTurnStart',
+    );
   });
 });

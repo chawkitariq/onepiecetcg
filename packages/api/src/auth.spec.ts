@@ -56,11 +56,15 @@ describe('createAuth', () => {
       socialProviders: {
         google: {
           overrideUserInfoOnSignIn: boolean;
-          mapProfileToUser: (profile: Record<string, unknown>) => Record<string, string>;
+          mapProfileToUser: (
+            profile: Record<string, unknown>,
+          ) => Record<string, string>;
         };
         discord: {
           overrideUserInfoOnSignIn: boolean;
-          mapProfileToUser: (profile: Record<string, unknown>) => Record<string, string>;
+          mapProfileToUser: (
+            profile: Record<string, unknown>,
+          ) => Record<string, string>;
         };
       };
     };

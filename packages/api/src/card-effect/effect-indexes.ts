@@ -1,4 +1,7 @@
-import type { CardEffectDefinition, EffectTriggerType } from '@onepiecetcg/shared';
+import type {
+  CardEffectDefinition,
+  EffectTriggerType,
+} from '@onepiecetcg/shared';
 import type {
   EffectRegistry,
   EventType,
@@ -40,12 +43,14 @@ export function buildEffectIndexes(
   EffectRegistry,
   'triggeredEffectsByTrigger' | 'replacementEffectsByEventType'
 > {
-  const triggeredEffectsByTrigger = Object.create(
-    null,
-  ) as Record<TriggerType, TriggeredEffectReference[]>;
-  const replacementEffectsByEventType = Object.create(
-    null,
-  ) as Record<EventType, ReplacementEffectReference[]>;
+  const triggeredEffectsByTrigger = Object.create(null) as Record<
+    TriggerType,
+    TriggeredEffectReference[]
+  >;
+  const replacementEffectsByEventType = Object.create(null) as Record<
+    EventType,
+    ReplacementEffectReference[]
+  >;
 
   for (const trigger of triggerTypes) {
     triggeredEffectsByTrigger[trigger] = [];

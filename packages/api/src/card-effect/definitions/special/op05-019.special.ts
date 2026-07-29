@@ -85,7 +85,7 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
             storedSelections: {},
           },
           event.playerSessionId,
-          '[Fire Fist] Choisissez jusqu\'a 1 Character adverse de puissance 0 ou moins a K.O.',
+          "[Fire Fist] Choisissez jusqu'a 1 Character adverse de puissance 0 ou moins a K.O.",
           {
             player: 'opponent',
             zones: ['characters'],
@@ -95,7 +95,11 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (koCards) => {
             for (const koCard of koCards) {
-              host.koCharacter(koCard.ownerSessionId, koCard.instanceId, 'effect');
+              host.koCharacter(
+                koCard.ownerSessionId,
+                koCard.instanceId,
+                'effect',
+              );
             }
           },
         );

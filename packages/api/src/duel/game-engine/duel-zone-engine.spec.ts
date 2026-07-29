@@ -1,5 +1,10 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { DuelPlayer, DuelState, createDuelCard, type Card } from '@onepiecetcg/shared';
+import {
+  DuelPlayer,
+  DuelState,
+  createDuelCard,
+  type Card,
+} from '@onepiecetcg/shared';
 import { DuelZoneEngine } from './duel-zone-engine';
 
 const card: Card = {
@@ -26,7 +31,12 @@ function createPlayer(sessionId: string): DuelPlayer {
   player.sessionId = sessionId;
   player.displayName = sessionId;
   player.zones.leader = createDuelCard(
-    { ...card, id: `${sessionId}-leader`, number: `${sessionId}-leader`, type: 'Leader' },
+    {
+      ...card,
+      id: `${sessionId}-leader`,
+      number: `${sessionId}-leader`,
+      type: 'Leader',
+    },
     `${sessionId}:leader`,
     sessionId,
   );

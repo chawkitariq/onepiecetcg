@@ -409,7 +409,9 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
             id: 'ms-all-sunday-064-on-play-add-rested-don',
             text: '[On Play] Add up to 1 DON!! card from your DON!! deck and rest it.',
             trigger: { type: 'onPlay' },
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
         {
@@ -418,7 +420,9 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
             id: 'ms-all-sunday-064-on-play-if-total-don-6-or-more-draw-1',
             text: 'Then, if you have 6 or more DON!! cards on your field, draw 1 card.',
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasTotalDonAtLeast', player: 'self', value: 6 }],
+            conditions: [
+              { type: 'playerHasTotalDonAtLeast', player: 'self', value: 6 },
+            ],
             actions: [{ type: 'draw', player: 'self', amount: 1 }],
           },
         },
@@ -573,7 +577,11 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'monkey-d-luffy-090-activate-main-once-return-7-trash-unrest-self-skip-next-refresh',
             text: '[Activate:Main] [Once Per Turn] You may return 7 cards from your trash to the bottom of your deck in any order: Set this Character as active. Then, this Character will not become active in your next Refresh Phase.',
-            trigger: { type: 'activateMain', oncePerTurn: true, optional: true },
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
             costs: [
               {
                 type: 'moveCard',
@@ -730,7 +738,11 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'charlotte-amande-activate-main-trash-trigger-rest-cost-2-or-less',
             text: "[Activate:Main] [Once Per Turn] You may trash 1 card with a [Trigger] from your hand: Rest up to 1 of your opponent's Characters with a cost of 2 or less.",
-            trigger: { type: 'activateMain', oncePerTurn: true, optional: true },
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
             costs: [
               {
                 type: 'trashFromHand',
@@ -1348,7 +1360,7 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'donquixote-family-counter-search-top-5-donquixote-pirates',
-            text: "[Counter] Look at 5 cards from the top of your deck; reveal up to 1 [Donquixote Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+            text: '[Counter] Look at 5 cards from the top of your deck; reveal up to 1 [Donquixote Pirates] type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.',
             trigger: { type: 'activateCounter' },
             actions: [
               {
@@ -1375,7 +1387,8 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP04-036',
-                effectId: 'donquixote-family-counter-search-top-5-donquixote-pirates',
+                effectId:
+                  'donquixote-family-counter-search-top-5-donquixote-pirates',
               },
             ],
           },
@@ -1636,7 +1649,7 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'whos-who-051-on-play-search-top-5-animal-kingdom-pirates',
-            text: '[On Play] Look at 5 cards from the top of your deck; reveal up to 1 [Animal Kingdom Pirates] type card other than [Who\'s.Who] and add it to your hand. Then, place the rest at the bottom of your deck in any order.',
+            text: "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 [Animal Kingdom Pirates] type card other than [Who's.Who] and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
             trigger: { type: 'onPlay' },
             actions: [
               {
@@ -1733,7 +1746,11 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
           effect: {
             id: 'kinemon-102-activate-main-once-pay-1-take-top-or-bottom-life-unrest-self',
             text: '[Activate:Main] [Once Per Turn] (1) You may add 1 card from the top or bottom of your Life cards to your hand: Set this Character as active.',
-            trigger: { type: 'activateMain', oncePerTurn: true, optional: true },
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
             costs: [
               { type: 'removeDon', player: 'self', amount: 1 },
               {
@@ -2176,7 +2193,9 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
             id: 'olin-trigger-if-life-1-or-less-play-this-card',
             text: '[Trigger] If you have 1 or less Life cards, play this card.',
             trigger: { type: 'trigger' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 1 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 1 },
+            ],
             actions: [
               {
                 type: 'play',
@@ -2701,8 +2720,12 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
             id: 'nez-palm-cannon-counter-if-life-2-or-less-add-rested-don',
             text: 'Then, if you have 2 or less Life cards, add up to 1 DON!! card from your DON!! deck and rest it.',
             trigger: { type: 'activateCounter' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 2 }],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 2 },
+            ],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
         {
@@ -3044,7 +3067,8 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP04-018',
-                effectId: 'enchanting-vertigo-dance-main-if-alabasta-minus-2000-up-to-2',
+                effectId:
+                  'enchanting-vertigo-dance-main-if-alabasta-minus-2000-up-to-2',
               },
             ],
           },
@@ -3196,7 +3220,9 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
                 },
               },
             ],
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 1 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 1 },
+            ],
             actions: [
               {
                 type: 'moveFirstCard',
@@ -3272,7 +3298,8 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP04-055',
-                effectId: 'plague-rounds-main-trash-ice-oni-bottom-deck-cost-4-or-less-play-ice-oni',
+                effectId:
+                  'plague-rounds-main-trash-ice-oni-bottom-deck-cost-4-or-less-play-ice-oni',
               },
             ],
           },
@@ -3737,7 +3764,9 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
                 value: 'Water Seven',
               },
             ],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
       ],

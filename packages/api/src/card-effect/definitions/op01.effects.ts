@@ -163,7 +163,9 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'radical-beam-counter-additional-plus-2000',
             text: 'Then, if you have 2 or less Life cards, that card gains an additional +2000 power.',
             trigger: { type: 'activateCounter' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 2 }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 2 },
+            ],
             actions: [
               {
                 type: 'modifyPower',
@@ -182,7 +184,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'radical-beam-trigger-plus-1000',
-            text: "[Trigger] Up to 1 of your Leader or Character cards gains +1000 power during this turn.",
+            text: '[Trigger] Up to 1 of your Leader or Character cards gains +1000 power during this turn.',
             trigger: { type: 'trigger' },
             actions: [
               {
@@ -539,7 +541,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'x-drake-on-play-don-minus-1-opponent-trashes-1',
-            text: "[On Play] DON!! -1: Your opponent trashes 1 card from their hand.",
+            text: '[On Play] DON!! -1: Your opponent trashes 1 card from their hand.',
             trigger: { type: 'onPlay' },
             costs: [{ type: 'removeDon', player: 'self', amount: 1 }],
             actions: [
@@ -568,7 +570,13 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'ms-all-sunday-on-ko-recover-event',
             text: '[On K.O.] If your Leader has the "Baroque Works" type, add up to 1 Event from your trash to your hand.',
             trigger: { type: 'onKo' },
-            conditions: [{ type: 'playerHasLeaderTrait', player: 'self', value: 'Baroque Works' }],
+            conditions: [
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Baroque Works',
+              },
+            ],
             actions: [
               {
                 type: 'search',
@@ -866,7 +874,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'shanks-when-attacking-opponent-small-blockers-cannot-block',
-            text: "Your opponent cannot activate a [Blocker] Character that has 2000 or less power during this battle.",
+            text: 'Your opponent cannot activate a [Blocker] Character that has 2000 or less power during this battle.',
             trigger: { type: 'whenAttacking' },
             actions: [
               {
@@ -1028,7 +1036,13 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'kinemon-on-play-play-akazaya',
             text: '[On Play] If your Leader is [Kouzuki Oden], play up to 1 "The Akazaya Nine" type Character card with a cost of 3 or less from your hand.',
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasLeaderName', player: 'self', value: 'Kouzuki Oden' }],
+            conditions: [
+              {
+                type: 'playerHasLeaderName',
+                player: 'self',
+                value: 'Kouzuki Oden',
+              },
+            ],
             actions: [
               {
                 type: 'play',
@@ -1308,8 +1322,12 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'thunder-bagua-counter-add-rested-don',
             text: 'Then, if you have 2 or less Life cards, add up to 1 DON!! card from your DON!! deck and rest it.',
             trigger: { type: 'activateCounter' },
-            conditions: [{ type: 'playerHasLifeAtMost', player: 'self', value: 2 }],
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: true }],
+            conditions: [
+              { type: 'playerHasLifeAtMost', player: 'self', value: 2 },
+            ],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: true },
+            ],
           },
         },
         {
@@ -1318,7 +1336,9 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'thunder-bagua-trigger-add-active-don',
             text: '[Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.',
             trigger: { type: 'trigger' },
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: false }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: false },
+            ],
           },
         },
       ],
@@ -1487,7 +1507,11 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             trigger: { type: 'whenAttacking' },
             conditions: [
               { type: 'sourceHasAttachedDonAtLeast', value: 1 },
-              { type: 'playerHasLeaderName', player: 'self', value: 'Kouzuki Oden' },
+              {
+                type: 'playerHasLeaderName',
+                player: 'self',
+                value: 'Kouzuki Oden',
+              },
             ],
             actions: [
               {
@@ -2350,7 +2374,9 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'ulti-mortar-trigger-add-active-don',
             text: '[Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.',
             trigger: { type: 'trigger' },
-            actions: [{ type: 'addDon', player: 'self', amount: 1, rested: false }],
+            actions: [
+              { type: 'addDon', player: 'self', amount: 1, rested: false },
+            ],
           },
         },
       ],
@@ -2728,7 +2754,9 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             id: 'kyoshirou-on-play-draw-1-if-total-don-8',
             text: '[On Play] Draw 1 card if you have 8 or more DON!! cards on your field.',
             trigger: { type: 'onPlay' },
-            conditions: [{ type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 }],
+            conditions: [
+              { type: 'playerHasTotalDonAtLeast', player: 'self', value: 8 },
+            ],
             actions: [{ type: 'draw', player: 'self', amount: 1 }],
           },
         },
@@ -2988,7 +3016,8 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP01-115',
-                effectId: 'elephants-marchoo-main-ko-cost-2-or-less-add-active-don',
+                effectId:
+                  'elephants-marchoo-main-ko-cost-2-or-less-add-active-don',
               },
             ],
           },
@@ -3065,7 +3094,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'ashura-doji-plus-2000-if-opponent-has-2-rested-characters',
-            text: "[DON!! x1] If your opponent has 2 or more rested Characters, this Character gains +2000 power.",
+            text: '[DON!! x1] If your opponent has 2 or more rested Characters, this Character gains +2000 power.',
             conditions: [
               { type: 'sourceHasAttachedDonAtLeast', value: 1 },
               {
@@ -3429,8 +3458,12 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'crocodile-on-your-event-activate-draw-1',
-            text: '[DON!! x1] When you activate an Event, you may draw 1 card if you have 4 or less cards in your hand and haven\'t drawn a card using this Leader\'s effect during this turn.',
-            trigger: { type: 'onEventActivated', optional: true, oncePerTurn: true },
+            text: "[DON!! x1] When you activate an Event, you may draw 1 card if you have 4 or less cards in your hand and haven't drawn a card using this Leader's effect during this turn.",
+            trigger: {
+              type: 'onEventActivated',
+              optional: true,
+              oncePerTurn: true,
+            },
             conditions: [
               { type: 'sourceHasAttachedDonAtLeast', value: 1 },
               { type: 'eventPlayerIs', player: 'self' },
@@ -3485,7 +3518,13 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
             text: '[On Play] (3): If your Leader is [Kouzuki Oden], set up to 1 of your "Land of Wano" type Character cards with a cost of 3 or less as active.',
             trigger: { type: 'onPlay' },
             costs: [{ type: 'removeDon', player: 'self', amount: 3 }],
-            conditions: [{ type: 'playerHasLeaderName', player: 'self', value: 'Kouzuki Oden' }],
+            conditions: [
+              {
+                type: 'playerHasLeaderName',
+                player: 'self',
+                value: 'Kouzuki Oden',
+              },
+            ],
             actions: [
               {
                 type: 'unrest',

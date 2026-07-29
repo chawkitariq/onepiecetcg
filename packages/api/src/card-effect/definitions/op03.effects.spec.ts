@@ -53,10 +53,16 @@ const createRegistry = (
             resolved.standard = [...(resolved.standard ?? []), entry.effect];
             break;
           case 'continuous':
-            resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
+            resolved.continuous = [
+              ...(resolved.continuous ?? []),
+              entry.effect,
+            ];
             break;
           case 'replacement':
-            resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+            resolved.replacements = [
+              ...(resolved.replacements ?? []),
+              entry.effect,
+            ];
             break;
           case 'special-ref':
             resolved.specialHandlerId = entry.specialHandlerId;
@@ -128,7 +134,10 @@ class TestHost implements EffectEngineHost {
   }
 
   public getOpponentSessionId(sessionId: string): string | null {
-    return Array.from(this.state.players.keys()).find((id) => id !== sessionId) ?? null;
+    return (
+      Array.from(this.state.players.keys()).find((id) => id !== sessionId) ??
+      null
+    );
   }
 
   public getCard(instanceId: string): DuelCard | null {
@@ -141,8 +150,18 @@ class TestHost implements EffectEngineHost {
         return player.zones.stage;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const found = player.zones[zone].find((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const found = player.zones[zone].find(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (found) {
           return found;
@@ -188,28 +207,41 @@ class TestHost implements EffectEngineHost {
             continue;
           }
 
-          if (selector.filter?.costMax != null && card.cost > selector.filter.costMax) {
+          if (
+            selector.filter?.costMax != null &&
+            card.cost > selector.filter.costMax
+          ) {
             continue;
           }
 
-          if (selector.filter?.costMin != null && card.cost < selector.filter.costMin) {
+          if (
+            selector.filter?.costMin != null &&
+            card.cost < selector.filter.costMin
+          ) {
             continue;
           }
 
-          if (selector.filter?.powerMax != null && card.power > selector.filter.powerMax) {
+          if (
+            selector.filter?.powerMax != null &&
+            card.power > selector.filter.powerMax
+          ) {
             continue;
           }
 
           if (
             selector.filter?.color &&
-            !selector.filter.color.some((color: string) => card.colors.includes(color))
+            !selector.filter.color.some((color: string) =>
+              card.colors.includes(color),
+            )
           ) {
             continue;
           }
 
           if (
             selector.filter?.trait &&
-            !selector.filter.trait.some((trait: string) => card.families.includes(trait))
+            !selector.filter.trait.some((trait: string) =>
+              card.families.includes(trait),
+            )
           ) {
             continue;
           }
@@ -223,7 +255,7 @@ class TestHost implements EffectEngineHost {
 
           if (
             selector.filter?.hasTrigger != null &&
-            (!!card.trigger ? true : false) !== selector.filter.hasTrigger
+            (card.trigger ? true : false) !== selector.filter.hasTrigger
           ) {
             continue;
           }
@@ -266,7 +298,10 @@ class TestHost implements EffectEngineHost {
             }
           }
 
-          if (selector.filter?.rested != null && card.rested !== selector.filter.rested) {
+          if (
+            selector.filter?.rested != null &&
+            card.rested !== selector.filter.rested
+          ) {
             continue;
           }
 
@@ -328,7 +363,10 @@ class TestHost implements EffectEngineHost {
     return card;
   }
 
-  public trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[] {
+  public trashTopDeckCards(
+    playerSessionId: string,
+    amount: number,
+  ): DuelCard[] {
     const player = this.getPlayer(playerSessionId);
     const moved: DuelCard[] = [];
 
@@ -350,7 +388,11 @@ class TestHost implements EffectEngineHost {
     return moved;
   }
 
-  public addDonToCost(playerSessionId: string, amount: number, rested: boolean): number {
+  public addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number {
     const player = this.getPlayer(playerSessionId);
 
     if (!player) {
@@ -407,7 +449,10 @@ class TestHost implements EffectEngineHost {
     _reason: 'battle' | 'effect',
   ): boolean {
     const player = this.getPlayer(playerSessionId);
-    const index = player?.zones.characters.findIndex((card) => card.instanceId === instanceId) ?? -1;
+    const index =
+      player?.zones.characters.findIndex(
+        (card) => card.instanceId === instanceId,
+      ) ?? -1;
 
     if (!player || index < 0) {
       return false;
@@ -427,11 +472,16 @@ class TestHost implements EffectEngineHost {
 
   public addCardToZone(
     playerSessionId: string,
-    zone: 'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
+    zone:
+      'hand' | 'deck' | 'donDeck' | 'characters' | 'trash' | 'cost' | 'life',
     card: Card,
     instanceSuffix: string,
   ): DuelCard {
-    const duelCard = createDuelCard(card, `${playerSessionId}:${instanceSuffix}`, playerSessionId);
+    const duelCard = createDuelCard(
+      card,
+      `${playerSessionId}:${instanceSuffix}`,
+      playerSessionId,
+    );
     this.getPlayer(playerSessionId)?.zones[zone].push(duelCard);
     return duelCard;
   }
@@ -443,8 +493,18 @@ class TestHost implements EffectEngineHost {
         return;
       }
 
-      for (const zone of ['deck', 'donDeck', 'hand', 'life', 'characters', 'cost', 'trash'] as const) {
-        const index = player.zones[zone].findIndex((card) => card.instanceId === instanceId);
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const index = player.zones[zone].findIndex(
+          (card) => card.instanceId === instanceId,
+        );
 
         if (index >= 0) {
           player.zones[zone].splice(index, 1);
@@ -464,7 +524,12 @@ describe('op03EffectDefinitions', () => {
     const kalifa = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP03-081', number: 'OP03-081', name: 'Kalifa', type: 'Character' }),
+      makeCard({
+        id: 'OP03-081',
+        number: 'OP03-081',
+        name: 'Kalifa',
+        type: 'Character',
+      }),
       'kalifa',
     );
     const deckA = host.addCardToZone(
@@ -494,7 +559,13 @@ describe('op03EffectDefinitions', () => {
     const target = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'T1', number: 'T1', name: 'Target', type: 'Character', cost: 5 }),
+      makeCard({
+        id: 'T1',
+        number: 'T1',
+        name: 'Target',
+        type: 'Character',
+        cost: 5,
+      }),
       'target',
     );
 
@@ -534,19 +605,35 @@ describe('op03EffectDefinitions', () => {
     const thunderBolt = host.addCardToZone(
       'p1',
       'trash',
-      makeCard({ id: 'OP03-121', number: 'OP03-121', name: 'Thunder Bolt', type: 'Event' }),
+      makeCard({
+        id: 'OP03-121',
+        number: 'OP03-121',
+        name: 'Thunder Bolt',
+        type: 'Event',
+      }),
       'thunder-bolt',
     );
     const lifeCard = host.addCardToZone(
       'p1',
       'life',
-      makeCard({ id: 'L1', number: 'L1', name: 'Life Card', type: 'Character' }),
+      makeCard({
+        id: 'L1',
+        number: 'L1',
+        name: 'Life Card',
+        type: 'Character',
+      }),
       'life-card',
     );
     const target = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'T2', number: 'T2', name: 'Target', type: 'Character', cost: 5 }),
+      makeCard({
+        id: 'T2',
+        number: 'T2',
+        name: 'Target',
+        type: 'Character',
+        cost: 5,
+      }),
       'target',
     );
 
@@ -582,7 +669,12 @@ describe('op03EffectDefinitions', () => {
     const pilaf = host.addCardToZone(
       'p1',
       'trash',
-      makeCard({ id: 'OP03-056', number: 'OP03-056', name: "Sanji's Pilaf", type: 'Event' }),
+      makeCard({
+        id: 'OP03-056',
+        number: 'OP03-056',
+        name: "Sanji's Pilaf",
+        type: 'Event',
+      }),
       'pilaf',
     );
     const drawA = host.addCardToZone(
@@ -618,7 +710,12 @@ describe('op03EffectDefinitions', () => {
     const gaimon = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP03-043', number: 'OP03-043', name: 'Gaimon', type: 'Character' }),
+      makeCard({
+        id: 'OP03-043',
+        number: 'OP03-043',
+        name: 'Gaimon',
+        type: 'Character',
+      }),
       'gaimon',
     );
     const attacker = host.addCardToZone(
@@ -672,7 +769,12 @@ describe('op03EffectDefinitions', () => {
     const toothAttack = host.addCardToZone(
       'p1',
       'trash',
-      makeCard({ id: 'OP03-037', number: 'OP03-037', name: 'Tooth Attack', type: 'Event' }),
+      makeCard({
+        id: 'OP03-037',
+        number: 'OP03-037',
+        name: 'Tooth Attack',
+        type: 'Event',
+      }),
       'tooth-attack',
     );
     const triggerCharacter = host.addCardToZone(
@@ -715,7 +817,12 @@ describe('op03EffectDefinitions', () => {
     const curiel = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP03-004', number: 'OP03-004', name: 'Curiel', type: 'Character' }),
+      makeCard({
+        id: 'OP03-004',
+        number: 'OP03-004',
+        name: 'Curiel',
+        type: 'Character',
+      }),
       'curiel',
     );
 
@@ -734,7 +841,12 @@ describe('op03EffectDefinitions', () => {
     const fukurou = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP03-088', number: 'OP03-088', name: 'Fukurou', type: 'Character' }),
+      makeCard({
+        id: 'OP03-088',
+        number: 'OP03-088',
+        name: 'Fukurou',
+        type: 'Character',
+      }),
       'fukurou',
     );
 
@@ -767,7 +879,15 @@ describe('op03EffectDefinitions', () => {
     host.addCardToZone(
       'p1',
       'cost',
-      makeCard({ id: 'DON-1', number: 'DON-1', name: 'DON!! 1', type: 'DON!!', cost: null, power: null, counter: null }),
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!! 1',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
       'don-1',
     );
     const galleyLa = host.addCardToZone(
@@ -814,7 +934,12 @@ describe('op03EffectDefinitions', () => {
     const jango = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP03-028', number: 'OP03-028', name: 'Jango', type: 'Character' }),
+      makeCard({
+        id: 'OP03-028',
+        number: 'OP03-028',
+        name: 'Jango',
+        type: 'Character',
+      }),
       'jango',
     );
     const target = host.addCardToZone(
@@ -831,7 +956,7 @@ describe('op03EffectDefinitions', () => {
       sourceCardId: jango.cardId,
     });
 
-    let decision = engine.getPendingDecision();
+    const decision = engine.getPendingDecision();
     expect(decision?.prompt.type).toBe('selectChoice');
     engine.answerDecision({
       decisionId: decision?.id ?? '',
@@ -850,19 +975,35 @@ describe('op03EffectDefinitions', () => {
     const katakuri = host.addCardToZone(
       'p1',
       'characters',
-      makeCard({ id: 'OP03-123', number: 'OP03-123', name: 'Charlotte Katakuri', type: 'Character' }),
+      makeCard({
+        id: 'OP03-123',
+        number: 'OP03-123',
+        name: 'Charlotte Katakuri',
+        type: 'Character',
+      }),
       'katakuri',
     );
     const lifeExisting = host.addCardToZone(
       'p2',
       'life',
-      makeCard({ id: 'L-EXIST', number: 'L-EXIST', name: 'Existing Life', type: 'Character' }),
+      makeCard({
+        id: 'L-EXIST',
+        number: 'L-EXIST',
+        name: 'Existing Life',
+        type: 'Character',
+      }),
       'life-existing',
     );
     const target = host.addCardToZone(
       'p2',
       'characters',
-      makeCard({ id: 'KC1', number: 'KC1', name: 'Target Character', type: 'Character', cost: 8 }),
+      makeCard({
+        id: 'KC1',
+        number: 'KC1',
+        name: 'Target Character',
+        type: 'Character',
+        cost: 8,
+      }),
       'target-character',
     );
 
@@ -901,19 +1042,34 @@ describe('op03EffectDefinitions', () => {
     const kingbaum = host.addCardToZone(
       'p1',
       'trash',
-      makeCard({ id: 'OP03-100', number: 'OP03-100', name: 'Kingbaum', type: 'Character' }),
+      makeCard({
+        id: 'OP03-100',
+        number: 'OP03-100',
+        name: 'Kingbaum',
+        type: 'Character',
+      }),
       'kingbaum',
     );
     const topLife = host.addCardToZone(
       'p1',
       'life',
-      makeCard({ id: 'KL1', number: 'KL1', name: 'Top Life', type: 'Character' }),
+      makeCard({
+        id: 'KL1',
+        number: 'KL1',
+        name: 'Top Life',
+        type: 'Character',
+      }),
       'top-life',
     );
     const bottomLife = host.addCardToZone(
       'p1',
       'life',
-      makeCard({ id: 'KL2', number: 'KL2', name: 'Bottom Life', type: 'Character' }),
+      makeCard({
+        id: 'KL2',
+        number: 'KL2',
+        name: 'Bottom Life',
+        type: 'Character',
+      }),
       'bottom-life',
     );
 
@@ -956,13 +1112,29 @@ describe('op03EffectDefinitions', () => {
     const eventCard = host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'AE1', number: 'AE1', name: 'Event Card', type: 'Event', cost: 1, power: null, counter: null }),
+      makeCard({
+        id: 'AE1',
+        number: 'AE1',
+        name: 'Event Card',
+        type: 'Event',
+        cost: 1,
+        power: null,
+        counter: null,
+      }),
       'event-card',
     );
     const stageCard = host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'AS1', number: 'AS1', name: 'Stage Card', type: 'Stage', cost: 1, power: null, counter: null }),
+      makeCard({
+        id: 'AS1',
+        number: 'AS1',
+        name: 'Stage Card',
+        type: 'Stage',
+        cost: 1,
+        power: null,
+        counter: null,
+      }),
       'stage-card',
     );
 
