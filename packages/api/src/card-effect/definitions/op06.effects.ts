@@ -360,8 +360,41 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP06-014',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op06-014-special',
+          kind: 'standard',
+          effect: {
+            id: 'ratchet-on-attacked-trash-any-film-plus-1000-per-card',
+            text: "[On Your Opponent's Attack] You may trash any number of [FILM] type cards from your hand. Your Leader or 1 of your Characters gains +1000 power during this battle for every card trashed.",
+            trigger: { type: 'onAttacked', optional: true },
+            actions: [
+              {
+                type: 'storeSelectedCards',
+                key: 'ratchet-film-trash',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { trait: ['FILM'] },
+                  count: { kind: 'any' },
+                },
+              },
+              {
+                type: 'moveStoredCards',
+                key: 'ratchet-film-trash',
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'trash',
+              },
+              {
+                type: 'modifyPowerByStoredCount',
+                key: 'ratchet-film-trash',
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
+                amountPerCard: 1000,
+                duration: { type: 'untilEndOfBattle' },
+              },
+            ],
+          },
         },
       ],
     },
@@ -1558,7 +1591,80 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // [Trigger] Activate this card's [Main] effect.
     {
       cardId: 'OP06-039',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-039-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'you-aint-even-worth-killing-time-main-choose-rest-or-ko',
+            text: "[Main] Choose one: • Rest up to 1 of your opponent's Characters with a cost of 6 or less. • K.O. up to 1 of your opponent's rested Characters with a cost of 6 or less.",
+            trigger: { type: 'activateMain' },
+            actions: [
+              {
+                type: 'chooseActionBranch',
+                message: 'Choose one:',
+                choices: [
+                  {
+                    id: 'rest',
+                    label:
+                      "Rest up to 1 of your opponent's Characters with a cost of 6 or less",
+                    actions: [
+                      {
+                        type: 'rest',
+                        selector: {
+                          player: 'opponent',
+                          zones: ['characters'],
+                          filter: {
+                            cardCategory: ['Character'],
+                            costMax: 6,
+                          },
+                          count: { kind: 'upTo', value: 1 },
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    id: 'ko',
+                    label:
+                      "K.O. up to 1 of your opponent's rested Characters with a cost of 6 or less",
+                    actions: [
+                      {
+                        type: 'ko',
+                        selector: {
+                          player: 'opponent',
+                          zones: ['characters'],
+                          filter: {
+                            cardCategory: ['Character'],
+                            rested: true,
+                            costMax: 6,
+                          },
+                          count: { kind: 'upTo', value: 1 },
+                        },
+                        upTo: true,
+                        reason: 'effect',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'you-aint-even-worth-killing-time-trigger-activate-main',
+            text: "[Trigger] Activate this card's [Main] effect.",
+            trigger: { type: 'trigger' },
+            actions: [
+              {
+                type: 'activateEffect',
+                cardId: 'OP06-039',
+                effectId: 'you-aint-even-worth-killing-time-main-choose-rest-or-ko',
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-040 Shark Arrows (Event, Green)
     // [Main] K.O. up to 2 of your opponent's rested Characters with a cost of 3 or less.
@@ -2348,7 +2454,49 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     {
       cardId: 'OP06-062',
       effects: [
-        { kind: 'special-ref', specialHandlerId: 'op06-062-special' },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'vinsmoke-judge-on-play-don-1-trash-2-play-germa-distinct',
+            text: '[On Play] DON!! -1 You may trash 2 cards from your hand: Play up to 4 "GERMA 66" type Character cards with different card names and 4000 power or less from your trash.',
+            trigger: { type: 'onPlay', optional: true },
+            conditions: [
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'GERMA 66',
+              },
+            ],
+            costs: [
+              { type: 'removeDon', player: 'self', amount: 1 },
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 2 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                  filter: {
+                    trait: ['GERMA 66'],
+                    cardCategory: ['Character'],
+                    powerMax: 4000,
+                  },
+                  count: { kind: 'upTo', value: 4 },
+                  distinctBy: 'name',
+                },
+                destination: 'characters',
+              },
+            ],
+          },
+        },
         {
           kind: 'standard',
           effect: {
@@ -2727,7 +2875,36 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // If your Leader has the [GERMA 66] type and the number of DON!! cards on your field is at least 2 less than the number on your opponent's field, this Character gains [Blocker].
     {
       cardId: 'OP06-072',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-072-special' }],
+      effects: [
+        {
+          kind: 'continuous',
+          effect: {
+            id: 'shiki-blocker-when-opponent-has-2-more-don',
+            text: 'If your Leader has the [GERMA 66] type and the number of DON!! cards on your field is at least 2 less than the number on your opponent\'s field, this Character gains [Blocker].',
+            conditions: [
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'GERMA 66',
+              },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 2,
+              },
+            ],
+            modifier: {
+              selector: {
+                player: 'self',
+                zones: ['characters'],
+                filter: { name: ['Shiki'] },
+              },
+              keywords: ['mustBeAttackTarget'],
+            },
+          },
+        },
+      ],
     },
     // OP06-073 Shiki (Character, Purple)
     // [Blocker] [On Play] If you have 8 or more DON!! cards on your field, draw 1 card and trash 1 card from your hand.
@@ -3180,7 +3357,39 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] Choose up to 1 Character card with a cost of 4 or less and up to 1 Character card with a cost of 2 or less from your trash. Play 1 card and play the other card rested.
     {
       cardId: 'OP06-086',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-086-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'gecko-moria-on-play-play-cost-4-and-cost-2-rested',
+            text: '[On Play] Choose up to 1 Character card with a cost of 4 or less and up to 1 Character card with a cost of 2 or less from your trash. Play 1 card and play the other card rested.',
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                  filter: { cardCategory: ['Character'], costMax: 4 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destination: 'characters',
+              },
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                  filter: { cardCategory: ['Character'], costMax: 2 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destination: 'characters',
+                rested: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-088 Sai (Character, Black)
     // If your Leader has the [Dressrosa] type and is active, this Character gains +2000 power.
@@ -3434,7 +3643,108 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     {
       cardId: 'OP06-095',
       effects: [
-        { kind: 'special-ref', specialHandlerId: 'op06-095-special' },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'shadows-asgard-main-plus-1000-ko-any-thriller-for-more',
+            text: '[Main] Your Leader gains +1000 power during this turn. Then, you may K.O. any number of your [Thriller Bark Pirates] type Characters with a cost of 2 or less. Your Leader gains an additional +1000 power during this turn for every Character K.O.\'d.',
+            trigger: { type: 'activateMain' },
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                amount: 1000,
+                duration: { type: 'untilEndOfTurn' },
+              },
+              {
+                type: 'storeSelectedCards',
+                key: 'shadows-asgard-ko',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Thriller Bark Pirates'],
+                    costMax: 2,
+                  },
+                  count: { kind: 'any' },
+                },
+              },
+              {
+                type: 'moveStoredCards',
+                key: 'shadows-asgard-ko',
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'trash',
+              },
+              {
+                type: 'modifyPowerByStoredCount',
+                key: 'shadows-asgard-ko',
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                amountPerCard: 1000,
+                duration: { type: 'untilEndOfTurn' },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'shadows-asgard-counter-plus-1000-ko-any-thriller-for-more',
+            text: '[Counter] Your Leader gains +1000 power during this turn. Then, you may K.O. any number of your [Thriller Bark Pirates] type Characters with a cost of 2 or less. Your Leader gains an additional +1000 power during this turn for every Character K.O.\'d.',
+            trigger: { type: 'activateCounter' },
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                amount: 1000,
+                duration: { type: 'untilEndOfTurn' },
+              },
+              {
+                type: 'storeSelectedCards',
+                key: 'shadows-asgard-ko',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Thriller Bark Pirates'],
+                    costMax: 2,
+                  },
+                  count: { kind: 'any' },
+                },
+              },
+              {
+                type: 'moveStoredCards',
+                key: 'shadows-asgard-ko',
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'trash',
+              },
+              {
+                type: 'modifyPowerByStoredCount',
+                key: 'shadows-asgard-ko',
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  count: { kind: 'exact', value: 1 },
+                },
+                amountPerCard: 1000,
+                duration: { type: 'untilEndOfTurn' },
+              },
+            ],
+          },
+        },
         {
           kind: 'standard',
           effect: {
@@ -3611,7 +3921,62 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] Look at up to 1 card from the top of your or your opponent's Life cards and place it at the top or bottom of the Life cards.
     {
       cardId: 'OP06-099',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-099-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'aisa-on-play-look-at-own-or-opponent-life',
+            text: "[On Play] Look at up to 1 card from the top of your or your opponent's Life cards and place it at the top or bottom of the Life cards.",
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'chooseActionBranch',
+                message: 'Which Life cards to look at?',
+                choices: [
+                  {
+                    id: 'self',
+                    label: 'Look at your own Life cards',
+                    actions: [
+                      {
+                        type: 'moveCard',
+                        selector: {
+                          player: 'self',
+                          zones: ['life'],
+                          filter: { zonePosition: 'topOrBottom' },
+                          count: { kind: 'upTo', value: 1 },
+                        },
+                        destinationPlayer: 'self',
+                        destinationZone: 'life',
+                        faceDown: false,
+                        chooseDestinationPosition: true,
+                      },
+                    ],
+                  },
+                  {
+                    id: 'opponent',
+                    label: "Look at your opponent's Life cards",
+                    actions: [
+                      {
+                        type: 'moveCard',
+                        selector: {
+                          player: 'opponent',
+                          zones: ['life'],
+                          filter: { zonePosition: 'top' },
+                          count: { kind: 'upTo', value: 1 },
+                        },
+                        destinationPlayer: 'opponent',
+                        destinationZone: 'life',
+                        faceDown: false,
+                        chooseDestinationPosition: true,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-100 Inuarashi (Character, Yellow)
     // [DON!! x2][When Attacking] You may trash 1 card from your hand: K.O. up to 1 of your opponent's Characters with a cost equal to or less than the number of your opponent's Life cards.
@@ -3779,7 +4144,41 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // [When Attacking] You may trash 2 cards from your hand: Add up to 1 of your Characters with 0 power to the top or bottom of the owner's Life cards face-up.
     {
       cardId: 'OP06-103',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-103-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'kawamatsu-when-attacking-trash-2-add-0-power-to-life',
+            text: "[When Attacking] You may trash 2 cards from your hand: Add up to 1 of your Characters with 0 power to the top or bottom of the owner's Life cards face-up.",
+            trigger: { type: 'whenAttacking', optional: true },
+            costs: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 2 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 0 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'life',
+                faceDown: false,
+                chooseDestinationPosition: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-104 Kikunojo (Character, Yellow)
     // [On K.O.] If your opponent has 3 or less Life cards, add up to 1 card from the top of your deck to the top of your Life cards.
@@ -3839,13 +4238,77 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // [On Play] You may add 1 card from the top or bottom of your Life cards to your hand: Add up to 1 card from your hand to the top of your Life cards.
     {
       cardId: 'OP06-106',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-106-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'kouzuki-hiyori-on-play-life-to-hand-then-hand-to-life',
+            text: '[On Play] You may add 1 card from the top or bottom of your Life cards to your hand: Add up to 1 card from your hand to the top of your Life cards.',
+            trigger: { type: 'onPlay', optional: true },
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'topOrBottom' },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'hand',
+              },
+            ],
+            actions: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'life',
+                faceDown: true,
+                toBottom: false,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-107 Kouzuki Momonosuke (Character, Yellow)
     // [Blocker] [On Play] Add up to 1 of your "Land of Wano" type Characters other than [Kouzuki Momonosuke] to the top or bottom of the owner's Life cards face-up.
     {
       cardId: 'OP06-107',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-107-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'kouzuki-momonosuke-on-play-add-wano-character-to-life',
+            text: '[On Play] Add up to 1 of your "Land of Wano" type Characters other than [Kouzuki Momonosuke] to the top or bottom of the owner\'s Life cards face-up.',
+            trigger: { type: 'onPlay' },
+            actions: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Land of Wano'],
+                    excludeName: ['Kouzuki Momonosuke'],
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'life',
+                faceDown: false,
+                chooseDestinationPosition: true,
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-108 Tenguyama Hitetsu (Character, Yellow)
     // [Trigger] Up to 1 of your [Land of Wano] type Leader or Character cards gains +2000 power during this turn.
@@ -4271,7 +4734,51 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
     // [Activate:Main][Once Per Turn] You may rest this card and 1 of your [Enel] cards: K.O. all of your opponent's Characters with a cost of 2 or less.
     {
       cardId: 'OP06-117',
-      effects: [{ kind: 'special-ref', specialHandlerId: 'op06-117-special' }],
+      effects: [
+        {
+          kind: 'standard',
+          effect: {
+            id: 'the-ark-maxim-activate-main-rest-self-and-enel-ko-all-cost-2',
+            text: "[Activate:Main][Once Per Turn] You may rest this card and 1 of your [Enel] cards: K.O. all of your opponent's Characters with a cost of 2 or less.",
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
+            costs: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'self',
+                  zones: ['stage'],
+                  source: 'effectSource',
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+              {
+                type: 'rest',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Enel'], rested: false },
+                  count: { kind: 'exact', value: 1 },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'koAllCharacters',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 2 },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
+        },
+      ],
     },
     // OP06-118 Roronoa Zoro (Character, Green)
     // [When Attacking][Once Per Turn](1): Set this Character as active.

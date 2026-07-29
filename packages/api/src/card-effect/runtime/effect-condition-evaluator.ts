@@ -72,6 +72,21 @@ export class EffectConditionEvaluator {
             this.selectors.countTotalDonOnField(thanPlayerId)
           );
         }
+        case 'playerHasAtLeastTotalDonLessThan': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const thanPlayerId = this.selectors.resolvePlayer(
+            condition.thanPlayer,
+            controllerSessionId,
+          );
+          return (
+            this.selectors.countTotalDonOnField(thanPlayerId) -
+              this.selectors.countTotalDonOnField(playerId) >=
+            condition.value
+          );
+        }
         case 'playerHasLeaderName': {
           const playerId = this.selectors.resolvePlayer(
             condition.player,

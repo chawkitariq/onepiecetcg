@@ -271,12 +271,19 @@ export class EffectActionExecutor {
           action.sourceZone === 'deck' ? player.zones.deck : player.zones.trash;
         const revealed = Array.from(sourceCards).slice(0, action.amount);
 
+        const maxCount =
+          action.count.kind === 'any'
+            ? revealed.length
+            : action.count.value;
+
         this.decisions.chooseCards(
           this.createDecisionId(source.instanceId, action.type),
           controllerSessionId,
           context,
           controllerSessionId,
-          `Choisissez ${action.count.kind === 'upTo' ? "jusqu'a " : ''}${action.count.value} carte(s).`,
+          action.count.kind === 'any'
+            ? "Choisissez n'importe quel nombre de cartes."
+            : `Choisissez ${action.count.kind === 'upTo' ? "jusqu'a " : ''}${maxCount} carte(s).`,
           {
             player: 'self',
             zones: [action.sourceZone],
@@ -892,7 +899,7 @@ export class EffectActionExecutor {
     );
     const count = selector.count ?? { kind: 'exact', value: targets.length };
     const min = count.kind === 'exact' ? count.value : 0;
-    const max = count.value;
+    const max = count.kind === 'any' ? targets.length : count.value;
 
     if (targets.length === 0 && min === 0) {
       resolve([]);

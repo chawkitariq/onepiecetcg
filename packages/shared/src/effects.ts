@@ -39,7 +39,8 @@ export type EffectKeyword =
 
 export type EffectCount =
   | { kind: 'exact'; value: number }
-  | { kind: 'upTo'; value: number };
+  | { kind: 'upTo'; value: number }
+  | { kind: 'any' };
 
 export type EffectCondition =
   | { type: 'controllerTurn'; value: boolean }
@@ -48,6 +49,12 @@ export type EffectCondition =
   | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
   | { type: 'playerHasLessLifeThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
   | { type: 'playerHasMoreTotalDonThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
+  | {
+      type: 'playerHasAtLeastTotalDonLessThan';
+      player: EffectOwnerSelector;
+      thanPlayer: EffectOwnerSelector;
+      value: number;
+    }
   | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderColorsAtLeast'; player: EffectOwnerSelector; value: number }
@@ -93,6 +100,7 @@ export type EffectTargetSelector = {
   zones: GameZone[];
   filter?: EffectCardFilter;
   count?: EffectCount;
+  distinctBy?: 'name';
 };
 
 export type EffectDuration =

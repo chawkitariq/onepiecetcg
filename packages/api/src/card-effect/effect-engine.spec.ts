@@ -1259,4 +1259,109 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.deck[0]).toBe(existingTop);
     expect(host.getPlayer('p1')?.zones.deck.at(-1)).toBe(source);
   });
+
+  it('supports selecting any number of cards for stored-count effects', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const anyCountDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'ANY-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'trash-any-hand-cards-for-leader-power',
+                text: 'Trash any number of cards from your hand. Your Leader gains +1000 power for each card trashed.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'storeSelectedCards' as const,
+                    key: 'trashed-hand',
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['hand'] as const,
+                      count: { kind: 'any' as const },
+                    },
+                  },
+                  {
+                    type: 'moveStoredCards' as const,
+                    key: 'trashed-hand',
+                    destinationPlayer: 'selectedCardOwner' as const,
+                    destinationZone: 'trash' as const,
+                  },
+                  {
+                    type: 'modifyPowerByStoredCount' as const,
+                    key: 'trashed-hand',
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['leader'] as const,
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                    amountPerCard: 1000,
+                    duration: { type: 'untilEndOfBattle' as const },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, anyCountDefinition]),
+      host,
+    );
+    const source = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ANY-001',
+        number: 'ANY-001',
+        name: 'Any Count Source',
+        type: 'Character',
+      }),
+      'any-source',
+    );
+    const first = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HAND-1', number: 'HAND-1', name: 'Hand 1', type: 'Event' }),
+      'hand-1',
+    );
+    const second = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HAND-2', number: 'HAND-2', name: 'Hand 2', type: 'Event' }),
+      'hand-2',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HAND-3', number: 'HAND-3', name: 'Hand 3', type: 'Event' }),
+      'hand-3',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectCards');
+    expect(decision?.prompt.max).toBe(3);
+
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [first.instanceId, second.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.trash).toHaveLength(2);
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(7000);
+  });
 });

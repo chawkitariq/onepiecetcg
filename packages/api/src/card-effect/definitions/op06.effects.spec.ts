@@ -988,4 +988,517 @@ describe('op06EffectDefinitions', () => {
 
     expect(host.getPlayer('p2')?.zones.trash).toHaveLength(1);
   });
+
+  it('lets Ratchet trash any number of FILM cards to buff a chosen ally', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const ratchet = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-014',
+        number: 'OP06-014',
+        name: 'Ratchet',
+        type: 'Character',
+      }),
+      'ratchet',
+    );
+    const ally = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-001',
+        number: 'ALLY-001',
+        name: 'Film Ally',
+        type: 'Character',
+        power: 1000,
+      }),
+      'film-ally',
+    );
+    const filmOne = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'FILM-1',
+        number: 'FILM-1',
+        name: 'Film One',
+        type: 'Character',
+        families: ['FILM'],
+      }),
+      'film-one',
+    );
+    const filmTwo = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'FILM-2',
+        number: 'FILM-2',
+        name: 'Film Two',
+        type: 'Event',
+        families: ['FILM'],
+      }),
+      'film-two',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'OTHER-1',
+        number: 'OTHER-1',
+        name: 'Other Card',
+        type: 'Event',
+      }),
+      'other-one',
+    );
+
+    engine.handleEvent({
+      type: 'onAttacked',
+      playerSessionId: 'p1',
+      sourceInstanceId: ratchet.instanceId,
+      sourceCardId: ratchet.cardId,
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+
+    engine.answerDecision({
+      decisionId: confirmDecision?.id ?? '',
+      confirmed: true,
+    });
+
+    const trashDecision = engine.getPendingDecision();
+    expect(trashDecision?.prompt.type).toBe('selectCards');
+    expect(trashDecision?.prompt.max).toBe(2);
+
+    engine.answerDecision({
+      decisionId: trashDecision?.id ?? '',
+      selectedCardInstanceIds: [filmOne.instanceId, filmTwo.instanceId],
+    });
+
+    const buffDecision = engine.getPendingDecision();
+    expect(buffDecision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: buffDecision?.id ?? '',
+      selectedCardInstanceIds: [ally.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.trash).toHaveLength(2);
+    expect(ally.power).toBe(3000);
+  });
+
+  it('routes Aisa trigger branch through declarative life reordering', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const aisa = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-099',
+        number: 'OP06-099',
+        name: 'Aisa',
+        type: 'Character',
+      }),
+      'aisa',
+    );
+    const topLife = host.addCardToZone(
+      'p2',
+      'life',
+      makeCard({
+        id: 'LIFE-TOP',
+        number: 'LIFE-TOP',
+        name: 'Top Life',
+        type: 'Character',
+      }),
+      'life-top',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: aisa.instanceId,
+      sourceCardId: aisa.cardId,
+    });
+
+    const branchDecision = engine.getPendingDecision();
+    expect(branchDecision?.prompt.type).toBe('selectChoice');
+
+    engine.answerDecision({
+      decisionId: branchDecision?.id ?? '',
+      selectedChoiceIds: ['opponent'],
+    });
+
+    const lifeDecision = engine.getPendingDecision();
+    expect(lifeDecision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: lifeDecision?.id ?? '',
+      selectedCardInstanceIds: [topLife.instanceId],
+    });
+
+    const positionDecision = engine.getPendingDecision();
+    expect(positionDecision?.prompt.type).toBe('selectChoice');
+
+    engine.answerDecision({
+      decisionId: positionDecision?.id ?? '',
+      selectedChoiceIds: ['bottom'],
+    });
+
+    expect(host.getPlayer('p2')?.zones.life.at(-1)?.instanceId).toBe(
+      topLife.instanceId,
+    );
+    expect(topLife.faceDown).toBe(false);
+  });
+
+  it('stacks Shadows Asgard power from any number of sacrificed Thriller Bark Pirates', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const shadowsAsgard = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP06-095',
+        number: 'OP06-095',
+        name: 'Shadows Asgard',
+        type: 'Event',
+      }),
+      'shadows-asgard',
+    );
+    const first = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'TB-1',
+        number: 'TB-1',
+        name: 'Thriller One',
+        type: 'Character',
+        cost: 2,
+        families: ['Thriller Bark Pirates'],
+      }),
+      'thriller-one',
+    );
+    const second = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'TB-2',
+        number: 'TB-2',
+        name: 'Thriller Two',
+        type: 'Character',
+        cost: 1,
+        families: ['Thriller Bark Pirates'],
+      }),
+      'thriller-two',
+    );
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: shadowsAsgard.instanceId,
+      sourceCardId: shadowsAsgard.cardId,
+    });
+
+    const sacrificeDecision = engine.getPendingDecision();
+    expect(sacrificeDecision?.prompt.type).toBe('selectCards');
+    expect(sacrificeDecision?.prompt.max).toBe(2);
+
+    engine.answerDecision({
+      decisionId: sacrificeDecision?.id ?? '',
+      selectedCardInstanceIds: [first.instanceId, second.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.trash).toHaveLength(3);
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(8000);
+  });
+
+  it('moves a chosen Life card to hand and puts a hand card back on top with Kouzuki Hiyori', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const hiyori = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-106',
+        number: 'OP06-106',
+        name: 'Kouzuki Hiyori',
+        type: 'Character',
+      }),
+      'hiyori',
+    );
+    host.addCardToZone(
+      'p1',
+      'life',
+      makeCard({
+        id: 'LIFE-BOTTOM',
+        number: 'LIFE-BOTTOM',
+        name: 'Bottom Life',
+        type: 'Character',
+      }),
+      'life-bottom',
+    );
+    const topLife = host.addCardToZone(
+      'p1',
+      'life',
+      makeCard({
+        id: 'LIFE-TOP-HIYORI',
+        number: 'LIFE-TOP-HIYORI',
+        name: 'Top Life',
+        type: 'Character',
+      }),
+      'life-top-hiyori',
+    );
+    const handCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-HIYORI',
+        number: 'HAND-HIYORI',
+        name: 'Hand Return',
+        type: 'Event',
+      }),
+      'hand-hiyori',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: hiyori.instanceId,
+      sourceCardId: hiyori.cardId,
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+
+    engine.answerDecision({
+      decisionId: confirmDecision?.id ?? '',
+      confirmed: true,
+    });
+
+    const takeLifeDecision = engine.getPendingDecision();
+    expect(takeLifeDecision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: takeLifeDecision?.id ?? '',
+      selectedCardInstanceIds: [topLife.instanceId],
+    });
+
+    const returnLifeDecision = engine.getPendingDecision();
+    expect(returnLifeDecision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: returnLifeDecision?.id ?? '',
+      selectedCardInstanceIds: [handCard.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toContain(topLife);
+    expect(host.getPlayer('p1')?.zones.life[0]).toBe(handCard);
+    expect(handCard.faceDown).toBe(true);
+  });
+
+  it('plays only distinct GERMA 66 names with Vinsmoke Judge on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1', { families: ['GERMA 66'] });
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const judge = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-062',
+        number: 'OP06-062',
+        name: 'Vinsmoke Judge',
+        type: 'Character',
+      }),
+      'judge',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'don-1',
+    );
+    const handOne = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HAND-J1', number: 'HAND-J1', name: 'Trash 1', type: 'Event' }),
+      'hand-j1',
+    );
+    const handTwo = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HAND-J2', number: 'HAND-J2', name: 'Trash 2', type: 'Event' }),
+      'hand-j2',
+    );
+    const reijuOne = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'GERMA-R1',
+        number: 'GERMA-R1',
+        name: 'Vinsmoke Reiju',
+        type: 'Character',
+        power: 4000,
+        families: ['GERMA 66'],
+      }),
+      'reiju-one',
+    );
+    const reijuTwo = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'GERMA-R2',
+        number: 'GERMA-R2',
+        name: 'Vinsmoke Reiju',
+        type: 'Character',
+        power: 4000,
+        families: ['GERMA 66'],
+      }),
+      'reiju-two',
+    );
+    const ichiji = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'GERMA-I1',
+        number: 'GERMA-I1',
+        name: 'Vinsmoke Ichiji',
+        type: 'Character',
+        power: 4000,
+        families: ['GERMA 66'],
+      }),
+      'ichiji-one',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: judge.instanceId,
+      sourceCardId: judge.cardId,
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+    engine.answerDecision({
+      decisionId: confirmDecision?.id ?? '',
+      confirmed: true,
+    });
+
+    const playDecision = engine.getPendingDecision();
+    expect(playDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: playDecision?.id ?? '',
+      selectedCardInstanceIds: [
+        reijuOne.instanceId,
+        reijuTwo.instanceId,
+        ichiji.instanceId,
+      ],
+    });
+
+    expect(host.getPlayer('p1')?.zones.characters).toContain(judge);
+    expect(host.getPlayer('p1')?.zones.characters).toContain(reijuOne);
+    expect(host.getPlayer('p1')?.zones.characters).toContain(ichiji);
+    expect(host.getPlayer('p1')?.zones.characters).not.toContain(reijuTwo);
+    expect(host.getPlayer('p1')?.zones.donDeck).toHaveLength(1);
+  });
+
+  it('grants Shiki Blocker when your DON!! total is at least 2 less than your opponent', () => {
+    const host = new TestHost();
+    host.addPlayer('p1', { families: ['GERMA 66'] });
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const shiki = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-072',
+        number: 'OP06-072',
+        name: 'Shiki',
+        type: 'Character',
+      }),
+      'shiki',
+    );
+
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'P1-DON-1',
+        number: 'P1-DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'p1-don-1',
+    );
+    host.addCardToZone(
+      'p2',
+      'cost',
+      makeCard({
+        id: 'P2-DON-1',
+        number: 'P2-DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'p2-don-1',
+    );
+    host.addCardToZone(
+      'p2',
+      'cost',
+      makeCard({
+        id: 'P2-DON-2',
+        number: 'P2-DON-2',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'p2-don-2',
+    );
+    host.addCardToZone(
+      'p2',
+      'cost',
+      makeCard({
+        id: 'P2-DON-3',
+        number: 'P2-DON-3',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'p2-don-3',
+    );
+
+    engine.reapplyContinuousEffects();
+
+    expect(shiki.mustBeAttackTarget).toBe(true);
+  });
 });

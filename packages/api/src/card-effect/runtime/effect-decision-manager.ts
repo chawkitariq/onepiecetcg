@@ -69,7 +69,14 @@ export class EffectDecisionManager {
   ): void {
     const count = selector.count ?? { kind: 'exact', value: 1 };
     const min = count.kind === 'exact' ? count.value : 0;
-    const max = count.value;
+    const max =
+      count.kind === 'any'
+        ? this.selectors.getSelectableCards(
+            selector,
+            controllerSessionId,
+            context,
+          ).length
+        : count.value;
 
     this.pause(
       {
@@ -90,11 +97,11 @@ export class EffectDecisionManager {
       },
       (response) => {
         const selected = new Set(response.selectedCardInstanceIds ?? []);
-        resolve(
-          this.selectors
-            .getSelectableCards(selector, controllerSessionId, context)
-            .filter((card) => selected.has(card.instanceId)),
-        );
+        const selectedCards = this.selectors
+          .getSelectableCards(selector, controllerSessionId, context)
+          .filter((card) => selected.has(card.instanceId));
+
+        resolve(this.applyDistinctRule(selectedCards, selector));
       },
     );
   }
@@ -134,5 +141,24 @@ export class EffectDecisionManager {
   private setPendingDecisionState(state: PendingDecisionState | null): void {
     this.pendingDecisionState = state;
     this.host.onPendingDecisionChange?.(state?.decision ?? null);
+  }
+
+  private applyDistinctRule(
+    cards: DuelCard[],
+    selector: EffectTargetSelector,
+  ): DuelCard[] {
+    if (selector.distinctBy !== 'name') {
+      return cards;
+    }
+
+    const seenNames = new Set<string>();
+    return cards.filter((card) => {
+      if (seenNames.has(card.name)) {
+        return false;
+      }
+
+      seenNames.add(card.name);
+      return true;
+    });
   }
 }

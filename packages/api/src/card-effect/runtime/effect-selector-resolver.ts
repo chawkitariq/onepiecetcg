@@ -66,6 +66,10 @@ export class EffectSelectorResolver {
       value: available,
     };
 
+    if (count.kind === 'any') {
+      return true;
+    }
+
     if (count.kind === 'upTo') {
       return available > 0 || count.value === 0;
     }
