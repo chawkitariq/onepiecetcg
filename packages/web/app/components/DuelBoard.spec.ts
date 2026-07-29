@@ -1721,7 +1721,10 @@ describe('DuelBoard drag and drop', () => {
     ]
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="global-feedback"]').text()).toContain('Luffy attaque Nami')
+    const feedback = wrapper.get('[data-test="global-feedback"]')
+
+    expect(feedback.text()).toContain('Luffy attaque Nami')
+    expect(feedback.attributes('data-feedback-family')).toBe('narration')
   })
 
   it('shows an animated error feedback line when an action error arrives', async () => {
@@ -1731,7 +1734,10 @@ describe('DuelBoard drag and drop', () => {
     errorMessage.value = 'Pas assez de DON!!'
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="error-feedback"]').text()).toContain('Pas assez de DON!!')
+    const feedback = wrapper.get('[data-test="error-feedback"]')
+
+    expect(feedback.text()).toContain('Pas assez de DON!!')
+    expect(feedback.attributes('data-feedback-family')).toBe('error')
     expect(document.body.textContent).toContain('Action impossible')
     expect(document.body.textContent).toContain('Pas assez de DON!!')
     expect(document.body.textContent).toContain('Compris')
@@ -1842,7 +1848,10 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="card-feedback-+1000"]').text()).toContain('+1000')
+    const feedback = wrapper.get('[data-test="card-feedback-+1000"]')
+
+    expect(feedback.text()).toContain('+1000')
+    expect(feedback.attributes('data-feedback-family')).toBe('gain')
   })
 
   it('shows a blocker feedback chip on the declared blocker card', async () => {
@@ -1874,7 +1883,10 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="card-feedback-Blocker"]').text()).toContain('Blocker')
+    const feedback = wrapper.get('[data-test="card-feedback-Blocker"]')
+
+    expect(feedback.text()).toContain('Blocker')
+    expect(feedback.attributes('data-feedback-family')).toBe('status')
   })
 
   it('shows a KO feedback chip when a character leaves the board', async () => {
@@ -1885,7 +1897,10 @@ describe('DuelBoard drag and drop', () => {
     })
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="card-feedback-KO"]').text()).toContain('KO')
+    const feedback = wrapper.get('[data-test="card-feedback-KO"]')
+
+    expect(feedback.text()).toContain('KO')
+    expect(feedback.attributes('data-feedback-family')).toBe('impact')
   })
 
   it('renders the finished duel modal with opponent deck, turn count, and duration', () => {

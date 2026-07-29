@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { animate } from 'animejs'
+import {
+  getDuelFloatingFeedbackAnimation,
+  resolveDuelFeedbackClasses,
+  type DuelFloatingFeedbackFamily
+} from '~/utils/duelFeedback'
 
 /**
  * A single number that rises and fades out from a fixed screen position, Hearthstone-style
@@ -10,7 +15,7 @@ const props = defineProps<{
   value: number
   x: number
   y: number
-  tone?: 'damage' | 'gain'
+  family?: DuelFloatingFeedbackFamily
 }>()
 
 const emit = defineEmits<{
@@ -18,12 +23,13 @@ const emit = defineEmits<{
 }>()
 
 const reducedMotion = usePreferredReducedMotion()
+const appConfig = useAppConfig()
 const floatingNumberElement = useTemplateRef<HTMLElement>('floating-number')
 
-const label = computed(() => (props.tone === 'gain' ? `+${props.value}` : `-${props.value}`))
+const label = computed(() => (props.family === 'gain' ? `+${props.value}` : `-${props.value}`))
 
-const toneClass = computed(() =>
-  props.tone === 'gain' ? 'text-success' : 'text-error'
+const feedbackClasses = computed(() =>
+  resolveDuelFeedbackClasses(appConfig, 'floating', props.family ?? 'impact')
 )
 
 function onAnimationComplete() {
@@ -37,31 +43,26 @@ onMounted(() => {
   }
 
   if (reducedMotion.value === 'reduce') {
-    animate(floatingNumberElement.value, {
-      opacity: [1, 1, 0],
-      duration: 600,
-      ease: 'linear',
-      onComplete: onAnimationComplete
-    })
+    animate(
+      floatingNumberElement.value,
+      getDuelFloatingFeedbackAnimation(props.family ?? 'impact', true, onAnimationComplete)
+    )
     return
   }
 
-  animate(floatingNumberElement.value, {
-    opacity: [0, 1, 1, 0],
-    y: [0, -56],
-    scale: [0.6, 1],
-    duration: 900,
-    ease: 'outCubic',
-    onComplete: onAnimationComplete
-  })
+  animate(
+    floatingNumberElement.value,
+    getDuelFloatingFeedbackAnimation(props.family ?? 'impact', false, onAnimationComplete)
+  )
 })
 </script>
 
 <template>
   <span
     ref="floating-number"
-    class="pointer-events-none fixed z-80 text-2xl font-black tabular-nums drop-shadow-[0_2px_4px_rgb(0_0_0/0.6)] sm:text-3xl"
-    :class="toneClass"
+    class="pointer-events-none fixed z-80 text-2xl font-black tabular-nums sm:text-3xl"
+    :class="feedbackClasses"
+    :data-feedback-family="family ?? 'impact'"
     :style="{ left: `${x}px`, top: `${y}px`, translate: '-50% -50%' }"
   >
     {{ label }}

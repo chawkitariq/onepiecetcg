@@ -6,6 +6,14 @@ import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
+import {
+  getDuelBannerFeedbackAnimation,
+  getDuelCardFeedbackAnimation,
+  resolveDuelFeedbackClasses,
+  type DuelBannerFeedbackFamily,
+  type DuelCardFeedbackFamily,
+  type DuelFloatingFeedbackFamily
+} from '~/utils/duelFeedback'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 import { createHoveredDuelCard, mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
@@ -28,22 +36,18 @@ type BoardTravelOverlay = {
   rotated?: boolean
 }
 
-type CardFeedbackTone = 'power' | 'warning' | 'danger'
-
 type CardFeedbackInstance = {
   key: number
   label: string
   x: number
   y: number
-  tone: CardFeedbackTone
+  family: DuelCardFeedbackFamily
 }
-
-type BannerFeedbackTone = 'action' | 'error'
 
 type BannerFeedbackInstance = {
   key: number
   message: string
-  tone: BannerFeedbackTone
+  family: DuelBannerFeedbackFamily
 }
 
 const BOARD_TRAVEL_MS = 520
@@ -52,6 +56,7 @@ const ATTACHED_DON_TRAVEL_STAGGER_MS = 70
 const DEFAULT_TRAVEL_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'
 const ATTACHED_DON_TRAVEL_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const AUTO_ADVANCE_PHASES = new Set(['refresh', 'draw', 'don', 'end'])
+const appConfig = useAppConfig()
 
 const {
   self,
@@ -934,7 +939,7 @@ type FloatingNumberInstance = {
   value: number
   x: number
   y: number
-  tone: 'damage' | 'gain'
+  family: DuelFloatingFeedbackFamily
 }
 
 const floatingNumbers = ref<FloatingNumberInstance[]>([])
@@ -962,7 +967,7 @@ function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeL
     value: lifeLoss,
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2,
-    tone: 'damage'
+    family: 'impact'
   }]
 }
 
@@ -974,7 +979,7 @@ function spawnCardFeedbackAtPosition(
   x: number,
   y: number,
   label: string,
-  tone: CardFeedbackTone
+  family: DuelCardFeedbackFamily
 ) {
   const key = cardFeedbackKey++
 
@@ -983,7 +988,7 @@ function spawnCardFeedbackAtPosition(
     label,
     x,
     y,
-    tone
+    family
   }]
 
   nextTick(() => {
@@ -993,25 +998,14 @@ function spawnCardFeedbackAtPosition(
       return
     }
 
-    animate(element, reducedMotion.value === 'reduce'
-      ? {
-          opacity: [1, 1, 0],
-          duration: 700,
-          ease: 'linear',
-          onComplete: () => removeCardFeedback(key)
-        }
-      : {
-          opacity: [0, 1, 1, 0],
-          y: [6, -20, -28],
-          scale: [0.9, 1, 1],
-          duration: 1000,
-          ease: 'outCubic',
-          onComplete: () => removeCardFeedback(key)
-        })
+    animate(
+      element,
+      getDuelCardFeedbackAnimation(family, reducedMotion.value === 'reduce', () => removeCardFeedback(key))
+    )
   })
 }
 
-function spawnCardFeedback(instanceId: string | undefined, label: string, tone: CardFeedbackTone) {
+function spawnCardFeedback(instanceId: string | undefined, label: string, family: DuelCardFeedbackFamily) {
   const element = instanceId ? queryCardElement(instanceId) : null
 
   if (element) {
@@ -1021,7 +1015,7 @@ function spawnCardFeedback(instanceId: string | undefined, label: string, tone: 
       rect.left + rect.width / 2,
       rect.top + Math.min(rect.height * 0.3, 44),
       label,
-      tone
+      family
     )
     return
   }
@@ -1036,7 +1030,7 @@ function spawnCardFeedback(instanceId: string | undefined, label: string, tone: 
     containerRect.left + containerRect.width / 2,
     containerRect.top + Math.min(containerRect.height * 0.32, 180),
     label,
-    tone
+    family
   )
 }
 
@@ -1045,13 +1039,13 @@ function removeCardFeedback(key: number) {
   cardFeedbacks.value = cardFeedbacks.value.filter(entry => entry.key !== key)
 }
 
-function spawnBannerFeedback(message: string, tone: BannerFeedbackTone) {
+function spawnBannerFeedback(message: string, family: DuelBannerFeedbackFamily) {
   const key = bannerFeedbackKey++
 
   bannerFeedbacks.value = [...bannerFeedbacks.value, {
     key,
     message,
-    tone
+    family
   }]
 
   nextTick(() => {
@@ -1061,21 +1055,10 @@ function spawnBannerFeedback(message: string, tone: BannerFeedbackTone) {
       return
     }
 
-    animate(element, reducedMotion.value === 'reduce'
-      ? {
-          opacity: [1, 1, 0],
-          duration: 900,
-          ease: 'linear',
-          onComplete: () => removeBannerFeedback(key)
-        }
-      : {
-          opacity: [0, 1, 1, 0],
-          y: [-10, 0, 0, -6],
-          scale: [0.96, 1, 1, 0.99],
-          duration: 1400,
-          ease: 'outCubic',
-          onComplete: () => removeBannerFeedback(key)
-        })
+    animate(
+      element,
+      getDuelBannerFeedbackAnimation(family, reducedMotion.value === 'reduce', () => removeBannerFeedback(key))
+    )
   })
 }
 
@@ -1084,18 +1067,12 @@ function removeBannerFeedback(key: number) {
   bannerFeedbacks.value = bannerFeedbacks.value.filter(entry => entry.key !== key)
 }
 
-function cardFeedbackToneClass(tone: CardFeedbackTone) {
-  return {
-    power: 'border-primary/40 bg-primary/15 text-primary',
-    warning: 'border-warning/40 bg-warning/15 text-warning',
-    danger: 'border-error/40 bg-error/15 text-error'
-  }[tone]
+function cardFeedbackClasses(family: DuelCardFeedbackFamily) {
+  return resolveDuelFeedbackClasses(appConfig, 'card', family)
 }
 
-function bannerFeedbackToneClass(tone: BannerFeedbackTone) {
-  return tone === 'error'
-    ? 'border-error/50 bg-error/16 text-error'
-    : 'border-primary/40 bg-default/90 text-highlighted'
+function bannerFeedbackClasses(family: DuelBannerFeedbackFamily) {
+  return resolveDuelFeedbackClasses(appConfig, 'banner', family)
 }
 
 function findPlayerByDisplayName(displayName: string) {
@@ -1187,7 +1164,7 @@ function queueAttachedDonFeedback(current: DuelPlayerView | null, previous: Duel
       continue
     }
 
-    nextTick(() => spawnCardFeedback(instanceId, `+${attachedDonGain * 1000}`, 'power'))
+    nextTick(() => spawnCardFeedback(instanceId, `+${attachedDonGain * 1000}`, 'gain'))
   }
 }
 
@@ -1214,7 +1191,7 @@ function queueKoFeedback(current: DuelPlayerView | null, previous: DuelPlayerVie
       rect.left + rect.width / 2,
       rect.top + rect.height / 2,
       'KO',
-      'danger'
+      'impact'
     )
   }
 }
@@ -1223,7 +1200,7 @@ function handleNewLogFeedback(message: string) {
   const globalActionMessage = resolveGlobalActionMessage(message)
 
   if (globalActionMessage) {
-    spawnBannerFeedback(globalActionMessage, 'action')
+    spawnBannerFeedback(globalActionMessage, 'narration')
   }
 
   const blockerMatch = message.match(/^(?<player>.+?) declare (?<card>.+?) comme Bloqueur\.$/u)
@@ -1233,7 +1210,7 @@ function handleNewLogFeedback(message: string) {
     nextTick(() => spawnCardFeedback(
       findVisibleCardInstanceIdByName(blockerCardName) ?? combat.value?.blockerInstanceId ?? undefined,
       'Blocker',
-      'warning'
+      'status'
     ))
   }
 
@@ -1246,7 +1223,7 @@ function handleNewLogFeedback(message: string) {
       ? player?.leader?.instanceId ?? undefined
       : findVisibleCardInstanceIdByName(donGainGroups.target) ?? undefined
 
-    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainGroups.power}`, 'power'))
+    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainGroups.power}`, 'gain'))
   }
 }
 
@@ -3451,8 +3428,9 @@ defineShortcuts({
                   :key="entry.key"
                   :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
                   :data-test="`card-feedback-${entry.label}`"
-                  class="duel-card-feedback absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
-                  :class="cardFeedbackToneClass(entry.tone)"
+                  :data-feedback-family="entry.family"
+                  class="duel-card-feedback absolute rounded-full px-3 py-1 text-sm font-black uppercase tracking-[0.18em] sm:text-base"
+                  :class="cardFeedbackClasses(entry.family)"
                   :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
                 >
                   {{ entry.label }}
@@ -3463,9 +3441,10 @@ defineShortcuts({
                   v-for="entry in bannerFeedbacks"
                   :key="entry.key"
                   :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
-                  :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
-                  class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
-                  :class="bannerFeedbackToneClass(entry.tone)"
+                  :data-test="entry.family === 'error' ? 'error-feedback' : 'global-feedback'"
+                  :data-feedback-family="entry.family"
+                  class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full px-4 py-2 text-center text-sm font-semibold sm:text-base"
+                  :class="bannerFeedbackClasses(entry.family)"
                 >
                   {{ entry.message }}
                 </div>
@@ -3484,7 +3463,7 @@ defineShortcuts({
                 :value="entry.value"
                 :x="entry.x"
                 :y="entry.y"
-                :tone="entry.tone"
+                :family="entry.family"
                 @done="removeFloatingNumber(entry.key)"
               />
               <DuelSetupOverlay v-if="phase === 'mulligan'" />

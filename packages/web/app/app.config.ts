@@ -1,5 +1,20 @@
 export default defineAppConfig({
   duel: {
+    feedback: {
+      base: 'duel-feedback',
+      surfaces: {
+        card: 'duel-feedback--card',
+        banner: 'duel-feedback--banner',
+        floating: 'duel-feedback--floating'
+      },
+      families: {
+        impact: 'duel-feedback--impact',
+        gain: 'duel-feedback--gain',
+        status: 'duel-feedback--status',
+        error: 'duel-feedback--error',
+        narration: 'duel-feedback--narration'
+      }
+    },
     highlight: {
       base: 'duel-highlight',
       states: {
