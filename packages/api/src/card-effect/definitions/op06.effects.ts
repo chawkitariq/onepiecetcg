@@ -1659,7 +1659,8 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
               {
                 type: 'activateEffect',
                 cardId: 'OP06-039',
-                effectId: 'you-aint-even-worth-killing-time-main-choose-rest-or-ko',
+                effectId:
+                  'you-aint-even-worth-killing-time-main-choose-rest-or-ko',
               },
             ],
           },
@@ -2880,7 +2881,7 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'shiki-blocker-when-opponent-has-2-more-don',
-            text: 'If your Leader has the [GERMA 66] type and the number of DON!! cards on your field is at least 2 less than the number on your opponent\'s field, this Character gains [Blocker].',
+            text: "If your Leader has the [GERMA 66] type and the number of DON!! cards on your field is at least 2 less than the number on your opponent's field, this Character gains [Blocker].",
             conditions: [
               {
                 type: 'playerHasLeaderTrait',
@@ -3647,7 +3648,7 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'shadows-asgard-main-plus-1000-ko-any-thriller-for-more',
-            text: '[Main] Your Leader gains +1000 power during this turn. Then, you may K.O. any number of your [Thriller Bark Pirates] type Characters with a cost of 2 or less. Your Leader gains an additional +1000 power during this turn for every Character K.O.\'d.',
+            text: "[Main] Your Leader gains +1000 power during this turn. Then, you may K.O. any number of your [Thriller Bark Pirates] type Characters with a cost of 2 or less. Your Leader gains an additional +1000 power during this turn for every Character K.O.'d.",
             trigger: { type: 'activateMain' },
             actions: [
               {
@@ -3698,7 +3699,7 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'shadows-asgard-counter-plus-1000-ko-any-thriller-for-more',
-            text: '[Counter] Your Leader gains +1000 power during this turn. Then, you may K.O. any number of your [Thriller Bark Pirates] type Characters with a cost of 2 or less. Your Leader gains an additional +1000 power during this turn for every Character K.O.\'d.',
+            text: "[Counter] Your Leader gains +1000 power during this turn. Then, you may K.O. any number of your [Thriller Bark Pirates] type Characters with a cost of 2 or less. Your Leader gains an additional +1000 power during this turn for every Character K.O.'d.",
             trigger: { type: 'activateCounter' },
             actions: [
               {

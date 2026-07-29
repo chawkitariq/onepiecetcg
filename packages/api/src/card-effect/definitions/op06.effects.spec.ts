@@ -1341,13 +1341,23 @@ describe('op06EffectDefinitions', () => {
     const handOne = host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'HAND-J1', number: 'HAND-J1', name: 'Trash 1', type: 'Event' }),
+      makeCard({
+        id: 'HAND-J1',
+        number: 'HAND-J1',
+        name: 'Trash 1',
+        type: 'Event',
+      }),
       'hand-j1',
     );
     const handTwo = host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'HAND-J2', number: 'HAND-J2', name: 'Trash 2', type: 'Event' }),
+      makeCard({
+        id: 'HAND-J2',
+        number: 'HAND-J2',
+        name: 'Trash 2',
+        type: 'Event',
+      }),
       'hand-j2',
     );
     const reijuOne = host.addCardToZone(

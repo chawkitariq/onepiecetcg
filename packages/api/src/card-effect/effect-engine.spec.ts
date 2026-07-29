@@ -1328,19 +1328,34 @@ describe('EffectEngine', () => {
     const first = host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'HAND-1', number: 'HAND-1', name: 'Hand 1', type: 'Event' }),
+      makeCard({
+        id: 'HAND-1',
+        number: 'HAND-1',
+        name: 'Hand 1',
+        type: 'Event',
+      }),
       'hand-1',
     );
     const second = host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'HAND-2', number: 'HAND-2', name: 'Hand 2', type: 'Event' }),
+      makeCard({
+        id: 'HAND-2',
+        number: 'HAND-2',
+        name: 'Hand 2',
+        type: 'Event',
+      }),
       'hand-2',
     );
     host.addCardToZone(
       'p1',
       'hand',
-      makeCard({ id: 'HAND-3', number: 'HAND-3', name: 'Hand 3', type: 'Event' }),
+      makeCard({
+        id: 'HAND-3',
+        number: 'HAND-3',
+        name: 'Hand 3',
+        type: 'Event',
+      }),
       'hand-3',
     );
 

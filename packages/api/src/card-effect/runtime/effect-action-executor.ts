@@ -272,9 +272,7 @@ export class EffectActionExecutor {
         const revealed = Array.from(sourceCards).slice(0, action.amount);
 
         const maxCount =
-          action.count.kind === 'any'
-            ? revealed.length
-            : action.count.value;
+          action.count.kind === 'any' ? revealed.length : action.count.value;
 
         this.decisions.chooseCards(
           this.createDecisionId(source.instanceId, action.type),
