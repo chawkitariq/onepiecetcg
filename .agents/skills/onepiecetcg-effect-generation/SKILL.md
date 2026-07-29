@@ -22,6 +22,7 @@ Generate and validate the effect-definition files used by this repository's back
    - Generate from a local metadata snapshot: run `scripts/run-generate-effects.sh --edition OP01 --source-file /abs/path/cards.json`.
    - Refine generated placeholders into authored effects in `packages/api/src/card-effect/definitions/`.
    - If you need to generate effects for multiple editions in one task, split the work by edition and use sub-agents so each edition can be generated and validated independently.
+   - Keep the generated comment blocks that contain the card description/text in skeleton output; never delete those comments during refinement.
 9. After generating a skeleton, implement the full DSL for every generated card entry in that edition before considering the work complete.
 10. Add or update the smallest useful mix of tests for the authored effects touched in scope:
    - engine or rules tests for reusable runtime behavior
@@ -48,6 +49,7 @@ Generate and validate the effect-definition files used by this repository's back
 - Execute generation and validation through the skill's bundled scripts. Do not rely on backend `src/` CLI files as the skill runtime.
 - Load cards from metadata first, then derive effect definitions from that metadata and the rules documents. Do not invent card facts that are absent from the metadata source.
 - Preserve authored definitions whenever generation runs. The bundled generator is designed to merge deterministic placeholder output with existing entries, not wipe human-authored work.
+- Preserve the generated skeleton comments that show the card description/text; do not remove them when editing generated files.
 - Do not stop after skeleton generation. Finish by implementing the DSL for every generated card in scope, then loop on validation until there are no structural errors and no unfinished generated placeholders.
 - Every touched effect must ship with meaningful coverage, but not every card needs an immediate one-test-per-card policy.
 - Prefer a pragmatic test pyramid:
