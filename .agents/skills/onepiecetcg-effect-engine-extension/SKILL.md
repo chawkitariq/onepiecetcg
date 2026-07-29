@@ -23,6 +23,8 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 ## Working Rules
 
 - Prefer extending the declarative DSL when multiple cards can share the same new concept.
+- When adding a new primitive could break, fragilize, or fail to improve engine reliability enough, choose the safest option for the current context and prefer a specialized handler if that keeps the engine more reliable.
+- Audit existing handlers before adding new engine behavior and decide whether any of them should be converted into a reusable primitive or kept as special-case code based on the current context.
 - Touch `packages/shared/src/effects.ts` first when the missing concept is part of authored card definitions.
 - Touch `packages/api/src/card-effect/effect-engine.ts` when the runtime cannot resolve an already-valid DSL concept.
 - Keep `definitions/special/` as the fallback for truly card-specific sequencing or temporary escape hatches, not as the default place for reusable mechanics.
