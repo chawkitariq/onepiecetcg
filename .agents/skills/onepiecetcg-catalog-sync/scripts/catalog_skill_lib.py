@@ -278,4 +278,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Directory where edition snapshots should be written.",
     )
+    parser.add_argument(
+        "--edition",
+        "-e",
+        help="Comma-separated edition ids to write, for example OP01 or OP01,OP02. If omitted, write every edition found in the source data.",
+    )
     return parser
+
+
+def parse_edition_filter(value: str | None) -> set[str] | None:
+    """Parse an optional edition filter."""
+
+    if value is None:
+        return None
+    editions = {normalize_card_id(item.split("-", 1)[0]) for item in value.split(",") if item.strip()}
+    return editions or None

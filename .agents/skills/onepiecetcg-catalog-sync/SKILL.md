@@ -14,10 +14,11 @@ Use this skill when you need an offline catalog snapshot for effect generation, 
 1. Read `references/project-context.md` to confirm where catalog snapshots live and how they are consumed.
 2. Read `references/source-and-output.md` to see which OPTCG API families to fetch, how to bucket cards by edition, and which shared fields must be preserved.
 3. Use `scripts/run-download-catalog.sh` to fetch the source data from the OPTCG API or to replay a local snapshot.
-4. Normalize each card to the `@onepiecetcg/shared` `Card` shape.
-5. Group cards by edition and write one JSON file per edition, using the edition id as the filename, for example `OP01.json`.
-6. Keep the output deterministic: stable ordering, stable ids, and no duplicate cards inside the same edition file.
-7. When the snapshot is ready, pass it to `onepiecetcg-effect-generation` with `--source-file` if you need to generate or refresh effect definitions without hitting the network.
+4. Pass `--edition OP01` for a single edition or `--edition OP01,OP02` to download multiple editions in the same request.
+5. Normalize each card to the `@onepiecetcg/shared` `Card` shape.
+6. Group cards by edition and write one JSON file per edition, using the edition id as the filename, for example `OP01.json`.
+7. Keep the output deterministic: stable ordering, stable ids, and no duplicate cards inside the same edition file.
+8. When the snapshot is ready, pass it to `onepiecetcg-effect-generation` with `--source-file` if you need to generate or refresh effect definitions without hitting the network.
 
 ## Working Rules
 
@@ -30,6 +31,7 @@ Use this skill when you need an offline catalog snapshot for effect generation, 
 ## Typical Triggers
 
 - Build or refresh local OPTCG edition snapshots.
+- Build or refresh one edition or several editions in the same command.
 - Normalize OPTCG API responses into the shared `Card` type.
 - Generate deterministic JSON inputs for `onepiecetcg-effect-generation`.
 - Inspect or reconcile edition-level card data before authoring card effects.

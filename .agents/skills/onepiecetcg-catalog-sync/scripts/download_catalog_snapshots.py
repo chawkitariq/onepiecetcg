@@ -10,6 +10,7 @@ from catalog_skill_lib import (
     detect_repo_root,
     fetch_live_catalog,
     load_cards_from_snapshot,
+    parse_edition_filter,
     write_edition_snapshots,
 )
 
@@ -26,11 +27,15 @@ def main() -> int:
         if args.output_dir
         else repo_root / "packages/cards/catalog"
     )
+    requested_editions = parse_edition_filter(args.edition)
 
     if args.source_file is not None:
         cards = load_cards_from_snapshot(args.source_file.resolve())
     else:
         cards = fetch_live_catalog()
+
+    if requested_editions is not None:
+        cards = [card for card in cards if card.id.split("-", 1)[0] in requested_editions]
 
     written_paths = write_edition_snapshots(cards, output_dir)
     print(f"Wrote {len(written_paths)} edition snapshot(s) to {output_dir}")

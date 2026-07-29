@@ -42,6 +42,7 @@ Prefer these source fields when present:
 - Use a stable ordering inside each edition file.
 - Keep the same edition grouping on every run.
 - Write valid JSON only, with no wrapper object unless the downstream consumer explicitly expects one.
+- Support filtering to one edition or several editions in the same run when the caller passes explicit edition ids.
 
 ## Handoff to effect generation
 
