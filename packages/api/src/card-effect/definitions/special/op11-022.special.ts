@@ -1,11 +1,116 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
+/**
+ * Shirahoshi Leader handler.
+ *
+ * Continuous "cannot attack" is expected in the main definition's `continuous` section.
+ *
+ * [Activate: Main] [Once Per Turn] You may rest 1 of your DON!! cards and
+ * turn 1 card from the top of your Life cards face-up: Play up to 1
+ * "Neptunian" type Character card or "Megalo" with a cost equal to or less
+ * than the number of DON!! cards on your field from your hand.
+ */
 export const op11022SpecialHandler: SpecialHandlerDefinition = {
   id: 'op11-022-special',
   cardId: 'OP11-022',
   resolve(event, engine) {
-    // Shirahoshi Leader: Cannot attack (continuous), and Activate: Main Once Per Turn:
-    // rest 1 DON + turn 1 life face-up -> play Neptunian or Megalo from hand
-    // with cost <= number of DON!! on field
+    if (event.type !== 'activateMain') return;
+
+    const anyEngine = engine as any;
+    const host = anyEngine.host;
+
+    const oncePerTurnKey = `${event.sourceInstanceId}:op11-022:${host.state.turn}`;
+    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
+
+    const player = host.getPlayer(event.playerSessionId);
+    if (!player) return;
+
+    const hasDonToRest = player.zones.cost.length > 0;
+    const hasLife = player.zones.life.length > 0;
+    if (!hasDonToRest || !hasLife) return;
+
+    let totalDonOnField =
+      player.zones.cost.length + (player.zones.leader.attachedDon ?? 0);
+    for (const char of player.zones.characters) {
+      totalDonOnField += char.attachedDon ?? 0;
+    }
+
+    const handCards = host.getCards(
+      {
+        player: 'self',
+        zones: ['hand'],
+        filter: {
+          cardCategory: ['Character'],
+          costMax: totalDonOnField,
+        },
+        count: { kind: 'upTo', value: 1 },
+      },
+      event.playerSessionId,
+    );
+    if (handCards.length === 0) return;
+
+    anyEngine.decisions.pause(
+      {
+        id: `${event.sourceInstanceId}:op11-022:confirm`,
+        effectId: 'op11-022-special',
+        effectCardId: event.sourceCardId,
+        sourceInstanceId: event.sourceInstanceId,
+        playerSessionId: event.playerSessionId,
+        createdAt: new Date().toISOString(),
+        prompt: {
+          type: 'confirm',
+          message:
+            '[Shirahoshi] Rest 1 DON!! and turn 1 Life face-up to play a Neptunian or Megalo?',
+          optional: true,
+        },
+      },
+      (response: { confirmed?: boolean }) => {
+        if (!response.confirmed) return;
+
+        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+
+        if (player.zones.cost.length > 0) {
+          player.zones.cost[0].rested = true;
+        }
+
+        const topLife = host.getCards(
+          {
+            player: 'self',
+            zones: ['life'],
+            filter: { zonePosition: 'top' },
+            count: { kind: 'exact', value: 1 },
+          },
+          event.playerSessionId,
+        );
+        if (topLife.length > 0) {
+          topLife[0].faceDown = false;
+        }
+
+        anyEngine.decisions.chooseCards(
+          `${event.sourceInstanceId}:op11-022:play`,
+          event.playerSessionId,
+          { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
+          event.playerSessionId,
+          '[Shirahoshi] Choose a Neptunian or Megalo to play:',
+          {
+            player: 'self',
+            zones: ['hand'],
+            filter: {
+              cardCategory: ['Character'],
+              costMax: totalDonOnField,
+            },
+            count: { kind: 'upTo', value: 1 },
+          },
+          undefined,
+          (selected) => {
+            for (const card of selected) {
+              host.playCard(card, event.playerSessionId, 'characters');
+            }
+            engine.reapplyContinuousEffects();
+          },
+        );
+      },
+    );
   },
 };

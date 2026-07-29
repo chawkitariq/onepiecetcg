@@ -22,10 +22,7 @@ const createRegistry = (
           resolved.standard = [...(resolved.standard ?? []), entry.effect];
           break;
         case 'continuous':
-          resolved.continuous = [
-            ...(resolved.continuous ?? []),
-            entry.effect,
-          ];
+          resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
           break;
         case 'replacement':
           resolved.replacements = [
@@ -85,9 +82,7 @@ describe('OP15 effect definitions', () => {
     const withSpecialRef = allCards.filter((c) =>
       c.effects?.some((e) => e.kind === 'special-ref'),
     );
-    const empty = allCards.filter(
-      (c) => !c.effects || c.effects.length === 0,
-    );
+    const empty = allCards.filter((c) => !c.effects || c.effects.length === 0);
 
     expect(withEffects.length).toBeGreaterThan(0);
     expect(withSpecialRef.length).toBe(15);
@@ -107,7 +102,11 @@ describe('OP15 effect definitions', () => {
 
     for (const card of op15EffectDefinitions.cards) {
       for (const entry of card.effects ?? []) {
-        if (entry.kind === 'standard' || entry.kind === 'continuous' || entry.kind === 'replacement') {
+        if (
+          entry.kind === 'standard' ||
+          entry.kind === 'continuous' ||
+          entry.kind === 'replacement'
+        ) {
           allIds.push(entry.effect.id);
         }
       }

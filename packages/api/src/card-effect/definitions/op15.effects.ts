@@ -389,14 +389,22 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'pearl-opponent-turn-leader-east-blue-power-2000',
-            text: '[Opponent\'s Turn] If your Leader has the {East Blue} type, this Character gains [Blocker] and +2000 power.',
+            text: "[Opponent's Turn] If your Leader has the {East Blue} type, this Character gains [Blocker] and +2000 power.",
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 2000,
             },
             conditions: [
               { type: 'controllerTurn', value: false },
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'East Blue' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'East Blue',
+              },
             ],
           },
         },
@@ -917,9 +925,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'usopp-opponent-turn-can-attack-active',
-            text: '[Opponent\'s Turn] This Character cannot be rested by your opponent\'s Leader and Character effects and gains [Blocker].',
+            text: "[Opponent's Turn] This Character cannot be rested by your opponent's Leader and Character effects and gains [Blocker].",
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
             },
             conditions: [{ type: 'controllerTurn', value: false }],
           },
@@ -1768,7 +1780,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Event'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { cardCategory: ['Event'] },
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [{ type: 'draw', player: 'self', amount: 2 }],
@@ -1804,7 +1821,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'grantKeywords',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 keywords: ['canAttackActiveCharacters'],
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -1828,7 +1849,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Event'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { cardCategory: ['Event'] },
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [{ type: 'draw', player: 'self', amount: 2 }],
@@ -1838,13 +1864,17 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'chinjao-opponent-turn-on-ko-opponent-bottom-deck',
-            text: '[Opponent\'s Turn] [On K.O.] Your opponent places 1 card from their hand at the bottom of their deck.',
+            text: "[Opponent's Turn] [On K.O.] Your opponent places 1 card from their hand at the bottom of their deck.",
             trigger: { type: 'onKo' },
             conditions: [{ type: 'controllerTurn', value: false }],
             actions: [
               {
                 type: 'moveCard',
-                selector: { player: 'opponent', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'selectedCardOwner',
                 destinationZone: 'deck',
                 toBottom: true,
@@ -1872,13 +1902,21 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'bobby-funk-has-kelly-funk-plus-3000',
             text: 'If you have [Kelly Funk], this Character gains +3000 power.',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 3000,
             },
             conditions: [
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Kelly Funk'] } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Kelly Funk'] },
+                },
               },
             ],
           },
@@ -1896,12 +1934,20 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'luffy-051-opponent-turn-dressrosa-plus-3000',
             text: '[Opponent\'s Turn] If your Leader has the "Dressrosa" type, this Character gains +3000 power.',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 3000,
             },
             conditions: [
               { type: 'controllerTurn', value: false },
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Dressrosa' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Dressrosa',
+              },
             ],
           },
         },
@@ -1916,16 +1962,18 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'replacement',
           effect: {
             id: 'leo-replacement-bottom-deck-instead-of-removal',
-            text: 'If your Character with 7000 base power or less would be removed from the field by your opponent\'s effect, you may place 1 of your Characters at the bottom of the owner\'s deck instead.',
+            text: "If your Character with 7000 base power or less would be removed from the field by your opponent's effect, you may place 1 of your Characters at the bottom of the owner's deck instead.",
             event: 'wouldMoveCard',
             optional: true,
-            conditions: [
-              { type: 'eventReasonIs', value: 'effect' },
-            ],
+            conditions: [{ type: 'eventReasonIs', value: 'effect' }],
             replacement: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'selectedCardOwner',
                 destinationZone: 'deck',
                 toBottom: true,
@@ -1947,11 +1995,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'rebecca-053-don-1-blocker',
             text: '[DON!! x1] This Character gains [Blocker].',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
             },
-            conditions: [
-              { type: 'sourceHasAttachedDonAtLeast', value: 1 },
-            ],
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
           },
         },
         {
@@ -1988,7 +2038,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'memento-of-him-main-choose-one',
-            text: '[Main] If your Leader is [Lucy], choose one: Draw 2 cards and trash 1 card from your hand. Then, play up to 1 {Dressrosa} type Character card with a cost of 4 or less from your hand. OR Return up to 1 Stage to the owner\'s hand.',
+            text: "[Main] If your Leader is [Lucy], choose one: Draw 2 cards and trash 1 card from your hand. Then, play up to 1 {Dressrosa} type Character card with a cost of 4 or less from your hand. OR Return up to 1 Stage to the owner's hand.",
             trigger: { type: 'activateMain' },
             conditions: [
               { type: 'playerHasLeaderName', player: 'self', value: 'Lucy' },
@@ -2000,27 +2050,45 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
                 choices: [
                   {
                     id: 'draw-trash-play',
-                    label: 'Draw 2 cards and trash 1 card from your hand. Then, play up to 1 {Dressrosa} type Character card with a cost of 4 or less from your hand.',
+                    label:
+                      'Draw 2 cards and trash 1 card from your hand. Then, play up to 1 {Dressrosa} type Character card with a cost of 4 or less from your hand.',
                     actions: [
                       { type: 'draw', player: 'self', amount: 2 },
                       {
                         type: 'trashFromHand',
-                        selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                        selector: {
+                          player: 'self',
+                          zones: ['hand'],
+                          count: { kind: 'exact', value: 1 },
+                        },
                       },
                       {
                         type: 'play',
-                        selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Character'], trait: ['Dressrosa'], costMax: 4 }, count: { kind: 'upTo', value: 1 } },
+                        selector: {
+                          player: 'self',
+                          zones: ['hand'],
+                          filter: {
+                            cardCategory: ['Character'],
+                            trait: ['Dressrosa'],
+                            costMax: 4,
+                          },
+                          count: { kind: 'upTo', value: 1 },
+                        },
                         destination: 'characters',
                       },
                     ],
                   },
                   {
                     id: 'return-stage',
-                    label: 'Return up to 1 Stage to the owner\'s hand.',
+                    label: "Return up to 1 Stage to the owner's hand.",
                     actions: [
                       {
                         type: 'moveCard',
-                        selector: { player: 'either', zones: ['stage'], count: { kind: 'upTo', value: 1 } },
+                        selector: {
+                          player: 'either',
+                          zones: ['stage'],
+                          count: { kind: 'upTo', value: 1 },
+                        },
                         destinationPlayer: 'selectedCardOwner',
                         destinationZone: 'hand',
                       },
@@ -2044,7 +2112,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'go-ahead-use-em-main-choose-one',
-            text: '[Main] Choose one: Draw 2 cards. OR Up to 1 of your {Dressrosa} type Characters gains [Blocker] until the end of your opponent\'s next End Phase.',
+            text: "[Main] Choose one: Draw 2 cards. OR Up to 1 of your {Dressrosa} type Characters gains [Blocker] until the end of your opponent's next End Phase.",
             trigger: { type: 'activateMain' },
             actions: [
               {
@@ -2058,7 +2126,8 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
                   },
                   {
                     id: 'grant-blocker',
-                    label: 'Up to 1 of your {Dressrosa} type Characters gains [Blocker] until the end of your opponent\'s next End Phase.',
+                    label:
+                      "Up to 1 of your {Dressrosa} type Characters gains [Blocker] until the end of your opponent's next End Phase.",
                     actions: [],
                   },
                 ],
@@ -2085,13 +2154,23 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 2 },
               {
                 type: 'grantKeywords',
-                selector: { player: 'self', zones: ['leader'], filter: { name: ['Lucy'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  filter: { name: ['Lucy'] },
+                  count: { kind: 'exact', value: 1 },
+                },
                 keywords: ['doubleAttack'],
                 duration: { type: 'untilEndOfTurn' },
               },
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader'], filter: { name: ['Lucy'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  filter: { name: ['Lucy'] },
+                  count: { kind: 'exact', value: 1 },
+                },
                 amount: 3000,
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -2122,7 +2201,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[On Play] If your Leader has the {Dressrosa} type, draw 1 card.',
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Dressrosa' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Dressrosa',
+              },
             ],
             actions: [{ type: 'draw', player: 'self', amount: 1 }],
           },
@@ -2131,22 +2214,36 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'dressrosa-kingdom-on-attacked-rest-trash-event-stage-plus-2000',
-            text: '[On Your Opponent\'s Attack] You may rest this Stage and trash 1 Event or Stage card from your hand: Up to 1 of your Leader or Character cards gains +2000 power during this battle.',
+            text: "[On Your Opponent's Attack] You may rest this Stage and trash 1 Event or Stage card from your hand: Up to 1 of your Leader or Character cards gains +2000 power during this battle.",
             trigger: { type: 'onAttacked', optional: true },
             costs: [
               {
                 type: 'rest',
-                selector: { player: 'self', source: 'effectSource', zones: ['stage'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['stage'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Event', 'Stage'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { cardCategory: ['Event', 'Stage'] },
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 2000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -2188,9 +2285,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'enel-060-6-or-less-don-cannot-be-removed-plus-2000',
-            text: 'If you have 6 or less DON!! cards on your field, this Character cannot be removed from the field by your opponent\'s effects and gains +2000 power.',
+            text: "If you have 6 or less DON!! cards on your field, this Character cannot be removed from the field by your opponent's effects and gains +2000 power.",
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 2000,
               keywords: ['cannotBeRemovedByOpponentEffects'],
             },
@@ -2209,7 +2310,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'enel-060-activate-main-don-1-blocker-trash-hand',
-            text: '[Activate: Main] DON!! 1: This Character gains [Blocker] until the end of your opponent\'s next End Phase. Then, trash 1 card from your hand.',
+            text: "[Activate: Main] DON!! 1: This Character gains [Blocker] until the end of your opponent's next End Phase. Then, trash 1 card from your hand.",
             trigger: { type: 'activateMain' },
             costs: [
               {
@@ -2221,7 +2322,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
           },
@@ -2254,15 +2359,25 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'ohm-when-attacking-6-or-less-don-minus-1000',
-            text: '[When Attacking] If you have 6 or less DON!! cards on your field, give up to 1 of your opponent\'s Characters 1000 power during this turn.',
+            text: "[When Attacking] If you have 6 or less DON!! cards on your field, give up to 1 of your opponent's Characters 1000 power during this turn.",
             trigger: { type: 'whenAttacking' },
             conditions: [
-              { type: 'playerHasAtLeastTotalDonLessThan', player: 'self', thanPlayer: 'opponent', value: 7 },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 7,
+              },
             ],
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: -1000,
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -2303,15 +2418,25 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'gedatsu-on-ko-6-or-less-don-ko-2000-or-less',
-            text: '[On K.O.] If you have 6 or less DON!! cards on your field, K.O. up to 1 of your opponent\'s Characters with 2000 power or less.',
+            text: "[On K.O.] If you have 6 or less DON!! cards on your field, K.O. up to 1 of your opponent's Characters with 2000 power or less.",
             trigger: { type: 'onKo' },
             conditions: [
-              { type: 'playerHasAtLeastTotalDonLessThan', player: 'self', thanPlayer: 'opponent', value: 7 },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 7,
+              },
             ],
             actions: [
               {
                 type: 'ko',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], powerMax: 2000 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 2000 },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 reason: 'effect',
               },
             ],
@@ -2328,7 +2453,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'kotori-activate-main-don-2-rest-self-satori-hotori-rest-5000-or-less',
-            text: '[Activate: Main] DON!! 2, You may rest this Character: If you have [Satori] and [Hotori], rest up to 1 of your opponent\'s Characters with 5000 power or less.',
+            text: "[Activate: Main] DON!! 2, You may rest this Character: If you have [Satori] and [Hotori], rest up to 1 of your opponent's Characters with 5000 power or less.",
             trigger: { type: 'activateMain', optional: true },
             costs: [
               {
@@ -2338,23 +2463,41 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               },
               {
                 type: 'rest',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             conditions: [
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Satori'] } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Satori'] },
+                },
               },
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Hotori'] } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Hotori'] },
+                },
               },
             ],
             actions: [
               {
                 type: 'rest',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], powerMax: 5000 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 5000 },
+                  count: { kind: 'upTo', value: 1 },
+                },
               },
             ],
           },
@@ -2427,7 +2570,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[When Attacking] If you have 6 or less DON!! cards on your field, look at 2 cards from the top of your deck and place them at the top or bottom of your deck in any order.',
             trigger: { type: 'whenAttacking' },
             conditions: [
-              { type: 'playerHasAtLeastTotalDonLessThan', player: 'self', thanPlayer: 'opponent', value: 7 },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 7,
+              },
             ],
             actions: [
               {
@@ -2453,11 +2601,20 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'shura-6-or-less-don-rush',
             text: 'If you have 6 or less DON!! cards on your field, this Character gains [Rush].',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               keywords: ['rush'],
             },
             conditions: [
-              { type: 'playerHasAtLeastTotalDonLessThan', player: 'self', thanPlayer: 'opponent', value: 7 },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 7,
+              },
             ],
           },
         },
@@ -2495,12 +2652,10 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'replacement',
           effect: {
             id: 'nola-replacement-return-don-instead-of-removal',
-            text: 'If your Character with 7000 base power or less would be removed from the field by your opponent\'s effect, you may return 1 DON!! card from your field to your DON!! deck instead.',
+            text: "If your Character with 7000 base power or less would be removed from the field by your opponent's effect, you may return 1 DON!! card from your field to your DON!! deck instead.",
             event: 'wouldMoveCard',
             optional: true,
-            conditions: [
-              { type: 'eventReasonIs', value: 'effect' },
-            ],
+            conditions: [{ type: 'eventReasonIs', value: 'effect' }],
             replacement: [
               {
                 type: 'removeDon',
@@ -2525,7 +2680,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'fuza-shura-unblockable',
             text: 'All of your [Shura] cards and this Character gain [Unblockable].',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               keywords: ['canAttackActiveCharacters'],
             },
           },
@@ -2536,7 +2695,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'fuza-shura-unblockable-all-shura',
             text: 'All of your [Shura] cards gain [Unblockable].',
             modifier: {
-              selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Shura'] } },
+              selector: {
+                player: 'self',
+                zones: ['leader', 'characters'],
+                filter: { name: ['Shura'] },
+              },
               keywords: ['canAttackActiveCharacters'],
             },
           },
@@ -2560,7 +2723,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'holly-ohm-double-attack',
             text: 'All of your [Ohm] cards and this Character gain [Double Attack].',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               keywords: ['doubleAttack'],
             },
           },
@@ -2571,7 +2738,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'holly-ohm-double-attack-all-ohm',
             text: 'All of your [Ohm] cards gain [Double Attack].',
             modifier: {
-              selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Ohm'] } },
+              selector: {
+                player: 'self',
+                zones: ['leader', 'characters'],
+                filter: { name: ['Ohm'] },
+              },
               keywords: ['doubleAttack'],
             },
           },
@@ -2591,7 +2762,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'hotori-activate-main-don-2-rest-self-kotori-satori-minus-3000',
-            text: '[Activate: Main] DON!! 2, You may rest this Character: If you have [Kotori] and [Satori], give up to 1 of your opponent\'s Characters 3000 power during this turn.',
+            text: "[Activate: Main] DON!! 2, You may rest this Character: If you have [Kotori] and [Satori], give up to 1 of your opponent's Characters 3000 power during this turn.",
             trigger: { type: 'activateMain', optional: true },
             costs: [
               {
@@ -2601,23 +2772,41 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               },
               {
                 type: 'rest',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             conditions: [
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Kotori'] } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Kotori'] },
+                },
               },
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Satori'] } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Satori'] },
+                },
               },
             ],
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: -3000,
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -2649,18 +2838,33 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
                     actions: [
                       {
                         type: 'play',
-                        selector: { player: 'self', zones: ['hand'], filter: { name: ['Heavenly Warriors'], costMax: 1 }, count: { kind: 'upTo', value: 1 } },
+                        selector: {
+                          player: 'self',
+                          zones: ['hand'],
+                          filter: { name: ['Heavenly Warriors'], costMax: 1 },
+                          count: { kind: 'upTo', value: 1 },
+                        },
                         destination: 'characters',
                       },
                     ],
                   },
                   {
                     id: 'vassals',
-                    label: 'Play up to 1 {Vassals} type Character card with a cost of 1',
+                    label:
+                      'Play up to 1 {Vassals} type Character card with a cost of 1',
                     actions: [
                       {
                         type: 'play',
-                        selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Character'], trait: ['Vassals'], costMax: 1 }, count: { kind: 'upTo', value: 1 } },
+                        selector: {
+                          player: 'self',
+                          zones: ['hand'],
+                          filter: {
+                            cardCategory: ['Character'],
+                            trait: ['Vassals'],
+                            costMax: 1,
+                          },
+                          count: { kind: 'upTo', value: 1 },
+                        },
                         destination: 'characters',
                       },
                     ],
@@ -2682,7 +2886,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'varie-main-don-1-enel-draw-1-plus-cost',
-            text: '[Main] DON!! 1: If your Leader is [Enel], draw 1 card. Then, up to 1 of your Characters gains +2 cost until the end of your opponent\'s next End Phase.',
+            text: "[Main] DON!! 1: If your Leader is [Enel], draw 1 card. Then, up to 1 of your Characters gains +2 cost until the end of your opponent's next End Phase.",
             trigger: { type: 'activateMain' },
             costs: [
               {
@@ -2698,7 +2902,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 1 },
               {
                 type: 'modifyCost',
-                selector: { player: 'self', zones: ['characters'], filter: { cardCategory: ['Character'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 2,
                 duration: { type: 'untilStartOfYourNextTurn' },
               },
@@ -2714,7 +2923,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Enel'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Enel'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 2000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -2733,7 +2947,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'el-thor-main-don-1-enel-plus-1000-ko-3000-or-less',
-            text: '[Main] DON!! 1: If your Leader is [Enel], up to 1 of your Leader or Character cards gains +1000 power during this turn. Then, K.O. up to 1 of your opponent\'s Characters with 3000 power or less.',
+            text: "[Main] DON!! 1: If your Leader is [Enel], up to 1 of your Leader or Character cards gains +1000 power during this turn. Then, K.O. up to 1 of your opponent's Characters with 3000 power or less.",
             trigger: { type: 'activateMain' },
             costs: [
               {
@@ -2748,13 +2962,22 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 1000,
                 duration: { type: 'untilEndOfTurn' },
               },
               {
                 type: 'ko',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], powerMax: 3000 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 3000 },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 reason: 'effect',
               },
             ],
@@ -2769,7 +2992,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Enel'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Enel'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 2000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -2788,7 +3016,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'kiten-main-don-1-enel-draw-1-minus-1000',
-            text: '[Main] DON!! 1: If your Leader is [Enel], draw 1 card. Then, give up to 1 of your opponent\'s Characters 1000 power during this turn.',
+            text: "[Main] DON!! 1: If your Leader is [Enel], draw 1 card. Then, give up to 1 of your opponent's Characters 1000 power during this turn.",
             trigger: { type: 'activateMain' },
             costs: [
               {
@@ -2804,7 +3032,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 1 },
               {
                 type: 'modifyPower',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: -1000,
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -2820,7 +3053,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Enel'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Enel'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 2000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -2838,7 +3076,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'lightning-dragon-main-don-1-draw-1-skip-refresh',
-            text: '[Main] DON!! 1: Draw 1 card. Then, up to 1 of your opponent\'s rested Characters with 6000 power or less will not become active in your opponent\'s next Refresh Phase.',
+            text: "[Main] DON!! 1: Draw 1 card. Then, up to 1 of your opponent's rested Characters with 6000 power or less will not become active in your opponent's next Refresh Phase.",
             trigger: { type: 'activateMain' },
             costs: [
               {
@@ -2851,7 +3089,16 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 1 },
               {
                 type: 'skipNextRefreshPhases',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], powerMax: 6000, rested: true }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    powerMax: 6000,
+                    rested: true,
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 1,
               },
             ],
@@ -2869,7 +3116,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'mamaragan-main-don-2-draw-1-rest-5000-or-less',
-            text: '[Main] DON!! 2: Draw 1 card. Then, rest up to 1 of your opponent\'s Characters with 5000 power or less.',
+            text: "[Main] DON!! 2: Draw 1 card. Then, rest up to 1 of your opponent's Characters with 5000 power or less.",
             trigger: { type: 'activateMain' },
             costs: [
               {
@@ -2882,7 +3129,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 1 },
               {
                 type: 'rest',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], powerMax: 5000 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 5000 },
+                  count: { kind: 'upTo', value: 1 },
+                },
               },
             ],
           },
@@ -2896,7 +3148,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 1000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -2907,7 +3163,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               },
             ],
             conditions: [
-              { type: 'playerHasAtLeastTotalDonLessThan', player: 'self', thanPlayer: 'opponent', value: 7 },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 7,
+              },
             ],
           },
         },
@@ -2942,7 +3203,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'absalom-trigger-activate-on-ko',
-            text: '[Trigger] Activate this card\'s [On K.O.] effect.',
+            text: "[Trigger] Activate this card's [On K.O.] effect.",
             trigger: { type: 'trigger' },
             actions: [
               {
@@ -2967,13 +3228,21 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'oars-gecko-moria-10000-plus-7000',
             text: 'If you have [Gecko Moria] with 10000 power or more on your field and there are no other [Oars] cards, this Character gains +7000 power.',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 7000,
             },
             conditions: [
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Gecko Moria'], powerMin: 10000 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Gecko Moria'], powerMin: 10000 },
+                },
               },
             ],
           },
@@ -2987,7 +3256,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['trash'], count: { kind: 'exact', value: 3 } },
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                  count: { kind: 'exact', value: 3 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'deck',
                 toBottom: true,
@@ -2996,7 +3269,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'play',
-                selector: { player: 'self', zones: ['trash'], filter: { name: ['Oars'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                  filter: { name: ['Oars'] },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destination: 'characters',
               },
             ],
@@ -3016,11 +3294,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[On Play] If your Leader has the {Straw Hat Crew} type, trash 5 cards from the top of your deck.',
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Straw Hat Crew' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Straw Hat Crew',
+              },
             ],
-            actions: [
-              { type: 'trashFromDeck', player: 'self', amount: 5 },
-            ],
+            actions: [{ type: 'trashFromDeck', player: 'self', amount: 5 }],
           },
         },
       ],
@@ -3037,9 +3317,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'charlotte-lola-on-play-trash-3',
             text: '[On Play] Trash 3 cards from the top of your deck.',
             trigger: { type: 'onPlay' },
-            actions: [
-              { type: 'trashFromDeck', player: 'self', amount: 3 },
-            ],
+            actions: [{ type: 'trashFromDeck', player: 'self', amount: 3 }],
           },
         },
         {
@@ -3075,9 +3353,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'spoil-on-play-trash-3',
             text: '[On Play] Trash 3 cards from the top of your deck.',
             trigger: { type: 'onPlay' },
-            actions: [
-              { type: 'trashFromDeck', player: 'self', amount: 3 },
-            ],
+            actions: [{ type: 'trashFromDeck', player: 'self', amount: 3 }],
           },
         },
         {
@@ -3089,7 +3365,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'trash',
               },
@@ -3104,7 +3385,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'attachDon',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 player: 'self',
                 amount: 1,
                 rested: true,
@@ -3127,11 +3412,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[On Play] If your Leader has the {Thriller Bark Pirates} type, trash 5 cards from the top of your deck.',
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Thriller Bark Pirates' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Thriller Bark Pirates',
+              },
             ],
-            actions: [
-              { type: 'trashFromDeck', player: 'self', amount: 5 },
-            ],
+            actions: [{ type: 'trashFromDeck', player: 'self', amount: 5 }],
           },
         },
         {
@@ -3164,9 +3451,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'chopper-085-on-play-trash-3',
             text: '[On Play] Trash 3 cards from the top of your deck.',
             trigger: { type: 'onPlay' },
-            actions: [
-              { type: 'trashFromDeck', player: 'self', amount: 3 },
-            ],
+            actions: [{ type: 'trashFromDeck', player: 'self', amount: 3 }],
           },
         },
         {
@@ -3178,13 +3463,22 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'trash',
               },
             ],
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Straw Hat Crew' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Straw Hat Crew',
+              },
             ],
             actions: [
               {
@@ -3192,7 +3486,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
                 player: 'self',
                 sourceZone: 'trash',
                 amount: 99,
-                filter: { cardCategory: ['Character'], trait: ['Straw Hat Crew'], excludeName: ['Tony Tony.Chopper'] },
+                filter: {
+                  cardCategory: ['Character'],
+                  trait: ['Straw Hat Crew'],
+                  excludeName: ['Tony Tony.Chopper'],
+                },
                 count: { kind: 'upTo', value: 1 },
                 destination: 'hand',
               },
@@ -3224,7 +3522,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'nico-robin-087-10-trash-blocker',
             text: 'If you have 10 or more cards in your trash, this Character gains [Blocker].',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
             },
             conditions: [
               {
@@ -3245,7 +3547,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 2 },
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 2 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 2 },
+                },
               },
             ],
           },
@@ -3264,7 +3570,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'pirates-docking-six-plus-6-cost',
             text: 'This Character gains +6 cost.',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               cost: 6,
             },
           },
@@ -3275,13 +3585,20 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'pirates-docking-six-on-play-trash-3-play-straw-hat-from-trash',
             text: '[On Play] You may trash 3 cards from the top of your deck: Play up to 1 {Straw Hat Crew} type Character card with a cost of 2 or less from your trash.',
             trigger: { type: 'onPlay', optional: true },
-            costs: [
-              { type: 'trashFromDeck', player: 'self', amount: 3 },
-            ],
+            costs: [{ type: 'trashFromDeck', player: 'self', amount: 3 }],
             actions: [
               {
                 type: 'play',
-                selector: { player: 'self', zones: ['trash'], filter: { cardCategory: ['Character'], trait: ['Straw Hat Crew'], costMax: 2 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Straw Hat Crew'],
+                    costMax: 2,
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destination: 'characters',
               },
             ],
@@ -3304,16 +3621,18 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'replacement',
           effect: {
             id: 'perona-replacement-trash-hand-instead-of-removal',
-            text: 'If your Character with 7000 base power or less would be removed from the field by your opponent\'s effect, you may trash 1 card from your hand instead.',
+            text: "If your Character with 7000 base power or less would be removed from the field by your opponent's effect, you may trash 1 card from your hand instead.",
             event: 'wouldMoveCard',
             optional: true,
-            conditions: [
-              { type: 'eventReasonIs', value: 'effect' },
-            ],
+            conditions: [{ type: 'eventReasonIs', value: 'effect' }],
             replacement: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
           },
@@ -3329,12 +3648,16 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'margarita-on-play-bottom-deck-opponent-trash',
-            text: '[On Play] Place up to 1 card from your opponent\'s trash at the bottom of the owner\'s deck.',
+            text: "[On Play] Place up to 1 card from your opponent's trash at the bottom of the owner's deck.",
             trigger: { type: 'onPlay' },
             actions: [
               {
                 type: 'moveCard',
-                selector: { player: 'opponent', zones: ['trash'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['trash'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destinationPlayer: 'selectedCardOwner',
                 destinationZone: 'deck',
                 toBottom: true,
@@ -3356,9 +3679,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'luffy-092-10-trash-base-9000-plus-10-cost',
-            text: 'If there are 10 or more cards, this Character\'s base power becomes 9000 and it gains +10 cost.',
+            text: "If there are 10 or more cards, this Character's base power becomes 9000 and it gains +10 cost.",
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 2000,
               cost: 10,
             },
@@ -3381,7 +3708,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'luffy-092-30-trash-plus-1000',
             text: 'If you have 30 or more cards, this Character gains +1000 power.',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 1000,
             },
             conditions: [
@@ -3409,7 +3740,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'trash',
               },
@@ -3424,7 +3760,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'grantKeywords',
-                selector: { player: 'self', zones: ['characters'], filter: { name: ['Monkey.D.Luffy'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { name: ['Monkey.D.Luffy'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 keywords: ['rush'],
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -3443,20 +3784,32 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'replacement',
           effect: {
             id: 'zoro-094-replacement-trash-self-instead-of-straw-hat-removal',
-            text: 'If your {Straw Hat Crew} type Character other than this Character would be removed from the field by your opponent\'s effect, you may trash this Character instead.',
+            text: "If your {Straw Hat Crew} type Character other than this Character would be removed from the field by your opponent's effect, you may trash this Character instead.",
             event: 'wouldMoveCard',
             optional: true,
             conditions: [
               { type: 'eventReasonIs', value: 'effect' },
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['characters'], filter: { cardCategory: ['Character'], trait: ['Straw Hat Crew'] } },
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Straw Hat Crew'],
+                  },
+                },
               },
             ],
             replacement: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'trash',
               },
@@ -3494,7 +3847,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { trait: ['Straw Hat Crew'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { trait: ['Straw Hat Crew'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 3000,
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -3517,7 +3875,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 4000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -3546,11 +3908,13 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               },
             ],
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Straw Hat Crew' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Straw Hat Crew',
+              },
             ],
-            actions: [
-              { type: 'trashFromDeck', player: 'self', amount: 5 },
-            ],
+            actions: [{ type: 'trashFromDeck', player: 'self', amount: 5 }],
           },
         },
         {
@@ -3562,13 +3926,21 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 amount: 3000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -3587,7 +3959,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'embarrassing-main-10-trash-restrict-attack',
-            text: '[Main] If you have 10 or more cards in your trash, up to 1 of your opponent\'s Characters with a base cost of 5 or less cannot attack until the end of your opponent\'s next End Phase.',
+            text: "[Main] If you have 10 or more cards in your trash, up to 1 of your opponent's Characters with a base cost of 5 or less cannot attack until the end of your opponent's next End Phase.",
             trigger: { type: 'activateMain' },
             conditions: [
               {
@@ -3599,7 +3971,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'restrictAttack',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], baseCostMax: 5 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], baseCostMax: 5 },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 turns: 1,
               },
             ],
@@ -3609,7 +3986,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'embarrassing-trigger-activate-main',
-            text: '[Trigger] Activate this card\'s [Main] effect.',
+            text: "[Trigger] Activate this card's [Main] effect.",
             trigger: { type: 'trigger' },
             actions: [
               {
@@ -3638,13 +4015,26 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'eventReasonIs', value: 'effect' },
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['characters'], filter: { cardCategory: ['Character'], trait: ['Sky Island'], basePowerMin: 6000 } },
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Sky Island'],
+                    basePowerMin: 6000,
+                  },
+                },
               },
             ],
             replacement: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'hand',
               },
@@ -3668,13 +4058,23 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], filter: { trait: ['Supernovas'] }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { trait: ['Supernovas'] },
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [
               {
                 type: 'grantKeywords',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 keywords: ['rush'],
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -3690,7 +4090,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'life',
                 faceDown: true,
@@ -3699,7 +4104,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'attachDon',
-                selector: { player: 'self', zones: ['leader', 'characters'], count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: { kind: 'upTo', value: 1 },
+                },
                 player: 'self',
                 amount: 1,
                 rested: true,
@@ -3718,18 +4127,28 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'kamakiri-on-play-trash-self-life-to-hand-ko-cost-6-or-less',
-            text: '[On Play] You may trash this Character and add 1 card from the top of your Life cards to your hand: K.O. up to 1 of your opponent\'s Characters with a cost of 6 or less.',
+            text: "[On Play] You may trash this Character and add 1 card from the top of your Life cards to your hand: K.O. up to 1 of your opponent's Characters with a cost of 6 or less.",
             trigger: { type: 'onPlay', optional: true },
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', source: 'effectSource', zones: ['characters'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'trash',
               },
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'hand',
               },
@@ -3737,7 +4156,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'ko',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], costMax: 6 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 6 },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 reason: 'effect',
               },
             ],
@@ -3759,7 +4183,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [
@@ -3794,7 +4222,15 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             conditions: [
               {
                 type: 'targetExists',
-                selector: { player: 'self', zones: ['characters'], filter: { cardCategory: ['Character'], trait: ['Sky Island'], powerMin: 7000 } },
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Sky Island'],
+                    powerMin: 7000,
+                  },
+                },
               },
             ],
             actions: [
@@ -3812,12 +4248,17 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'ganfall-on-play-rest-cost-equal-or-less-opponent-life',
-            text: '[On Play] Rest up to 1 of your opponent\'s Characters with a cost equal to or less than the number of your opponent\'s Life cards.',
+            text: "[On Play] Rest up to 1 of your opponent's Characters with a cost equal to or less than the number of your opponent's Life cards.",
             trigger: { type: 'onPlay' },
             actions: [
               {
                 type: 'rest',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
               },
             ],
           },
@@ -3835,9 +4276,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'genbo-trigger-draw-1-play-if-life-2-or-less',
             text: '[Trigger] Draw 1 card. Then, if you have 2 or less Life cards, play this card.',
             trigger: { type: 'trigger' },
-            actions: [
-              { type: 'draw', player: 'self', amount: 1 },
-            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
             conditions: [
               { type: 'playerHasLifeAtMost', player: 'self', value: 2 },
             ],
@@ -3858,13 +4297,21 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[On Play] If you have less Life cards than your opponent, draw 2 cards and trash 2 cards from your hand.',
             trigger: { type: 'onPlay' },
             conditions: [
-              { type: 'playerHasLessLifeThan', player: 'self', thanPlayer: 'opponent' },
+              {
+                type: 'playerHasLessLifeThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+              },
             ],
             actions: [
               { type: 'draw', player: 'self', amount: 2 },
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 2 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 2 },
+                },
               },
             ],
           },
@@ -3879,7 +4326,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 2 },
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
           },
@@ -3895,16 +4346,19 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'replacement',
           effect: {
             id: 'jewelry-bonney-replacement-life-to-hand-instead-of-removal',
-            text: 'If your Character with 7000 base power or less would be removed from the field by your opponent\'s effect, you may add 1 card from the top of your Life cards to your hand instead.',
+            text: "If your Character with 7000 base power or less would be removed from the field by your opponent's effect, you may add 1 card from the top of your Life cards to your hand instead.",
             event: 'wouldMoveCard',
             optional: true,
-            conditions: [
-              { type: 'eventReasonIs', value: 'effect' },
-            ],
+            conditions: [{ type: 'eventReasonIs', value: 'effect' }],
             replacement: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'hand',
               },
@@ -3928,7 +4382,16 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 1 },
               {
                 type: 'play',
-                selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Character', 'Stage'], color: ['Yellow'], costMax: 2 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: {
+                    cardCategory: ['Character', 'Stage'],
+                    color: ['Yellow'],
+                    costMax: 2,
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destination: 'characters',
               },
             ],
@@ -3984,24 +4447,47 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'hand',
               },
             ],
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Straw Hat Crew' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Straw Hat Crew',
+              },
             ],
             actions: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['deck'], filter: { zonePosition: 'top' }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['deck'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'life',
               },
               {
                 type: 'play',
-                selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Character'], trait: ['Sky Island'], costMax: 5 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Sky Island'],
+                    costMax: 5,
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destination: 'characters',
               },
             ],
@@ -4021,12 +4507,21 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[On K.O.] If your Leader has the {Shandian Warrior} type, add up to 1 card from the top of your deck to the top of your Life cards.',
             trigger: { type: 'onKo' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Shandian Warrior' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Shandian Warrior',
+              },
             ],
             actions: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['deck'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['deck'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'life',
               },
@@ -4047,13 +4542,16 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'mont-blanc-noland-don-1-when-attacking-kalgara-rush',
             text: '[DON!! x1] [When Attacking] Up to 1 of your [Kalgara] cards gains [Rush] during this turn.',
             trigger: { type: 'whenAttacking' },
-            conditions: [
-              { type: 'sourceHasAttachedDonAtLeast', value: 1 },
-            ],
+            conditions: [{ type: 'sourceHasAttachedDonAtLeast', value: 1 }],
             actions: [
               {
                 type: 'grantKeywords',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { name: ['Kalgara'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { name: ['Kalgara'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 keywords: ['rush'],
                 duration: { type: 'untilEndOfTurn' },
               },
@@ -4077,7 +4575,16 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'play',
-                selector: { player: 'self', zones: ['hand'], filter: { cardCategory: ['Character'], trait: ['Shandian Warrior'], costMax: 3 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    trait: ['Shandian Warrior'],
+                    costMax: 3,
+                  },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destination: 'characters',
               },
             ],
@@ -4099,13 +4606,22 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             costs: [
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
             actions: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['deck'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['deck'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'life',
               },
@@ -4124,7 +4640,7 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'wyper-on-play-life-face-up-all-opponent-minus-2000-ko-0-power',
-            text: '[On Play] You may turn 1 card from the top of your Life cards face-up: Give all of your opponent\'s Characters 2000 power during this turn. Then, K.O. all of your opponent\'s Characters with 0 power or less.',
+            text: "[On Play] You may turn 1 card from the top of your Life cards face-up: Give all of your opponent's Characters 2000 power during this turn. Then, K.O. all of your opponent's Characters with 0 power or less.",
             trigger: { type: 'onPlay', optional: true },
             costs: [
               {
@@ -4137,13 +4653,21 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'] } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                },
                 amount: -2000,
                 duration: { type: 'untilEndOfTurn' },
               },
               {
                 type: 'koAllCharacters',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], powerMax: 0 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], powerMax: 0 },
+                },
                 excludeSource: true,
                 reason: 'effect',
               },
@@ -4159,7 +4683,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'attachDon',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { trait: ['Sky Island'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { trait: ['Sky Island'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 player: 'self',
                 amount: 1,
                 rested: true,
@@ -4178,17 +4707,27 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'impact-dial-main-ko-cost-4-or-less-life-to-hand',
-            text: '[Main] K.O. up to 1 of your opponent\'s Characters with a cost of 4 or less. Then, add 1 card from the top of your Life cards to your hand.',
+            text: "[Main] K.O. up to 1 of your opponent's Characters with a cost of 4 or less. Then, add 1 card from the top of your Life cards to your hand.",
             trigger: { type: 'activateMain' },
             actions: [
               {
                 type: 'ko',
-                selector: { player: 'opponent', zones: ['characters'], filter: { cardCategory: ['Character'], costMax: 4 }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'], costMax: 4 },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 reason: 'effect',
               },
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'hand',
               },
@@ -4210,24 +4749,42 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[Main] If your Leader has the {Straw Hat Crew} type, trash 1 card from the top of your Life cards. Then, add up to 1 card from the top of your deck to the top of your Life cards and trash 1 card from your hand.',
             trigger: { type: 'activateMain' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Straw Hat Crew' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Straw Hat Crew',
+              },
             ],
             actions: [
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['life'], filter: { zonePosition: 'top' }, count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'exact', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'trash',
               },
               {
                 type: 'moveCard',
-                selector: { player: 'self', zones: ['deck'], filter: { zonePosition: 'top' }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['deck'],
+                  filter: { zonePosition: 'top' },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 destinationPlayer: 'self',
                 destinationZone: 'life',
               },
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
           },
@@ -4241,7 +4798,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             actions: [
               {
                 type: 'modifyPower',
-                selector: { player: 'self', zones: ['leader'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader'],
+                  count: { kind: 'exact', value: 1 },
+                },
                 amount: 4000,
                 duration: { type: 'untilEndOfBattle' },
               },
@@ -4266,7 +4827,12 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               { type: 'draw', player: 'self', amount: 1 },
               {
                 type: 'attachDon',
-                selector: { player: 'self', zones: ['leader', 'characters'], filter: { trait: ['Sky Island'] }, count: { kind: 'upTo', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  filter: { trait: ['Sky Island'] },
+                  count: { kind: 'upTo', value: 1 },
+                },
                 player: 'self',
                 amount: 1,
                 rested: true,
@@ -4281,7 +4847,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             text: '[Trigger] If your Leader has the {Sky Island} type, draw 2 cards.',
             trigger: { type: 'trigger' },
             conditions: [
-              { type: 'playerHasLeaderTrait', player: 'self', value: 'Sky Island' },
+              {
+                type: 'playerHasLeaderTrait',
+                player: 'self',
+                value: 'Sky Island',
+              },
             ],
             actions: [{ type: 'draw', player: 'self', amount: 2 }],
           },
@@ -4298,14 +4868,23 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'enel-118-6-or-less-don-cannot-be-removed-plus-2000',
-            text: 'If you have 6 or less DON!! cards on your field, this Character cannot be removed from the field by your opponent\'s effects and gains +2000 power.',
+            text: "If you have 6 or less DON!! cards on your field, this Character cannot be removed from the field by your opponent's effects and gains +2000 power.",
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               power: 2000,
               keywords: ['cannotBeRemovedByOpponentEffects'],
             },
             conditions: [
-              { type: 'playerHasAtLeastTotalDonLessThan', player: 'self', thanPlayer: 'opponent', value: 7 },
+              {
+                type: 'playerHasAtLeastTotalDonLessThan',
+                player: 'self',
+                thanPlayer: 'opponent',
+                value: 7,
+              },
             ],
           },
         },
@@ -4336,7 +4915,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
               },
               {
                 type: 'trashFromHand',
-                selector: { player: 'self', zones: ['hand'], count: { kind: 'exact', value: 1 } },
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: { kind: 'exact', value: 1 },
+                },
               },
             ],
           },
@@ -4355,7 +4938,11 @@ export const op15EffectDefinitions: EditionEffectDefinitions = {
             id: 'luffy-119-6-or-more-don-rush',
             text: 'If you have 6 or more DON!! cards on your field, this Character gains [Rush].',
             modifier: {
-              selector: { player: 'self', source: 'effectSource', zones: ['characters'] },
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
               keywords: ['rush'],
             },
             conditions: [

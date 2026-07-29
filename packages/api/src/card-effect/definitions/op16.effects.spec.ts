@@ -16,7 +16,10 @@ const createRegistry = (): EffectRegistry => {
           resolved.continuous = [...(resolved.continuous ?? []), entry.effect];
           break;
         case 'replacement':
-          resolved.replacements = [...(resolved.replacements ?? []), entry.effect];
+          resolved.replacements = [
+            ...(resolved.replacements ?? []),
+            entry.effect,
+          ];
           break;
         case 'special-ref':
           resolved.specialHandlerId = entry.specialHandlerId;
@@ -120,7 +123,9 @@ describe('op16EffectDefinitions', () => {
 
       const trigger = card.standard![1];
       expect(trigger.trigger.type).toBe('trigger');
-      expect(trigger.actions.some((a) => a.type === 'activateEffect')).toBe(true);
+      expect(trigger.actions.some((a) => a.type === 'activateEffect')).toBe(
+        true,
+      );
     });
   });
 
@@ -174,9 +179,18 @@ describe('op16EffectDefinitions', () => {
 
   describe('cards with no effects have empty arrays', () => {
     const noEffectCards = [
-      'OP16-004', 'OP16-016', 'OP16-023', 'OP16-028',
-      'OP16-042', 'OP16-044', 'OP16-046', 'OP16-061',
-      'OP16-062', 'OP16-086', 'OP16-088', 'OP16-112',
+      'OP16-004',
+      'OP16-016',
+      'OP16-023',
+      'OP16-028',
+      'OP16-042',
+      'OP16-044',
+      'OP16-046',
+      'OP16-061',
+      'OP16-062',
+      'OP16-086',
+      'OP16-088',
+      'OP16-112',
     ];
 
     for (const cardId of noEffectCards) {
@@ -233,7 +247,9 @@ describe('op16EffectDefinitions', () => {
       const effect = card.standard![0];
       expect(effect.trigger.type).toBe('activateMain');
       expect(effect.costs?.some((c) => c.type === 'rest')).toBe(true);
-      expect(effect.conditions?.some((c) => c.type === 'targetCountAtLeast')).toBe(true);
+      expect(
+        effect.conditions?.some((c) => c.type === 'targetCountAtLeast'),
+      ).toBe(true);
       const restandAction = effect.actions.find((a) => a.type === 'restand');
       expect(restandAction).toBeDefined();
     });
@@ -259,7 +275,9 @@ describe('op16EffectDefinitions', () => {
       expect(card).toBeDefined();
       const effect = card.standard![0];
       expect(effect.trigger.type).toBe('trigger');
-      expect(effect.conditions?.some((c) => c.type === 'playerHasLifeAtMost')).toBe(true);
+      expect(
+        effect.conditions?.some((c) => c.type === 'playerHasLifeAtMost'),
+      ).toBe(true);
     });
   });
 
@@ -269,7 +287,11 @@ describe('op16EffectDefinitions', () => {
       expect(card).toBeDefined();
       expect(card.continuous?.length).toBe(1);
       expect(card.standard?.length).toBe(1);
-      expect(card.continuous![0].conditions?.some((c) => c.type === 'playerHasLifeAtMost')).toBe(true);
+      expect(
+        card.continuous![0].conditions?.some(
+          (c) => c.type === 'playerHasLifeAtMost',
+        ),
+      ).toBe(true);
       expect(card.standard![0].trigger.type).toBe('trigger');
     });
   });

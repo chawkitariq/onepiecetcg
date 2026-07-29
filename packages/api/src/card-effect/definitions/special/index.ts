@@ -168,7 +168,6 @@ import { op14111SpecialHandler } from './op14-111.special';
 import { op14115SpecialHandler } from './op14-115.special';
 import { op14119SpecialHandler } from './op14-119.special';
 
-
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op04040SpecialHandler,
   op04047SpecialHandler,

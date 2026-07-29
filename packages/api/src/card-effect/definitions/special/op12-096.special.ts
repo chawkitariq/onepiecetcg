@@ -1,11 +1,45 @@
+import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
+/**
+ * OP12-096
+ * [Activate: Main] [Once Per Turn] Trash 2 from hand: Set up to 2 DON!! active.
+ */
 export const op12096SpecialHandler: SpecialHandlerDefinition = {
   id: 'op12-096-special',
   cardId: 'OP12-096',
   resolve(event, engine) {
-    // TODO: Implement special handler for OP12-096
-    // [Main] K.O. up to 1 of your opponent's Characters with a cost of 4 or less.
-    // If you have a Character with a cost of 8 or more, you may select your opponent's Character with a cost of 6 or less instead.
+    if (event.type !== 'activateMain') return;
+
+    const definition: StandardEffectDefinition = {
+      id: 'op12-096-activate-main',
+      text: '[Activate: Main] [Once Per Turn] Trash 2 from hand: Set up to 2 DON!! active.',
+      trigger: { type: 'activateMain', oncePerTurn: true },
+      costs: [
+        {
+          type: 'trashFromHand',
+          selector: {
+            player: 'self',
+            zones: ['hand'],
+            count: { kind: 'exact', value: 2 },
+          },
+        },
+      ],
+      actions: [
+        {
+          type: 'addDon',
+          player: 'self',
+          amount: 2,
+          rested: false,
+        },
+      ],
+    };
+
+    engine.queueEffect(
+      event.playerSessionId,
+      event.sourceInstanceId,
+      event.sourceCardId,
+      definition,
+    );
   },
 };
