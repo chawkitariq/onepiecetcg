@@ -120,14 +120,18 @@ def normalize_card(payload: dict[str, Any]) -> CatalogCard | None:
         or set_id
     ).strip()
 
+    raw_colors = first_value(payload, "card_color", "cardColor", "colors", "color")
+    if isinstance(raw_colors, str):
+        colors = [c.strip() for c in re.split(r"[/,\s]+", raw_colors) if c.strip()]
+    else:
+        colors = to_string_list(raw_colors)
+
     return CatalogCard(
         id=card_id,
         number=card_id,
         name=str(name).strip(),
         type=str(first_value(payload, "card_type", "cardType", "type") or "").strip(),
-        colors=to_string_list(
-            first_value(payload, "card_color", "cardColor", "colors", "color")
-        ),
+        colors=colors,
         cost=parse_int(first_value(payload, "card_cost", "cost")),
         power=parse_int(first_value(payload, "card_power", "power")),
         life=parse_int(first_value(payload, "life", "card_life")),
