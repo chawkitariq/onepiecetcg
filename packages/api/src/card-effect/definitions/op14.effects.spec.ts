@@ -380,6 +380,22 @@ class TestHost implements EffectEngineHost {
   }
   public syncPlayer(_playerSessionId: string): void {}
 
+  public playCard(
+    card: DuelCard,
+    controllerSessionId: string,
+    zone: string,
+  ): void {
+    this.removeCard(card.instanceId);
+    const player = this.getPlayer(controllerSessionId);
+    if (!player) return;
+    card.ownerSessionId = controllerSessionId;
+    if (zone === 'characters') {
+      player.zones.characters.push(card);
+    } else if (zone === 'stage') {
+      player.zones.stage = card;
+    }
+  }
+
   public addCardToZone(
     playerSessionId: string,
     zone: string,
@@ -556,5 +572,1261 @@ describe('op14EffectDefinitions', () => {
     for (const id of expected) {
       expect(handlerIds).toContain(id);
     }
+  });
+});
+
+describe('OP14 behavioral tests', () => {
+  function addDonCards(host: TestHost, sessionId: string, count: number): void {
+    for (let i = 0; i < count; i++) {
+      host.addCardToZone(
+        sessionId,
+        'donDeck',
+        makeCard({
+          id: `DON${i}`,
+          number: `DON${i}`,
+          name: 'DON!!',
+          type: 'DON!!',
+        }),
+        `don-${i}`,
+      );
+    }
+  }
+
+  it('OP14-002 Urouge draws 1 and KOs 3000-power opponent when attacking with 5000+ power', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW1',
+        number: 'DRAW1',
+        name: 'Draw',
+        type: 'Character',
+      }),
+      'd1',
+    );
+    const opponent = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'OPP',
+        number: 'OPP',
+        name: 'Target',
+        type: 'Character',
+        power: 3000,
+      }),
+      'opp',
+    );
+    const urouge = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-002',
+        number: 'OP14-002',
+        name: 'Urouge',
+        type: 'Character',
+        power: 5000,
+      }),
+      'urouge',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: urouge.instanceId,
+      sourceCardId: urouge.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(1);
+
+    const koDecision = engine.getPendingDecision();
+    expect(koDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: koDecision!.id,
+      selectedCardInstanceIds: [opponent.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(opponent);
+    expect(host.getPlayer('p2')?.zones.trash[0]).toBe(opponent);
+  });
+
+  it('OP14-005 Killer attachDon activateMain once per turn', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const killer = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-005',
+        number: 'OP14-005',
+        name: 'Killer',
+        type: 'Character',
+      }),
+      'killer',
+    );
+    addDonCards(host, 'p1', 5);
+    host.addDonToCost('p1', 5, true);
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: killer.instanceId,
+      sourceCardId: killer.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [killer.instanceId],
+    });
+
+    expect(killer.attachedDon).toBe(1);
+  });
+
+  it('OP14-013 Luffy gives opponent -1000 power when attacking', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const luffy = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-013',
+        number: 'OP14-013',
+        name: 'Monkey.D.Luffy',
+        type: 'Character',
+      }),
+      'luffy',
+    );
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT',
+        number: 'TGT',
+        name: 'Target',
+        type: 'Character',
+        power: 5000,
+      }),
+      'tgt',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: luffy.instanceId,
+      sourceCardId: luffy.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(target.power).toBe(4000);
+  });
+
+  it('OP14-018 Time for Counterattack trigger plays red 2000-power character from hand', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const event = host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP14-018',
+        number: 'OP14-018',
+        name: 'Time for Counterattack',
+        type: 'Event',
+      }),
+      'ev',
+    );
+    const redChar = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'RED1',
+        number: 'RED1',
+        name: 'Red Fighter',
+        type: 'Character',
+        colors: ['Red'],
+        power: 2000,
+      }),
+      'redChar',
+    );
+
+    engine.handleEvent({
+      type: 'trigger',
+      playerSessionId: 'p1',
+      sourceInstanceId: event.instanceId,
+      sourceCardId: event.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [redChar.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.characters).toContain(redChar);
+    expect(host.getPlayer('p1')?.zones.hand).not.toContain(redChar);
+  });
+
+  it('OP14-023 Kikunojo restands at end of turn', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const kikunojo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-023',
+        number: 'OP14-023',
+        name: 'Kikunojo',
+        type: 'Character',
+      }),
+      'kiku',
+    );
+    kikunojo.rested = true;
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p1',
+      sourceInstanceId: kikunojo.instanceId,
+      sourceCardId: kikunojo.cardId,
+    });
+
+    expect(kikunojo.rested).toBe(false);
+  });
+
+  it('OP14-024 Kinemon unrests DON!! on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const kinemon = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-024',
+        number: 'OP14-024',
+        name: 'Kinemon',
+        type: 'Character',
+      }),
+      'kine',
+    );
+    addDonCards(host, 'p1', 5);
+    host.addDonToCost('p1', 5, true);
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: kinemon.instanceId,
+      sourceCardId: kinemon.cardId,
+    });
+
+    const costDon = host.getPlayer('p1')?.zones.cost ?? [];
+    const activeDon = costDon.filter((d) => !d.rested).length;
+    expect(activeDon).toBeGreaterThanOrEqual(3);
+  });
+
+  it('OP14-031 Nami rests 2 opponent characters with cost 8 or less on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const nami = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-031',
+        number: 'OP14-031',
+        name: 'Nami',
+        type: 'Character',
+      }),
+      'nami',
+    );
+    const opp1 = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'OPP1',
+        number: 'OPP1',
+        name: 'Fodder',
+        type: 'Character',
+        cost: 3,
+      }),
+      'opp1',
+    );
+    const opp2 = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'OPP2',
+        number: 'OPP2',
+        name: 'Fodder2',
+        type: 'Character',
+        cost: 5,
+      }),
+      'opp2',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: nami.instanceId,
+      sourceCardId: nami.cardId,
+    });
+
+    expect(opp1.rested).toBe(true);
+    expect(opp2.rested).toBe(true);
+  });
+
+  it('OP14-047 Shirahoshi draws 1 and plays fish-man from hand on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'DEK1', number: 'DEK1', name: 'Draw', type: 'Character' }),
+      'dek1',
+    );
+    const fishMan = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'FISH',
+        number: 'FISH',
+        name: 'Fish-Man Fighter',
+        type: 'Character',
+        families: ['Fish-Man'],
+        cost: 3,
+      }),
+      'fish',
+    );
+    const shirahoshi = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-047',
+        number: 'OP14-047',
+        name: 'Shirahoshi',
+        type: 'Character',
+      }),
+      'shira',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: shirahoshi.instanceId,
+      sourceCardId: shirahoshi.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(2);
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [fishMan.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.characters).toContain(fishMan);
+    expect(host.getPlayer('p1')?.zones.hand).not.toContain(fishMan);
+  });
+
+  it('OP14-048 Shiryu bounces 1 opponent character and trashes entire hand on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const shiryu = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-048',
+        number: 'OP14-048',
+        name: 'Shiryu',
+        type: 'Character',
+      }),
+      'shiryu',
+    );
+    const opponent = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'OPP',
+        number: 'OPP',
+        name: 'Bouncer',
+        type: 'Character',
+      }),
+      'opp',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'H1', number: 'H1', name: 'Card1', type: 'Character' }),
+      'h1',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'H2', number: 'H2', name: 'Card2', type: 'Character' }),
+      'h2',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: shiryu.instanceId,
+      sourceCardId: shiryu.cardId,
+    });
+
+    const bounceDecision = engine.getPendingDecision();
+    expect(bounceDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: bounceDecision!.id,
+      selectedCardInstanceIds: [opponent.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(opponent);
+    expect(host.getPlayer('p2')?.zones.hand).toContain(opponent);
+
+    const trashDecision = engine.getPendingDecision();
+    expect(trashDecision?.prompt.type).toBe('selectCards');
+    const handCards = host.getPlayer('p1')?.zones.hand ?? [];
+    engine.answerDecision({
+      decisionId: trashDecision!.id,
+      selectedCardInstanceIds: handCards.map((c) => c.instanceId),
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(0);
+    expect(host.getPlayer('p1')?.zones.trash.length).toBe(2);
+  });
+
+  it('OP14-064 Giolla adds 1 rested DON!! and KOs 0-base-power character on KO', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    addDonCards(host, 'p1', 1);
+    const giolla = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-064',
+        number: 'OP14-064',
+        name: 'Giolla',
+        type: 'Character',
+      }),
+      'giolla',
+    );
+    const zeroPower = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'ZERO',
+        number: 'ZERO',
+        name: 'ZeroPower',
+        type: 'Character',
+        power: 0,
+      }),
+      'zero',
+    );
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: giolla.instanceId,
+      sourceCardId: giolla.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost.length).toBe(1);
+    expect(host.getPlayer('p1')?.zones.cost[0].rested).toBe(true);
+
+    const koDecision = engine.getPendingDecision();
+    expect(koDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: koDecision!.id,
+      selectedCardInstanceIds: [zeroPower.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(zeroPower);
+    expect(host.getPlayer('p2')?.zones.trash[0]).toBe(zeroPower);
+  });
+
+  it('OP14-081 Spider Mice trashes 3 from deck on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D1', number: 'D1', name: 'Top1', type: 'Character' }),
+      'd1',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D2', number: 'D2', name: 'Top2', type: 'Character' }),
+      'd2',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D3', number: 'D3', name: 'Top3', type: 'Character' }),
+      'd3',
+    );
+    const mice = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-081',
+        number: 'OP14-081',
+        name: 'Spider Mice',
+        type: 'Character',
+      }),
+      'mice',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: mice.instanceId,
+      sourceCardId: mice.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.trash.length).toBe(3);
+    expect(host.getPlayer('p1')?.zones.deck.length).toBe(0);
+  });
+
+  it('OP14-085 Miss Goldenweek draws 2 and trashes 2 on KO', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D1', number: 'D1', name: 'Draw1', type: 'Character' }),
+      'd1',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D2', number: 'D2', name: 'Draw2', type: 'Character' }),
+      'd2',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'H1', number: 'H1', name: 'Trash1', type: 'Character' }),
+      'h1',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'H2', number: 'H2', name: 'Trash2', type: 'Character' }),
+      'h2',
+    );
+    const goldenweek = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-085',
+        number: 'OP14-085',
+        name: 'Miss Goldenweek',
+        type: 'Character',
+      }),
+      'goldenweek',
+    );
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: goldenweek.instanceId,
+      sourceCardId: goldenweek.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(4);
+
+    const trashDecision = engine.getPendingDecision();
+    expect(trashDecision?.prompt.type).toBe('selectCards');
+    const handCards = host.getPlayer('p1')?.zones.hand ?? [];
+    engine.answerDecision({
+      decisionId: trashDecision!.id,
+      selectedCardInstanceIds: handCards.slice(0, 2).map((c) => c.instanceId),
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(2);
+    expect(host.getPlayer('p1')?.zones.trash.length).toBe(2);
+  });
+
+  it('OP14-001 Trafalgar Law special swaps base power of 2 Supernovas characters', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const law = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-001',
+        number: 'OP14-001',
+        name: 'Trafalgar Law',
+        type: 'Character',
+      }),
+      'law',
+    );
+    const weak = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'WEAK',
+        number: 'WEAK',
+        name: 'Weak Supernova',
+        type: 'Character',
+        power: 2000,
+        families: ['Supernovas'],
+      }),
+      'weak',
+    );
+    const strong = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'STRONG',
+        number: 'STRONG',
+        name: 'Strong Supernova',
+        type: 'Character',
+        power: 7000,
+        families: ['Supernovas'],
+      }),
+      'strong',
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: law.instanceId,
+      sourceCardId: law.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [weak.instanceId, strong.instanceId],
+    });
+
+    expect(weak.power).toBe(7000);
+    expect(strong.power).toBe(2000);
+  });
+
+  it('OP14-016 X.Drake special gives -2000 power when attacking with DON!! x1', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const drake = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-016',
+        number: 'OP14-016',
+        name: 'X.Drake',
+        type: 'Character',
+      }),
+      'drake',
+    );
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT',
+        number: 'TGT',
+        name: 'Target',
+        type: 'Character',
+        power: 5000,
+      }),
+      'tgt',
+    );
+    drake.attachedDon = 1;
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: drake.instanceId,
+      sourceCardId: drake.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(target.power).toBe(3000);
+  });
+
+  it('OP14-028 Johnny special KOs opponent rested cost 2 character when becoming rested on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const johnny = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-028',
+        number: 'OP14-028',
+        name: 'Johnny',
+        type: 'Character',
+        power: 3000,
+      }),
+      'johnny',
+    );
+    johnny.rested = true;
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT',
+        number: 'TGT',
+        name: 'Rested Fodder',
+        type: 'Character',
+        cost: 2,
+      }),
+      'tgt',
+    );
+    target.rested = true;
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: johnny.instanceId,
+      sourceCardId: johnny.cardId,
+    });
+
+    const koDecision = engine.getPendingDecision();
+    expect(koDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: koDecision!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(target);
+    expect(host.getPlayer('p2')?.zones.trash[0]).toBe(target);
+  });
+
+  it('OP14-045 Kuroobi special draws 1 on KO', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D1', number: 'D1', name: 'Draw', type: 'Character' }),
+      'd1',
+    );
+    const kuroobi = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-045',
+        number: 'OP14-045',
+        name: 'Kuroobi',
+        type: 'Character',
+      }),
+      'kuroobi',
+    );
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(0);
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: kuroobi.instanceId,
+      sourceCardId: kuroobi.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(1);
+  });
+
+  it('OP14-061 Vergo special gives opponent -2000 power when attacking with DON!! x1', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const vergo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-061',
+        number: 'OP14-061',
+        name: 'Vergo',
+        type: 'Character',
+      }),
+      'vergo',
+    );
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT',
+        number: 'TGT',
+        name: 'Target',
+        type: 'Character',
+        power: 5000,
+      }),
+      'tgt',
+    );
+    vergo.attachedDon = 1;
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: vergo.instanceId,
+      sourceCardId: vergo.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(target.power).toBe(3000);
+  });
+
+  it('OP14-062 Gladius special KOs opponent 6000-base-power character with DON!! 1 on KO', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const gladius = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-062',
+        number: 'OP14-062',
+        name: 'Gladius',
+        type: 'Character',
+      }),
+      'gladius',
+    );
+    addDonCards(host, 'p1', 1);
+    host.addDonToCost('p1', 1, false);
+    host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT',
+        number: 'TGT',
+        name: 'Victim',
+        type: 'Character',
+        power: 6000,
+      }),
+      'tgt',
+    );
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: gladius.instanceId,
+      sourceCardId: gladius.cardId,
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+    engine.answerDecision({ decisionId: confirmDecision!.id, confirmed: true });
+
+    const modeDecision = engine.getPendingDecision();
+    expect(modeDecision?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({
+      decisionId: modeDecision!.id,
+      selectedChoiceIds: ['ko'],
+    });
+
+    const targetDecision = engine.getPendingDecision();
+    expect(targetDecision?.prompt.type).toBe('selectCards');
+
+    const target = host.getPlayer('p2')?.zones.characters[0];
+    engine.answerDecision({
+      decisionId: targetDecision!.id,
+      selectedCardInstanceIds: [target!.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters.length).toBe(0);
+    expect(host.getPlayer('p1')?.zones.cost.length).toBe(0);
+  });
+
+  it('OP14-069 Doflamingo special KOs opponent 8-cost character with DON!! -3 on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const doflamingo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-069',
+        number: 'OP14-069',
+        name: 'Donquixote Doflamingo',
+        type: 'Character',
+      }),
+      'dofi',
+    );
+    addDonCards(host, 'p1', 3);
+    host.addDonToCost('p1', 3, false);
+    const leader = host.getPlayer('p1')?.zones.leader!;
+    leader.families = ['Donquixote Pirates'];
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT',
+        number: 'TGT',
+        name: 'Victim',
+        type: 'Character',
+        cost: 5,
+      }),
+      'tgt',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: doflamingo.instanceId,
+      sourceCardId: doflamingo.cardId,
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+    engine.answerDecision({ decisionId: confirmDecision!.id, confirmed: true });
+
+    const modeDecision = engine.getPendingDecision();
+    expect(modeDecision?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({
+      decisionId: modeDecision!.id,
+      selectedChoiceIds: ['ko'],
+    });
+
+    const targetDecision = engine.getPendingDecision();
+    expect(targetDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: targetDecision!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(target);
+    expect(host.getPlayer('p1')?.zones.cost.length).toBe(0);
+  });
+
+  it('OP14-092 Mr.3 replacement saves character from KO on opponent turn', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const mr3 = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-092',
+        number: 'OP14-092',
+        name: 'Mr.3',
+        type: 'Character',
+      }),
+      'mr3',
+    );
+    host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({ id: 'T1', number: 'T1', name: 'Trash1', type: 'Character' }),
+      't1',
+    );
+    host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({ id: 'T2', number: 'T2', name: 'Trash2', type: 'Character' }),
+      't2',
+    );
+    host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({ id: 'T3', number: 'T3', name: 'Trash3', type: 'Character' }),
+      't3',
+    );
+
+    host.state.activePlayerSessionId = 'p2';
+
+    const replaced = engine.applyReplacement({
+      type: 'wouldKoCharacter',
+      playerSessionId: 'p1',
+      sourceInstanceId: mr3.instanceId,
+    });
+
+    expect(replaced).toBe(true);
+    expect(host.getPlayer('p1')?.zones.trash.length).toBe(0);
+    expect(host.getPlayer('p1')?.zones.deck.length).toBe(3);
+  });
+
+  it('OP14-010 Basil Hawkins searches 5 deck cards for Supernovas 2000-power on KO', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const hawkins = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-010',
+        number: 'OP14-010',
+        name: 'Basil Hawkins',
+        type: 'Character',
+      }),
+      'hawkins',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'FOUND',
+        number: 'FOUND',
+        name: 'Supernova Buddy',
+        type: 'Character',
+        families: ['Supernovas'],
+        power: 2000,
+      }),
+      'found',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'OTHER',
+        number: 'OTHER',
+        name: 'Other Card',
+        type: 'Character',
+      }),
+      'other',
+    );
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: hawkins.instanceId,
+      sourceCardId: hawkins.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.length).toBe(0);
+
+    const searchDecision = engine.getPendingDecision();
+    expect(searchDecision?.prompt.type).toBe('selectCards');
+    const found = host
+      .getPlayer('p1')
+      ?.zones.deck.find((c) => c.cardId === 'FOUND');
+    if (found) {
+      engine.answerDecision({
+        decisionId: searchDecision!.id,
+        selectedCardInstanceIds: [found.instanceId],
+      });
+    }
+
+    expect(host.getPlayer('p1')?.zones.characters).toContain(
+      host.getPlayer('p1')?.zones.characters.find((c) => c.cardId === 'FOUND'),
+    );
+  });
+
+  it('OP14-017 Chambres special swaps base power of 2 opponent characters', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const chambres = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-017',
+        number: 'OP14-017',
+        name: 'Chambres',
+        type: 'Event',
+      }),
+      'chambres',
+    );
+    const weak = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'WEAK',
+        number: 'WEAK',
+        name: 'Weak Opponent',
+        type: 'Character',
+        power: 2000,
+      }),
+      'weak',
+    );
+    const strong = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'STRONG',
+        number: 'STRONG',
+        name: 'Strong Opponent',
+        type: 'Character',
+        power: 8000,
+      }),
+      'strong',
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: chambres.instanceId,
+      sourceCardId: chambres.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [weak.instanceId, strong.instanceId],
+    });
+
+    expect(weak.power).toBe(8000);
+    expect(strong.power).toBe(2000);
+  });
+
+  it('OP14-065 Senor Pink returns 1 opponent DON!! to deck on KO', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const pink = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-065',
+        number: 'OP14-065',
+        name: 'Senor Pink',
+        type: 'Character',
+      }),
+      'pink',
+    );
+    addDonCards(host, 'p2', 3);
+    host.addDonToCost('p2', 3, false);
+
+    expect(host.getPlayer('p2')?.zones.cost.length).toBe(3);
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: pink.instanceId,
+      sourceCardId: pink.cardId,
+    });
+
+    expect(host.getPlayer('p2')?.zones.cost.length).toBe(2);
+    expect(host.getPlayer('p2')?.zones.donDeck.length).toBe(1);
+  });
+
+  it('OP14-072 Baby 5 adds 1 active DON!! from deck on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const baby5 = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-072',
+        number: 'OP14-072',
+        name: 'Baby 5',
+        type: 'Character',
+      }),
+      'baby5',
+    );
+    addDonCards(host, 'p1', 1);
+
+    expect(host.getPlayer('p1')?.zones.cost.length).toBe(0);
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: baby5.instanceId,
+      sourceCardId: baby5.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost.length).toBe(1);
+    expect(host.getPlayer('p1')?.zones.cost[0].rested).toBe(false);
   });
 });

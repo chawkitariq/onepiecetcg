@@ -1,7 +1,14 @@
 import { describe, expect, it } from '@jest/globals';
 import type { CardEffectDefinition } from '@onepiecetcg/shared';
 import type { EffectRegistry } from '../types/effect-registry';
+import { EffectEngine } from '../effect-engine';
 import { op16EffectDefinitions } from './op16.effects';
+import { specialHandlerDefinitions } from './special';
+import {
+  createRegistry as createFullRegistry,
+  makeCard,
+  TestHost,
+} from './test-utils';
 
 const createRegistry = (): EffectRegistry => {
   const effectsByCardId: Record<string, CardEffectDefinition> = {};
@@ -294,5 +301,721 @@ describe('op16EffectDefinitions', () => {
       ).toBe(true);
       expect(card.standard![0].trigger.type).toBe('trigger');
     });
+  });
+});
+
+describe('op16EffectDefinitions - behavioral tests', () => {
+  function addDonToDonDeck(
+    host: TestHost,
+    playerId: string,
+    count: number,
+  ): void {
+    for (let i = 0; i < count; i++) {
+      host.addCardToZone(
+        playerId,
+        'donDeck',
+        makeCard({
+          id: `DON-${playerId}-${i}`,
+          number: `DON-${playerId}-${i}`,
+          name: 'DON!!',
+          type: 'DON!!',
+          cost: null,
+          power: null,
+          counter: null,
+        }),
+        `don-${playerId}-${i}`,
+      );
+    }
+  }
+
+  function addDonToCost(host: TestHost, playerId: string, count: number): void {
+    for (let i = 0; i < count; i++) {
+      host.addCardToZone(
+        playerId,
+        'cost',
+        makeCard({
+          id: `DON-COST-${playerId}-${i}`,
+          number: `DON-COST-${playerId}-${i}`,
+          name: 'DON!!',
+          type: 'DON!!',
+          cost: null,
+          power: null,
+          counter: null,
+        }),
+        `don-cost-${playerId}-${i}`,
+      );
+    }
+  }
+
+  function confirmOptional(engine: EffectEngine): void {
+    const d = engine.getPendingDecision();
+    if (d?.prompt.type === 'confirm') {
+      engine.answerDecision({ decisionId: d.id, confirmed: true });
+    }
+  }
+
+  function answerSelectCards(engine: EffectEngine, ids: string[]): void {
+    const d = engine.getPendingDecision();
+    expect(d?.prompt.type).toBe('selectCards');
+    engine.answerDecision({ decisionId: d!.id, selectedCardInstanceIds: ids });
+  }
+
+  function answerSelectChoice(engine: EffectEngine, choiceId: string): void {
+    const d = engine.getPendingDecision();
+    expect(d?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({ decisionId: d!.id, selectedChoiceIds: [choiceId] });
+  }
+
+  function freshEngine(): { host: TestHost; engine: EffectEngine } {
+    const h = new TestHost();
+    h.addPlayer('p1');
+    h.addPlayer('p2');
+    const e = new EffectEngine(
+      createFullRegistry([op16EffectDefinitions], specialHandlerDefinitions),
+      h,
+    );
+    return { host: h, engine: e };
+  }
+
+  it('OP16-006 Shanks: rest 2 DON!! to KO opponent 4000-or-less character', () => {
+    const { host, engine } = freshEngine();
+    const shanks = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-006',
+        number: 'OP16-006',
+        name: 'Shanks',
+        type: 'Character',
+      }),
+      's',
+    );
+    addDonToCost(host, 'p1', 2);
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'T1',
+        number: 'T1',
+        name: 'Target',
+        type: 'Character',
+        power: 3000,
+      }),
+      't',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: shanks.instanceId,
+      sourceCardId: shanks.cardId,
+    });
+    confirmOptional(engine);
+    answerSelectCards(engine, [target.instanceId]);
+
+    expect(host.getPlayer('p2')!.zones.characters).not.toContain(target);
+    expect(host.getPlayer('p2')!.zones.trash).toContain(target);
+    expect(
+      host.getPlayer('p1')!.zones.cost.filter((c) => !c.rested),
+    ).toHaveLength(0);
+  });
+
+  it('OP16-008 Squard: trash own 10000-power char to KO opponent 8000-or-less', () => {
+    const { host, engine } = freshEngine();
+    const squard = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-008',
+        number: 'OP16-008',
+        name: 'Squard',
+        type: 'Character',
+      }),
+      's',
+    );
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'SAC',
+        number: 'SAC',
+        name: 'Sacrifice',
+        type: 'Character',
+        power: 10000,
+      }),
+      'sac',
+    );
+    const victim = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'VIC',
+        number: 'VIC',
+        name: 'Victim',
+        type: 'Character',
+        power: 7000,
+      }),
+      'v',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: squard.instanceId,
+      sourceCardId: squard.cardId,
+    });
+    confirmOptional(engine);
+    answerSelectCards(engine, [victim.instanceId]);
+
+    expect(host.getPlayer('p1')!.zones.characters.length).toBe(1);
+    expect(host.getPlayer('p1')!.zones.trash.length).toBe(1);
+    expect(host.getPlayer('p2')!.zones.characters).not.toContain(victim);
+    expect(host.getPlayer('p2')!.zones.trash).toContain(victim);
+  });
+
+  it('OP16-012 Benn Beckman: rest 1 DON, play Shanks from hand', () => {
+    const { host, engine } = freshEngine();
+    const beckman = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-012',
+        number: 'OP16-012',
+        name: 'Benn Beckman',
+        type: 'Character',
+      }),
+      'b',
+    );
+    host.getPlayer('p1')!.zones.leader.families.push('Red-Haired Pirates');
+    addDonToCost(host, 'p1', 10);
+    const shanksCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'SHANKS',
+        number: 'SHANKS',
+        name: 'Shanks',
+        type: 'Character',
+      }),
+      'sh',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: beckman.instanceId,
+      sourceCardId: beckman.cardId,
+    });
+    confirmOptional(engine);
+    answerSelectCards(engine, [shanksCard.instanceId]);
+
+    expect(host.getPlayer('p1')!.zones.hand).not.toContain(shanksCard);
+    expect(host.getPlayer('p1')!.zones.characters).toContain(shanksCard);
+    expect(host.getPlayer('p1')!.zones.cost.every((d) => d.rested)).toBe(true);
+  });
+
+  it('OP16-033 Morley: replacement KO avoided by resting 2 characters/leader', () => {
+    const { host, engine } = freshEngine();
+    const morley = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-033',
+        number: 'OP16-033',
+        name: 'Morley',
+        type: 'Character',
+      }),
+      'm',
+    );
+
+    const replaced = engine.applyReplacement({
+      type: 'wouldKoCharacter',
+      playerSessionId: 'p1',
+      sourceInstanceId: morley.instanceId,
+      reason: 'effect',
+    });
+
+    expect(replaced).toBe(true);
+    expect(host.getPlayer('p1')!.zones.characters).toContain(morley);
+  });
+
+  it('OP16-035 Zoro: On Play rest opponent, choose branch trash & give DON!!', () => {
+    const { host, engine } = freshEngine();
+    const zoro = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-035',
+        number: 'OP16-035',
+        name: 'Roronoa Zoro',
+        type: 'Character',
+      }),
+      'z',
+    );
+    const oppChar = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'O35',
+        number: 'O35',
+        name: 'Opp Char',
+        type: 'Character',
+      }),
+      'o',
+    );
+    addDonToCost(host, 'p1', 3);
+    for (const c of host.getPlayer('p1')!.zones.cost) c.rested = true;
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'TRASH',
+        number: 'TRASH',
+        name: 'Trash Me',
+        type: 'Character',
+      }),
+      'tr',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: zoro.instanceId,
+      sourceCardId: zoro.cardId,
+    });
+    answerSelectChoice(engine, 'trash-and-give-don');
+    answerSelectCards(engine, [host.getPlayer('p1')!.zones.leader.instanceId]);
+
+    expect(oppChar.rested).toBe(true);
+    expect(host.getPlayer('p1')!.zones.hand).toHaveLength(0);
+    expect(host.getPlayer('p1')!.zones.leader.attachedDon).toBe(3);
+  });
+
+  it('OP16-038: rest 6 DON to restand all with 5 distinct Impel Down characters', () => {
+    const { host, engine } = freshEngine();
+    host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP16-038',
+        number: 'OP16-038',
+        name: "Let's Go!!",
+        type: 'Event',
+      }),
+      'e',
+    );
+    addDonToCost(host, 'p1', 6);
+    for (let i = 0; i < 5; i++) {
+      const c = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: `ID${i}`,
+          number: `ID${i}`,
+          name: `Imp${i}`,
+          type: 'Character',
+          families: ['Impel Down'],
+        }),
+        `id${i}`,
+      );
+      c.rested = true;
+    }
+    host.getPlayer('p1')!.zones.leader.rested = true;
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: 'p1:e',
+      sourceCardId: 'OP16-038',
+    });
+    confirmOptional(engine);
+
+    for (const c of host.getPlayer('p1')!.zones.characters)
+      expect(c.rested).toBe(false);
+    expect(host.getPlayer('p1')!.zones.leader.rested).toBe(false);
+  });
+
+  it('OP16-047 Doflamingo: rest self, opponent 8+ hand moves 2 to deck bottom', () => {
+    const { host, engine } = freshEngine();
+    const doffy = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-047',
+        number: 'OP16-047',
+        name: 'Donquixote Doflamingo',
+        type: 'Character',
+      }),
+      'd',
+    );
+    const oppHand = Array.from({ length: 8 }, (_, i) =>
+      host.addCardToZone(
+        'p2',
+        'hand',
+        makeCard({
+          id: `OH${i}`,
+          number: `OH${i}`,
+          name: `OH${i}`,
+          type: 'Character',
+        }),
+        `oh${i}`,
+      ),
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: doffy.instanceId,
+      sourceCardId: doffy.cardId,
+    });
+    confirmOptional(engine);
+    answerSelectCards(engine, [oppHand[0].instanceId, oppHand[1].instanceId]);
+    answerSelectChoice(engine, 'bottom');
+    answerSelectChoice(engine, 'bottom');
+
+    expect(doffy.rested).toBe(true);
+    expect(host.getPlayer('p2')!.zones.hand).toHaveLength(6);
+    expect(host.getPlayer('p2')!.zones.deck).toHaveLength(2);
+  });
+
+  it('OP16-060 Sengoku leader: remove 8 DON to play Admiral characters', () => {
+    const { host, engine } = freshEngine();
+    const leader = host.getPlayer('p1')!.zones.leader;
+    leader.cardId = 'OP16-060';
+    addDonToCost(host, 'p1', 8);
+    const aA = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'ADM-A',
+        number: 'ADM-A',
+        name: 'Kuzan',
+        type: 'Character',
+        families: ['Admiral'],
+      }),
+      'a',
+    );
+    const aB = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'ADM-B',
+        number: 'ADM-B',
+        name: 'Borsalino',
+        type: 'Character',
+        families: ['Admiral'],
+      }),
+      'b',
+    );
+
+    engine.handleEvent({
+      type: 'activateMain',
+      playerSessionId: 'p1',
+      sourceInstanceId: leader.instanceId,
+      sourceCardId: leader.cardId,
+    });
+    confirmOptional(engine);
+    answerSelectCards(engine, [aA.instanceId, aB.instanceId]);
+
+    expect(host.getPlayer('p1')!.zones.hand).not.toContain(aA);
+    expect(host.getPlayer('p1')!.zones.characters).toContain(aA);
+    expect(host.getPlayer('p1')!.zones.characters).toContain(aB);
+    expect(host.getPlayer('p1')!.zones.cost).toHaveLength(0);
+  });
+
+  it('OP16-063 Kuzan: on play add 2 DON!! rested', () => {
+    const { host, engine } = freshEngine();
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-063',
+        number: 'OP16-063',
+        name: 'Kuzan',
+        type: 'Character',
+      }),
+      'k',
+    );
+    addDonToDonDeck(host, 'p1', 5);
+    const before = host.getPlayer('p1')!.zones.cost.length;
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: 'p1:k',
+      sourceCardId: 'OP16-063',
+    });
+
+    expect(host.getPlayer('p1')!.zones.cost.length).toBe(before + 2);
+    expect(host.getPlayer('p1')!.zones.cost.every((d) => d.rested)).toBe(true);
+  });
+
+  it('OP16-074 Magellan: on play opponent returns 1 DON!! (Impel Down leader)', () => {
+    const { host, engine } = freshEngine();
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-074',
+        number: 'OP16-074',
+        name: 'Magellan',
+        type: 'Character',
+      }),
+      'm',
+    );
+    host.getPlayer('p1')!.zones.leader.families.push('Impel Down');
+    addDonToCost(host, 'p2', 3);
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: 'p1:m',
+      sourceCardId: 'OP16-074',
+    });
+
+    expect(host.getPlayer('p2')!.zones.cost).toHaveLength(2);
+    expect(host.getPlayer('p2')!.zones.donDeck).toHaveLength(1);
+  });
+
+  it('OP16-080 Teach: opponent turn continuous +1 cost for self characters', () => {
+    const { host, engine } = freshEngine();
+    const teach = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-080',
+        number: 'OP16-080',
+        name: 'Marshall.D.Teach',
+        type: 'Character',
+        cost: 7,
+      }),
+      't',
+    );
+    host.state.activePlayerSessionId = 'p2';
+    host.state.turnPlayer = 'p2';
+    engine.reapplyContinuousEffects();
+
+    expect(teach.cost).toBe(8);
+  });
+
+  it('OP16-089 Mihawk: on play draw 2 trash 2 and modify opponent cost', () => {
+    const { host, engine } = freshEngine();
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-089',
+        number: 'OP16-089',
+        name: 'Dracule Mihawk',
+        type: 'Character',
+      }),
+      'm',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'DA', number: 'DA', name: 'Draw A', type: 'Character' }),
+      'da',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'DB', number: 'DB', name: 'Draw B', type: 'Character' }),
+      'db',
+    );
+    const hta = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HTA', number: 'HTA', name: 'Hand A', type: 'Character' }),
+      'hta',
+    );
+    const htb = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'HTB', number: 'HTB', name: 'Hand B', type: 'Character' }),
+      'htb',
+    );
+    const opp = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'O89',
+        number: 'O89',
+        name: 'Opp Char',
+        type: 'Character',
+        cost: 5,
+      }),
+      'o',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: 'p1:m',
+      sourceCardId: 'OP16-089',
+    });
+    answerSelectCards(engine, [hta.instanceId, htb.instanceId]);
+    answerSelectCards(engine, [opp.instanceId]);
+
+    expect(host.getPlayer('p1')!.zones.trash).toContain(hta);
+    expect(host.getPlayer('p1')!.zones.trash).toContain(htb);
+    expect(opp.cost).toBe(9);
+  });
+
+  it('OP16-032 special: Boa Hancock marks opponent char cannotBeRested on play', () => {
+    const { host, engine } = freshEngine();
+    const boa = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-032',
+        number: 'OP16-032',
+        name: 'Boa Hancock',
+        type: 'Character',
+      }),
+      'b',
+    );
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'O32',
+        number: 'O32',
+        name: 'Opponent Char',
+        type: 'Character',
+      }),
+      't',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: boa.instanceId,
+      sourceCardId: boa.cardId,
+    });
+    answerSelectCards(engine, [target.instanceId]);
+
+    expect((target as any).cannotBeRested).toBe(true);
+  });
+
+  it('OP16-119 special: trigger negates effect then KOs cost 5 or less', () => {
+    const { host, engine } = freshEngine();
+    host.addCardToZone(
+      'p1',
+      'trash',
+      makeCard({
+        id: 'OP16-119',
+        number: 'OP16-119',
+        name: 'Marshall.D.Teach',
+        type: 'Character',
+      }),
+      't',
+    );
+    const neg = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'NEG',
+        number: 'NEG',
+        name: 'Negate Target',
+        type: 'Character',
+        cost: 4,
+      }),
+      'n',
+    );
+    const ko = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'KO',
+        number: 'KO',
+        name: 'KO Target',
+        type: 'Character',
+        cost: 5,
+      }),
+      'k',
+    );
+
+    engine.handleEvent({
+      type: 'trigger',
+      playerSessionId: 'p1',
+      sourceInstanceId: 'p1:t',
+      sourceCardId: 'OP16-119',
+    });
+    answerSelectCards(engine, [neg.instanceId]);
+    expect((neg as any).effectNegated).toBe(true);
+
+    answerSelectCards(engine, [ko.instanceId]);
+    expect(host.getPlayer('p2')!.zones.characters).not.toContain(ko);
+    expect(host.getPlayer('p2')!.zones.trash).toContain(ko);
+  });
+
+  it('OP16-015 Luffy hand cost reduction: Ace leader + 6+ DON gives -2 cost', () => {
+    const { host, engine } = freshEngine();
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'OP16-015',
+        number: 'OP16-015',
+        name: 'Monkey.D.Luffy',
+        type: 'Character',
+        cost: 7,
+      }),
+      'l',
+    );
+    host.getPlayer('p1')!.zones.leader.name = 'Ace';
+    addDonToCost(host, 'p1', 6);
+    const luffy = host.getPlayer('p1')!.zones.hand[0];
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: luffy.instanceId,
+      sourceCardId: luffy.cardId,
+    });
+
+    expect(engine.getNextPlayCostModifier(luffy)).toBe(-2);
+  });
+
+  it('OP16-009 Speed Jil: trash 8000-power from hand to gain Rush and +2000 power', () => {
+    const { host, engine } = freshEngine();
+    const sj = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP16-009',
+        number: 'OP16-009',
+        name: 'Speed Jil',
+        type: 'Character',
+        power: 5000,
+      }),
+      's',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'T9',
+        number: 'T9',
+        name: 'Trash Card',
+        type: 'Character',
+        power: 8000,
+      }),
+      't',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: sj.instanceId,
+      sourceCardId: sj.cardId,
+    });
+    confirmOptional(engine);
+
+    expect(host.getPlayer('p1')!.zones.hand).toHaveLength(0);
+    expect(host.getPlayer('p1')!.zones.trash).toHaveLength(1);
+    expect(sj.hasRush).toBe(true);
+    expect(sj.power).toBe(7000);
   });
 });

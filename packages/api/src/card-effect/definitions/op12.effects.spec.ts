@@ -1,7 +1,13 @@
 import { describe, expect, it } from '@jest/globals';
-import type { Card, CardEffectDefinition } from '@onepiecetcg/shared';
+import {
+  type Card,
+  type CardEffectDefinition,
+  createDuelCard,
+} from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../types/effect-registry';
 import { op12EffectDefinitions } from './op12.effects';
+import { EffectEngine } from '../effect-engine';
+import { makeCard, createRegistry, TestHost } from './test-utils';
 
 describe('OP12 effect definitions', () => {
   it('exports the edition definitions', () => {
@@ -257,5 +263,793 @@ describe('OP12 effect definitions', () => {
         'cannotBeRemovedByOpponentEffects',
       );
     }
+  });
+
+  describe('behavioral tests', () => {
+    it('OP12-003 Crocus [On K.O.] queues optional confirm decision', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      const crocus = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-003',
+          number: 'OP12-003',
+          name: 'Crocus',
+          type: 'Character',
+          power: 3000,
+        }),
+        'crocus',
+      );
+
+      expect(engine.getPendingDecision()).toBeNull();
+
+      engine.handleEvent({
+        type: 'onKo',
+        playerSessionId: 'p1',
+        sourceInstanceId: crocus.instanceId,
+        sourceCardId: crocus.cardId,
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+      expect(pending!.prompt.type).toBe('confirm');
+      expect(pending!.effectId).toBe('crocus-on-ko-play-red-3000-or-less');
+    });
+
+    it('OP12-006 Shakuyaku [On Play] searches deck and prompts card selection', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      const shakuyaku = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-006',
+          number: 'OP12-006',
+          name: 'Shakuyaku',
+          type: 'Character',
+        }),
+        'shakuyaku',
+      );
+      host.addCardToZone(
+        'p1',
+        'deck',
+        makeCard({
+          id: 'LUFFY',
+          number: 'LUFFY',
+          name: 'Monkey.D.Luffy',
+          type: 'Character',
+        }),
+        'luffy',
+      );
+      for (let i = 0; i < 4; i++) {
+        host.addCardToZone(
+          'p1',
+          'deck',
+          makeCard({
+            id: `FILLER-${i}`,
+            number: `FILLER-${i}`,
+            name: `Filler ${i}`,
+            type: 'Character',
+          }),
+          `filler-${i}`,
+        );
+      }
+
+      engine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: 'p1',
+        sourceInstanceId: shakuyaku.instanceId,
+        sourceCardId: shakuyaku.cardId,
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+      expect(pending!.prompt.type).toBe('selectCards');
+      expect(pending!.prompt.max).toBe(1);
+    });
+
+    it('OP12-015 Luffy gains +2000 power when 2+ DON!! are attached', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      const luffy = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-015',
+          number: 'OP12-015',
+          name: 'Monkey.D.Luffy',
+          type: 'Character',
+          power: 5000,
+        }),
+        'luffy',
+      );
+
+      engine.reapplyContinuousEffects();
+      expect(luffy.power).toBe(5000);
+
+      luffy.attachedDon = 2;
+      engine.reapplyContinuousEffects();
+      expect(luffy.power).toBe(7000);
+
+      luffy.attachedDon = 0;
+      engine.reapplyContinuousEffects();
+      expect(luffy.power).toBe(5000);
+    });
+
+    it('OP12-016 To Never Doubt has special-ref and counter effect', () => {
+      const card = op12EffectDefinitions.cards.find(
+        (c) => c.cardId === 'OP12-016',
+      );
+      expect(card).toBeDefined();
+      const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
+      expect(refEntry).toBeDefined();
+      if (refEntry?.kind === 'special-ref') {
+        expect(refEntry.specialHandlerId).toBe('op12-016-special');
+      }
+      const counterEntry = card!.effects!.find((e) => e.kind === 'standard');
+      expect(counterEntry).toBeDefined();
+      if (counterEntry?.kind === 'standard') {
+        expect(counterEntry.effect.actions[0].type).toBe('modifyPower');
+        expect(counterEntry.effect.actions[0].amount).toBe(2000);
+      }
+    });
+
+    it('OP12-017 Color of Observation Haki is special-ref', () => {
+      const card = op12EffectDefinitions.cards.find(
+        (c) => c.cardId === 'OP12-017',
+      );
+      expect(card).toBeDefined();
+      const entry = card!.effects![0];
+      expect(entry.kind).toBe('special-ref');
+      if (entry.kind === 'special-ref') {
+        expect(entry.specialHandlerId).toBe('op12-017-special');
+      }
+    });
+
+    it('OP12-020 Roronoa Zoro Leader is special-ref', () => {
+      const card = op12EffectDefinitions.cards.find(
+        (c) => c.cardId === 'OP12-020',
+      );
+      expect(card).toBeDefined();
+      const entry = card!.effects![0];
+      expect(entry.kind).toBe('special-ref');
+      if (entry.kind === 'special-ref') {
+        expect(entry.specialHandlerId).toBe('op12-020-special');
+      }
+    });
+
+    it('OP12-024 Gyukimaru [When Attacking] with 3+ DON!! rests an opponent Character', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      const gyukimaru = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-024',
+          number: 'OP12-024',
+          name: 'Gyukimaru',
+          type: 'Character',
+          power: 5000,
+        }),
+        'gyukimaru',
+      );
+      const opponentChar = host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'OPP',
+          number: 'OPP',
+          name: 'Opponent',
+          type: 'Character',
+          cost: 5,
+          power: 4000,
+        }),
+        'opp',
+      );
+
+      gyukimaru.attachedDon = 3;
+
+      engine.handleEvent({
+        type: 'whenAttacking',
+        playerSessionId: 'p1',
+        sourceInstanceId: gyukimaru.instanceId,
+        sourceCardId: gyukimaru.cardId,
+      });
+
+      const pending = engine.getPendingDecision();
+      if (pending) {
+        engine.answerDecision({
+          id: pending.id,
+          confirmed: true,
+          selections: [opponentChar.instanceId],
+        });
+      }
+
+      expect(opponentChar.rested).toBe(true);
+    });
+
+    it('OP12-029 Shimotsuki Kouzaburou [On Play] queues a selection decision', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-029',
+          number: 'OP12-029',
+          name: 'Shimotsuki Kouzaburou',
+          type: 'Character',
+          power: 3000,
+        }),
+        'kouzaburou',
+      );
+      host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'RESTABLE',
+          number: 'RESTABLE',
+          name: 'Restable',
+          type: 'Character',
+          cost: 2,
+          power: 2000,
+        }),
+        'restable',
+      );
+      const koable = host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'KOABLE',
+          number: 'KOABLE',
+          name: 'Koable',
+          type: 'Character',
+          cost: 1,
+          power: 1000,
+        }),
+        'koable',
+      );
+      koable.rested = true;
+
+      engine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: 'p1',
+        sourceInstanceId: 'p1:kouzaburou',
+        sourceCardId: 'OP12-029',
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+    });
+
+    it('OP12-008 Shanks [On Opponent Attack] with costs queues confirm and selection', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.state.activePlayerSessionId = 'p2';
+      const shanks = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-008',
+          number: 'OP12-008',
+          name: 'Shanks',
+          type: 'Character',
+          power: 6000,
+        }),
+        'shanks',
+      );
+      host.addCardToZone(
+        'p1',
+        'hand',
+        makeCard({
+          id: 'COST',
+          number: 'COST',
+          name: 'Cost Card',
+          type: 'Event',
+        }),
+        'cost-card',
+      );
+      const oppLeader = host.getPlayer('p2')!.zones.leader;
+
+      engine.handleEvent({
+        type: 'onAttacked',
+        playerSessionId: 'p1',
+        sourceInstanceId: shanks.instanceId,
+        sourceCardId: shanks.cardId,
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+      expect(['confirm', 'selectCards']).toContain(pending!.prompt.type);
+
+      if (pending!.prompt.type === 'confirm') {
+        engine.answerDecision({ id: pending!.id, confirmed: true });
+        const second = engine.getPendingDecision();
+        if (second) {
+          engine.answerDecision({
+            id: second.id,
+            confirmed: true,
+            selections: [oppLeader.instanceId],
+          });
+        }
+      }
+    });
+
+    it('OP12-060 Boeuf Burst [Main] with multicolored leader offers branch choice', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.getPlayer('p1')!.zones.leader.colors = ['Red', 'Blue'];
+
+      const boeuf = host.addCardToZone(
+        'p1',
+        'hand',
+        makeCard({
+          id: 'OP12-060',
+          number: 'OP12-060',
+          name: 'Boeuf Burst',
+          type: 'Event',
+        }),
+        'boeuf',
+      );
+
+      engine.handleEvent({
+        type: 'activateMain',
+        playerSessionId: 'p1',
+        sourceInstanceId: boeuf.instanceId,
+        sourceCardId: boeuf.cardId,
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+      expect(pending!.prompt.type).toBe('selectChoice');
+      expect(pending!.prompt.choices).toHaveLength(2);
+    });
+
+    it('OP12-040 Kuzan (040) and OP12-041 Sanji (041) are special-ref cards', () => {
+      for (const cardId of ['OP12-040', 'OP12-041']) {
+        const card = op12EffectDefinitions.cards.find(
+          (c) => c.cardId === cardId,
+        );
+        expect(card).toBeDefined();
+        const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
+        expect(refEntry).toBeDefined();
+        if (refEntry?.kind === 'special-ref') {
+          expect(refEntry.specialHandlerId).toMatch(/^op12-\d{3}-special$/);
+        }
+      }
+    });
+
+    it('OP12-053 Borsalino gains +1000 power on opponent turn with Navy Leader', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.getPlayer('p1')!.zones.leader.families = ['Navy'];
+      const borsalino = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-053',
+          number: 'OP12-053',
+          name: 'Borsalino',
+          type: 'Character',
+          power: 5000,
+        }),
+        'borsalino',
+      );
+
+      host.state.activePlayerSessionId = 'p2';
+      engine.reapplyContinuousEffects();
+
+      expect(borsalino.power).toBe(6000);
+      expect(borsalino.mustBeAttackTarget).toBe(true);
+    });
+
+    it('OP12-075 Ms. All Sunday [On Play] queues KO selection then opponent DON!! add', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      const msAllSunday = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-075',
+          number: 'OP12-075',
+          name: 'Ms. All Sunday',
+          type: 'Character',
+          power: 5000,
+        }),
+        'ms',
+      );
+      host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'TARGET',
+          number: 'TARGET',
+          name: 'Target',
+          type: 'Character',
+          cost: 3,
+          power: 3000,
+        }),
+        'target',
+      );
+
+      engine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: 'p1',
+        sourceInstanceId: msAllSunday.instanceId,
+        sourceCardId: msAllSunday.cardId,
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+      expect(['selectCards', 'confirm']).toContain(pending!.prompt.type);
+    });
+
+    it('OP12-081 Koala Leader is special-ref', () => {
+      const card = op12EffectDefinitions.cards.find(
+        (c) => c.cardId === 'OP12-081',
+      );
+      expect(card).toBeDefined();
+      const entry = card!.effects![0];
+      expect(entry.kind).toBe('special-ref');
+      if (entry.kind === 'special-ref') {
+        expect(entry.specialHandlerId).toBe('op12-081-special');
+      }
+    });
+
+    it('OP12-085 Karasu [When Attacking] with Rev Army Leader and 5+ opponent hand cards queues trash decision', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.getPlayer('p1')!.zones.leader.families = ['Revolutionary Army'];
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-085',
+          number: 'OP12-085',
+          name: 'Karasu',
+          type: 'Character',
+          power: 5000,
+        }),
+        'karasu',
+      );
+      for (let i = 0; i < 5; i++) {
+        host.addCardToZone(
+          'p2',
+          'hand',
+          makeCard({
+            id: `OPP-HAND-${i}`,
+            number: `OPP-HAND-${i}`,
+            name: `Hand ${i}`,
+            type: 'Event',
+          }),
+          `opp-hand-${i}`,
+        );
+      }
+
+      engine.handleEvent({
+        type: 'whenAttacking',
+        playerSessionId: 'p1',
+        sourceInstanceId: 'p1:karasu',
+        sourceCardId: 'OP12-085',
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+    });
+
+    it('OP12-096 Ursa Shock is special-ref and trigger draws 1 + mills 1', () => {
+      const card = op12EffectDefinitions.cards.find(
+        (c) => c.cardId === 'OP12-096',
+      );
+      expect(card).toBeDefined();
+      const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
+      expect(refEntry).toBeDefined();
+      if (refEntry?.kind === 'special-ref') {
+        expect(refEntry.specialHandlerId).toBe('op12-096-special');
+      }
+
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.addCardToZone(
+        'p1',
+        'hand',
+        makeCard({
+          id: 'OP12-096',
+          number: 'OP12-096',
+          name: 'Ursa Shock',
+          type: 'Event',
+        }),
+        'ursa',
+      );
+      host.addCardToZone(
+        'p1',
+        'deck',
+        makeCard({
+          id: 'DRAW',
+          number: 'DRAW',
+          name: 'Drawn',
+          type: 'Character',
+        }),
+        'draw-me',
+      );
+      host.addCardToZone(
+        'p1',
+        'deck',
+        makeCard({
+          id: 'MILL',
+          number: 'MILL',
+          name: 'Milled',
+          type: 'Character',
+        }),
+        'mill-me',
+      );
+
+      engine.handleEvent({
+        type: 'trigger',
+        playerSessionId: 'p1',
+        sourceInstanceId: 'p1:ursa',
+        sourceCardId: 'OP12-096',
+      });
+
+      expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+      expect(host.getPlayer('p1')?.zones.trash).toHaveLength(1);
+    });
+
+    it('OP12-102 Shirahoshi has special-ref and continuous Neptunian +2000 power on opponent turn', () => {
+      const card = op12EffectDefinitions.cards.find(
+        (c) => c.cardId === 'OP12-102',
+      );
+      expect(card).toBeDefined();
+      const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
+      expect(refEntry).toBeDefined();
+      if (refEntry?.kind === 'special-ref') {
+        expect(refEntry.specialHandlerId).toBe('op12-102-special');
+      }
+
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.state.activePlayerSessionId = 'p2';
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-102',
+          number: 'OP12-102',
+          name: 'Shirahoshi',
+          type: 'Character',
+          cost: 2,
+          power: 1000,
+          families: ['Neptunian'],
+        }),
+        'shirahoshi',
+      );
+      const neptunian = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'NEPT',
+          number: 'NEPT',
+          name: 'Neptunian Warrior',
+          type: 'Character',
+          power: 3000,
+          families: ['Neptunian'],
+        }),
+        'nept',
+      );
+
+      engine.reapplyContinuousEffects();
+      expect(neptunian.power).toBe(5000);
+    });
+
+    it('OP12-118 Jewelry Bonney [On Play] condition requires 8+ rested cards; does not trigger with 6', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-118',
+          number: 'OP12-118',
+          name: 'Jewelry Bonney',
+          type: 'Character',
+          power: 4000,
+        }),
+        'bonney',
+      );
+
+      for (let i = 0; i < 3; i++) {
+        host.addCardToZone(
+          'p1',
+          'hand',
+          makeCard({
+            id: `HAND-${i}`,
+            number: `HAND-${i}`,
+            name: `Hand ${i}`,
+            type: 'Event',
+          }),
+          `hand-${i}`,
+        );
+      }
+      for (let i = 0; i < 3; i++) {
+        const c = host.addCardToZone(
+          'p1',
+          'characters',
+          makeCard({
+            id: `CHAR-${i}`,
+            number: `CHAR-${i}`,
+            name: `Char ${i}`,
+            type: 'Character',
+            power: 1000,
+          }),
+          `char-${i}`,
+        );
+        c.rested = true;
+      }
+      for (let i = 0; i < 3; i++) {
+        const d = host.addCardToZone(
+          'p1',
+          'cost',
+          makeCard({
+            id: `DON-${i}`,
+            number: `DON-${i}`,
+            name: 'DON!!',
+            type: 'DON!!',
+          }),
+          `don-${i}`,
+        );
+        d.rested = true;
+      }
+
+      engine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: 'p1',
+        sourceInstanceId: 'p1:bonney',
+        sourceCardId: 'OP12-118',
+      });
+
+      expect(engine.getPendingDecision()).toBeNull();
+    });
+
+    it('OP12-118 Jewelry Bonney [On Play] triggers with 8+ rested cards', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      for (let i = 0; i < 5; i++) {
+        const c = host.addCardToZone(
+          'p1',
+          'characters',
+          makeCard({
+            id: `CHAR-${i}`,
+            number: `CHAR-${i}`,
+            name: `Char ${i}`,
+            type: 'Character',
+            power: 1000,
+          }),
+          `char-${i}`,
+        );
+        c.rested = true;
+      }
+      for (let i = 0; i < 4; i++) {
+        const d = host.addCardToZone(
+          'p1',
+          'cost',
+          makeCard({
+            id: `DON-${i}`,
+            number: `DON-${i}`,
+            name: 'DON!!',
+            type: 'DON!!',
+          }),
+          `don-${i}`,
+        );
+        d.rested = true;
+      }
+
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP12-118',
+          number: 'OP12-118',
+          name: 'Jewelry Bonney',
+          type: 'Character',
+          power: 4000,
+        }),
+        'bonney',
+      );
+
+      engine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: 'p1',
+        sourceInstanceId: 'p1:bonney',
+        sourceCardId: 'OP12-118',
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending).not.toBeNull();
+    });
   });
 });
