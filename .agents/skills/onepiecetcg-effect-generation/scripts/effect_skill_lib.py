@@ -158,6 +158,9 @@ def normalize_effect_text(value: Any) -> str:
     text = str(value).strip()
     if not text or text.upper() == "NULL":
         return ""
+    disclaimer_index = re.search(r"\bdisclaimer\s*:", text, flags=re.IGNORECASE)
+    if disclaimer_index:
+        text = text[: disclaimer_index.start()].strip()
     return text
 
 

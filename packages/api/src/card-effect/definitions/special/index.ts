@@ -1,6 +1,6 @@
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
-import { op04047SpecialHandler } from './op04-047.special';
 import { op04040SpecialHandler } from './op04-040.special';
+import { op04047SpecialHandler } from './op04-047.special';
 import { op04048SpecialHandler } from './op04-048.special';
 import { op04116SpecialHandler } from './op04-116.special';
 
