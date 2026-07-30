@@ -19,6 +19,11 @@ import { op13EffectDefinitions } from './op13.effects';
 import { op14EffectDefinitions } from './op14.effects';
 import { op15EffectDefinitions } from './op15.effects';
 import { op16EffectDefinitions } from './op16.effects';
+import { st01EffectDefinitions } from './st01.effects';
+import { st02EffectDefinitions } from './st02.effects';
+import { st03EffectDefinitions } from './st03.effects';
+import { st04EffectDefinitions } from './st04.effects';
+import { st05EffectDefinitions } from './st05.effects';
 
 export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   eb01EffectDefinitions,
@@ -41,4 +46,9 @@ export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   op14EffectDefinitions,
   op15EffectDefinitions,
   op16EffectDefinitions,
+  st01EffectDefinitions,
+  st02EffectDefinitions,
+  st03EffectDefinitions,
+  st04EffectDefinitions,
+  st05EffectDefinitions,
 ];

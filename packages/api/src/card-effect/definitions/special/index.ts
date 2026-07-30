@@ -148,6 +148,7 @@ import { op16084SpecialHandler } from './op16-084.special';
 import { op16115SpecialHandler } from './op16-115.special';
 import { op16118SpecialHandler } from './op16-118.special';
 import { op16119SpecialHandler } from './op16-119.special';
+import { st01016SpecialHandler } from './st01-016.special';
 
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   eb01001CounterRuleSpecialHandler,
@@ -299,4 +300,5 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op16115SpecialHandler,
   op16118SpecialHandler,
   op16119SpecialHandler,
+  st01016SpecialHandler,
 ] as const;
