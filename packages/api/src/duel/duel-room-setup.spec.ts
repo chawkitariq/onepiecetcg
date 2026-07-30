@@ -97,6 +97,52 @@ async function createReadyRoom(): Promise<DuelRoom> {
 }
 
 describe('DuelRoom setup sequence (stage 6)', () => {
+  it('preserves the live Colyseus root state object when game setup starts', async () => {
+    configureDuelRoomServices({
+      decksService: {
+        getValidatedGameDeck: jest.fn((authUserId: string, deckId: string) =>
+          Promise.resolve({
+            id: deckId,
+            name: 'Valid deck',
+            ownerAuthUserId: authUserId,
+            leader,
+            cards: Array.from({ length: 50 }, (_, index) => ({
+              ...mainCard,
+              copyIndex: index + 1,
+            })),
+          }),
+        ),
+      } as never,
+    });
+
+    const room = new DuelRoom();
+    (
+      room as DuelRoom & { listing: { remove: jest.Mock; metadata: object } }
+    ).listing = {
+      remove: jest.fn(),
+      metadata: {},
+    };
+    await room.onCreate();
+    jest.spyOn(room, 'lock').mockImplementation(() => undefined);
+    const initialState = room.state;
+
+    await room.onJoin(
+      { sessionId: 'session-a' } as never,
+      { displayName: 'Alice', deckId: 'deck-a' },
+      { userId: 'user-a' },
+    );
+    await room.onJoin(
+      { sessionId: 'session-b' } as never,
+      { displayName: 'Bob', deckId: 'deck-b' },
+      { userId: 'user-b' },
+    );
+
+    expect(room.state).toBe(initialState);
+
+    const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
+    await disposableRoom._dispose();
+  });
+
   it('lets the designated starting player choose to play first', async () => {
     const room = await createReadyRoom();
     const access = asPrivateRoom(room);

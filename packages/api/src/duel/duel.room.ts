@@ -259,32 +259,7 @@ export class DuelRoom extends Room<DuelState> {
       syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
     });
-    const gameplayRuntime = createDuelRoomGameplayRuntime({
-      state: this.state,
-      maxClients: this.maxClients,
-      addLog: (message, level, actorSessionId) =>
-        this.addLog(message, level, actorSessionId),
-      reportMainPhaseError: (message) =>
-        this.notifier.sendMainPhaseError(message),
-      reportCombatError: (message) => this.notifier.sendCombatError(message),
-      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      onPendingEffectDecisionChange: (decision) =>
-        this.notifier.syncPendingEffectDecision(decision),
-      shuffleCards: (cards) => this.shuffle(cards),
-      finalizeMatch: (endReason, winnerSessionId) =>
-        this.lifecycle.finalizeMatch(endReason, winnerSessionId),
-      recordMatchResult: () => this.lifecycle.recordMatchResult(),
-      markMatchStarted: (startedAt) =>
-        this.lifecycle.markMatchStarted(startedAt),
-      unshiftIntoTrash: (player, card) =>
-        this.unshiftIntoZone(player.zones.trash, card),
-      knockOutCharacter: (owner, card, reason, skipReplacement) =>
-        this.knockOutCharacter(owner, card, reason, skipReplacement),
-      knockOutCharacterById: (playerSessionId, instanceId, reason) =>
-        this.knockOutCharacterById(playerSessionId, instanceId, reason),
-      isProtectedFromBattleKo: (defendingCard, attackerCard) =>
-        this.isProtectedFromBattleKo(defendingCard, attackerCard),
-    });
+    const gameplayRuntime = this.createLiveGameplayRuntime(this.state);
     this.installGameplayRuntime(gameplayRuntime);
 
     const description = options.description
@@ -2266,6 +2241,35 @@ export class DuelRoom extends Room<DuelState> {
     this.runtimeState = gameplayRuntime.runtimeState;
   }
 
+  private createLiveGameplayRuntime(state: DuelState): DuelRoomGameplayRuntime {
+    return createDuelRoomGameplayRuntime({
+      state,
+      maxClients: this.maxClients,
+      addLog: (message, level, actorSessionId) =>
+        this.addLog(message, level, actorSessionId),
+      reportMainPhaseError: (message) =>
+        this.notifier.sendMainPhaseError(message),
+      reportCombatError: (message) => this.notifier.sendCombatError(message),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
+      onPendingEffectDecisionChange: (decision) =>
+        this.notifier.syncPendingEffectDecision(decision),
+      shuffleCards: (cards) => this.shuffle(cards),
+      finalizeMatch: (endReason, winnerSessionId) =>
+        this.lifecycle.finalizeMatch(endReason, winnerSessionId),
+      recordMatchResult: () => this.lifecycle.recordMatchResult(),
+      markMatchStarted: (startedAt) =>
+        this.lifecycle.markMatchStarted(startedAt),
+      unshiftIntoTrash: (player, card) =>
+        this.unshiftIntoZone(player.zones.trash, card),
+      knockOutCharacter: (owner, card, reason, skipReplacement) =>
+        this.knockOutCharacter(owner, card, reason, skipReplacement),
+      knockOutCharacterById: (playerSessionId, instanceId, reason) =>
+        this.knockOutCharacterById(playerSessionId, instanceId, reason),
+      isProtectedFromBattleKo: (defendingCard, attackerCard) =>
+        this.isProtectedFromBattleKo(defendingCard, attackerCard),
+    });
+  }
+
   private createIsolatedGameplayRuntime() {
     const state = cloneRoomDuelState(this.state);
     const keywordSnapshot = this.captureCardKeywordSnapshot(state);
@@ -2543,10 +2547,30 @@ export class DuelRoom extends Room<DuelState> {
 
   private adoptIsolatedRuntime(runtime: IsolatedGameplayRuntime): void {
     const lifecycleState = runtime.lifecycle.exportState();
-    this.setState(runtime.state);
-    this.installGameplayRuntime(runtime.gameplayRuntime);
+    if (runtime.gameplayRuntime.effectBoundary.getPendingEffectDecision()) {
+      // The effect engine still carries a non-serializable continuation while
+      // a player decision is pending, so we must keep the isolated runtime as
+      // the active engine bundle until that decision is answered.
+      this.setState(runtime.state);
+      this.installGameplayRuntime(runtime.gameplayRuntime);
+      this.lifecycle = this.createLifecycleForState(this.state);
+      this.lifecycle.importState(lifecycleState);
+      this.lifecycle.recordMatchResult();
+      this.rebuildAllClientViews();
+      this.notifier.syncPendingEffectDecision(
+        this.effectBoundary.getPendingEffectDecision(),
+      );
+      return;
+    }
+
+    const effectBoundaryState =
+      runtime.gameplayRuntime.effectBoundary.exportState();
+    adoptRoomDuelState(this.state, runtime.state);
+    const liveGameplayRuntime = this.createLiveGameplayRuntime(this.state);
     this.lifecycle = this.createLifecycleForState(this.state);
     this.lifecycle.importState(lifecycleState);
+    liveGameplayRuntime.effectBoundary.importState(effectBoundaryState);
+    this.installGameplayRuntime(liveGameplayRuntime);
     this.lifecycle.recordMatchResult();
     this.rebuildAllClientViews();
     this.notifier.syncPendingEffectDecision(

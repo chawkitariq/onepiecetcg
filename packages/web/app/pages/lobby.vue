@@ -55,6 +55,7 @@ const describedRooms = ref<DescribedRoomSummary[]>([])
 const loadingDescribedRooms = ref(false)
 const describedRoomsError = ref('')
 const joiningRoomId = ref('')
+let watchedRoom: typeof room.value | null = null
 
 const cardById = computed(() => new Map(cards.value.map(card => [card.id, card])))
 
@@ -162,14 +163,19 @@ async function loadDescribedRooms() {
   }
 }
 
-function watchRoom() {
-  room.value?.onStateChange(() => {
-    roomVersion.value += 1
+function onRoomStateChange() {
+  roomVersion.value += 1
 
-    if (players.value.length === 2 && players.value.every(player => player.ready) && room.value) {
-      void navigateTo(`/zone/${room.value.roomId}`)
-    }
-  })
+  if (players.value.length === 2 && players.value.every(player => player.ready) && room.value) {
+    void navigateTo(`/zone/${room.value.roomId}`)
+  }
+}
+
+function watchRoom() {
+  watchedRoom?.onStateChange.remove(onRoomStateChange)
+  watchedRoom = room.value
+  watchedRoom?.onStateChange(onRoomStateChange)
+  onRoomStateChange()
 }
 
 async function quickMatch() {
@@ -281,6 +287,8 @@ async function joinDescribedRoom(roomId: string) {
 }
 
 async function leaveRoom() {
+  watchedRoom?.onStateChange.remove(onRoomStateChange)
+  watchedRoom = null
   await leave()
   createdRoomCode.value = ''
   joinCodeState.code = ''
@@ -291,6 +299,11 @@ async function copyRoomCode() {
   await navigator.clipboard.writeText(createdRoomCode.value)
   toast.add({ title: 'Code copié', color: 'success' })
 }
+
+onBeforeUnmount(() => {
+  watchedRoom?.onStateChange.remove(onRoomStateChange)
+  watchedRoom = null
+})
 </script>
 
 <template>
