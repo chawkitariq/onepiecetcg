@@ -230,12 +230,14 @@ describe('ST25 effect definitions', () => {
       // Deck cards for drawing
       for (let i = 0; i < 2; i++) {
         host.addCardToZone(
-          'p1', 'deck',
+          'p1',
+          'deck',
           makeCard({
             id: `deck-${i}`,
             number: `deck-${i}`,
             name: `Deck ${i}`,
-            type: 'Event', cost: 0,
+            type: 'Event',
+            cost: 0,
           }),
           `deck-${i}`,
         );
@@ -243,13 +245,15 @@ describe('ST25 effect definitions', () => {
 
       // Cross Guild card in hand to play
       const crossGuildCard = host.addCardToZone(
-        'p1', 'hand',
+        'p1',
+        'hand',
         makeCard({
           id: 'cross-guild-char',
           number: 'cross-guild-char',
           name: 'Cross Guild Fighter',
           type: 'Character',
-          cost: 3, power: 4000,
+          cost: 3,
+          power: 4000,
           families: ['Cross Guild'],
         }),
         'cross-guild',
@@ -257,10 +261,14 @@ describe('ST25 effect definitions', () => {
 
       // Card to trash from hand
       const trashCard = host.addCardToZone(
-        'p1', 'hand',
+        'p1',
+        'hand',
         makeCard({
-          id: 'trash-me', number: 'trash-me',
-          name: 'Trash Me', type: 'Event', cost: 0,
+          id: 'trash-me',
+          number: 'trash-me',
+          name: 'Trash Me',
+          type: 'Event',
+          cost: 0,
         }),
         'trash-me',
       );

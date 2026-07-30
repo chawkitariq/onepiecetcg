@@ -1,4 +1,4 @@
-import type { StandardEffectDefinition } from '@onepiecetcg/shared';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 
 /**
@@ -15,26 +15,49 @@ export const op15046SpecialHandler: SpecialHandlerDefinition = {
 
     const anyEngine = engine as any;
     const host = anyEngine.host;
+    const decisions = anyEngine.decisions;
+    const registry = anyEngine.registry;
+
     const player = host.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const leaderHasDressrosa = (player.zones.leader.families ?? []).includes(
-      'Dressrosa',
-    );
-    if (!leaderHasDressrosa) return;
+    const leaderFamilies = Array.from(player.zones.leader.families);
+    if (!leaderFamilies.includes('Dressrosa')) return;
 
-    const definition: StandardEffectDefinition = {
-      id: 'sabo-046-on-play-activate-dressrosa-event',
-      text: '[On Play] If your Leader has the {Dressrosa} type, activate up to 1 {Dressrosa} type Event from your hand.',
-      trigger: { type: 'onPlay', optional: true },
-      actions: [],
-    };
-
-    engine.queueEffect(
+    decisions.chooseCards(
+      `${event.sourceInstanceId}:op15-046:select-event`,
       event.playerSessionId,
-      event.sourceInstanceId,
-      event.sourceCardId,
-      definition,
+      { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
+      event.playerSessionId,
+      '[Sabo] Select a Dressrosa Event to activate:',
+      {
+        player: 'self',
+        zones: ['hand'],
+        filter: { cardCategory: ['Event'], trait: ['Dressrosa'] },
+        count: { kind: 'upTo', value: 1 },
+      },
+      undefined,
+      (cards) => {
+        for (const card of cards) {
+          host.moveCard(card, event.playerSessionId, 'trash');
+          const eventEffects =
+            registry.effectsByCardId[card.cardId]?.standard ?? [];
+          for (const effectDef of eventEffects) {
+            engine.queueEffect(
+              event.playerSessionId,
+              card.instanceId,
+              card.cardId,
+              effectDef,
+            );
+          }
+        }
+        if (cards.length > 0) {
+          host.syncPlayer(event.playerSessionId);
+          const opponentId =
+            host.getOpponentSessionId(event.playerSessionId);
+          if (opponentId) host.syncPlayer(opponentId);
+        }
+      },
     );
   },
 };

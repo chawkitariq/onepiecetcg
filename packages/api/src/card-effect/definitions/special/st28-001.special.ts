@@ -47,7 +47,9 @@ export const st28001SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const opponentSessionId = host.getOpponentSessionId(anyEvt.playerSessionId) ?? anyEvt.playerSessionId;
+    const opponentSessionId =
+      host.getOpponentSessionId(anyEvt.playerSessionId) ??
+      anyEvt.playerSessionId;
 
     anyEngine.decisions.chooseCards(
       `${anyEvt.sourceInstanceId}:st28-001:on-play-ko`,

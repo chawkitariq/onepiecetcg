@@ -61,6 +61,23 @@ export const st21003SpecialHandler: SpecialHandlerDefinition = {
         },
         undefined,
         () => {
+          for (const target of host.getCards(
+            {
+              player: 'opponent',
+              zones: ['characters'],
+              filter: { cardCategory: ['Character'] },
+            },
+            anyEvt.playerSessionId,
+          )) {
+            anyEngine.modifiers.addKeywordModifier(
+              anyEvt.sourceInstanceId,
+              anyEvt.playerSessionId,
+              target.instanceId,
+              ['cannotBlock'],
+              'untilEndOfTurn',
+            );
+          }
+
           engine.reapplyContinuousEffects();
         },
       );
