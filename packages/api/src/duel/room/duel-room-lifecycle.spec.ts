@@ -112,4 +112,36 @@ describe('DuelRoomLifecycle', () => {
     expect(state.players.size).toBe(0);
     expect(disconnectRoom).toHaveBeenCalledTimes(1);
   });
+
+  it('exports and restores the mutable lifecycle state', () => {
+    const state = new DuelState();
+    const lifecycle = new DuelRoomLifecycle({
+      state,
+      addLog: jest.fn(),
+      getOpponentSessionId: jest.fn(),
+      disconnectRoom: jest.fn(),
+      reportStatsError: jest.fn(),
+    });
+
+    lifecycle.registerPlayer('session-a', 'user-a');
+    lifecycle.registerPlayer('session-b', 'user-b');
+    lifecycle.markMatchStarted(new Date('2026-07-30T10:00:00.000Z'));
+
+    const snapshot = lifecycle.exportState();
+    const restored = new DuelRoomLifecycle({
+      state: new DuelState(),
+      addLog: jest.fn(),
+      getOpponentSessionId: jest.fn(),
+      disconnectRoom: jest.fn(),
+      reportStatsError: jest.fn(),
+    });
+
+    restored.importState(snapshot);
+
+    expect(restored.hasJoined('user-a')).toBe(true);
+    expect(restored.hasJoined('user-b')).toBe(true);
+    expect(restored.getPlayerId('session-a')).toBe('player-1');
+    expect(restored.getPlayerId('session-b')).toBe('player-2');
+    expect(restored.exportState()).toEqual(snapshot);
+  });
 });

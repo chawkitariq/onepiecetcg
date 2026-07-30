@@ -14,12 +14,24 @@ export type DuelRoomLifecycleDeps = {
   reportStatsError: (error: unknown) => void;
 };
 
+export type DuelRoomLifecycleState = {
+  authUserIdBySession: Array<[string, string]>;
+  playerIdBySession: Array<[string, string]>;
+  nextPlayerOrdinal: number;
+  matchStartedAt: string | null;
+  matchResultRecorded: boolean;
+};
+
 /**
  * Owns room-level lifecycle state that is orthogonal to gameplay engines:
  * joined users, match start/end bookkeeping, and match-result recording.
  */
 export class DuelRoomLifecycle {
   private readonly authUserIdBySession = new Map<string, string>();
+
+  private readonly playerIdBySession = new Map<string, string>();
+
+  private nextPlayerOrdinal = 1;
 
   private matchStartedAt: Date | null = null;
 
@@ -37,8 +49,21 @@ export class DuelRoomLifecycle {
   /**
    * Registers the authenticated owner of a joined player seat.
    */
-  public registerPlayer(sessionId: string, authUserId: string): void {
+  public registerPlayer(sessionId: string, authUserId: string): string {
     this.authUserIdBySession.set(sessionId, authUserId);
+    const playerId = `player-${this.nextPlayerOrdinal}`;
+
+    this.playerIdBySession.set(sessionId, playerId);
+    this.nextPlayerOrdinal += 1;
+
+    return playerId;
+  }
+
+  /**
+   * Returns the stable duel-local player identifier for the current seat.
+   */
+  public getPlayerId(sessionId: string): string | undefined {
+    return this.playerIdBySession.get(sessionId);
   }
 
   /**
@@ -148,9 +173,40 @@ export class DuelRoomLifecycle {
   public removePlayer(sessionId: string): void {
     this.deps.state.players.delete(sessionId);
     this.authUserIdBySession.delete(sessionId);
+    this.playerIdBySession.delete(sessionId);
 
     if (this.deps.state.players.size === 0) {
       void this.deps.disconnectRoom();
     }
+  }
+
+  /** Exports the mutable room-lifecycle state for a future replay/adoption. */
+  public exportState(): DuelRoomLifecycleState {
+    return {
+      authUserIdBySession: Array.from(this.authUserIdBySession.entries()),
+      playerIdBySession: Array.from(this.playerIdBySession.entries()),
+      nextPlayerOrdinal: this.nextPlayerOrdinal,
+      matchStartedAt: this.matchStartedAt?.toISOString() ?? null,
+      matchResultRecorded: this.matchResultRecorded,
+    };
+  }
+
+  /** Restores the mutable room-lifecycle state from a previous snapshot. */
+  public importState(state: DuelRoomLifecycleState): void {
+    this.authUserIdBySession.clear();
+    for (const [sessionId, authUserId] of state.authUserIdBySession) {
+      this.authUserIdBySession.set(sessionId, authUserId);
+    }
+
+    this.playerIdBySession.clear();
+    for (const [sessionId, playerId] of state.playerIdBySession) {
+      this.playerIdBySession.set(sessionId, playerId);
+    }
+
+    this.nextPlayerOrdinal = state.nextPlayerOrdinal;
+    this.matchStartedAt = state.matchStartedAt
+      ? new Date(state.matchStartedAt)
+      : null;
+    this.matchResultRecorded = state.matchResultRecorded;
   }
 }
