@@ -175,4 +175,43 @@ describe('DuelRoomEffectBoundary', () => {
     expect(synced).toEqual([]);
     expect(boundary.hasPendingPlayerInteraction()).toBe(false);
   });
+
+  it('exports and restores the manual trigger fallback state', () => {
+    const sourceFixture = createBoundaryFixture();
+    const revealedCard = createDuelCard(
+      manualTriggerLifeCard,
+      'alice:life:restore',
+      sourceFixture.alice.sessionId,
+    );
+
+    sourceFixture.alice.zones.life.push(revealedCard);
+    sourceFixture.boundary.resolveRevealedLifeCard(
+      sourceFixture.alice,
+      revealedCard,
+    );
+
+    const snapshot = sourceFixture.boundary.exportState();
+    const restoredFixture = createBoundaryFixture();
+    const restoredCard = createDuelCard(
+      manualTriggerLifeCard,
+      'alice:life:restore',
+      restoredFixture.alice.sessionId,
+    );
+
+    restoredFixture.alice.zones.life.push(restoredCard);
+    restoredFixture.boundary.importState(snapshot);
+
+    expect(restoredFixture.boundary.hasPendingPlayerInteraction()).toBe(true);
+    expect(restoredFixture.state.combat.awaitingTriggerDecision).toBe(true);
+
+    const resolved = restoredFixture.boundary.resolveManualTriggerDecision(
+      restoredFixture.alice.sessionId,
+      false,
+    );
+
+    expect(resolved).toEqual({ ok: true });
+    expect(restoredFixture.alice.zones.hand).toContain(restoredCard);
+    expect(restoredFixture.boundary.hasPendingPlayerInteraction()).toBe(false);
+    expect(restoredFixture.state.combat.awaitingTriggerDecision).toBe(false);
+  });
 });

@@ -21,6 +21,13 @@ export type DuelRoomEffectBoundaryDeps = DuelEffectEngineHostDeps & {
   broadcastCardView: (card: DuelCard) => void;
 };
 
+export type DuelRoomEffectBoundaryState = {
+  engine: import('../../card-effect/runtime/effect-engine-types').EffectEngineState;
+  manualTrigger:
+    | import('./duel-manual-trigger-manager').SerializedManualTriggerFallbackState
+    | null;
+};
+
 /**
  * Explicit API boundary between Colyseus duel orchestration and the card
  * effect engine. `DuelRoom` keeps structural combat/state rules; this class
@@ -100,6 +107,20 @@ export class DuelRoomEffectBoundary {
   public clearCombatModifiers(): void {
     this.engine.clearCombatModifiers();
     this.manualTriggers.clear();
+  }
+
+  /** Exports the serializable mutable boundary state. */
+  public exportState(): DuelRoomEffectBoundaryState {
+    return {
+      engine: this.engine.exportState(),
+      manualTrigger: this.manualTriggers.exportState(),
+    };
+  }
+
+  /** Restores a previously exported mutable boundary state. */
+  public importState(state: DuelRoomEffectBoundaryState): void {
+    this.engine.importState(state.engine);
+    this.manualTriggers.importState(state.manualTrigger);
   }
 
   public applyKoReplacement(

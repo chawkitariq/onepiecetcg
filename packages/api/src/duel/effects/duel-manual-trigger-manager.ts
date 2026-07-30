@@ -5,6 +5,11 @@ type ManualTriggerFallbackState = {
   ownerSessionId: string;
 };
 
+export type SerializedManualTriggerFallbackState = {
+  cardInstanceId: string;
+  ownerSessionId: string;
+};
+
 /**
  * Dependencies required by the manual trigger fallback manager.
  */
@@ -112,5 +117,71 @@ export class DuelManualTriggerManager {
   public clear(): void {
     this.deps.state.combat.awaitingTriggerDecision = false;
     this.pendingManualTrigger = null;
+  }
+
+  /** Exports the pending manual trigger fallback state, if any. */
+  public exportState(): SerializedManualTriggerFallbackState | null {
+    if (!this.pendingManualTrigger) {
+      return null;
+    }
+
+    return {
+      cardInstanceId: this.pendingManualTrigger.card.instanceId,
+      ownerSessionId: this.pendingManualTrigger.ownerSessionId,
+    };
+  }
+
+  /** Restores the pending manual trigger fallback state from a snapshot. */
+  public importState(state: SerializedManualTriggerFallbackState | null): void {
+    if (!state) {
+      this.clear();
+      return;
+    }
+
+    const card = this.findCardByInstanceId(state.cardInstanceId);
+
+    if (!card) {
+      throw new Error(
+        `Manual trigger fallback card ${state.cardInstanceId} is missing from state.`,
+      );
+    }
+
+    this.deps.state.combat.awaitingTriggerDecision = true;
+    this.pendingManualTrigger = {
+      card,
+      ownerSessionId: state.ownerSessionId,
+    };
+  }
+
+  private findCardByInstanceId(instanceId: string): DuelCard | null {
+    for (const player of this.deps.state.players.values()) {
+      if (player.zones.leader.instanceId === instanceId) {
+        return player.zones.leader;
+      }
+
+      if (player.zones.stage.instanceId === instanceId) {
+        return player.zones.stage;
+      }
+
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const card = player.zones[zone].find(
+          (candidate) => candidate.instanceId === instanceId,
+        );
+
+        if (card) {
+          return card;
+        }
+      }
+    }
+
+    return null;
   }
 }
