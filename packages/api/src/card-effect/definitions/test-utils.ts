@@ -223,6 +223,26 @@ export class TestHost implements EffectEngineHost {
           )
             continue;
           if (
+            selector.filter?.basePowerMax != null &&
+            card.basePower > selector.filter.basePowerMax
+          )
+            continue;
+          if (
+            selector.filter?.basePowerMin != null &&
+            card.basePower < selector.filter.basePowerMin
+          )
+            continue;
+          if (
+            selector.filter?.baseCostMax != null &&
+            card.baseCost > selector.filter.baseCostMax
+          )
+            continue;
+          if (
+            selector.filter?.baseCostMin != null &&
+            card.baseCost < selector.filter.baseCostMin
+          )
+            continue;
+          if (
             selector.filter?.rested != null &&
             card.rested !== selector.filter.rested
           )

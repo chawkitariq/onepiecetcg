@@ -39,6 +39,15 @@ import { st17EffectDefinitions } from './st17.effects';
 import { st18EffectDefinitions } from './st18.effects';
 import { st19EffectDefinitions } from './st19.effects';
 import { st20EffectDefinitions } from './st20.effects';
+import { st21EffectDefinitions } from './st21.effects';
+import { st22EffectDefinitions } from './st22.effects';
+import { st23EffectDefinitions } from './st23.effects';
+import { st24EffectDefinitions } from './st24.effects';
+import { st25EffectDefinitions } from './st25.effects';
+import { st26EffectDefinitions } from './st26.effects';
+import { st27EffectDefinitions } from './st27.effects';
+import { st28EffectDefinitions } from './st28.effects';
+import { st29EffectDefinitions } from './st29.effects';
 
 export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   eb01EffectDefinitions,
@@ -81,4 +90,13 @@ export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
   st18EffectDefinitions,
   st19EffectDefinitions,
   st20EffectDefinitions,
+  st21EffectDefinitions,
+  st22EffectDefinitions,
+  st23EffectDefinitions,
+  st24EffectDefinitions,
+  st25EffectDefinitions,
+  st26EffectDefinitions,
+  st27EffectDefinitions,
+  st28EffectDefinitions,
+  st29EffectDefinitions,
 ];
