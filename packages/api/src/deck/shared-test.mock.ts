@@ -8,10 +8,13 @@ const actualShared = jest.requireActual(
 
 export const {
   DuelCard,
+  DuelCombat,
   DuelZones,
   DuelPlayer,
   DuelLog,
   DuelState,
+  adoptDuelState,
+  cloneDuelState,
   createDuelCard,
 } = actualShared;
 

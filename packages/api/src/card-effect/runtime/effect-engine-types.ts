@@ -128,6 +128,25 @@ export type PendingDecisionState = {
   continuation: (response: EffectDecisionResponse) => void;
 };
 
+export type SerializedQueuedEffect = Omit<QueuedEffect, 'sourceCard'>;
+
+export type EffectModifierEngineState = {
+  modifiers: RuntimeModifier[];
+  costModifiers: RuntimeCostModifier[];
+  keywordModifiers: RuntimeKeywordModifier[];
+  playerRestrictions: RuntimePlayerRestriction[];
+  nextPlayCostModifiers: RuntimeNextPlayCostModifier[];
+  delayedMovesAtEndOfBattle: RuntimeDelayedMove[];
+};
+
+export type EffectEngineState = {
+  queue: SerializedQueuedEffect[];
+  delayedTurnEndQueue: SerializedQueuedEffect[];
+  resolvedOncePerTurnKeys: string[];
+  modifiers: EffectModifierEngineState;
+  cannotRestKeys: string[];
+};
+
 export type EffectResolutionContext = {
   sourceInstanceId: string;
   storedSelections: Record<string, DuelCard[]>;

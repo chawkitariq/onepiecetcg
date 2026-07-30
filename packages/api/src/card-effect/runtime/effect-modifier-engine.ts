@@ -2,6 +2,7 @@ import type { EffectKeyword } from '@onepiecetcg/shared';
 import type { EffectCardFilter } from '@onepiecetcg/shared';
 import type { EffectRegistry } from '../types/effect-registry';
 import type {
+  EffectModifierEngineState,
   EffectEngineHost,
   RuntimeDelayedMove,
   RuntimeNextPlayCostModifier,
@@ -454,6 +455,65 @@ export class EffectModifierEngine {
       rested: options?.rested,
       toBottom: options?.toBottom,
     });
+  }
+
+  /** Exports the mutable modifier state so the engine can be recreated later. */
+  public exportState(): EffectModifierEngineState {
+    return {
+      modifiers: this.modifiers.map((modifier) => ({ ...modifier })),
+      costModifiers: this.costModifiers.map((modifier) => ({ ...modifier })),
+      keywordModifiers: this.keywordModifiers.map((modifier) => ({
+        ...modifier,
+        keywords: [...modifier.keywords],
+      })),
+      playerRestrictions: this.playerRestrictions.map((restriction) => ({
+        ...restriction,
+      })),
+      nextPlayCostModifiers: this.nextPlayCostModifiers.map((modifier) => ({
+        ...modifier,
+        filter: structuredClone(modifier.filter),
+      })),
+      delayedMovesAtEndOfBattle: this.delayedMovesAtEndOfBattle.map((move) => ({
+        ...move,
+      })),
+    };
+  }
+
+  /** Restores the mutable modifier state from a previous snapshot. */
+  public importState(state: EffectModifierEngineState): void {
+    this.modifiers.splice(0, this.modifiers.length, ...state.modifiers);
+    this.costModifiers.splice(
+      0,
+      this.costModifiers.length,
+      ...state.costModifiers,
+    );
+    this.keywordModifiers.splice(
+      0,
+      this.keywordModifiers.length,
+      ...state.keywordModifiers.map((modifier) => ({
+        ...modifier,
+        keywords: [...modifier.keywords],
+      })),
+    );
+    this.playerRestrictions.splice(
+      0,
+      this.playerRestrictions.length,
+      ...state.playerRestrictions,
+    );
+    this.nextPlayCostModifiers.splice(
+      0,
+      this.nextPlayCostModifiers.length,
+      ...state.nextPlayCostModifiers.map((modifier) => ({
+        ...modifier,
+        filter: structuredClone(modifier.filter),
+      })),
+    );
+    this.delayedMovesAtEndOfBattle.splice(
+      0,
+      this.delayedMovesAtEndOfBattle.length,
+      ...state.delayedMovesAtEndOfBattle,
+    );
+    this.reapplyContinuousEffects();
   }
 
   private applyKeywords(

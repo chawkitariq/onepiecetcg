@@ -9,6 +9,7 @@ import { EffectDecisionManager } from './runtime/effect-decision-manager';
 import { EffectModifierEngine } from './runtime/effect-modifier-engine';
 import { EffectSelectorResolver } from './runtime/effect-selector-resolver';
 import type {
+  EffectEngineState,
   EffectEngineHost,
   EffectEvent,
   EffectEventType,
@@ -43,6 +44,8 @@ export class EffectEngine {
   private readonly modifiers: EffectModifierEngine;
 
   private readonly actions: EffectActionExecutor;
+
+  public _cannotRestKeys?: Set<string>;
 
   public constructor(
     private readonly registry: EffectRegistry,
@@ -95,6 +98,11 @@ export class EffectEngine {
   /** Serializes the pending player choice, if the resolver is paused on one. */
   public getPendingDecision() {
     return this.decisions.getPendingDecision();
+  }
+
+  /** Returns whether the engine currently carries a non-serializable pause. */
+  public hasPendingDecision(): boolean {
+    return this.decisions.hasPendingDecision();
   }
 
   /** Recomputes visible power from printed power plus active continuous modifiers. */
@@ -233,6 +241,54 @@ export class EffectEngine {
   public answerDecision(response: EffectDecisionResponse): void {
     this.decisions.answerDecision(response);
     this.flushQueue();
+  }
+
+  /**
+   * Exports the serializable mutable engine state. Pending decision
+   * continuations cannot be serialized and therefore are rejected here.
+   */
+  public exportState(): EffectEngineState {
+    if (this.decisions.hasPendingDecision()) {
+      throw new Error(
+        'EffectEngine cannot export state while a decision continuation is pending.',
+      );
+    }
+
+    return {
+      queue: this.queue.map((queued) => ({
+        controllerSessionId: queued.controllerSessionId,
+        sourceInstanceId: queued.sourceInstanceId,
+        sourceCardId: queued.sourceCardId,
+        definition: queued.definition,
+        triggeringEvent: queued.triggeringEvent,
+      })),
+      delayedTurnEndQueue: this.delayedTurnEndQueue.map((queued) => ({
+        controllerSessionId: queued.controllerSessionId,
+        sourceInstanceId: queued.sourceInstanceId,
+        sourceCardId: queued.sourceCardId,
+        definition: queued.definition,
+        triggeringEvent: queued.triggeringEvent,
+      })),
+      resolvedOncePerTurnKeys: Array.from(this.resolvedOncePerTurnKeys),
+      modifiers: this.modifiers.exportState(),
+      cannotRestKeys: Array.from(this._cannotRestKeys ?? []),
+    };
+  }
+
+  /** Restores a previously exported serializable engine state. */
+  public importState(state: EffectEngineState): void {
+    this.queue.splice(0, this.queue.length, ...state.queue);
+    this.delayedTurnEndQueue.splice(
+      0,
+      this.delayedTurnEndQueue.length,
+      ...state.delayedTurnEndQueue,
+    );
+    this.resolvedOncePerTurnKeys.clear();
+    for (const key of state.resolvedOncePerTurnKeys) {
+      this.resolvedOncePerTurnKeys.add(key);
+    }
+    this.modifiers.importState(state.modifiers);
+    this._cannotRestKeys = new Set(state.cannotRestKeys);
   }
 
   /** Enqueues a one-off effect directly; used by special handlers. */

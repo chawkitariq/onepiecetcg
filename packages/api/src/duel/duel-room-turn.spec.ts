@@ -83,7 +83,7 @@ type PrivateRoomAccess = {
   handlePlayCard: (
     client: { sessionId: string; send: jest.Mock },
     message: { instanceId: string; discardCharacterInstanceId?: string },
-  ) => void;
+  ) => Promise<void>;
   handleAttachDon: (
     client: { sessionId: string; send: jest.Mock },
     message: {
@@ -91,7 +91,7 @@ type PrivateRoomAccess = {
       targetInstanceId?: string;
       count?: number;
     },
-  ) => void;
+  ) => Promise<void>;
 };
 
 function asPrivateRoom(room: DuelRoom): PrivateRoomAccess {
@@ -407,21 +407,25 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const player = room.state.players.get(firstSessionId);
     const characterInstanceId = ensureHandContains(player, 'Character');
 
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: characterInstanceId,
     });
 
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
     expect(
-      player?.zones.characters.some(
+      updatedPlayer?.zones.characters.some(
         (card) => card.instanceId === characterInstanceId,
       ),
     ).toBe(true);
     expect(
-      player?.zones.characters.find(
+      updatedPlayer?.zones.characters.find(
         (card) => card.instanceId === characterInstanceId,
       )?.playedThisTurn,
     ).toBe(true);
-    expect(player?.zones.cost.filter((card) => card.rested)).toHaveLength(1);
+    expect(
+      updatedPlayer?.zones.cost.filter((card) => card.rested),
+    ).toHaveLength(1);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();
@@ -438,7 +442,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     room.state.phase = 'main';
 
     const client = fakeClient(firstSessionId);
-    access.handlePlayCard(client, { instanceId: characterInstanceId });
+    await access.handlePlayCard(client, { instanceId: characterInstanceId });
 
     expect(
       player?.zones.characters.some(
@@ -474,7 +478,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const access = asPrivateRoom(room);
     const client = fakeClient(firstSessionId);
 
-    access.handlePlayCard(client, { instanceId: characterInstanceId });
+    await access.handlePlayCard(client, { instanceId: characterInstanceId });
 
     expect(player.zones.characters).toHaveLength(5);
     expectErrorMessage(client, 'pleine');
@@ -513,26 +517,30 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     room.state.phase = 'main';
     const access = asPrivateRoom(room);
 
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: characterInstanceId,
       discardCharacterInstanceId: toDiscard.instanceId,
     });
 
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
     expect(player.zones.characters).toHaveLength(5);
     expect(
-      player.zones.characters.some(
+      updatedPlayer?.zones.characters.some(
         (card) => card.instanceId === characterInstanceId,
       ),
     ).toBe(true);
     expect(
-      player.zones.characters.some(
+      updatedPlayer?.zones.characters.some(
         (card) => card.instanceId === toDiscard.instanceId,
       ),
     ).toBe(false);
-    expect(player.zones.trash[0]?.instanceId).toBe(toDiscard.instanceId);
-    expect(player.zones.trash[0]?.attachedDon).toBe(0);
+    expect(updatedPlayer?.zones.trash[0]?.instanceId).toBe(
+      toDiscard.instanceId,
+    );
+    expect(updatedPlayer?.zones.trash[0]?.attachedDon).toBe(0);
     expect(
-      player.zones.cost.filter(
+      updatedPlayer?.zones.cost.filter(
         (card) => card.instanceId.includes('don-returned') && card.rested,
       ),
     ).toHaveLength(2);
@@ -564,7 +572,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const access = asPrivateRoom(room);
     const client = fakeClient(firstSessionId);
 
-    access.handlePlayCard(client, {
+    await access.handlePlayCard(client, {
       instanceId: characterInstanceId,
       discardCharacterInstanceId: 'not-a-real-instance-id',
     });
@@ -584,13 +592,17 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     placeUntappedDon(player, 1);
     room.state.phase = 'main';
     const access = asPrivateRoom(room);
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: eventInstanceId,
     });
 
-    expect(player?.zones.trash[0]?.instanceId).toBe(eventInstanceId);
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
+    expect(updatedPlayer?.zones.trash[0]?.instanceId).toBe(eventInstanceId);
     expect(
-      player?.zones.hand.some((card) => card.instanceId === eventInstanceId),
+      updatedPlayer?.zones.hand.some(
+        (card) => card.instanceId === eventInstanceId,
+      ),
     ).toBe(false);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
@@ -605,11 +617,13 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
 
     room.state.phase = 'main';
     const access = asPrivateRoom(room);
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: stageInstanceId,
     });
 
-    expect(player?.zones.stage.instanceId).toBe(stageInstanceId);
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
+    expect(updatedPlayer?.zones.stage.instanceId).toBe(stageInstanceId);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();
@@ -623,32 +637,39 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
 
     room.state.phase = 'main';
     const access = asPrivateRoom(room);
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: firstStageInstanceId,
     });
+
+    const playerAfterFirstStage = room.state.players.get(firstSessionId);
 
     // Simulate a DON!! attached to the Stage card (no current path attaches
     // DON!! to a Stage, but attachedDon exists on every DuelCard, and the
     // zone-change rule must still hold if that ever becomes reachable).
-    if (player) {
-      player.zones.stage.attachedDon = 1;
+    if (playerAfterFirstStage) {
+      playerAfterFirstStage.zones.stage.attachedDon = 1;
     }
 
-    const secondStageInstanceId = ensureHandContains(player, 'Stage');
-    placeUntappedDon(player, 1);
-    const costCountBeforePlay = player?.zones.cost.length ?? 0;
+    const secondStageInstanceId = ensureHandContains(
+      playerAfterFirstStage,
+      'Stage',
+    );
+    placeUntappedDon(playerAfterFirstStage, 1);
+    const costCountBeforePlay = playerAfterFirstStage?.zones.cost.length ?? 0;
 
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: secondStageInstanceId,
     });
 
-    expect(player?.zones.stage.instanceId).toBe(secondStageInstanceId);
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
+    expect(updatedPlayer?.zones.stage.instanceId).toBe(secondStageInstanceId);
     // Paying cost only rests DON!! cards (they stay in the cost zone), and
     // the replaced Stage's 1 attachedDon comes back as 1 new rested DON!!
     // card -- net +1 to the cost zone's card count.
-    expect(player?.zones.cost.length).toBe(costCountBeforePlay + 1);
+    expect(updatedPlayer?.zones.cost.length).toBe(costCountBeforePlay + 1);
     expect(
-      player?.zones.trash.find(
+      updatedPlayer?.zones.trash.find(
         (card) => card.instanceId === firstStageInstanceId,
       )?.attachedDon,
     ).toBe(0);
@@ -672,10 +693,14 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
 
     room.state.phase = 'main';
     const access = asPrivateRoom(room);
-    access.handleAttachDon(fakeClient(firstSessionId), { target: 'leader' });
+    await access.handleAttachDon(fakeClient(firstSessionId), {
+      target: 'leader',
+    });
 
-    expect(player?.zones.leader.attachedDon).toBe(1);
-    expect(player?.zones.cost.every((card) => card.rested)).toBe(true);
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
+    expect(updatedPlayer?.zones.leader.attachedDon).toBe(1);
+    expect(updatedPlayer?.zones.cost.every((card) => card.rested)).toBe(true);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();
@@ -689,30 +714,39 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     room.state.phase = 'main';
 
     const characterInstanceId = ensureHandContains(player, 'Character');
-    asPrivateRoom(room).handlePlayCard(fakeClient(firstSessionId), {
+    await asPrivateRoom(room).handlePlayCard(fakeClient(firstSessionId), {
       instanceId: characterInstanceId,
     });
 
-    if (player) {
-      player.zones.cost.forEach((card) => {
+    const afterPlayPlayer = room.state.players.get(firstSessionId);
+
+    if (afterPlayPlayer) {
+      afterPlayPlayer.zones.cost.forEach((card) => {
         card.rested = false;
       });
     }
 
-    const playedCharacter = player?.zones.characters.find(
+    const playedCharacter = afterPlayPlayer?.zones.characters.find(
       (card) => card.instanceId === characterInstanceId,
     );
 
     expect(playedCharacter).toBeDefined();
 
-    asPrivateRoom(room).handleAttachDon(fakeClient(firstSessionId), {
+    await asPrivateRoom(room).handleAttachDon(fakeClient(firstSessionId), {
       target: 'character',
       targetInstanceId: characterInstanceId,
       count: 2,
     });
 
-    expect(playedCharacter?.attachedDon).toBe(2);
-    expect(player?.zones.cost.filter((card) => !card.rested)).toHaveLength(1);
+    const updatedPlayer = room.state.players.get(firstSessionId);
+    const updatedCharacter = updatedPlayer?.zones.characters.find(
+      (card) => card.instanceId === characterInstanceId,
+    );
+
+    expect(updatedCharacter?.attachedDon).toBe(2);
+    expect(
+      updatedPlayer?.zones.cost.filter((card) => !card.rested),
+    ).toHaveLength(1);
     expect(room.state.logs.at(-1)?.message).toContain('donne 2 DON!!');
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
@@ -725,7 +759,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const access = asPrivateRoom(room);
     const client = fakeClient(firstSessionId);
 
-    access.handleAttachDon(client, { target: 'leader' });
+    await access.handleAttachDon(client, { target: 'leader' });
 
     const player = room.state.players.get(firstSessionId);
     expect(player?.zones.leader.attachedDon).toBe(0);
@@ -752,7 +786,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     room.state.phase = 'main';
     const access = asPrivateRoom(room);
     const firstClient = fakeClient(firstSessionId);
-    access.handleAttachDon(firstClient, { target: 'leader' });
+    await access.handleAttachDon(firstClient, { target: 'leader' });
 
     access.handleEndPhase(firstClient); // -> end
     access.handleEndPhase(firstClient); // ends turn -> second player refresh
@@ -763,9 +797,11 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     access.handleEndPhase(fakeClient(secondSessionId)); // ends turn -> first player refresh
 
     expect(room.state.activePlayerSessionId).toBe(firstSessionId);
-    expect(player?.zones.leader.attachedDon).toBe(0);
+    const updatedPlayer = room.state.players.get(firstSessionId);
+
+    expect(updatedPlayer?.zones.leader.attachedDon).toBe(0);
     expect(
-      player?.zones.cost.some(
+      updatedPlayer?.zones.cost.some(
         (card) => card.instanceId.includes('don-returned') && card.rested,
       ),
     ).toBe(true);
@@ -783,13 +819,15 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const player = room.state.players.get(firstSessionId);
     const characterInstanceId = ensureHandContains(player, 'Character');
 
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: characterInstanceId,
     });
 
-    const playedCharacter = player?.zones.characters.find(
-      (card) => card.instanceId === characterInstanceId,
-    );
+    let playedCharacter = room.state.players
+      .get(firstSessionId)
+      ?.zones.characters.find(
+        (card) => card.instanceId === characterInstanceId,
+      );
     expect(playedCharacter?.playedThisTurn).toBe(true);
 
     const firstClient = fakeClient(firstSessionId);
@@ -800,6 +838,12 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     access.handleEndPhase(fakeClient(secondSessionId)); // main
     access.handleEndPhase(fakeClient(secondSessionId)); // end
     access.handleEndPhase(fakeClient(secondSessionId)); // ends turn -> first player refresh
+
+    playedCharacter = room.state.players
+      .get(firstSessionId)
+      ?.zones.characters.find(
+        (card) => card.instanceId === characterInstanceId,
+      );
 
     expect(playedCharacter?.playedThisTurn).toBe(false);
     expect(playedCharacter?.rested).toBe(false);
