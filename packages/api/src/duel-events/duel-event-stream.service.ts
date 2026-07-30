@@ -27,7 +27,10 @@ export class DuelEventStreamService {
       .getRepository(DuelEventStream)
       .findOne({
         where: { matchId },
-        select: ['matchId', 'status'],
+        select: {
+          matchId: true,
+          status: true,
+        },
       });
 
     return stream?.status ?? null;
@@ -42,7 +45,10 @@ export class DuelEventStreamService {
       .getRepository(DuelEventStream)
       .findOne({
         where: { matchId },
-        select: ['matchId', 'participants'],
+        select: {
+          matchId: true,
+          participants: true,
+        },
       });
 
     return (
