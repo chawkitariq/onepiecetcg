@@ -247,6 +247,9 @@ export class DuelCombatEngine {
       'whenAttacking',
       clientSessionId,
       attackerCard,
+      {
+        targetInstanceId: combat.targetInstanceId,
+      },
     );
 
     combat.step = 'blocked';

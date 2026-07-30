@@ -5,7 +5,12 @@ import type {
   PendingEffectDecision,
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
-import type { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
+import type {
+  DuelCard,
+  DuelPlayer,
+  DuelState,
+  GameZone,
+} from '@onepiecetcg/shared';
 
 /**
  * Gameplay event windows that can enqueue one or more authored card effects.
@@ -14,6 +19,7 @@ export type EffectEventType =
   | 'onPlay'
   | 'activateCounter'
   | 'onEventActivated'
+  | 'onCardRemovedByEffect'
   | 'onCharacterPlayed'
   | 'onDonAttached'
   | 'onDonReturned'
@@ -37,6 +43,12 @@ export type EffectEvent = {
   playerSessionId: string;
   sourceInstanceId: string;
   sourceCardId: string;
+  targetInstanceId?: string;
+  targetCardId?: string;
+  sourceZone?: GameZone;
+  destinationZone?: GameZone;
+  effectControllerSessionId?: string;
+  playedByEffect?: boolean;
 };
 
 /**
@@ -108,6 +120,7 @@ export type QueuedEffect = {
   sourceCardId: string;
   sourceCard?: DuelCard;
   definition: StandardEffectDefinition;
+  triggeringEvent?: EffectEvent;
 };
 
 export type PendingDecisionState = {
@@ -118,6 +131,8 @@ export type PendingDecisionState = {
 export type EffectResolutionContext = {
   sourceInstanceId: string;
   storedSelections: Record<string, DuelCard[]>;
+  eventTargetInstanceId?: string;
+  triggeringEvent?: EffectEvent;
 };
 
 /**

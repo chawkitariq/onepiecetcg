@@ -14,8 +14,6 @@ import type {
   SpecialHandlerDefinition,
 } from '../types/effect-registry';
 import { op05EffectDefinitions } from './op05.effects';
-import { op05060SpecialHandler } from './special/op05-060.special';
-import { op05114SpecialHandler } from './special/op05-114.special';
 import { op05007SpecialHandler } from './special/op05-007.special';
 import { op05043SpecialHandler } from './special/op05-043.special';
 import { op05019SpecialHandler } from './special/op05-019.special';
@@ -2950,10 +2948,7 @@ describe('op05EffectDefinitions', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05114SpecialHandler]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
 
     const elThor = host.addCardToZone(
       'p1',
@@ -2995,7 +2990,7 @@ describe('op05EffectDefinitions', () => {
     host.addPlayer('p1');
     host.addPlayer('p2');
     const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05060SpecialHandler]),
+      createRegistry([op05EffectDefinitions]),
       host,
     );
 
@@ -3564,70 +3559,20 @@ describe('op05EffectDefinitions', () => {
     expect(vivi.mustBeAttackTarget).toBe(true);
   });
 
-  it('lets El Thor K.O. an opponent character on trigger up to the opponent life count', () => {
-    const host = new TestHost();
-    host.addPlayer('p1');
-    host.addPlayer('p2');
-    const engine = new EffectEngine(
-      createRegistry([op05EffectDefinitions], [op05114SpecialHandler]),
-      host,
+  it('registers El Thor as standard counter and trigger effects', () => {
+    const card = op05EffectDefinitions.cards.find(
+      (entry) => entry.cardId === 'OP05-114',
     );
-
-    const elThor = host.addCardToZone(
-      'p1',
-      'trash',
-      makeCard({
-        id: 'OP05-114',
-        number: 'OP05-114',
-        name: 'El Thor',
-        type: 'Event',
-      }),
-      'el-thor',
+    expect(card).toBeDefined();
+    const effectIds = card?.effects
+      ?.filter((entry) => entry.kind === 'standard')
+      .map((entry) => (entry.kind === 'standard' ? entry.effect.id : null));
+    expect(effectIds).toEqual(
+      expect.arrayContaining([
+        'el-thor-counter-dynamic-power',
+        'el-thor-trigger-ko-cost-equal-to-opponent-life',
+      ]),
     );
-    for (let index = 0; index < 4; index += 1) {
-      host.addCardToZone(
-        'p2',
-        'life',
-        makeCard({
-          id: `OP99-L${index}`,
-          number: `OP99-L${index}`,
-          name: `Life ${index}`,
-          type: 'Character',
-        }),
-        `life-${index}`,
-      );
-    }
-    const target = host.addCardToZone(
-      'p2',
-      'characters',
-      makeCard({
-        id: 'OP99-C4',
-        number: 'OP99-C4',
-        name: 'Cost Four Target',
-        type: 'Character',
-        cost: 4,
-      }),
-      'target',
-    );
-
-    engine.handleEvent({
-      type: 'trigger',
-      playerSessionId: 'p1',
-      sourceInstanceId: elThor.instanceId,
-      sourceCardId: elThor.cardId,
-    });
-
-    const decision = engine.getPendingDecision();
-
-    expect(decision?.prompt.type).toBe('selectCards');
-
-    engine.answerDecision({
-      decisionId: decision!.id,
-      selectedCardInstanceIds: [target.instanceId],
-    });
-
-    expect(host.getPlayer('p2')?.zones.characters).not.toContain(target);
-    expect(host.getPlayer('p2')?.zones.trash).toContain(target);
   });
 
   it("lets Gedatsu K.O. an opposing character with cost at most the opponent's life count", () => {

@@ -5,6 +5,7 @@ import type {
 } from '@onepiecetcg/shared';
 import {
   EffectEngine,
+  type EffectEvent,
   type EffectEventType,
 } from '../../card-effect/effect-engine';
 import { effectRegistry } from '../../card-effect/effect-registry';
@@ -136,12 +137,17 @@ export class DuelRoomEffectBoundary {
     type: EffectEventType,
     playerSessionId: string,
     card: DuelCard,
+    context?: Pick<
+      EffectEvent,
+      'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'
+    >,
   ): void {
     this.engine.handleEvent({
       type,
       playerSessionId,
       sourceInstanceId: card.instanceId,
       sourceCardId: card.cardId,
+      ...context,
     });
   }
 
@@ -149,8 +155,12 @@ export class DuelRoomEffectBoundary {
     this.dispatcher.emitWindowEffects(type);
   }
 
-  public emitPlayedCard(playerSessionId: string, card: DuelCard): void {
-    this.dispatcher.emitPlayedCard(playerSessionId, card);
+  public emitPlayedCard(
+    playerSessionId: string,
+    card: DuelCard,
+    sourceZone: EffectEvent['sourceZone'] = 'hand',
+  ): void {
+    this.dispatcher.emitPlayedCard(playerSessionId, card, sourceZone);
   }
 
   public emitDonAttached(playerSessionId: string, card: DuelCard): void {

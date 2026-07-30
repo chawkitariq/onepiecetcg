@@ -5,6 +5,7 @@ export type EffectTriggerType =
   | 'activateMain'
   | 'activateCounter'
   | 'onEventActivated'
+  | 'onCardRemovedByEffect'
   | 'onCharacterPlayed'
   | 'onDonAttached'
   | 'onDonReturned'
@@ -59,10 +60,20 @@ export type EffectCondition =
   | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
   | { type: 'playerHasLeaderColorsAtLeast'; player: EffectOwnerSelector; value: number }
   | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasTotalDonAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasActiveDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasHandAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLifeAndHandAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playersHaveTotalLifeAtMost'; value: number }
   | { type: 'playerHasOnlyCharactersWithTrait'; player: EffectOwnerSelector; trait: string }
   | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
+  | { type: 'eventSourceZoneIs'; value: GameZone }
+  | { type: 'eventDestinationZoneIs'; value: GameZone }
+  | { type: 'eventEffectControllerIs'; player: EffectOwnerSelector }
+  | { type: 'eventPlayedByEffect'; value: boolean }
   | { type: 'eventReasonIs'; value: 'battle' | 'effect' }
   | { type: 'eventSourceHasNoBaseEffect' }
+  | { type: 'eventTargetMatchesFilter'; filter: EffectCardFilter }
   | { type: 'targetExists'; selector: EffectTargetSelector }
   | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
   | { type: 'targetCountAtMost'; selector: EffectTargetSelector; value: number }
@@ -84,6 +95,7 @@ export type EffectCardFilter = {
   attribute?: string[];
   differentColorThanStoredSelection?: string;
   trait?: string[];
+  traitIncludes?: string[];
   name?: string[];
   excludeName?: string[];
   hasNoBaseEffect?: boolean;
@@ -368,6 +380,23 @@ export type EffectAction =
       key: string;
       filter: EffectCardFilter;
       actions: EffectAction[];
+    }
+  | {
+      type: 'ifConditionsMatch';
+      conditions: EffectCondition[];
+      actions: EffectAction[];
+    }
+  | {
+      type: 'ifAnyConditionGroupMatches';
+      conditionGroups: EffectCondition[][];
+      actions: EffectAction[];
+    }
+  | {
+      type: 'modifyStoredCardsPower';
+      key: string;
+      amount: number;
+      duration: EffectDuration;
+      description?: string;
     }
   | {
       type: 'registerNextPlayCostModifier';

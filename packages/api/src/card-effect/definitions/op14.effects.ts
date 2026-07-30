@@ -229,8 +229,25 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-011',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-011-special',
+          kind: 'continuous',
+          effect: {
+            id: 'bartolomeo-011-don-2-gains-blocker',
+            text: '[DON!! x2] This Character gains [Blocker].',
+            conditions: [
+              {
+                type: 'sourceHasAttachedDonAtLeast',
+                value: 2,
+              },
+            ],
+            modifier: {
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
+              keywords: ['mustBeAttackTarget'],
+            },
+          },
         },
       ],
     },
@@ -409,8 +426,37 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-016',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-016-special',
+          kind: 'standard',
+          effect: {
+            id: 'x-drake-when-attacking-don-1-minus-2000',
+            text: "[DON!! x1] [When Attacking] Give up to 1 of your opponent's Characters 2000 power during this turn.",
+            trigger: {
+              type: 'whenAttacking',
+            },
+            conditions: [
+              {
+                type: 'sourceHasAttachedDonAtLeast',
+                value: 1,
+              },
+            ],
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                amount: -2000,
+                duration: {
+                  type: 'untilEndOfTurn',
+                },
+              },
+            ],
+          },
         },
       ],
     },
@@ -756,8 +802,102 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-027',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-027-special',
+          kind: 'continuous',
+          effect: {
+            id: 'shanks-027-opponent-turn-rested-opponent-plus-1000',
+            text: "[Opponent's Turn] If this Character is rested, give all of your opponent's Characters +1000 power.",
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: false,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            modifier: {
+              selector: {
+                player: 'opponent',
+                zones: ['characters'],
+              },
+              power: 1000,
+            },
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'shanks-027-on-play-rested-rest-7000-or-less',
+            text: "[Your Turn] When this Character becomes rested, rest up to 1 of your opponent's Characters with 7000 base power or less.",
+            trigger: {
+              type: 'onPlay',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            actions: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    basePowerMax: 7000,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'shanks-027-on-don-attached-rested-rest-7000-or-less',
+            text: "[Your Turn] When this Character becomes rested, rest up to 1 of your opponent's Characters with 7000 base power or less.",
+            trigger: {
+              type: 'onDonAttached',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            actions: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    basePowerMax: 7000,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+              },
+            ],
+          },
         },
       ],
     },
@@ -765,8 +905,82 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-028',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-028-special',
+          kind: 'standard',
+          effect: {
+            id: 'johnny-on-play-rested-ko-rested-cost-2-or-less',
+            text: "[Your Turn] When this Character becomes rested, K.O. up to 1 of your opponent's rested Characters with a cost of 2 or less.",
+            trigger: {
+              type: 'onPlay',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 2,
+                    rested: true,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'johnny-on-don-attached-rested-ko-rested-cost-2-or-less',
+            text: "[Your Turn] When this Character becomes rested, K.O. up to 1 of your opponent's rested Characters with a cost of 2 or less.",
+            trigger: {
+              type: 'onDonAttached',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 2,
+                    rested: true,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
         },
       ],
     },
@@ -914,8 +1128,78 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-032',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-032-special',
+          kind: 'standard',
+          effect: {
+            id: 'humandrill-on-play-rested-rest-cost-4-or-less',
+            text: "[Your Turn] When this Character becomes rested, rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+            trigger: {
+              type: 'onPlay',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            actions: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 4,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'humandrill-on-don-attached-rested-rest-cost-4-or-less',
+            text: "[Your Turn] When this Character becomes rested, rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+            trigger: {
+              type: 'onDonAttached',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'sourceIsRested',
+                value: true,
+              },
+            ],
+            actions: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 4,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+              },
+            ],
+          },
         },
       ],
     },
@@ -999,19 +1283,6 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
               power: 1000,
             },
           },
-        },
-        {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-034-special',
-        },
-      ],
-    },
-    {
-      cardId: 'OP14-035',
-      effects: [
-        {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-035-special',
         },
       ],
     },
@@ -1366,8 +1637,76 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-041',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-041-special',
+          kind: 'standard',
+          effect: {
+            id: 'boa-hancock-041-opponent-turn-on-character-play-draw-1',
+            text: "[Opponent's Turn] When you play a Character, draw 1 card.",
+            trigger: {
+              type: 'onCharacterPlayed',
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: false,
+              },
+              {
+                type: 'eventPlayerIs',
+                player: 'self',
+              },
+            ],
+            actions: [
+              {
+                type: 'draw',
+                player: 'self',
+                amount: 1,
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'boa-hancock-041-on-ko-opponent-life-to-owner-hand',
+            text: "[DON!!x1] [Once Per Turn] When one of your {Amazon Lily} or {Kuja Pirates} type Characters with 5000 base power or more is K.O.'d add up to 1 card from the top of your opponent's Life cards to the owner's hand.",
+            trigger: {
+              type: 'onKo',
+              oncePerTurn: true,
+            },
+            conditions: [
+              {
+                type: 'sourceHasAttachedDonAtLeast',
+                value: 1,
+              },
+              {
+                type: 'eventPlayerIs',
+                player: 'self',
+              },
+              {
+                type: 'eventTargetMatchesFilter',
+                filter: {
+                  cardCategory: ['Character'],
+                  owner: 'self',
+                  trait: ['Amazon Lily', 'Kuja Pirates'],
+                  basePowerMin: 5000,
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'moveFirstCard',
+                selector: {
+                  player: 'opponent',
+                  zones: ['life'],
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'hand',
+              },
+            ],
+          },
         },
       ],
     },
@@ -1466,8 +1805,60 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-044',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-044-special',
+          kind: 'standard',
+          effect: {
+            id: 'edward-newgate-044-on-play-whitebeard-reveal-draw-2-trash-1',
+            text: "[On Play] Reveal 1 card from the top of your deck. If that card's type includes \"Whitebeard Pirates\", draw 2 cards and trash 1 card from your hand.",
+            trigger: {
+              type: 'onPlay',
+            },
+            actions: [
+              {
+                type: 'storeSelectedCards',
+                key: 'revealedTopDeckCard',
+                selector: {
+                  player: 'self',
+                  zones: ['deck'],
+                  filter: {
+                    zonePosition: 'top',
+                  },
+                  count: {
+                    kind: 'exact',
+                    value: 1,
+                  },
+                },
+              },
+              {
+                type: 'revealStoredCards',
+                key: 'revealedTopDeckCard',
+              },
+              {
+                type: 'ifStoredSelectionMatches',
+                key: 'revealedTopDeckCard',
+                filter: {
+                  traitIncludes: ['Whitebeard Pirates'],
+                },
+                actions: [
+                  {
+                    type: 'draw',
+                    player: 'self',
+                    amount: 2,
+                  },
+                  {
+                    type: 'trashFromHand',
+                    selector: {
+                      player: 'self',
+                      zones: ['hand'],
+                      count: {
+                        kind: 'exact',
+                        value: 1,
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
         },
       ],
     },
@@ -1475,8 +1866,63 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-045',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-045-special',
+          kind: 'standard',
+          effect: {
+            id: 'kuroobi-045-on-ko-draw-1',
+            text: '[On K.O.] Draw 1 card.',
+            trigger: {
+              type: 'onKo',
+            },
+            actions: [
+              {
+                type: 'draw',
+                player: 'self',
+                amount: 1,
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'kuroobi-045-hand-trash-by-effect-gain-rush',
+            text: 'When a card is trashed from your hand by an effect, this Character gains [Rush] during this turn.',
+            trigger: {
+              type: 'onCardRemovedByEffect',
+            },
+            conditions: [
+              {
+                type: 'eventPlayerIs',
+                player: 'self',
+              },
+              {
+                type: 'eventSourceZoneIs',
+                value: 'hand',
+              },
+              {
+                type: 'eventDestinationZoneIs',
+                value: 'trash',
+              },
+            ],
+            actions: [
+              {
+                type: 'grantKeywords',
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: {
+                    kind: 'exact',
+                    value: 1,
+                  },
+                },
+                keywords: ['rush'],
+                duration: {
+                  type: 'untilEndOfTurn',
+                },
+              },
+            ],
+          },
         },
       ],
     },
@@ -1618,8 +2064,97 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP14-049',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-049-special',
+          kind: 'standard',
+          effect: {
+            id: 'jinbe-049-hand-trash-by-effect-gain-rush',
+            text: 'When a card is trashed from your hand by an effect, this Character gains [Rush] during this turn.',
+            trigger: {
+              type: 'onCardRemovedByEffect',
+            },
+            conditions: [
+              {
+                type: 'eventPlayerIs',
+                player: 'self',
+              },
+              {
+                type: 'eventSourceZoneIs',
+                value: 'hand',
+              },
+              {
+                type: 'eventDestinationZoneIs',
+                value: 'trash',
+              },
+            ],
+            actions: [
+              {
+                type: 'grantKeywords',
+                selector: {
+                  player: 'self',
+                  source: 'effectSource',
+                  zones: ['characters'],
+                  count: {
+                    kind: 'exact',
+                    value: 1,
+                  },
+                },
+                keywords: ['rush'],
+                duration: {
+                  type: 'untilEndOfTurn',
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'jinbe-049-on-play-rest-2-don-draw-2-bounce-7-or-less',
+            text: "[On Play] You may rest 2 of your DON!! cards: Draw 2 cards and return up to 1 Character with a cost of 7 or less to the owner's hand.",
+            trigger: {
+              type: 'onPlay',
+              optional: true,
+            },
+            costs: [
+              {
+                type: 'rest',
+                selector: {
+                  player: 'self',
+                  zones: ['cost'],
+                  filter: {
+                    rested: false,
+                  },
+                  count: {
+                    kind: 'exact',
+                    value: 2,
+                  },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'draw',
+                player: 'self',
+                amount: 2,
+              },
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'either',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 7,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'hand',
+              },
+            ],
+          },
         },
       ],
     },
@@ -2039,10 +2574,6 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
     {
       cardId: 'OP14-061',
       effects: [
-        {
-          kind: 'special-ref',
-          specialHandlerId: 'op14-061-special',
-        },
         {
           kind: 'standard',
           effect: {

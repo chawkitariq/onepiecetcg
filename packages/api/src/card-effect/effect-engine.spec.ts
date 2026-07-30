@@ -151,6 +151,10 @@ class TestHost implements EffectEngineHost {
         return player.zones.leader;
       }
 
+      if (player.zones.stage.instanceId === instanceId) {
+        return player.zones.stage;
+      }
+
       for (const zone of [
         'deck',
         'donDeck',
@@ -506,6 +510,11 @@ class TestHost implements EffectEngineHost {
 
   private removeCard(instanceId: string): void {
     for (const player of this.state.players.values()) {
+      if (player.zones.stage.instanceId === instanceId) {
+        player.zones.stage = new DuelCard();
+        return;
+      }
+
       for (const zone of [
         'deck',
         'donDeck',
@@ -1478,5 +1487,532 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.trash).toHaveLength(2);
     expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
     expect(host.getPlayer('p1')?.zones.leader.power).toBe(7000);
+  });
+
+  it('can apply conditional power changes to the same stored selection', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const conditionalStoredSelectionDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'COND-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'conditional-stored-power',
+                text: 'Choose up to 1 of your Leader or Character cards. It gains +2000 power during this battle. Then, if your opponent has 2 or less Life cards, that card gains an additional +2000 power during this battle.',
+                trigger: { type: 'activateCounter' as const },
+                actions: [
+                  {
+                    type: 'storeSelectedCards' as const,
+                    key: 'selected-target',
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['leader', 'characters'] as const,
+                      count: { kind: 'upTo' as const, value: 1 },
+                    },
+                  },
+                  {
+                    type: 'modifyStoredCardsPower' as const,
+                    key: 'selected-target',
+                    amount: 2000,
+                    duration: { type: 'untilEndOfBattle' as const },
+                  },
+                  {
+                    type: 'ifConditionsMatch' as const,
+                    conditions: [
+                      {
+                        type: 'playerHasLifeAtMost' as const,
+                        player: 'opponent' as const,
+                        value: 2,
+                      },
+                    ],
+                    actions: [
+                      {
+                        type: 'modifyStoredCardsPower' as const,
+                        key: 'selected-target',
+                        amount: 2000,
+                        duration: { type: 'untilEndOfBattle' as const },
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, conditionalStoredSelectionDefinition]),
+      host,
+    );
+    const source = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'COND-001',
+        number: 'COND-001',
+        name: 'Conditional Source',
+        type: 'Event',
+      }),
+      'conditional-source',
+    );
+    const target = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'TARGET-001',
+        number: 'TARGET-001',
+        name: 'Target',
+        type: 'Character',
+        power: 4000,
+      }),
+      'target',
+    );
+
+    host.getPlayer('p2')!.zones.life = host.getPlayer('p2')!.zones.life.slice(0, 2);
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(target.power).toBe(8000);
+  });
+
+  it('supports conditions on the combined life and hand count', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const combinedLifeAndHandDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'COMBINED-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'combined-life-hand-draw',
+                text: 'If you have 4 or fewer cards total in your Life area and hand, draw 1 card.',
+                trigger: { type: 'onPlay' as const },
+                conditions: [
+                  {
+                    type: 'playerHasLifeAndHandAtMost' as const,
+                    player: 'self' as const,
+                    value: 4,
+                  },
+                ],
+                actions: [{ type: 'draw' as const, player: 'self' as const, amount: 1 }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, combinedLifeAndHandDefinition]),
+      host,
+    );
+    const source = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'COMBINED-001',
+        number: 'COMBINED-001',
+        name: 'Combined Count Source',
+        type: 'Character',
+      }),
+      'combined-source',
+    );
+
+    host.getPlayer('p1')!.zones.life = host.getPlayer('p1')!.zones.life.slice(0, 2);
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-1',
+        number: 'HAND-1',
+        name: 'Hand 1',
+        type: 'Event',
+      }),
+      'hand-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw 1',
+        type: 'Event',
+      }),
+      'draw-1',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+  });
+
+  it('supports conditions against the played card in observer-style onCharacterPlayed effects', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const observerDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'OBSERVER-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'observer-draw-on-trigger-character-play',
+                text: 'When you play a Character with Trigger, draw 1 card.',
+                trigger: { type: 'onCharacterPlayed' as const },
+                conditions: [
+                  { type: 'controllerTurn' as const, value: true },
+                  { type: 'eventPlayerIs' as const, player: 'self' as const },
+                  {
+                    type: 'eventTargetMatchesFilter' as const,
+                    filter: {
+                      cardCategory: ['Character'] as const,
+                      hasTrigger: true,
+                    },
+                  },
+                ],
+                actions: [{ type: 'draw' as const, player: 'self' as const, amount: 1 }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, observerDefinition]),
+      host,
+    );
+    const observer = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OBSERVER-001',
+        number: 'OBSERVER-001',
+        name: 'Observer',
+        type: 'Character',
+      }),
+      'observer',
+    );
+    const playedCharacter = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'PLAYED-001',
+        number: 'PLAYED-001',
+        name: 'Played Trigger Character',
+        type: 'Character',
+        trigger: 'Play this card.',
+      }),
+      'played-trigger-character',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw 1',
+        type: 'Event',
+      }),
+      'draw-1',
+    );
+
+    engine.handleEvent({
+      type: 'onCharacterPlayed',
+      playerSessionId: 'p1',
+      sourceInstanceId: playedCharacter.instanceId,
+      sourceCardId: playedCharacter.cardId,
+      sourceZone: 'hand',
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.hand[0]?.name).toBe('Draw 1');
+    expect(host.getPlayer('p1')?.zones.characters).toContain(observer);
+  });
+
+  it('supports observer-style onCardRemovedByEffect effects with source and destination zone conditions', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const observerDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'OBSERVER-REMOVE-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'observer-draw-on-own-hand-trash-by-effect',
+                text: 'When a card is trashed from your hand by an effect, draw 1 card.',
+                trigger: { type: 'onCardRemovedByEffect' as const },
+                conditions: [
+                  { type: 'eventPlayerIs' as const, player: 'self' as const },
+                  { type: 'eventSourceZoneIs' as const, value: 'hand' as const },
+                  {
+                    type: 'eventDestinationZoneIs' as const,
+                    value: 'trash' as const,
+                  },
+                ],
+                actions: [
+                  { type: 'draw' as const, player: 'self' as const, amount: 1 },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          cardId: 'TRASH-HAND-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'trash-one-hand-card',
+                text: 'Trash 1 card from your hand.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'trashFromHand' as const,
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['hand'] as const,
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, observerDefinition]),
+      host,
+    );
+    const observer = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OBSERVER-REMOVE-001',
+        number: 'OBSERVER-REMOVE-001',
+        name: 'Removal Observer',
+        type: 'Character',
+      }),
+      'observer-remove',
+    );
+    const trashSource = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'TRASH-HAND-001',
+        number: 'TRASH-HAND-001',
+        name: 'Trash Source',
+        type: 'Character',
+      }),
+      'trash-source',
+    );
+    const trashedCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'TRASH-ME',
+        number: 'TRASH-ME',
+        name: 'Trash Me',
+        type: 'Event',
+      }),
+      'trash-me',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-REMOVE-1',
+        number: 'DRAW-REMOVE-1',
+        name: 'Draw Remove 1',
+        type: 'Event',
+      }),
+      'draw-remove-1',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: trashSource.instanceId,
+      sourceCardId: trashSource.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.trash).toContain(trashedCard);
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.hand[0]?.name).toBe('Draw Remove 1');
+    expect(host.getPlayer('p1')?.zones.characters).toContain(observer);
+  });
+
+  it('supports observer-style onCardRemovedByEffect effects from cards in the stage area', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const observerDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'STAGE-OBSERVER-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'stage-observer-add-rested-don',
+                text: 'When your character is removed from the field by your opponent effect, add 1 rested DON.',
+                trigger: { type: 'onCardRemovedByEffect' as const },
+                conditions: [
+                  { type: 'eventPlayerIs' as const, player: 'self' as const },
+                  {
+                    type: 'eventEffectControllerIs' as const,
+                    player: 'opponent' as const,
+                  },
+                  { type: 'eventSourceZoneIs' as const, value: 'characters' as const },
+                  {
+                    type: 'eventTargetMatchesFilter' as const,
+                    filter: {
+                      cardCategory: ['Character'] as const,
+                      owner: 'self' as const,
+                    },
+                  },
+                ],
+                actions: [
+                  {
+                    type: 'addDon' as const,
+                    player: 'self' as const,
+                    amount: 1,
+                    rested: true,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          cardId: 'REMOVE-OPPONENT-CHAR',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'remove-opponent-character',
+                text: 'Move 1 opponent Character to the trash.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'moveCard' as const,
+                    selector: {
+                      player: 'opponent' as const,
+                      zones: ['characters'] as const,
+                      filter: {
+                        cardCategory: ['Character'] as const,
+                        name: ['Removed Character'] as const,
+                      },
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                    destinationPlayer: 'selectedCardOwner' as const,
+                    destinationZone: 'trash' as const,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, observerDefinition]),
+      host,
+    );
+    const stageObserver = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'STAGE-OBSERVER-001',
+        number: 'STAGE-OBSERVER-001',
+        name: 'Stage Observer',
+        type: 'Stage',
+      }),
+      'stage-observer',
+    );
+    host.moveCard(stageObserver, 'p1', 'stage');
+    host.addCardToZone(
+      'p1',
+      'donDeck',
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'don-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'REMOVED-CHAR',
+        number: 'REMOVED-CHAR',
+        name: 'Removed Character',
+        type: 'Character',
+      }),
+      'removed-character',
+    );
+    const remover = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'REMOVE-OPPONENT-CHAR',
+        number: 'REMOVE-OPPONENT-CHAR',
+        name: 'Remover',
+        type: 'Character',
+      }),
+      'remover',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p2',
+      sourceInstanceId: remover.instanceId,
+      sourceCardId: remover.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.cost).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.cost[0]?.rested).toBe(true);
   });
 });

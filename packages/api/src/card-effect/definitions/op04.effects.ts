@@ -2337,8 +2337,87 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP04-040',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op04-040-special',
+          kind: 'standard',
+          effect: {
+            id: 'queen-040-when-attacking-don-1-draw-or-add-top-deck-to-life',
+            text: '[DON!! x1] [When Attacking] If you have a total of 4 or less cards in your Life area and hand, draw 1 card. If you have a Character with a cost of 8 or more, you may add up to 1 card from the top of your deck to the top of your Life cards instead of drawing 1 card.',
+            trigger: { type: 'whenAttacking' },
+            conditions: [
+              { type: 'sourceHasAttachedDonAtLeast', value: 1 },
+              { type: 'playerHasLifeAndHandAtMost', player: 'self', value: 4 },
+            ],
+            actions: [
+              {
+                type: 'ifConditionsMatch',
+                conditions: [
+                  {
+                    type: 'targetExists',
+                    selector: {
+                      player: 'self',
+                      zones: ['characters'],
+                      filter: { costMin: 8 },
+                      count: { kind: 'upTo', value: 1 },
+                    },
+                  },
+                  {
+                    type: 'targetExists',
+                    selector: {
+                      player: 'self',
+                      zones: ['deck'],
+                      count: { kind: 'upTo', value: 1 },
+                    },
+                  },
+                ],
+                actions: [
+                  {
+                    type: 'chooseActionBranch',
+                    message:
+                      'Choisissez entre piocher 1 carte ou ajouter la carte du dessus du deck a la Vie.',
+                    choices: [
+                      {
+                        id: 'draw-1',
+                        label: 'Piocher 1',
+                        actions: [{ type: 'draw', player: 'self', amount: 1 }],
+                      },
+                      {
+                        id: 'add-top-deck-to-life',
+                        label: 'Ajouter a la Vie',
+                        actions: [
+                          {
+                            type: 'moveFirstCard',
+                            selector: {
+                              player: 'self',
+                              zones: ['deck'],
+                              filter: { zonePosition: 'top' },
+                              count: { kind: 'exact', value: 1 },
+                            },
+                            destinationPlayer: 'self',
+                            destinationZone: 'life',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'ifConditionsMatch',
+                conditions: [
+                  {
+                    type: 'targetCountAtMost',
+                    selector: {
+                      player: 'self',
+                      zones: ['characters'],
+                      filter: { costMin: 8 },
+                      count: { kind: 'upTo', value: 1 },
+                    },
+                    value: 0,
+                  },
+                ],
+                actions: [{ type: 'draw', player: 'self', amount: 1 }],
+              },
+            ],
+          },
         },
       ],
     },
@@ -2911,8 +2990,82 @@ export const op04EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP04-116',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op04-116-special',
+          kind: 'standard',
+          effect: {
+            id: 'diable-jambe-joue-shot-counter-plus-6000',
+            text: '[Counter] Up to 1 of your Leader or Character cards gains +6000 power during this battle.',
+            trigger: {
+              type: 'activateCounter',
+            },
+            actions: [
+              {
+                type: 'modifyPower',
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                amount: 6000,
+                duration: {
+                  type: 'untilEndOfBattle',
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'diable-jambe-joue-shot-counter-ko-cost-2-or-less',
+            text: "Then, if you and your opponent have a total of 4 or less Life cards, K.O. up to 1 of your opponent's Characters with a cost of 2 or less.",
+            trigger: {
+              type: 'activateCounter',
+            },
+            conditions: [
+              {
+                type: 'playersHaveTotalLifeAtMost',
+                value: 4,
+              },
+            ],
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 2,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'diable-jambe-joue-shot-trigger-draw-1',
+            text: '[Trigger] Draw 1 card.',
+            trigger: {
+              type: 'trigger',
+            },
+            actions: [
+              {
+                type: 'draw',
+                player: 'self',
+                amount: 1,
+              },
+            ],
+          },
         },
       ],
     },

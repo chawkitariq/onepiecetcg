@@ -395,17 +395,23 @@ describe('OP12 effect definitions', () => {
       expect(luffy.power).toBe(5000);
     });
 
-    it('OP12-016 To Never Doubt has special-ref and counter effect', () => {
+    it('OP12-016 To Never Doubt has activate-main and counter effects', () => {
       const card = op12EffectDefinitions.cards.find(
         (c) => c.cardId === 'OP12-016',
       );
       expect(card).toBeDefined();
-      const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
-      expect(refEntry).toBeDefined();
-      if (refEntry?.kind === 'special-ref') {
-        expect(refEntry.specialHandlerId).toBe('op12-016-special');
+      const activateMainEntry = card!.effects!.find(
+        (e) => e.kind === 'standard' && e.effect.id === 'to-never-doubt-activate-main-ko-cost-4-or-less',
+      );
+      expect(activateMainEntry).toBeDefined();
+      if (activateMainEntry?.kind === 'standard') {
+        expect(activateMainEntry.effect.trigger.type).toBe('activateMain');
       }
-      const counterEntry = card!.effects!.find((e) => e.kind === 'standard');
+      const counterEntry = card!.effects!.find(
+        (e) =>
+          e.kind === 'standard' &&
+          e.effect.id === 'to-never-doubt-counter-plus-2000',
+      );
       expect(counterEntry).toBeDefined();
       if (counterEntry?.kind === 'standard') {
         expect(counterEntry.effect.actions[0].type).toBe('modifyPower');
@@ -413,16 +419,16 @@ describe('OP12 effect definitions', () => {
       }
     });
 
-    it('OP12-017 Color of Observation Haki is special-ref', () => {
+    it('OP12-017 Color of Observation Haki has main and trigger effects', () => {
       const card = op12EffectDefinitions.cards.find(
         (c) => c.cardId === 'OP12-017',
       );
       expect(card).toBeDefined();
-      const entry = card!.effects![0];
-      expect(entry.kind).toBe('special-ref');
-      if (entry.kind === 'special-ref') {
-        expect(entry.specialHandlerId).toBe('op12-017-special');
-      }
+      expect(card!.effects).toHaveLength(2);
+      const triggerTypes = card!.effects
+        ?.filter((entry) => entry.kind === 'standard')
+        .map((entry) => (entry.kind === 'standard' ? entry.effect.trigger.type : null));
+      expect(triggerTypes).toEqual(expect.arrayContaining(['activateMain', 'trigger']));
     });
 
     it('OP12-020 Roronoa Zoro Leader is special-ref', () => {
@@ -648,17 +654,18 @@ describe('OP12 effect definitions', () => {
       expect(pending!.prompt.choices).toHaveLength(2);
     });
 
-    it('OP12-040 Kuzan (040) and OP12-041 Sanji (041) are special-ref cards', () => {
+    it('OP12-040 Kuzan (040) and OP12-041 Sanji (041) use standard effects', () => {
       for (const cardId of ['OP12-040', 'OP12-041']) {
         const card = op12EffectDefinitions.cards.find(
           (c) => c.cardId === cardId,
         );
         expect(card).toBeDefined();
-        const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
-        expect(refEntry).toBeDefined();
-        if (refEntry?.kind === 'special-ref') {
-          expect(refEntry.specialHandlerId).toMatch(/^op12-\d{3}-special$/);
-        }
+        expect(card!.effects?.some((entry) => entry.kind === 'standard')).toBe(
+          true,
+        );
+        expect(card!.effects?.some((entry) => entry.kind === 'special-ref')).toBe(
+          false,
+        );
       }
     });
 
@@ -739,16 +746,192 @@ describe('OP12 effect definitions', () => {
       expect(['selectCards', 'confirm']).toContain(pending!.prompt.type);
     });
 
-    it('OP12-081 Koala Leader is special-ref', () => {
+    it('OP12-081 Koala Leader uses standard attack and observer effects', () => {
       const card = op12EffectDefinitions.cards.find(
         (c) => c.cardId === 'OP12-081',
       );
       expect(card).toBeDefined();
-      const entry = card!.effects![0];
-      expect(entry.kind).toBe('special-ref');
-      if (entry.kind === 'special-ref') {
-        expect(entry.specialHandlerId).toBe('op12-081-special');
-      }
+      expect(card!.effects).toHaveLength(2);
+      expect(card!.effects!.every((entry) => entry.kind === 'standard')).toBe(
+        true,
+      );
+    });
+
+    it("OP12-081 draws 1 when attacking the opponent's Leader with 2 cost-8+ Characters", () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.addCardToZone(
+        'p1',
+        'deck',
+        makeCard({
+          id: 'DRAW-1',
+          number: 'DRAW-1',
+          name: 'Draw 1',
+          type: 'Character',
+        }),
+        'draw-1',
+      );
+
+      host.getPlayer('p1')!.zones.leader.cardId = 'OP12-081';
+      host.getPlayer('p2')!.zones.leader.cardId = 'OPP-LEADER';
+
+      const firstBigCharacter = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'BIG-1',
+          number: 'BIG-1',
+          name: 'Big 1',
+          type: 'Character',
+          cost: 8,
+          power: 8000,
+        }),
+        'big-1',
+      );
+      host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'BIG-2',
+          number: 'BIG-2',
+          name: 'Big 2',
+          type: 'Character',
+          cost: 9,
+          power: 9000,
+        }),
+        'big-2',
+      );
+
+      engine.handleEvent({
+        type: 'whenAttacking',
+        playerSessionId: 'p1',
+        sourceInstanceId: host.getPlayer('p1')!.zones.leader.instanceId,
+        sourceCardId: 'OP12-081',
+        targetInstanceId: host.getPlayer('p2')!.zones.leader.instanceId,
+        targetCardId: host.getPlayer('p2')!.zones.leader.cardId,
+      });
+
+      expect(firstBigCharacter.ownerSessionId).toBe('p1');
+      expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    });
+
+    it('OP12-081 makes the opponent add the top Life card to hand when they play an 8+ base cost Character', () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.getPlayer('p1')!.zones.leader.cardId = 'OP12-081';
+      host.addCardToZone(
+        'p2',
+        'life',
+        makeCard({
+          id: 'LIFE-1',
+          number: 'LIFE-1',
+          name: 'Life 1',
+          type: 'Event',
+        }),
+        'life-1',
+      );
+      const expensiveCharacter = host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'EXPENSIVE-1',
+          number: 'EXPENSIVE-1',
+          name: 'Expensive 1',
+          type: 'Character',
+          cost: 8,
+          power: 8000,
+        }),
+        'expensive-1',
+      );
+
+      engine.handleEvent({
+        type: 'onCharacterPlayed',
+        playerSessionId: 'p2',
+        sourceInstanceId: expensiveCharacter.instanceId,
+        sourceCardId: expensiveCharacter.cardId,
+        targetInstanceId: expensiveCharacter.instanceId,
+        targetCardId: expensiveCharacter.cardId,
+        sourceZone: 'hand',
+        playedByEffect: false,
+      });
+
+      expect(host.getPlayer('p2')?.zones.life).toHaveLength(0);
+      expect(host.getPlayer('p2')?.zones.hand).toHaveLength(1);
+    });
+
+    it("OP12-081 also triggers when the opponent plays a Character using another Character's effect", () => {
+      const host = new TestHost();
+      host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op12EffectDefinitions]),
+        host,
+      );
+
+      host.getPlayer('p1')!.zones.leader.cardId = 'OP12-081';
+      host.addCardToZone(
+        'p2',
+        'life',
+        makeCard({
+          id: 'LIFE-2',
+          number: 'LIFE-2',
+          name: 'Life 2',
+          type: 'Event',
+        }),
+        'life-2',
+      );
+      const sourceCharacter = host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'SOURCE-CHAR',
+          number: 'SOURCE-CHAR',
+          name: 'Source Character',
+          type: 'Character',
+          cost: 4,
+          power: 4000,
+        }),
+        'source-char',
+      );
+      const playedByEffectCharacter = host.addCardToZone(
+        'p2',
+        'characters',
+        makeCard({
+          id: 'PLAYED-BY-EFFECT',
+          number: 'PLAYED-BY-EFFECT',
+          name: 'Played By Effect',
+          type: 'Character',
+          cost: 3,
+          power: 3000,
+        }),
+        'played-by-effect',
+      );
+
+      engine.handleEvent({
+        type: 'onCharacterPlayed',
+        playerSessionId: 'p2',
+        sourceInstanceId: sourceCharacter.instanceId,
+        sourceCardId: sourceCharacter.cardId,
+        targetInstanceId: playedByEffectCharacter.instanceId,
+        targetCardId: playedByEffectCharacter.cardId,
+        sourceZone: 'characters',
+        playedByEffect: true,
+      });
+
+      expect(host.getPlayer('p2')?.zones.life).toHaveLength(0);
+      expect(host.getPlayer('p2')?.zones.hand).toHaveLength(1);
     });
 
     it('OP12-085 Karasu [When Attacking] with Rev Army Leader and 5+ opponent hand cards queues trash decision', () => {
@@ -798,15 +981,17 @@ describe('OP12 effect definitions', () => {
       expect(pending).not.toBeNull();
     });
 
-    it('OP12-096 Ursa Shock is special-ref and trigger draws 1 + mills 1', () => {
+    it('OP12-096 Ursa Shock has activate-main and trigger effects', () => {
       const card = op12EffectDefinitions.cards.find(
         (c) => c.cardId === 'OP12-096',
       );
       expect(card).toBeDefined();
-      const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
-      expect(refEntry).toBeDefined();
-      if (refEntry?.kind === 'special-ref') {
-        expect(refEntry.specialHandlerId).toBe('op12-096-special');
+      const activateMainEntry = card!.effects!.find(
+        (e) => e.kind === 'standard' && e.effect.id === 'ursa-shock-activate-main-set-up-to-2-don-active',
+      );
+      expect(activateMainEntry).toBeDefined();
+      if (activateMainEntry?.kind === 'standard') {
+        expect(activateMainEntry.effect.trigger.type).toBe('activateMain');
       }
 
       const host = new TestHost();
@@ -862,15 +1047,19 @@ describe('OP12 effect definitions', () => {
       expect(host.getPlayer('p1')?.zones.trash).toHaveLength(1);
     });
 
-    it('OP12-102 Shirahoshi has special-ref and continuous Neptunian +2000 power on opponent turn', () => {
+    it('OP12-102 Shirahoshi has on-play search and continuous Neptunian +2000 power on opponent turn', () => {
       const card = op12EffectDefinitions.cards.find(
         (c) => c.cardId === 'OP12-102',
       );
       expect(card).toBeDefined();
-      const refEntry = card!.effects!.find((e) => e.kind === 'special-ref');
-      expect(refEntry).toBeDefined();
-      if (refEntry?.kind === 'special-ref') {
-        expect(refEntry.specialHandlerId).toBe('op12-102-special');
+      const onPlayEntry = card!.effects!.find(
+        (e) => e.kind === 'standard',
+      );
+      expect(onPlayEntry).toBeDefined();
+      if (onPlayEntry?.kind === 'standard') {
+        expect(onPlayEntry.effect.id).toBe(
+          'shirahoshi-on-play-search-cost-6-or-more',
+        );
       }
 
       const host = new TestHost();

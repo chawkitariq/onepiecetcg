@@ -545,6 +545,116 @@ describe('op04EffectDefinitions', () => {
     expect(host.getPlayer('p1')?.zones.trash).not.toContain(hiyori);
   });
 
+  it('lets Queen draw 1 when attacking with DON!! x1 and 4 or fewer total life and hand cards', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const queen = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP04-040',
+        number: 'OP04-040',
+        name: 'Queen',
+        type: 'Character',
+      }),
+      'queen',
+    );
+    queen.attachedDon = 1;
+    host.getPlayer('p1')!.zones.life = [];
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'H1', number: 'H1', name: 'Hand 1', type: 'Event' }),
+      'hand-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({ id: 'D1', number: 'D1', name: 'Draw 1', type: 'Character' }),
+      'draw-1',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: queen.instanceId,
+      sourceCardId: queen.cardId,
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+    expect(host.getPlayer('p1')?.zones.hand.at(-1)?.name).toBe('Draw 1');
+  });
+
+  it('lets Queen choose to add the top deck card to life instead of drawing when you control a cost-8 character', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const queen = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP04-040',
+        number: 'OP04-040',
+        name: 'Queen',
+        type: 'Character',
+      }),
+      'queen',
+    );
+    queen.attachedDon = 1;
+    host.getPlayer('p1')!.zones.life = [];
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({ id: 'H1', number: 'H1', name: 'Hand 1', type: 'Event' }),
+      'hand-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'BIG',
+        number: 'BIG',
+        name: 'Big Character',
+        type: 'Character',
+        cost: 8,
+      }),
+      'big-character',
+    );
+    const deckTop = host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'LIFE',
+        number: 'LIFE',
+        name: 'Life Top',
+        type: 'Character',
+      }),
+      'life-top',
+    );
+
+    engine.handleEvent({
+      type: 'whenAttacking',
+      playerSessionId: 'p1',
+      sourceInstanceId: queen.instanceId,
+      sourceCardId: queen.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({
+      decisionId: decision?.id ?? '',
+      selectedChoiceIds: ['add-top-deck-to-life'],
+    });
+
+    expect(host.getPlayer('p1')?.zones.life[0]).toBe(deckTop);
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.deck).toHaveLength(0);
+  });
+
   it('keeps Nefeltari Vivi from attacking and lets its main effect draw then grant Rush', () => {
     const host = new TestHost();
     host.addPlayer('p1', {
@@ -731,6 +841,139 @@ describe('op04EffectDefinitions', () => {
 
     expect(host.getPlayer('p2')?.zones.characters).not.toContain(target);
     expect(host.getPlayer('p2')?.zones.deck.at(-1)).toBe(target);
+  });
+
+  it('lets Diable Jambe Joue Shot grant +6000 power during battle', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const eventCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'OP04-116',
+        number: 'OP04-116',
+        name: 'Diable Jambe Joue Shot',
+        type: 'Event',
+      }),
+      'diable-jambe',
+    );
+    const target = host.getPlayer('p1')!.zones.leader;
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: eventCard.instanceId,
+      sourceCardId: eventCard.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: decision!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(target.power).toBe(11000);
+  });
+
+  it('lets Diable Jambe Joue Shot K.O. a cost 2 or less character when total life is 4 or less', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const eventCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'OP04-116',
+        number: 'OP04-116',
+        name: 'Diable Jambe Joue Shot',
+        type: 'Event',
+      }),
+      'diable-jambe',
+    );
+    while (host.getPlayer('p1')!.zones.life.length > 2) {
+      host.getPlayer('p1')!.zones.life.pop();
+    }
+    while (host.getPlayer('p2')!.zones.life.length > 2) {
+      host.getPlayer('p2')!.zones.life.pop();
+    }
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'C2',
+        number: 'C2',
+        name: 'Cost Two',
+        type: 'Character',
+        cost: 2,
+      }),
+      'cost-two',
+    );
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: eventCard.instanceId,
+      sourceCardId: eventCard.cardId,
+    });
+
+    let decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: decision!.id,
+      selectedCardInstanceIds: [host.getPlayer('p1')!.zones.leader.instanceId],
+    });
+
+    decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: decision!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(target);
+    expect(host.getPlayer('p2')?.zones.trash).toContain(target);
+  });
+
+  it('lets Diable Jambe Joue Shot draw 1 on trigger', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+    const eventCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'OP04-116',
+        number: 'OP04-116',
+        name: 'Diable Jambe Joue Shot',
+        type: 'Event',
+      }),
+      'diable-jambe',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW',
+        number: 'DRAW',
+        name: 'Drawn Card',
+        type: 'Character',
+      }),
+      'drawn-card',
+    );
+
+    engine.handleEvent({
+      type: 'trigger',
+      playerSessionId: 'p1',
+      sourceInstanceId: eventCard.instanceId,
+      sourceCardId: eventCard.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
   });
 
   it('lets Donquixote Doflamingo mark rested opposing cards to skip their next refresh', () => {

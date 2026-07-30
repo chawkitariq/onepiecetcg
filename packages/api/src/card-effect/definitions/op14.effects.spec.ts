@@ -494,11 +494,9 @@ describe('op14EffectDefinitions', () => {
     );
   });
 
-  it('OP14-032 effect is registered via special-ref', () => {
+  it('OP14-032 effect is registered via standard triggers', () => {
     const registry = createRegistry();
-    expect(registry.effectsByCardId['OP14-032']?.specialHandlerId).toBe(
-      'op14-032-special',
-    );
+    expect(registry.effectsByCardId['OP14-032']?.standard).toHaveLength(2);
   });
 
   it('OP14-092 mr-3-replacement registers a replacement effect for wouldKoCharacter', () => {
@@ -533,30 +531,32 @@ describe('op14EffectDefinitions', () => {
     });
   });
 
+  it('continuous effect OP14-011 registers correctly', () => {
+    const registry = createRegistry();
+    const effects = registry.effectsByCardId['OP14-011'];
+    expect(effects?.continuous).toBeDefined();
+    expect(effects.continuous![0].id).toBe(
+      'bartolomeo-011-don-2-gains-blocker',
+    );
+    expect(effects.continuous![0].conditions![0]).toEqual({
+      type: 'sourceHasAttachedDonAtLeast',
+      value: 2,
+    });
+  });
+
   it('all special handlers for OP14 are registered in the index', () => {
     const handlerIds = specialHandlerDefinitions.map((h) => h.id);
     const expected = [
       'op14-001-special',
       'op14-009-special',
-      'op14-011-special',
-      'op14-016-special',
       'op14-017-special',
       'op14-020-special',
       'op14-021-special',
-      'op14-027-special',
-      'op14-028-special',
-      'op14-032-special',
       'op14-033-special',
-      'op14-034-special',
       'op14-035-special',
-      'op14-041-special',
-      'op14-044-special',
-      'op14-045-special',
-      'op14-049-special',
       'op14-053-special',
       'op14-056-special',
       'op14-060-special',
-      'op14-061-special',
       'op14-062-special',
       'op14-069-special',
       'op14-070-special',
@@ -652,6 +652,33 @@ describe('OP14 behavioral tests', () => {
 
     expect(host.getPlayer('p2')?.zones.characters).not.toContain(opponent);
     expect(host.getPlayer('p2')?.zones.trash[0]).toBe(opponent);
+  });
+
+  it('OP14-011 Bartolomeo gains Blocker with 2 attached DON!!', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const bartolomeo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-011',
+        number: 'OP14-011',
+        name: 'Bartolomeo',
+        type: 'Character',
+      }),
+      'bartolomeo',
+    );
+
+    expect(bartolomeo.mustBeAttackTarget).toBe(false);
+
+    bartolomeo.attachedDon = 2;
+    engine.reapplyContinuousEffects();
+
+    expect(bartolomeo.mustBeAttackTarget).toBe(true);
+    expect(bartolomeo.cannotBlock).toBe(false);
   });
 
   it('OP14-005 Killer attachDon activateMain once per turn', () => {
@@ -1255,7 +1282,7 @@ describe('OP14 behavioral tests', () => {
     expect(strong.power).toBe(2000);
   });
 
-  it('OP14-016 X.Drake special gives -2000 power when attacking with DON!! x1', () => {
+  it('OP14-016 X.Drake standard effect gives -2000 power when attacking with DON!! x1', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
@@ -1306,7 +1333,7 @@ describe('OP14 behavioral tests', () => {
     expect(target.power).toBe(3000);
   });
 
-  it('OP14-028 Johnny special KOs opponent rested cost 2 character when becoming rested on play', () => {
+  it('OP14-028 Johnny standard effect KOs opponent rested cost 2 character when becoming rested on play', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
@@ -1360,7 +1387,156 @@ describe('OP14 behavioral tests', () => {
     expect(host.getPlayer('p2')?.zones.trash[0]).toBe(target);
   });
 
-  it('OP14-045 Kuroobi special draws 1 on KO', () => {
+  it('OP14-027 Shanks standard effect rests an opponent character with 7000 base power or less when becoming rested on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const shanks = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-027',
+        number: 'OP14-027',
+        name: 'Shanks',
+        type: 'Character',
+        power: 6000,
+      }),
+      'shanks-027',
+    );
+    shanks.rested = true;
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT-27',
+        number: 'TGT-27',
+        name: 'Target 27',
+        type: 'Character',
+        power: 7000,
+      }),
+      'tgt-27',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: shanks.instanceId,
+      sourceCardId: shanks.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    if (decision) {
+      expect(decision.prompt.type).toBe('selectCards');
+      engine.answerDecision({
+        decisionId: decision.id,
+        selectedCardInstanceIds: [target.instanceId],
+      });
+    }
+
+    expect(target.rested).toBe(true);
+  });
+
+  it('OP14-027 Shanks continuous effect gives opponent characters +1000 on opponent turn while rested', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const shanks = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-027',
+        number: 'OP14-027',
+        name: 'Shanks',
+        type: 'Character',
+        power: 6000,
+      }),
+      'shanks-027',
+    );
+    shanks.rested = true;
+    const opponentChar = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'OPP-27',
+        number: 'OPP-27',
+        name: 'Opponent 27',
+        type: 'Character',
+        power: 5000,
+      }),
+      'opp-27',
+    );
+
+    host.state.activePlayerSessionId = 'p2';
+    engine.reapplyContinuousEffects();
+
+    expect(opponentChar.power).toBe(6000);
+  });
+
+  it('OP14-032 Humandrill standard effect rests an opponent character with cost 4 or less when becoming rested on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const humandrill = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-032',
+        number: 'OP14-032',
+        name: 'Humandrill',
+        type: 'Character',
+        power: 4000,
+      }),
+      'humandrill',
+    );
+    humandrill.rested = true;
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TGT-32',
+        number: 'TGT-32',
+        name: 'Cost Four Target',
+        type: 'Character',
+        cost: 4,
+      }),
+      'tgt-32',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: humandrill.instanceId,
+      sourceCardId: humandrill.cardId,
+    });
+
+    const decision = engine.getPendingDecision();
+    if (decision) {
+      expect(decision.prompt.type).toBe('selectCards');
+      engine.answerDecision({
+        decisionId: decision.id,
+        selectedCardInstanceIds: [target.instanceId],
+      });
+    }
+
+    expect(target.rested).toBe(true);
+  });
+
+  it('OP14-045 Kuroobi standard effect draws 1 on KO', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
@@ -1399,7 +1575,89 @@ describe('OP14 behavioral tests', () => {
     expect(host.getPlayer('p1')?.zones.hand.length).toBe(1);
   });
 
-  it('OP14-061 Vergo special gives opponent -2000 power when attacking with DON!! x1', () => {
+  it('OP14-045 Kuroobi gains Rush during the turn when your hand card is trashed by an effect', () => {
+    const helperDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'HELPER-TRASH-HAND',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'helper-trash-hand',
+                text: 'Trash 1 card from your hand.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'trashFromHand' as const,
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['hand'] as const,
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions, helperDefinition], specialHandlerDefinitions),
+      host,
+    );
+
+    const kuroobi = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-045',
+        number: 'OP14-045',
+        name: 'Kuroobi',
+        type: 'Character',
+      }),
+      'kuroobi',
+    );
+    const helper = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'HELPER-TRASH-HAND',
+        number: 'HELPER-TRASH-HAND',
+        name: 'Helper Trash Hand',
+        type: 'Character',
+      }),
+      'helper-trash-hand',
+    );
+    const trashedCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-TRASH',
+        number: 'HAND-TRASH',
+        name: 'Hand Trash',
+        type: 'Event',
+      }),
+      'hand-trash',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: helper.instanceId,
+      sourceCardId: helper.cardId,
+    });
+
+    expect(kuroobi.hasRush).toBe(true);
+    expect(host.getPlayer('p1')?.zones.trash).toContain(trashedCard);
+  });
+
+  it('OP14-044 Edward.Newgate reveals the top deck card, then draws 2 and trashes 1 if it includes Whitebeard Pirates', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
@@ -1407,6 +1665,371 @@ describe('OP14 behavioral tests', () => {
       createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
       host,
     );
+
+    const newgate = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-044',
+        number: 'OP14-044',
+        name: 'Edward.Newgate',
+        type: 'Character',
+      }),
+      'newgate',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'TOP-DECK',
+        number: 'TOP-DECK',
+        name: 'Top Deck',
+        type: 'Character',
+        families: ['The Four Emperors Whitebeard Pirates'],
+      }),
+      'top-deck',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw 1',
+        type: 'Character',
+      }),
+      'draw-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-2',
+        number: 'DRAW-2',
+        name: 'Draw 2',
+        type: 'Character',
+      }),
+      'draw-2',
+    );
+    const trashedCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'TRASH-ME',
+        number: 'TRASH-ME',
+        name: 'Trash Me',
+        type: 'Event',
+      }),
+      'trash-me',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: newgate.instanceId,
+      sourceCardId: newgate.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: pending!.id,
+      selectedCardInstanceIds: [trashedCard.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+    expect(host.getPlayer('p1')?.zones.trash).toContain(trashedCard);
+  });
+
+  it('OP14-049 Jinbe can rest 2 DON!! to draw 2 and return a cost-7-or-less Character to hand on play', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'COST-DON-1',
+        number: 'COST-DON-1',
+        name: 'DON!!',
+        type: 'Don',
+      }),
+      'cost-don-1',
+    );
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'COST-DON-2',
+        number: 'COST-DON-2',
+        name: 'DON!!',
+        type: 'Don',
+      }),
+      'cost-don-2',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1-049',
+        number: 'DRAW-1-049',
+        name: 'Draw 1',
+        type: 'Character',
+      }),
+      'draw-1-049',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-2-049',
+        number: 'DRAW-2-049',
+        name: 'Draw 2',
+        type: 'Character',
+      }),
+      'draw-2-049',
+    );
+    const jinbe = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-049',
+        number: 'OP14-049',
+        name: 'Jinbe',
+        type: 'Character',
+      }),
+      'jinbe',
+    );
+    const target = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TARGET-049',
+        number: 'TARGET-049',
+        name: 'Target 049',
+        type: 'Character',
+        cost: 7,
+      }),
+      'target-049',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: jinbe.instanceId,
+      sourceCardId: jinbe.cardId,
+    });
+
+    const confirm = engine.getPendingDecision();
+    expect(confirm?.prompt.type).toBe('confirm');
+    engine.answerDecision({
+      decisionId: confirm!.id,
+      confirmed: true,
+    });
+
+    const selectTarget = engine.getPendingDecision();
+    expect(selectTarget?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: selectTarget!.id,
+      selectedCardInstanceIds: [target.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(2);
+    expect(host.getPlayer('p2')?.zones.hand).toContain(target);
+    expect(host.getPlayer('p2')?.zones.characters).not.toContain(target);
+  });
+
+  it('OP14-049 Jinbe gains Rush during the turn when your hand card is trashed by an effect', () => {
+    const helperDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'HELPER-TRASH-HAND',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'helper-trash-hand',
+                text: 'Trash 1 card from your hand.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'trashFromHand' as const,
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['hand'] as const,
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions, helperDefinition], specialHandlerDefinitions),
+      host,
+    );
+
+    const jinbe = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-049',
+        number: 'OP14-049',
+        name: 'Jinbe',
+        type: 'Character',
+      }),
+      'jinbe',
+    );
+    const helper = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'HELPER-TRASH-HAND',
+        number: 'HELPER-TRASH-HAND',
+        name: 'Helper Trash Hand',
+        type: 'Character',
+      }),
+      'helper-trash-hand',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'HAND-TRASH-049',
+        number: 'HAND-TRASH-049',
+        name: 'Hand Trash 049',
+        type: 'Event',
+      }),
+      'hand-trash-049',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: helper.instanceId,
+      sourceCardId: helper.cardId,
+    });
+
+    expect(jinbe.hasRush).toBe(true);
+  });
+
+  it('OP14-056 Wadatsumi cannot attack by default, then regains its effect after a hand card is trashed by an effect until end of turn', () => {
+    const helperDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'HELPER-TRASH-HAND',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'helper-trash-hand',
+                text: 'Trash 1 card from your hand.',
+                trigger: { type: 'onPlay' as const },
+                actions: [
+                  {
+                    type: 'trashFromHand' as const,
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['hand'] as const,
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions, helperDefinition], specialHandlerDefinitions),
+      host,
+    );
+
+    const wadatsumi = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-056',
+        number: 'OP14-056',
+        name: 'Wadatsumi',
+        type: 'Character',
+      }),
+      'wadatsumi',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: wadatsumi.instanceId,
+      sourceCardId: wadatsumi.cardId,
+    });
+
+    expect(wadatsumi.cannotAttack).toBe(true);
+
+    const helper = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'HELPER-TRASH-HAND',
+        number: 'HELPER-TRASH-HAND',
+        name: 'Helper Trash Hand',
+        type: 'Character',
+      }),
+      'helper-trash-hand',
+    );
+    host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'WADA-HAND-TRASH',
+        number: 'WADA-HAND-TRASH',
+        name: 'Wada Hand Trash',
+        type: 'Event',
+      }),
+      'wada-hand-trash',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: helper.instanceId,
+      sourceCardId: helper.cardId,
+    });
+
+    expect(wadatsumi.cannotAttack).toBe(false);
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p1',
+      sourceInstanceId: wadatsumi.instanceId,
+      sourceCardId: wadatsumi.cardId,
+    });
+
+    expect(wadatsumi.cannotAttack).toBe(true);
+  });
+
+  it('OP14-061 Vergo standard effect gives opponent -2000 power when attacking with DON!! x1', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry([op14EffectDefinitions]), host);
 
     const vergo = host.addCardToZone(
       'p1',
@@ -1431,7 +2054,17 @@ describe('OP14 behavioral tests', () => {
       }),
       'tgt',
     );
-    vergo.attachedDon = 1;
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!!',
+        type: 'Don',
+      }),
+      'don-1',
+    );
 
     engine.handleEvent({
       type: 'whenAttacking',
@@ -1448,6 +2081,125 @@ describe('OP14 behavioral tests', () => {
     });
 
     expect(target.power).toBe(3000);
+  });
+
+  it("OP14-041 Boa Hancock draws 1 when you play a Character during your opponent's turn", () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    host.state.activePlayerSessionId = 'p2';
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const boa = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-041',
+        number: 'OP14-041',
+        name: 'Boa Hancock',
+        type: 'Character',
+      }),
+      'boa',
+    );
+    const playedCharacter = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'PLAYED-1',
+        number: 'PLAYED-1',
+        name: 'Played Character',
+        type: 'Character',
+      }),
+      'played-character',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw 1',
+        type: 'Character',
+      }),
+      'draw-1',
+    );
+
+    engine.handleEvent({
+      type: 'onCharacterPlayed',
+      playerSessionId: 'p1',
+      sourceInstanceId: playedCharacter.instanceId,
+      sourceCardId: playedCharacter.cardId,
+      sourceZone: 'hand',
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p1')?.zones.hand[0]?.name).toBe('Draw 1');
+    expect(host.getPlayer('p1')?.zones.characters).toContain(boa);
+  });
+
+  it("OP14-041 Boa Hancock moves the top opponent Life card to its owner's hand when your 5000+ Amazon Lily or Kuja Pirates Character is K.O.'d", () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const boa = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-041',
+        number: 'OP14-041',
+        name: 'Boa Hancock',
+        type: 'Character',
+        power: 5000,
+      }),
+      'boa',
+    );
+    boa.attachedDon = 1;
+
+    const alliedCharacter = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-1',
+        number: 'ALLY-1',
+        name: 'Allied Character',
+        type: 'Character',
+        power: 5000,
+        families: ['Amazon Lily'],
+      }),
+      'allied-character',
+    );
+    host.addCardToZone(
+      'p2',
+      'life',
+      makeCard({
+        id: 'LIFE-1',
+        number: 'LIFE-1',
+        name: 'Life 1',
+        type: 'Event',
+      }),
+      'life-1',
+    );
+
+    engine.handleEvent({
+      type: 'onKo',
+      playerSessionId: 'p1',
+      sourceInstanceId: alliedCharacter.instanceId,
+      sourceCardId: alliedCharacter.cardId,
+      targetInstanceId: alliedCharacter.instanceId,
+      targetCardId: alliedCharacter.cardId,
+    });
+
+    expect(host.getPlayer('p2')?.zones.life).toHaveLength(0);
+    expect(host.getPlayer('p2')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p2')?.zones.hand[0]?.name).toBe('Life 1');
   });
 
   it('OP14-062 Gladius special KOs opponent 6000-base-power character with DON!! 1 on KO', () => {

@@ -281,8 +281,84 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-114',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-114-special',
+          kind: 'standard',
+          effect: {
+            id: 'el-thor-counter-dynamic-power',
+            text: '[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, if your opponent has 2 or less Life cards, that card gains an additional +2000 power during this battle.',
+            trigger: {
+              type: 'activateCounter',
+            },
+            actions: [
+              {
+                type: 'storeSelectedCards',
+                key: 'el-thor-target',
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+              },
+              {
+                type: 'modifyStoredCardsPower',
+                key: 'el-thor-target',
+                amount: 2000,
+                duration: {
+                  type: 'untilEndOfBattle',
+                },
+              },
+              {
+                type: 'ifConditionsMatch',
+                conditions: [
+                  {
+                    type: 'playerHasLifeAtMost',
+                    player: 'opponent',
+                    value: 2,
+                  },
+                ],
+                actions: [
+                  {
+                    type: 'modifyStoredCardsPower',
+                    key: 'el-thor-target',
+                    amount: 2000,
+                    duration: {
+                      type: 'untilEndOfBattle',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'el-thor-trigger-ko-cost-equal-to-opponent-life',
+            text: "[Trigger] K.O. up to 1 of your opponent's Characters with a cost equal to or less than the number of your opponent's Life Cards.",
+            trigger: {
+              type: 'trigger',
+            },
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMaxFromLifeOf: 'opponent',
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
         },
       ],
     },
@@ -2094,8 +2170,94 @@ export const op05EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP05-060',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op05-060-special',
+          kind: 'standard',
+          effect: {
+            id: 'monkey-d-luffy-060-activate-main-life-to-hand-add-don-if-zero-don',
+            text: '[Activate: Main] [Once Per Turn] You may add 1 card from the top of your Life cards to your hand: If you have 0 DON!! cards on your field, add up to 1 DON!! card from your DON!! deck and set it as active.',
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
+            conditions: [
+              {
+                type: 'playerHasTotalDonAtMost',
+                player: 'self',
+                value: 0,
+              },
+            ],
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: {
+                    zonePosition: 'top',
+                  },
+                  count: {
+                    kind: 'exact',
+                    value: 1,
+                  },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'hand',
+              },
+            ],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 1,
+                rested: false,
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'monkey-d-luffy-060-activate-main-life-to-hand-add-don-if-three-or-more-don',
+            text: '[Activate: Main] [Once Per Turn] You may add 1 card from the top of your Life cards to your hand: If you have 3 or more DON!! cards on your field, add up to 1 DON!! card from your DON!! deck and set it as active.',
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+              optional: true,
+            },
+            conditions: [
+              {
+                type: 'playerHasTotalDonAtLeast',
+                player: 'self',
+                value: 3,
+              },
+            ],
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['life'],
+                  filter: {
+                    zonePosition: 'top',
+                  },
+                  count: {
+                    kind: 'exact',
+                    value: 1,
+                  },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'hand',
+              },
+            ],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 1,
+                rested: false,
+              },
+            ],
+          },
         },
       ],
     },

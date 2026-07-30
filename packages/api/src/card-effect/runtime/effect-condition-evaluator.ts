@@ -122,6 +122,53 @@ export class EffectConditionEvaluator {
             this.selectors.countTotalDonOnField(playerId) >= condition.value
           );
         }
+        case 'playerHasTotalDonAtMost': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          return (
+            this.selectors.countTotalDonOnField(playerId) <= condition.value
+          );
+        }
+        case 'playerHasActiveDonAtLeast': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          const activeDonCount =
+            player?.zones.cost.filter((card) => !card.rested).length ?? 0;
+          return activeDonCount >= condition.value;
+        }
+        case 'playerHasHandAtMost': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+          return (player?.zones.hand.length ?? 0) <= condition.value;
+        }
+        case 'playerHasLifeAndHandAtMost': {
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          const player = playerId ? this.host.getPlayer(playerId) : undefined;
+
+          return (
+            (player?.zones.life.length ?? 0) + (player?.zones.hand.length ?? 0) <=
+            condition.value
+          );
+        }
+        case 'playersHaveTotalLifeAtMost': {
+          const players = Array.from(this.host.state.players.values());
+          const totalLife = players.reduce(
+            (sum, player) => sum + player.zones.life.length,
+            0,
+          );
+          return totalLife <= condition.value;
+        }
         case 'playerHasOnlyCharactersWithTrait': {
           const playerId = this.selectors.resolvePlayer(
             condition.player,
@@ -148,6 +195,23 @@ export class EffectConditionEvaluator {
           );
           return playerId === event.playerSessionId;
         }
+        case 'eventSourceZoneIs':
+          return event?.sourceZone === condition.value;
+        case 'eventDestinationZoneIs':
+          return event?.destinationZone === condition.value;
+        case 'eventEffectControllerIs': {
+          if (!event?.effectControllerSessionId) {
+            return false;
+          }
+
+          const playerId = this.selectors.resolvePlayer(
+            condition.player,
+            controllerSessionId,
+          );
+          return playerId === event.effectControllerSessionId;
+        }
+        case 'eventPlayedByEffect':
+          return event?.playedByEffect === condition.value;
         case 'eventReasonIs':
           return event !== undefined && 'reason' in event
             ? event.reason === condition.value
@@ -163,6 +227,28 @@ export class EffectConditionEvaluator {
             eventSource !== null &&
             eventSource.text.length === 0 &&
             eventSource.trigger.length === 0
+          );
+        }
+        case 'eventTargetMatchesFilter': {
+          if (!event?.targetInstanceId) {
+            return false;
+          }
+
+          const eventTarget = this.host.getCard(event.targetInstanceId);
+
+          if (!eventTarget) {
+            return false;
+          }
+
+          return this.selectors.matchesFilter(
+            eventTarget,
+            condition.filter,
+            controllerSessionId,
+            {
+              sourceInstanceId: source.instanceId,
+              storedSelections: {},
+              eventTargetInstanceId: event.targetInstanceId,
+            },
           );
         }
         case 'targetExists':

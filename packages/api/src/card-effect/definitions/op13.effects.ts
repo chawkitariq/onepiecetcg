@@ -867,8 +867,60 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP13-031',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op13-031-special',
+          kind: 'continuous',
+          effect: {
+            id: 'trafalgar-law-031-life-1-or-less-gains-blocker',
+            text: 'If you have 1 or less Life cards, this Character gains [Blocker].',
+            conditions: [
+              {
+                type: 'playerHasLifeAtMost',
+                player: 'self',
+                value: 1,
+              },
+            ],
+            modifier: {
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
+              keywords: ['mustBeAttackTarget'],
+            },
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'trafalgar-law-031-on-play-bounce-1-play-cost-5-or-less-rested',
+            text: '[On Play] You may return 1 of your Characters to the owner\'s hand: Play up to 1 Character card with a cost of 5 or less from your hand rested.',
+            trigger: { type: 'onPlay', optional: true },
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { cardCategory: ['Character'] },
+                  count: { kind: 'exact', value: 1 },
+                },
+                destinationPlayer: 'selectedCardOwner',
+                destinationZone: 'hand',
+              },
+            ],
+            actions: [
+              {
+                type: 'play',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  filter: { cardCategory: ['Character'], costMax: 5 },
+                  count: { kind: 'upTo', value: 1 },
+                },
+                destination: 'characters',
+                rested: true,
+              },
+            ],
+          },
         },
       ],
     },
@@ -2504,8 +2556,45 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP13-078',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op13-078-special',
+          kind: 'standard',
+          effect: {
+            id: 'oro-jackson-078-on-roger-pirates-removed-add-rested-don',
+            text: '[Once Per Turn] When your Character with a type including "Roger Pirates" is removed from the field by your opponent\'s effect, add up to 1 DON!! card from your DON!! deck and rest it.',
+            trigger: {
+              type: 'onCardRemovedByEffect',
+              oncePerTurn: true,
+            },
+            conditions: [
+              {
+                type: 'eventPlayerIs',
+                player: 'self',
+              },
+              {
+                type: 'eventEffectControllerIs',
+                player: 'opponent',
+              },
+              {
+                type: 'eventSourceZoneIs',
+                value: 'characters',
+              },
+              {
+                type: 'eventTargetMatchesFilter',
+                filter: {
+                  cardCategory: ['Character'],
+                  owner: 'self',
+                  traitIncludes: ['Roger Pirates'],
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 1,
+                rested: true,
+              },
+            ],
+          },
         },
       ],
     },
@@ -2822,8 +2911,41 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP13-089',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op13-089-special',
+          kind: 'continuous',
+          effect: {
+            id: 'saint-topman-warcury-089-trash-7-plus-immunity-and-blocker',
+            text: 'If you have 7 or more cards in your trash, this Character cannot be removed from the field by your opponent\'s effects and gains [Blocker].',
+            conditions: [
+              {
+                type: 'targetCountAtLeast',
+                selector: {
+                  player: 'self',
+                  zones: ['trash'],
+                },
+                value: 7,
+              },
+            ],
+            modifier: {
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
+              keywords: [
+                'cannotBeRemovedByOpponentEffects',
+                'mustBeAttackTarget',
+              ],
+            },
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'saint-topman-warcury-089-on-ko-draw-1',
+            text: '[On K.O.] Draw 1 card.',
+            trigger: { type: 'onKo' },
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
         },
       ],
     },
@@ -3159,8 +3281,48 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP13-100',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op13-100-special',
+          kind: 'standard',
+          effect: {
+            id: 'jewelry-bonney-100-your-turn-on-trigger-character-play-attach-2-rested-don',
+            text: '[Your Turn] [Once Per Turn] This effect can be activated when you play a Character with a [Trigger]. Give up to 2 rested DON!! cards to 1 of your Leader or Character cards.',
+            trigger: {
+              type: 'onCharacterPlayed',
+              oncePerTurn: true,
+            },
+            conditions: [
+              {
+                type: 'controllerTurn',
+                value: true,
+              },
+              {
+                type: 'eventPlayerIs',
+                player: 'self',
+              },
+              {
+                type: 'eventTargetMatchesFilter',
+                filter: {
+                  cardCategory: ['Character'],
+                  hasTrigger: true,
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'attachDon',
+                player: 'self',
+                selector: {
+                  player: 'self',
+                  zones: ['leader', 'characters'],
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                amount: 2,
+                rested: true,
+              },
+            ],
+          },
         },
       ],
     },
@@ -3370,8 +3532,25 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP13-112',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op13-112-special',
+          kind: 'continuous',
+          effect: {
+            id: 'vegapunk-112-attached-don-2-plus-gains-blocker',
+            text: 'If you have a total of 2 or more given DON!! cards, this Character gains [Blocker].',
+            conditions: [
+              {
+                type: 'sourceHasAttachedDonAtLeast',
+                value: 2,
+              },
+            ],
+            modifier: {
+              selector: {
+                player: 'self',
+                source: 'effectSource',
+                zones: ['characters'],
+              },
+              keywords: ['mustBeAttackTarget'],
+            },
+          },
         },
       ],
     },

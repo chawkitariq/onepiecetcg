@@ -184,6 +184,15 @@ export class EffectSelectorResolver {
       return false;
     }
 
+    if (
+      filter.traitIncludes &&
+      !filter.traitIncludes.some((trait) =>
+        card.families.some((family) => family.includes(trait)),
+      )
+    ) {
+      return false;
+    }
+
     if (filter.name && !filter.name.includes(card.name)) {
       return false;
     }

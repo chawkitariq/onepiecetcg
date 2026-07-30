@@ -11,24 +11,37 @@ export const op14056SpecialHandler: SpecialHandlerDefinition = {
   id: 'op14-056-special',
   cardId: 'OP14-056',
   resolve(event, engine) {
-    if (event.type === 'onPlay') {
-      const anyEngine = engine as any;
-      anyEngine.modifiers.addKeywordModifier(
-        event.sourceInstanceId,
-        event.playerSessionId,
-        event.sourceInstanceId,
-        ['cannotAttack'],
-        'whileSourceInPlay',
-      );
-      engine.reapplyContinuousEffects();
-    } else if (event.type === 'onCardDrawn') {
-      const anyEngine = engine as any;
-      const { host } = anyEngine;
-      const source = host.getCard(event.sourceInstanceId);
-      if (!source) return;
-      source.cannotAttack = false;
-      host.syncPlayer(event.playerSessionId);
-      engine.reapplyContinuousEffects();
+    const anyEngine = engine as any;
+    const { host } = anyEngine;
+    const source = host.getCard(event.sourceInstanceId);
+    if (!source) return;
+
+    const syncCannotAttack = () => {
+      source.cannotAttack = source['op14-056:negatedTurn'] !== host.state.turn;
+      host.syncPlayer(source.ownerSessionId);
+    };
+
+    if (event.type === 'onPlay' || event.type === 'onTurnStart') {
+      syncCannotAttack();
+      return;
+    }
+
+    if (event.type === 'onTurnEnd') {
+      if (source['op14-056:negatedTurn'] === host.state.turn) {
+        source['op14-056:negatedTurn'] = undefined;
+      }
+      syncCannotAttack();
+      return;
+    }
+
+    if (
+      event.type === 'onCardRemovedByEffect' &&
+      event.playerSessionId === source.ownerSessionId &&
+      event.sourceZone === 'hand' &&
+      event.destinationZone === 'trash'
+    ) {
+      source['op14-056:negatedTurn'] = host.state.turn;
+      syncCannotAttack();
     }
   },
 };

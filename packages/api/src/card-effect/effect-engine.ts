@@ -61,6 +61,7 @@ export class EffectEngine {
       registry,
       host,
       this.selectors,
+      this.conditions,
       this.decisions,
       this.modifiers,
       (
@@ -85,13 +86,8 @@ export class EffectEngine {
       (controllerSessionId, source, actions) => {
         this.scheduleTurnEndActions(controllerSessionId, source, actions);
       },
-      (type, playerSessionId, source) => {
-        this.handleEvent({
-          type,
-          playerSessionId,
-          sourceInstanceId: source.instanceId,
-          sourceCardId: source.cardId,
-        });
+      (event) => {
+        this.handleEvent(event);
       },
     );
   }
@@ -148,7 +144,11 @@ export class EffectEngine {
         }
 
         this.queueTriggeredEffectsForCard(
-          event,
+          {
+            ...event,
+            targetInstanceId: event.targetInstanceId ?? source.instanceId,
+            targetCardId: event.targetCardId ?? source.cardId,
+          },
           candidate,
           candidate.ownerSessionId,
         );
@@ -159,6 +159,14 @@ export class EffectEngine {
       event,
       this,
     );
+
+    if (event.type === 'onCharacterPlayed') {
+      this.broadcastCharacterPlayedToObserverSpecialHandlers(event, source);
+    }
+
+    if (event.type === 'onCardRemovedByEffect') {
+      this.broadcastRemovedByEffectToObserverSpecialHandlers(event, source);
+    }
 
     if (event.type === 'onTurnEnd') {
       this.flushDelayedTurnEndEffects();
@@ -299,6 +307,7 @@ export class EffectEngine {
                 queued.definition,
                 queued.controllerSessionId,
                 source,
+                queued.triggeringEvent,
               );
             }
           },
@@ -310,6 +319,7 @@ export class EffectEngine {
         queued.definition,
         queued.controllerSessionId,
         source,
+        queued.triggeringEvent,
       );
     }
   }
@@ -318,6 +328,7 @@ export class EffectEngine {
     definition: StandardEffectDefinition,
     controllerSessionId: string,
     source: DuelCard,
+    triggeringEvent?: EffectEvent,
   ): void {
     if (
       !this.actions.canPayCosts(definition.costs ?? [], controllerSessionId)
@@ -339,6 +350,8 @@ export class EffectEngine {
         {
           sourceInstanceId: source.instanceId,
           storedSelections: {},
+          eventTargetInstanceId: triggeringEvent?.targetInstanceId,
+          triggeringEvent,
         },
       );
     };
@@ -352,7 +365,12 @@ export class EffectEngine {
       definition.costs,
       controllerSessionId,
       source,
-      { sourceInstanceId: source.instanceId, storedSelections: {} },
+      {
+        sourceInstanceId: source.instanceId,
+        storedSelections: {},
+        eventTargetInstanceId: triggeringEvent?.targetInstanceId,
+        triggeringEvent,
+      },
       0,
       runActions,
     );
@@ -381,6 +399,7 @@ export class EffectEngine {
   private shouldBroadcastTriggerToOtherCards(type: EffectEventType): boolean {
     return (
       type === 'onEventActivated' ||
+      type === 'onCardRemovedByEffect' ||
       type === 'onCharacterPlayed' ||
       type === 'onDonAttached' ||
       type === 'onDonReturned' ||
@@ -391,6 +410,62 @@ export class EffectEngine {
       type === 'onTurnEnd' ||
       type === 'onKo'
     );
+  }
+
+  private broadcastCharacterPlayedToObserverSpecialHandlers(
+    event: EffectEvent,
+    playedCard: DuelCard,
+  ): void {
+    for (const candidate of this.selectors.collectInPlayCards()) {
+      if (candidate.instanceId === playedCard.instanceId) {
+        continue;
+      }
+
+      const handler = this.registry.specialHandlersByCardId[candidate.cardId];
+
+      if (!handler) {
+        continue;
+      }
+
+      handler.resolve(
+        {
+          ...event,
+          sourceInstanceId: candidate.instanceId,
+          sourceCardId: candidate.cardId,
+          targetInstanceId: event.targetInstanceId ?? playedCard.instanceId,
+          targetCardId: event.targetCardId ?? playedCard.cardId,
+        },
+        this,
+      );
+    }
+  }
+
+  private broadcastRemovedByEffectToObserverSpecialHandlers(
+    event: EffectEvent,
+    removedCard: DuelCard,
+  ): void {
+    for (const candidate of this.selectors.collectInPlayCards()) {
+      if (candidate.instanceId === removedCard.instanceId) {
+        continue;
+      }
+
+      const handler = this.registry.specialHandlersByCardId[candidate.cardId];
+
+      if (!handler) {
+        continue;
+      }
+
+      handler.resolve(
+        {
+          ...event,
+          sourceInstanceId: candidate.instanceId,
+          sourceCardId: candidate.cardId,
+          targetInstanceId: event.targetInstanceId ?? removedCard.instanceId,
+          targetCardId: event.targetCardId ?? removedCard.cardId,
+        },
+        this,
+      );
+    }
   }
 
   private queueTriggeredEffectsForCard(
@@ -430,6 +505,7 @@ export class EffectEngine {
         sourceInstanceId: source.instanceId,
         sourceCardId: source.cardId,
         definition: effect,
+        triggeringEvent: event,
       });
     }
   }

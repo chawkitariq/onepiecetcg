@@ -144,6 +144,11 @@ export class TestHost implements EffectEngineHost {
       if (player.zones.leader.instanceId === instanceId) {
         return player.zones.leader;
       }
+
+      if (player.zones.stage.instanceId === instanceId) {
+        return player.zones.stage;
+      }
+
       for (const zone of [
         'deck',
         'donDeck',
@@ -232,6 +237,13 @@ export class TestHost implements EffectEngineHost {
           )
             continue;
           if (
+            selector.filter?.traitIncludes &&
+            !selector.filter.traitIncludes.some((trait: string) =>
+              card.families.some((family: string) => family.includes(trait)),
+            )
+          )
+            continue;
+          if (
             selector.filter?.excludeName &&
             selector.filter.excludeName.includes(card.name)
           )
@@ -262,6 +274,11 @@ export class TestHost implements EffectEngineHost {
 
   private removeCard(instanceId: string): void {
     for (const player of this.state.players.values()) {
+      if (player.zones.stage.instanceId === instanceId) {
+        player.zones.stage = new DuelCard();
+        return;
+      }
+
       for (const zone of [
         'deck',
         'donDeck',

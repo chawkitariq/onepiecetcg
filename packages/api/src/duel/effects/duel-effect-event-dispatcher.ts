@@ -1,5 +1,5 @@
 import type { DuelCard, DuelState } from '@onepiecetcg/shared';
-import type { EffectEventType } from '../../card-effect/effect-engine';
+import type { EffectEvent, EffectEventType } from '../../card-effect/effect-engine';
 import { effectRegistry } from '../../card-effect/effect-registry';
 
 /**
@@ -12,6 +12,10 @@ export type DuelEffectEventDispatcherDeps = {
     type: EffectEventType,
     playerSessionId: string,
     card: DuelCard,
+    context?: Pick<
+      EffectEvent,
+      'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'
+    >,
   ) => void;
 };
 
@@ -42,18 +46,34 @@ export class DuelEffectEventDispatcher {
   /**
    * Emits the correct effect events when a card is played from hand.
    */
-  public emitPlayedCard(playerSessionId: string, card: DuelCard): void {
+  public emitPlayedCard(
+    playerSessionId: string,
+    card: DuelCard,
+    sourceZone: EffectEvent['sourceZone'] = 'hand',
+  ): void {
     if (card.type === 'Event') {
-      this.deps.emitCardEvent('activateMain', playerSessionId, card);
-      this.deps.emitCardEvent('onEventActivated', playerSessionId, card);
+      this.deps.emitCardEvent('activateMain', playerSessionId, card, {
+        sourceZone,
+        playedByEffect: false,
+      });
+      this.deps.emitCardEvent('onEventActivated', playerSessionId, card, {
+        sourceZone,
+        playedByEffect: false,
+      });
       return;
     }
 
     if (card.type === 'Character') {
-      this.deps.emitCardEvent('onCharacterPlayed', playerSessionId, card);
+      this.deps.emitCardEvent('onCharacterPlayed', playerSessionId, card, {
+        sourceZone,
+        playedByEffect: false,
+      });
     }
 
-    this.deps.emitCardEvent('onPlay', playerSessionId, card);
+    this.deps.emitCardEvent('onPlay', playerSessionId, card, {
+      sourceZone,
+      playedByEffect: false,
+    });
   }
 
   /**

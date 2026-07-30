@@ -32,7 +32,7 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
           event.sourceInstanceId,
           event.playerSessionId,
           event.sourceInstanceId,
-          'cannotBeRemovedByOpponentEffects',
+          ['cannotBeRemovedByOpponentEffects'],
           'untilEndOfTurn',
         );
 

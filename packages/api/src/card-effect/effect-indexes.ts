@@ -16,6 +16,7 @@ const triggerTypes = [
   'activateMain',
   'activateCounter',
   'onEventActivated',
+  'onCardRemovedByEffect',
   'onCharacterPlayed',
   'onDonAttached',
   'onDonReturned',

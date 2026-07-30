@@ -96,11 +96,11 @@ describe('OP13 effect definitions', () => {
       expect(count).toBeGreaterThanOrEqual(70);
     });
 
-    it('has 7 cards with continuous effects', () => {
+    it('has 10 cards with continuous effects', () => {
       const count = op13EffectDefinitions.cards.filter((c) =>
         (c.effects ?? []).some((e) => e.kind === 'continuous'),
       ).length;
-      expect(count).toBe(7);
+      expect(count).toBe(10);
     });
 
     it('has 4 cards with replacement effects', () => {
@@ -110,11 +110,11 @@ describe('OP13 effect definitions', () => {
       expect(count).toBe(4);
     });
 
-    it('has 28 cards with special-ref', () => {
+    it('has 23 cards with special-ref', () => {
       const count = op13EffectDefinitions.cards.filter((c) =>
         (c.effects ?? []).some((e) => e.kind === 'special-ref'),
       ).length;
-      expect(count).toBe(28);
+      expect(count).toBe(23);
     });
   });
 
@@ -785,7 +785,7 @@ describe('OP13 effect definitions', () => {
       );
     });
 
-    it('OP13-031 Trafalgar Law (special) bounces a character and plays cost 5 or less from hand', () => {
+    it('OP13-031 Trafalgar Law bounces a character and plays cost 5 or less from hand', () => {
       const host = new TestHost();
       const p1 = host.addPlayer('p1');
       host.addPlayer('p2');
@@ -852,6 +852,9 @@ describe('OP13 effect definitions', () => {
       });
 
       expect(p1.zones.characters.some((c) => c.cardId === 'P')).toBe(true);
+      expect(
+        p1.zones.characters.find((c) => c.cardId === 'P')?.rested,
+      ).toBe(true);
     });
 
     it('OP13-003 Gol.D.Roger (special leader) gives leader +2000 on play when DON field ≤ 9', () => {
@@ -1079,6 +1082,311 @@ describe('OP13 effect definitions', () => {
 
       const activeCount = p1.zones.cost.filter((d) => !d.rested).length;
       expect(activeCount).toBe(2);
+    });
+
+    it('OP13-100 Jewelry Bonney attaches up to 2 rested DON!! when you play a Character with Trigger during your turn', () => {
+      const host = new TestHost();
+      const p1 = host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op13EffectDefinitions], specialHandlerDefinitions),
+        host,
+      );
+
+      const firstDon = host.addCardToZone(
+        'p1',
+        'cost',
+        makeCard({
+          id: 'DON-1',
+          number: 'DON-1',
+          name: 'DON',
+          type: 'DON!!',
+          cost: null,
+          power: null,
+          counter: null,
+        }),
+        'don-1',
+      );
+      firstDon.rested = true;
+      const secondDon = host.addCardToZone(
+        'p1',
+        'cost',
+        makeCard({
+          id: 'DON-2',
+          number: 'DON-2',
+          name: 'DON',
+          type: 'DON!!',
+          cost: null,
+          power: null,
+          counter: null,
+        }),
+        'don-2',
+      );
+      secondDon.rested = true;
+
+      const bonney = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP13-100',
+          number: 'OP13-100',
+          name: 'Jewelry Bonney',
+          type: 'Character',
+        }),
+        'bonney',
+      );
+      const triggeredCharacter = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'TRIGGERED-CHAR',
+          number: 'TRIGGERED-CHAR',
+          name: 'Triggered Character',
+          type: 'Character',
+          trigger: 'Play this card.',
+        }),
+        'triggered-character',
+      );
+
+      engine.handleEvent({
+        type: 'onCharacterPlayed',
+        playerSessionId: 'p1',
+        sourceInstanceId: triggeredCharacter.instanceId,
+        sourceCardId: triggeredCharacter.cardId,
+        sourceZone: 'hand',
+      });
+
+      const pending = engine.getPendingDecision();
+      expect(pending?.prompt.type).toBe('selectCards');
+      engine.answerDecision({
+        decisionId: pending?.id ?? '',
+        selectedCardInstanceIds: [bonney.instanceId],
+      });
+
+      expect(p1.zones.cost).toHaveLength(0);
+      expect(bonney.attachedDon).toBe(2);
+    });
+
+    it('OP13-078 Oro Jackson adds 1 rested DON!! when your Roger Pirates Character is removed from the field by your opponent effect', () => {
+      const host = new TestHost();
+      const p1 = host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op13EffectDefinitions], specialHandlerDefinitions),
+        host,
+      );
+
+      const oroJackson = host.addCardToZone(
+        'p1',
+        'hand',
+        makeCard({
+          id: 'OP13-078',
+          number: 'OP13-078',
+          name: 'Oro Jackson',
+          type: 'Stage',
+        }),
+        'oro-jackson',
+      );
+      host.playCard(oroJackson, 'p1', 'stage');
+      const removedCharacter = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'ROGER-CHAR',
+          number: 'ROGER-CHAR',
+          name: 'Roger Character',
+          type: 'Character',
+          families: ['Roger Pirates'],
+        }),
+        'roger-character',
+      );
+      host.addCardToZone(
+        'p1',
+        'donDeck',
+        makeCard({
+          id: 'DON-078',
+          number: 'DON-078',
+          name: 'DON!!',
+          type: 'DON!!',
+          cost: null,
+          power: null,
+          counter: null,
+        }),
+        'don-078',
+      );
+      engine.handleEvent({
+        type: 'onCardRemovedByEffect',
+        playerSessionId: 'p1',
+        effectControllerSessionId: 'p2',
+        sourceInstanceId: oroJackson.instanceId,
+        sourceCardId: oroJackson.cardId,
+        targetInstanceId: removedCharacter.instanceId,
+        targetCardId: removedCharacter.cardId,
+        sourceZone: 'characters',
+        destinationZone: 'trash',
+      });
+
+      expect(p1.zones.cost).toHaveLength(1);
+      expect(p1.zones.cost[0]?.rested).toBe(true);
+      expect(p1.zones.stage).toBe(oroJackson);
+    });
+
+    it('OP13-089 St. Topman Warcury gains immunity and Blocker with 7+ trash, then draws 1 on K.O.', () => {
+      const host = new TestHost();
+      const p1 = host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op13EffectDefinitions], specialHandlerDefinitions),
+        host,
+      );
+
+      for (let index = 0; index < 7; index += 1) {
+        host.addCardToZone(
+          'p1',
+          'trash',
+          makeCard({
+            id: `TRASH-${index}`,
+            number: `TRASH-${index}`,
+            name: `Trash ${index}`,
+            type: 'Character',
+          }),
+          `trash-${index}`,
+        );
+      }
+      host.addCardToZone(
+        'p1',
+        'deck',
+        makeCard({
+          id: 'DRAW-089',
+          number: 'DRAW-089',
+          name: 'Draw 089',
+          type: 'Character',
+        }),
+        'draw-089',
+      );
+
+      const warcury = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP13-089',
+          number: 'OP13-089',
+          name: 'St. Topman Warcury',
+          type: 'Character',
+        }),
+        'warcury',
+      );
+
+      engine.reapplyContinuousEffects();
+
+      expect(warcury.cannotBeRemovedByOpponentEffects).toBe(true);
+      expect(warcury.mustBeAttackTarget).toBe(true);
+
+      engine.handleEvent({
+        type: 'onKo',
+        playerSessionId: 'p1',
+        sourceInstanceId: warcury.instanceId,
+        sourceCardId: warcury.cardId,
+        targetInstanceId: warcury.instanceId,
+        targetCardId: warcury.cardId,
+      });
+
+      expect(p1.zones.hand).toHaveLength(1);
+      expect(p1.zones.hand[0]?.cardId).toBe('DRAW-089');
+    });
+
+    it('OP13-091 St. Marcus Mars gains immunity and Blocker with 7+ trash on play', () => {
+      const host = new TestHost();
+      const p1 = host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op13EffectDefinitions], specialHandlerDefinitions),
+        host,
+      );
+
+      for (let index = 0; index < 7; index += 1) {
+        host.addCardToZone(
+          'p1',
+          'trash',
+          makeCard({
+            id: `TRASH-MARS-${index}`,
+            number: `TRASH-MARS-${index}`,
+            name: `Trash Mars ${index}`,
+            type: 'Character',
+          }),
+          `trash-mars-${index}`,
+        );
+      }
+
+      const discard = host.addCardToZone(
+        'p1',
+        'hand',
+        makeCard({
+          id: 'DISCARD-091',
+          number: 'DISCARD-091',
+          name: 'Discard 091',
+          type: 'Event',
+        }),
+        'discard-091',
+      );
+      const mars = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP13-091',
+          number: 'OP13-091',
+          name: 'St. Marcus Mars',
+          type: 'Character',
+        }),
+        'mars',
+      );
+
+      engine.handleEvent({
+        type: 'onPlay',
+        playerSessionId: 'p1',
+        sourceInstanceId: mars.instanceId,
+        sourceCardId: mars.cardId,
+      });
+
+      expect(mars.cannotBeRemovedByOpponentEffects).toBe(true);
+      expect(mars.mustBeAttackTarget).toBe(false);
+
+      const confirm = engine.getPendingDecision();
+      expect(confirm?.prompt.type).toBe('confirm');
+      engine.answerDecision({ decisionId: confirm!.id, confirmed: false });
+
+      expect(p1.zones.hand.some((card) => card.cardId === discard.cardId)).toBe(
+        true,
+      );
+    });
+
+    it('OP13-112 Vegapunk gains Blocker with 2 attached DON!!', () => {
+      const host = new TestHost();
+      const p1 = host.addPlayer('p1');
+      host.addPlayer('p2');
+      const engine = new EffectEngine(
+        createRegistry([op13EffectDefinitions], specialHandlerDefinitions),
+        host,
+      );
+
+      const vegapunk = host.addCardToZone(
+        'p1',
+        'characters',
+        makeCard({
+          id: 'OP13-112',
+          number: 'OP13-112',
+          name: 'Vegapunk',
+          type: 'Character',
+        }),
+        'vegapunk',
+      );
+
+      expect(vegapunk.mustBeAttackTarget).toBe(false);
+
+      vegapunk.attachedDon = 2;
+      engine.reapplyContinuousEffects();
+
+      expect(vegapunk.mustBeAttackTarget).toBe(true);
     });
   });
 });

@@ -592,8 +592,55 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-016',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-016-special',
+          kind: 'standard',
+          effect: {
+            id: 'to-never-doubt-activate-main-ko-cost-4-or-less',
+            text: '[Activate: Main] [Once Per Turn] If you have 1 or less Life, return up to 1 DON!! to deck: K.O. up to 1 opponent Character with cost <= 4.',
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+            },
+            conditions: [
+              {
+                type: 'playerHasLifeAtMost',
+                player: 'self',
+                value: 1,
+              },
+            ],
+            costs: [
+              {
+                type: 'moveCard',
+                selector: {
+                  player: 'self',
+                  zones: ['cost'],
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                destinationPlayer: 'self',
+                destinationZone: 'donDeck',
+              },
+            ],
+            actions: [
+              {
+                type: 'ko',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                    costMax: 4,
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                reason: 'effect',
+              },
+            ],
+          },
         },
         {
           kind: 'standard',
@@ -630,8 +677,64 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-017',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-017-special',
+          kind: 'standard',
+          effect: {
+            id: 'color-of-observation-haki-main-cannot-attack',
+            text: '[Main] Up to 1 opponent Character cannot attack during this turn.',
+            trigger: {
+              type: 'activateMain',
+            },
+            actions: [
+              {
+                type: 'grantKeywords',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                keywords: ['cannotAttack'],
+                duration: {
+                  type: 'untilEndOfTurn',
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'color-of-observation-haki-trigger-cannot-attack',
+            text: '[Trigger] Up to 1 opponent Character cannot attack during this turn.',
+            trigger: {
+              type: 'trigger',
+            },
+            actions: [
+              {
+                type: 'grantKeywords',
+                selector: {
+                  player: 'opponent',
+                  zones: ['characters'],
+                  filter: {
+                    cardCategory: ['Character'],
+                  },
+                  count: {
+                    kind: 'upTo',
+                    value: 1,
+                  },
+                },
+                keywords: ['cannotAttack'],
+                duration: {
+                  type: 'untilEndOfTurn',
+                },
+              },
+            ],
+          },
         },
       ],
     },
@@ -1609,8 +1712,35 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-040',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-040-special',
+          kind: 'standard',
+          effect: {
+            id: 'kuzan-040-when-attacking-opponent-trash-2',
+            text: '[When Attacking] [Once Per Turn] If you have 5+ DON!! active, opponent trashes 2 from hand.',
+            trigger: {
+              type: 'whenAttacking',
+              oncePerTurn: true,
+            },
+            conditions: [
+              {
+                type: 'playerHasActiveDonAtLeast',
+                player: 'self',
+                value: 5,
+              },
+            ],
+            actions: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'opponent',
+                  zones: ['hand'],
+                  count: {
+                    kind: 'exact',
+                    value: 2,
+                  },
+                },
+              },
+            ],
+          },
         },
       ],
     },
@@ -1621,8 +1751,39 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-041',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-041-special',
+          kind: 'standard',
+          effect: {
+            id: 'sanji-041-on-ko-draw-up-to-3-then-trash-2',
+            text: '[On K.O.] If you have 3 or less cards in hand, draw up to 3 cards. Then trash 2 from hand.',
+            trigger: {
+              type: 'onKo',
+            },
+            conditions: [
+              {
+                type: 'playerHasHandAtMost',
+                player: 'self',
+                value: 3,
+              },
+            ],
+            actions: [
+              {
+                type: 'drawUntilHandSize',
+                player: 'self',
+                size: 3,
+              },
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: {
+                    kind: 'exact',
+                    value: 2,
+                  },
+                },
+              },
+            ],
+          },
         },
         {
           kind: 'standard',
@@ -3463,8 +3624,80 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-081',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-081-special',
+          kind: 'standard',
+          effect: {
+            id: 'koala-081-when-attacking-draw-1',
+            text: "When this Leader attacks your opponent's Leader, if you have 2 or more Characters with a cost of 8 or more, draw 1 card.",
+            trigger: { type: 'whenAttacking' },
+            conditions: [
+              {
+                type: 'eventTargetMatchesFilter',
+                filter: {
+                  cardCategory: ['Leader'],
+                  owner: 'opponent',
+                },
+              },
+              {
+                type: 'targetCountAtLeast',
+                selector: {
+                  player: 'self',
+                  zones: ['characters'],
+                  filter: { costMin: 8 },
+                },
+                value: 2,
+              },
+            ],
+            actions: [{ type: 'draw', player: 'self', amount: 1 }],
+          },
+        },
+        {
+          kind: 'standard',
+          effect: {
+            id: 'koala-081-opponent-plays-character-life-to-hand',
+            text: "[Once Per Turn] This effect can be activated when your opponent plays a Character with a base cost of 8 or more, or when your opponent plays a Character using a Character's effect. Your opponent adds 1 card from the top of their Life cards to their hand.",
+            trigger: { type: 'onCharacterPlayed', oncePerTurn: true },
+            conditions: [{ type: 'eventPlayerIs', player: 'opponent' }],
+            actions: [
+              {
+                type: 'ifAnyConditionGroupMatches',
+                conditionGroups: [
+                  [
+                    {
+                      type: 'eventTargetMatchesFilter',
+                      filter: {
+                        cardCategory: ['Character'],
+                        baseCostMin: 8,
+                      },
+                    },
+                  ],
+                  [
+                    {
+                      type: 'eventTargetMatchesFilter',
+                      filter: {
+                        cardCategory: ['Character'],
+                      },
+                    },
+                    {
+                      type: 'eventPlayedByEffect',
+                      value: true,
+                    },
+                  ],
+                ],
+                actions: [
+                  {
+                    type: 'moveFirstCard',
+                    selector: {
+                      player: 'opponent',
+                      zones: ['life'],
+                      count: { kind: 'exact', value: 1 },
+                    },
+                    destinationPlayer: 'opponent',
+                    destinationZone: 'hand',
+                  },
+                ],
+              },
+            ],
+          },
         },
       ],
     },
@@ -4034,8 +4267,36 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-096',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-096-special',
+          kind: 'standard',
+          effect: {
+            id: 'ursa-shock-activate-main-set-up-to-2-don-active',
+            text: '[Activate: Main] [Once Per Turn] Trash 2 from hand: Set up to 2 DON!! active.',
+            trigger: {
+              type: 'activateMain',
+              oncePerTurn: true,
+            },
+            costs: [
+              {
+                type: 'trashFromHand',
+                selector: {
+                  player: 'self',
+                  zones: ['hand'],
+                  count: {
+                    kind: 'exact',
+                    value: 2,
+                  },
+                },
+              },
+            ],
+            actions: [
+              {
+                type: 'addDon',
+                player: 'self',
+                amount: 2,
+                rested: false,
+              },
+            ],
+          },
         },
         {
           kind: 'standard',
@@ -4403,8 +4664,32 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
       cardId: 'OP12-102',
       effects: [
         {
-          kind: 'special-ref',
-          specialHandlerId: 'op12-102-special',
+          kind: 'standard',
+          effect: {
+            id: 'shirahoshi-on-play-search-cost-6-or-more',
+            text: '[On Play] Look at 5 cards from top of deck; reveal up to 1 cost 6+ and add to hand. Then place rest at bottom.',
+            trigger: {
+              type: 'onPlay',
+            },
+            actions: [
+              {
+                type: 'search',
+                player: 'self',
+                sourceZone: 'deck',
+                amount: 5,
+                filter: {
+                  costMin: 6,
+                },
+                count: {
+                  kind: 'upTo',
+                  value: 1,
+                },
+                destination: 'hand',
+                restDestination: 'deck',
+                restToBottom: true,
+              },
+            ],
+          },
         },
         {
           kind: 'continuous',

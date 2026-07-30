@@ -1,6 +1,7 @@
 import type { EffectAction, EffectTargetSelector } from '@onepiecetcg/shared';
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { EffectRegistry } from '../types/effect-registry';
+import { EffectConditionEvaluator } from './effect-condition-evaluator';
 import { EffectDecisionManager } from './effect-decision-manager';
 import { EffectModifierEngine } from './effect-modifier-engine';
 import { EffectSelectorResolver } from './effect-selector-resolver';
@@ -23,9 +24,7 @@ type ScheduleTurnEndActionsFn = (
 ) => void;
 
 type EmitEffectEventFn = (
-  type: import('./effect-engine-types').EffectEventType,
-  playerSessionId: string,
-  source: DuelCard,
+  event: import('./effect-engine-types').EffectEvent,
 ) => void;
 
 /**
@@ -36,6 +35,7 @@ export class EffectActionExecutor {
     private readonly registry: EffectRegistry,
     private readonly host: EffectEngineHost,
     private readonly selectors: EffectSelectorResolver,
+    private readonly conditions: EffectConditionEvaluator,
     private readonly decisions: EffectDecisionManager,
     private readonly modifiers: EffectModifierEngine,
     private readonly queueEffect: QueueEffectFn,
@@ -86,7 +86,12 @@ export class EffectActionExecutor {
             const drawn = this.host.drawCard(playerId);
 
             if (drawn) {
-              this.emitEffectEvent('onCardDrawn', playerId, source);
+              this.emitEffectEvent({
+                type: 'onCardDrawn',
+                playerSessionId: playerId,
+                sourceInstanceId: source.instanceId,
+                sourceCardId: source.cardId,
+              });
             }
           }
 
@@ -110,7 +115,12 @@ export class EffectActionExecutor {
             const drawn = this.host.drawCard(playerId);
 
             if (drawn) {
-              this.emitEffectEvent('onCardDrawn', playerId, source);
+              this.emitEffectEvent({
+                type: 'onCardDrawn',
+                playerSessionId: playerId,
+                sourceInstanceId: source.instanceId,
+                sourceCardId: source.cardId,
+              });
             }
           }
 
@@ -182,7 +192,14 @@ export class EffectActionExecutor {
           'Choisissez des cartes a defausser.',
           (cards) => {
             for (const card of cards) {
+              const originZone = this.selectors.findZoneOfCard(card)?.zone;
               this.host.moveCard(card, card.ownerSessionId, 'trash');
+              this.emitCardRemovedByEffect(
+                card,
+                originZone,
+                'trash',
+                controllerSessionId,
+              );
             }
             next();
           },
@@ -408,11 +425,18 @@ export class EffectActionExecutor {
             return;
           }
 
+          const originZone = this.selectors.findZoneOfCard(card)?.zone;
           this.host.moveCard(card, playerId, action.destinationZone, {
             faceDown: action.faceDown,
             rested: action.rested,
             toBottom: action.toBottom,
           });
+          this.emitCardRemovedByEffect(
+            card,
+            originZone,
+            action.destinationZone,
+            controllerSessionId,
+          );
         }
 
         next();
@@ -851,6 +875,77 @@ export class EffectActionExecutor {
         );
         return;
       }
+      case 'ifConditionsMatch': {
+        if (
+          !this.conditions.conditionsPass(
+            action.conditions,
+            controllerSessionId,
+            source,
+          )
+        ) {
+          next();
+          return;
+        }
+
+        this.resolveActions(
+          action.actions,
+          controllerSessionId,
+          source,
+          context,
+          0,
+          next,
+        );
+        return;
+      }
+      case 'ifAnyConditionGroupMatches': {
+        const evaluationEvent = context.triggeringEvent ?? {
+          type: source.type === 'Character' ? 'onPlay' : 'activateMain',
+          playerSessionId: controllerSessionId,
+          sourceInstanceId: source.instanceId,
+          sourceCardId: source.cardId,
+          targetInstanceId: context.eventTargetInstanceId,
+        };
+        const matches = action.conditionGroups.some((conditionGroup) =>
+          this.conditions.conditionsPass(
+            conditionGroup,
+            controllerSessionId,
+            source,
+            evaluationEvent,
+          ),
+        );
+
+        if (!matches) {
+          next();
+          return;
+        }
+
+        this.resolveActions(
+          action.actions,
+          controllerSessionId,
+          source,
+          context,
+          0,
+          next,
+        );
+        return;
+      }
+      case 'modifyStoredCardsPower': {
+        const cards = context.storedSelections[action.key] ?? [];
+
+        for (const target of cards) {
+          this.modifiers.addPowerModifier(
+            source.instanceId,
+            controllerSessionId,
+            target.instanceId,
+            action.amount,
+            action.duration.type,
+          );
+        }
+
+        this.modifiers.reapplyContinuousEffects();
+        next();
+        return;
+      }
       case 'play': {
         this.forSelectedCards(
           action.selector,
@@ -860,6 +955,7 @@ export class EffectActionExecutor {
           'Choisissez une carte a mettre en jeu.',
           (cards) => {
             for (const card of cards) {
+              const originZone = this.selectors.findZoneOfCard(card)?.zone;
               this.host.moveCard(
                 card,
                 card.ownerSessionId,
@@ -868,6 +964,34 @@ export class EffectActionExecutor {
                   rested: action.rested ?? false,
                 },
               );
+
+              if (card.type === 'Character') {
+                this.emitEffectEvent({
+                  type: 'onCharacterPlayed',
+                  playerSessionId: controllerSessionId,
+                  sourceInstanceId: card.instanceId,
+                  sourceCardId: card.cardId,
+                  sourceZone: originZone as import('@onepiecetcg/shared').GameZone | undefined,
+                  playedByEffect: true,
+                });
+                this.emitEffectEvent({
+                  type: 'onPlay',
+                  playerSessionId: controllerSessionId,
+                  sourceInstanceId: card.instanceId,
+                  sourceCardId: card.cardId,
+                  sourceZone: originZone as import('@onepiecetcg/shared').GameZone | undefined,
+                  playedByEffect: true,
+                });
+              } else if (card.type === 'Stage') {
+                this.emitEffectEvent({
+                  type: 'onPlay',
+                  playerSessionId: controllerSessionId,
+                  sourceInstanceId: card.instanceId,
+                  sourceCardId: card.cardId,
+                  sourceZone: originZone as import('@onepiecetcg/shared').GameZone | undefined,
+                  playedByEffect: true,
+                });
+              }
             }
             next();
           },
@@ -1127,12 +1251,15 @@ export class EffectActionExecutor {
       case 'revealStoredCards':
       case 'moveStoredCards':
       case 'ifStoredSelectionMatches':
+      case 'ifConditionsMatch':
+      case 'ifAnyConditionGroupMatches':
       case 'activateEffect':
       case 'drawUntilHandSize':
       case 'preventOwnEffectLifeToHand':
       case 'registerNextPlayCostModifier':
       case 'scheduleActionsAtTurnEnd':
       case 'returnDonToDonDeckMatchingOpponentCount':
+      case 'modifyStoredCardsPower':
         return true;
       case 'chooseActionBranch':
         return true;
@@ -1146,6 +1273,30 @@ export class EffectActionExecutor {
 
   private createDecisionId(sourceInstanceId: string, suffix: string): string {
     return `${sourceInstanceId}:${suffix}:${Math.random()}`;
+  }
+
+  private emitCardRemovedByEffect(
+    card: DuelCard,
+    originZone: import('@onepiecetcg/shared').GameZone | undefined,
+    destinationZone: string,
+    effectControllerSessionId: string,
+  ): void {
+    if (!originZone || originZone === destinationZone) {
+      return;
+    }
+
+    this.emitEffectEvent({
+      type: 'onCardRemovedByEffect',
+      playerSessionId: card.ownerSessionId,
+      effectControllerSessionId,
+      sourceInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+      targetInstanceId: card.instanceId,
+      targetCardId: card.cardId,
+      sourceZone: originZone,
+      destinationZone:
+        destinationZone as import('@onepiecetcg/shared').GameZone,
+    });
   }
 
   private moveCardsWithOptionalDestinationChoice(
@@ -1205,11 +1356,18 @@ export class EffectActionExecutor {
     }
 
     const finishMove = (toBottom: boolean | undefined) => {
+      const originZone = this.selectors.findZoneOfCard(card)?.zone;
       this.host.moveCard(card, playerId, destinationZone, {
         faceDown: options.faceDown,
         rested: options.rested,
         toBottom,
       });
+      this.emitCardRemovedByEffect(
+        card,
+        originZone,
+        destinationZone,
+        controllerSessionId,
+      );
       this.moveCardsWithOptionalDestinationChoice(
         cards,
         controllerSessionId,

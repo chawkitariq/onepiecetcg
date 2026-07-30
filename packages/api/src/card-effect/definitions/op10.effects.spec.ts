@@ -4,6 +4,7 @@ import type { SpecialHandlerDefinition } from '../types/effect-registry';
 import { op10EffectDefinitions } from './op10.effects';
 import { EffectEngine } from '../effect-engine';
 import { TestHost, makeCard, createRegistry } from './test-utils';
+import { specialHandlerDefinitions } from './special';
 
 describe('OP10 effect definitions', () => {
   it('exports the edition definitions', () => {
@@ -401,6 +402,109 @@ describe('OP10 behavioral effects', () => {
     });
 
     expect(target.power).toBe(2000);
+  });
+
+  it('OP10-058 Rebecca draws 1 if a cost-8 character exists, then plays revealed Dressrosa characters with the second rested if cost 4 or less', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op10EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const rebecca = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP10-058',
+        number: 'OP10-058',
+        name: 'Rebecca',
+        type: 'Character',
+      }),
+      'rebecca',
+    );
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'BIG',
+        number: 'BIG',
+        name: 'Big Character',
+        type: 'Character',
+        cost: 8,
+      }),
+      'big-character',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw 1',
+        type: 'Character',
+      }),
+      'draw-1',
+    );
+    const firstDressrosa = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'DRESS-1',
+        number: 'DRESS-1',
+        name: 'Dressrosa 1',
+        type: 'Character',
+        cost: 5,
+        families: ['Dressrosa'],
+      }),
+      'dressrosa-1',
+    );
+    const secondDressrosa = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'DRESS-2',
+        number: 'DRESS-2',
+        name: 'Dressrosa 2',
+        type: 'Character',
+        cost: 4,
+        families: ['Dressrosa'],
+      }),
+      'dressrosa-2',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: rebecca.instanceId,
+      sourceCardId: rebecca.cardId,
+    });
+
+    const revealDecision = engine.getPendingDecision();
+    expect(revealDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: revealDecision?.id ?? '',
+      selectedCardInstanceIds: [
+        firstDressrosa.instanceId,
+        secondDressrosa.instanceId,
+      ],
+    });
+
+    const choiceDecision = engine.getPendingDecision();
+    expect(choiceDecision?.prompt.type).toBe('selectChoice');
+    engine.answerDecision({
+      decisionId: choiceDecision?.id ?? '',
+      selectedChoiceIds: [firstDressrosa.instanceId],
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand.map((card) => card.name)).toEqual([
+      'Draw 1',
+    ]);
+    expect(host.getPlayer('p1')?.zones.characters).toContain(firstDressrosa);
+    expect(host.getPlayer('p1')?.zones.characters).toContain(secondDressrosa);
+    expect(firstDressrosa.rested).toBe(false);
+    expect(secondDressrosa.rested).toBe(true);
   });
 
   it('OP10-023: rests up to 2 opponent characters with cost ≤5 when leader has Navy', () => {

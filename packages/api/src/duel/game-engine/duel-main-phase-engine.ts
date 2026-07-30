@@ -5,7 +5,11 @@ const MAX_CHARACTERS = 5;
 type MainPhaseEffectBoundary = {
   hasPendingPlayerInteraction(): boolean;
   reapplyContinuousEffects(): void;
-  emitPlayedCard(playerSessionId: string, card: DuelCard): void;
+  emitPlayedCard(
+    playerSessionId: string,
+    card: DuelCard,
+    sourceZone?: 'hand' | 'deck' | 'trash',
+  ): void;
   emitDonAttached(playerSessionId: string, card: DuelCard): void;
   getNextPlayCostModifier(card: DuelCard): number;
   consumeNextPlayCostModifier(card: DuelCard): void;
@@ -273,7 +277,7 @@ export class DuelMainPhaseEngine {
       `${player.displayName} joue ${card.name} en zone Personnage.`,
     );
     this.deps.effectBoundary.reapplyContinuousEffects();
-    this.deps.effectBoundary.emitPlayedCard(player.sessionId, card);
+    this.deps.effectBoundary.emitPlayedCard(player.sessionId, card, 'hand');
   }
 
   private playStage(
@@ -294,14 +298,14 @@ export class DuelMainPhaseEngine {
     this.deps.broadcastCardView(card);
     this.deps.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
     this.deps.effectBoundary.reapplyContinuousEffects();
-    this.deps.effectBoundary.emitPlayedCard(player.sessionId, card);
+    this.deps.effectBoundary.emitPlayedCard(player.sessionId, card, 'hand');
   }
 
   private activateEvent(player: DuelPlayer, card: DuelCard): void {
     this.deps.unshiftIntoTrash(player, card);
     this.deps.broadcastCardView(card);
     this.deps.addLog(`${player.displayName} active ${card.name}.`);
-    this.deps.effectBoundary.emitPlayedCard(player.sessionId, card);
+    this.deps.effectBoundary.emitPlayedCard(player.sessionId, card, 'hand');
   }
 
   private consumeReservedDon(player: DuelPlayer, donCards: DuelCard[]): number {
