@@ -5,7 +5,8 @@
 Write effect-definition files only in:
 
 - edition definitions: `packages/api/src/card-effect/definitions/`
-- special handlers: `packages/api/src/card-effect/definitions/special/`
+- special handlers: `packages/api/src/card-effect/definitions/<EDITION>/special/` (e.g. `OP/special/`, `ST/special/`)
+- shared handler utilities: `packages/api/src/card-effect/definitions/` (`special-handler-utils.ts`)
 
 ## Edition file naming
 
@@ -96,13 +97,24 @@ Example from the repo:
 - file `OP01-047.special.ts`
 - export `op01047SpecialHandler`
 
-## Special handler index
+## Per-edition special handler index
 
-The special-handler aggregate file lives here:
+Each edition must have a per-edition special index at:
+
+- `packages/api/src/card-effect/definitions/<EDITION>/special/index.ts`
+
+It must:
+
+1. import every `*.special.ts` export within that edition's `special/` directory
+2. export an aggregated array named `<edition>SpecialHandlers` (e.g. `opSpecialHandlers`, `stSpecialHandlers`, `ebSpecialHandlers`)
+
+## Root special handler aggregator
+
+The global aggregate file lives here:
 
 - `packages/api/src/card-effect/definitions/special/index.ts`
 
 It must:
 
-1. import every `*.special.ts` export
-2. export `specialHandlerDefinitions`
+1. import every per-edition `special/index.ts`
+2. spread them into a single `specialHandlerDefinitions` array
