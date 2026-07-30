@@ -48,24 +48,28 @@ export class EffectModifierEngine {
           : Number.isFinite(card.cost)
             ? card.cost
             : -1;
-        card.baseCost = baseCost;
-        card.cost = baseCost;
-        card.power = card.basePower;
-        card.hasRush = false;
-        card.hasDoubleAttack = false;
-        card.hasBanish = false;
-        card.canAttackActiveCharacters = false;
-        card.mustBeAttackTarget = false;
-        card.cannotAttack = false;
-        card.cannotAttackLeaderOnTurnPlayed = false;
-        card.cannotBlock = false;
-        card.cannotBeKoedInBattle = false;
-        card.cannotBeKoedByEffects = false;
-        card.cannotBeKoedBySlashInBattle = false;
-        card.cannotBeKoedByStrikeInBattle = false;
-        card.winOnDeckOut = false;
-        card.cannotBeRemovedByOpponentEffects = false;
-        card.skipNextRefreshPhases = 0;
+        this.patchCardStats(card, {
+          baseCost,
+          cost: baseCost,
+          power: card.basePower,
+        });
+        this.patchCardStatus(card, {
+          hasRush: false,
+          hasDoubleAttack: false,
+          hasBanish: false,
+          canAttackActiveCharacters: false,
+          mustBeAttackTarget: false,
+          cannotAttack: false,
+          cannotAttackLeaderOnTurnPlayed: false,
+          cannotBlock: false,
+          cannotBeKoedInBattle: false,
+          cannotBeKoedByEffects: false,
+          cannotBeKoedBySlashInBattle: false,
+          cannotBeKoedByStrikeInBattle: false,
+          winOnDeckOut: false,
+          cannotBeRemovedByOpponentEffects: false,
+          skipNextRefreshPhases: 0,
+        });
       }
     }
 
@@ -88,16 +92,20 @@ export class EffectModifierEngine {
           card.ownerSessionId,
         )) {
           if (continuous.modifier.power) {
-            target.power += continuous.modifier.power;
+            this.patchCardStats(target, {
+              power: target.power + continuous.modifier.power,
+            });
           }
 
           if (continuous.modifier.cost) {
-            target.cost = Number.isFinite(target.cost)
+            const currentCost = Number.isFinite(target.cost)
               ? target.cost
               : Number.isFinite(target.baseCost)
                 ? target.baseCost
                 : -1;
-            target.cost += continuous.modifier.cost;
+            this.patchCardStats(target, {
+              cost: currentCost + continuous.modifier.cost,
+            });
           }
 
           if (continuous.modifier.powerPerCount) {
@@ -109,9 +117,12 @@ export class EffectModifierEngine {
               1,
               continuous.modifier.powerPerCount.divisor ?? 1,
             );
-            target.power +=
-              Math.floor(count / divisor) *
-              continuous.modifier.powerPerCount.amount;
+            this.patchCardStats(target, {
+              power:
+                target.power +
+                Math.floor(count / divisor) *
+                  continuous.modifier.powerPerCount.amount,
+            });
           }
 
           if (continuous.modifier.keywords) {
@@ -119,10 +130,12 @@ export class EffectModifierEngine {
           }
 
           if (continuous.modifier.skipNextRefreshPhases) {
-            target.skipNextRefreshPhases = Math.max(
-              target.skipNextRefreshPhases,
-              continuous.modifier.skipNextRefreshPhases,
-            );
+            this.patchCardStatus(target, {
+              skipNextRefreshPhases: Math.max(
+                target.skipNextRefreshPhases,
+                continuous.modifier.skipNextRefreshPhases,
+              ),
+            });
           }
         }
       }
@@ -132,7 +145,9 @@ export class EffectModifierEngine {
       const target = this.host.getCard(modifier.targetInstanceId);
 
       if (target) {
-        target.power += modifier.amount;
+        this.patchCardStats(target, {
+          power: target.power + modifier.amount,
+        });
       }
     }
 
@@ -140,7 +155,9 @@ export class EffectModifierEngine {
       const target = this.host.getCard(modifier.targetInstanceId);
 
       if (target) {
-        target.cost += modifier.amount;
+        this.patchCardStats(target, {
+          cost: target.cost + modifier.amount,
+        });
       }
     }
 
@@ -155,7 +172,9 @@ export class EffectModifierEngine {
     for (const player of players) {
       for (const card of this.selectors.collectPlayerCards(player)) {
         if (card.cost >= 0) {
-          card.cost = Math.max(card.cost, 0);
+          this.patchCardStats(card, {
+            cost: Math.max(card.cost, 0),
+          });
         }
       }
     }
@@ -517,69 +536,104 @@ export class EffectModifierEngine {
   }
 
   private applyKeywords(
-    card: {
-      hasRush: boolean;
-      hasDoubleAttack: boolean;
-      hasBanish: boolean;
-      canAttackActiveCharacters: boolean;
-      mustBeAttackTarget: boolean;
-      cannotAttack: boolean;
-      cannotAttackLeaderOnTurnPlayed: boolean;
-      cannotBlock: boolean;
-      cannotBeKoedInBattle: boolean;
-      cannotBeKoedByEffects: boolean;
-      cannotBeKoedBySlashInBattle: boolean;
-      cannotBeKoedByStrikeInBattle: boolean;
-      winOnDeckOut: boolean;
-      cannotBeRemovedByOpponentEffects: boolean;
-    },
+    card: { instanceId: string } & Pick<
+      Parameters<typeof this.patchCardStatus>[1],
+      | 'hasRush'
+      | 'hasDoubleAttack'
+      | 'hasBanish'
+      | 'canAttackActiveCharacters'
+      | 'mustBeAttackTarget'
+      | 'cannotAttack'
+      | 'cannotAttackLeaderOnTurnPlayed'
+      | 'cannotBlock'
+      | 'cannotBeKoedInBattle'
+      | 'cannotBeKoedByEffects'
+      | 'cannotBeKoedBySlashInBattle'
+      | 'cannotBeKoedByStrikeInBattle'
+      | 'winOnDeckOut'
+      | 'cannotBeRemovedByOpponentEffects'
+    >,
     keywords: EffectKeyword[],
   ): void {
     for (const keyword of keywords) {
       switch (keyword) {
         case 'rush':
-          card.hasRush = true;
+          this.patchCardStatus(card, { hasRush: true });
           break;
         case 'doubleAttack':
-          card.hasDoubleAttack = true;
+          this.patchCardStatus(card, { hasDoubleAttack: true });
           break;
         case 'banish':
-          card.hasBanish = true;
+          this.patchCardStatus(card, { hasBanish: true });
           break;
         case 'canAttackActiveCharacters':
-          card.canAttackActiveCharacters = true;
+          this.patchCardStatus(card, { canAttackActiveCharacters: true });
           break;
         case 'mustBeAttackTarget':
-          card.mustBeAttackTarget = true;
+          this.patchCardStatus(card, { mustBeAttackTarget: true });
           break;
         case 'cannotAttack':
-          card.cannotAttack = true;
+          this.patchCardStatus(card, { cannotAttack: true });
           break;
         case 'cannotAttackLeaderOnTurnPlayed':
-          card.cannotAttackLeaderOnTurnPlayed = true;
+          this.patchCardStatus(card, {
+            cannotAttackLeaderOnTurnPlayed: true,
+          });
           break;
         case 'cannotBlock':
-          card.cannotBlock = true;
+          this.patchCardStatus(card, { cannotBlock: true });
           break;
         case 'cannotBeKoedInBattle':
-          card.cannotBeKoedInBattle = true;
+          this.patchCardStatus(card, { cannotBeKoedInBattle: true });
           break;
         case 'cannotBeKoedByEffects':
-          card.cannotBeKoedByEffects = true;
+          this.patchCardStatus(card, { cannotBeKoedByEffects: true });
           break;
         case 'cannotBeKoedBySlashInBattle':
-          card.cannotBeKoedBySlashInBattle = true;
+          this.patchCardStatus(card, {
+            cannotBeKoedBySlashInBattle: true,
+          });
           break;
         case 'cannotBeKoedByStrikeInBattle':
-          card.cannotBeKoedByStrikeInBattle = true;
+          this.patchCardStatus(card, {
+            cannotBeKoedByStrikeInBattle: true,
+          });
           break;
         case 'winOnDeckOut':
-          card.winOnDeckOut = true;
+          this.patchCardStatus(card, { winOnDeckOut: true });
           break;
         case 'cannotBeRemovedByOpponentEffects':
-          card.cannotBeRemovedByOpponentEffects = true;
+          this.patchCardStatus(card, {
+            cannotBeRemovedByOpponentEffects: true,
+          });
           break;
       }
     }
+  }
+
+  private patchCardStatus(
+    card: { instanceId: string } & Record<string, unknown>,
+    patch: Parameters<
+      NonNullable<EffectEngineHost['patchCardStatus']>
+    >[1],
+  ): void {
+    if (this.host.patchCardStatus) {
+      this.host.patchCardStatus(card.instanceId, patch);
+      return;
+    }
+
+    Object.assign(card, patch);
+  }
+
+  private patchCardStats(
+    card: { instanceId: string } & Record<string, unknown>,
+    patch: Parameters<NonNullable<EffectEngineHost['patchCardStats']>>[1],
+  ): void {
+    if (this.host.patchCardStats) {
+      this.host.patchCardStats(card.instanceId, patch);
+      return;
+    }
+
+    Object.assign(card, patch);
   }
 }

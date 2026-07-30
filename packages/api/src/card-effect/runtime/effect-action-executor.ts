@@ -213,7 +213,9 @@ export class EffectActionExecutor {
           action.selector,
           controllerSessionId,
         )) {
-          target.rested = action.type === 'rest';
+          this.patchCardStatus(target, {
+            rested: action.type === 'rest',
+          });
         }
         next();
         return;
@@ -568,10 +570,14 @@ export class EffectActionExecutor {
           action.selector,
           controllerSessionId,
         )) {
-          target.cannotAttackUntilTurn = Math.max(
+          const cannotAttackUntilTurn = Math.max(
             target.cannotAttackUntilTurn,
             this.host.state.turn + action.turns,
           );
+
+          this.patchCardStatus(target, {
+            cannotAttackUntilTurn,
+          });
         }
         next();
         return;
@@ -618,7 +624,11 @@ export class EffectActionExecutor {
           action.selector,
           controllerSessionId,
         )) {
-          target.attachedDon = Math.max(0, target.attachedDon - action.amount);
+          const attachedDon = Math.max(0, target.attachedDon - action.amount);
+
+          this.patchCardStats(target, {
+            attachedDon,
+          });
         }
 
         next();
@@ -690,10 +700,14 @@ export class EffectActionExecutor {
           'Choisissez la carte qui ne deviendra pas active lors de sa prochaine phase de Recharge.',
           (cards) => {
             for (const card of cards) {
-              card.skipNextRefreshPhases = Math.max(
+              const skipNextRefreshPhases = Math.max(
                 card.skipNextRefreshPhases,
                 action.amount,
               );
+
+              this.patchCardStatus(card, {
+                skipNextRefreshPhases,
+              });
             }
 
             next();
@@ -1434,5 +1448,23 @@ export class EffectActionExecutor {
     }
 
     return true;
+  }
+
+  private patchCardStatus(card: DuelCard, patch: Record<string, unknown>): void {
+    if (this.host.patchCardStatus) {
+      this.host.patchCardStatus(card.instanceId, patch);
+      return;
+    }
+
+    Object.assign(card, patch);
+  }
+
+  private patchCardStats(card: DuelCard, patch: Record<string, unknown>): void {
+    if (this.host.patchCardStats) {
+      this.host.patchCardStats(card.instanceId, patch);
+      return;
+    }
+
+    Object.assign(card, patch);
   }
 }
