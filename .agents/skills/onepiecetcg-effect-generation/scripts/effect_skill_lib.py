@@ -94,10 +94,14 @@ def normalize_card_id(card_id: str) -> str:
     return card_id.strip().upper()
 
 
-def normalize_edition_id(edition_id: str) -> str:
-    """Return the canonical uppercase edition id."""
+def normalize_edition_id(value: str) -> str:
+    """Normalize an edition id to the hyphenated catalog-format (e.g. OP01 -> OP-01)."""
 
-    return edition_id.strip().upper()
+    normalized = normalize_card_id(value)
+    match = re.match(r"^([A-Z]+)(\d{2})$", normalized)
+    if match is not None:
+        return f"{match.group(1)}-{match.group(2)}"
+    return normalized
 
 
 def split_csv_ids(value: str) -> list[str]:
@@ -289,12 +293,13 @@ def should_generate_definition(card: CatalogCard) -> bool:
 
 
 def get_card_edition_id(card_id: str) -> str | None:
-    """Extract the edition prefix from a card id."""
+    """Extract the hyphenated edition id from a card id (e.g. OP01-006 -> OP-01)."""
 
     normalized = normalize_card_id(card_id)
     if "-" not in normalized:
         return None
-    return normalized.split("-", 1)[0]
+    prefix = normalized.split("-", 1)[0]
+    return normalize_edition_id(prefix)
 
 
 def scan_object_spans(text: str) -> list[tuple[int, int]]:
@@ -652,15 +657,15 @@ def validate_sources(
 
 
 def to_variable_name(edition_id: str) -> str:
-    """Build the exported TS variable name for an edition file."""
+    """Build the exported TS variable name for an edition file (dashes stripped for valid identifier)."""
 
-    return f"{edition_id.lower()}EffectDefinitions"
+    return f"{edition_id.lower().replace('-', '')}EffectDefinitions"
 
 
 def to_effect_file_name(edition_id: str) -> str:
-    """Build the filename for an edition definition file."""
+    """Build the uppercase filename for an edition definition file, matching catalog-sync naming."""
 
-    return f"{edition_id.lower()}.effects.ts"
+    return f"{edition_id}.effects.ts"
 
 
 def quote_ts_string(value: str) -> str:

@@ -55,7 +55,7 @@ A card block is stored in the wrong edition file.
 
 Example:
 
-- `OP01-006` inside `op02.effects.ts`
+- `OP01-006` inside `OP-02.effects.ts`
 
 ### `DUPLICATE_CARD_ID`
 
@@ -91,7 +91,7 @@ Use this sequence:
 2. implement the full DSL for every generated placeholder card in scope
 3. choose the right test layer for the touched behavior:
    - `packages/api/src/card-effect/effect-engine.spec.ts` for reusable runtime or rules behavior
-   - edition-specific specs such as `packages/api/src/card-effect/definitions/op01.effects.spec.ts` for card-level effect behavior
+   - edition-specific specs such as `packages/api/src/card-effect/definitions/OP-01.effects.spec.ts` for card-level effect behavior
    - `packages/api/src/card-effect/effect-loader.spec.ts` when loader or registry wiring changes
 4. add or update tests at that layer so the important touched behavior is covered
 5. when you add card-level coverage, cover the complete effect path: trigger, optional decisions, costs, target selection, modifiers, moves, and final state

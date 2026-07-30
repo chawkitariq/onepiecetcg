@@ -11,14 +11,14 @@ Write effect-definition files only in:
 
 Edition files must use:
 
-- lowercase edition id
+- the hyphenated catalog-style edition id (e.g. `OP-01` → `op-01`)
 - `.effects.ts` suffix
 
 Examples:
 
-- `op01.effects.ts`
-- `op02.effects.ts`
-- `st10.effects.ts`
+- `OP-01.effects.ts`
+- `OP-02.effects.ts`
+- `ST-10.effects.ts`
 
 ## Edition test file naming
 
@@ -26,15 +26,15 @@ Edition-specific effect test files must use the same base name as the edition de
 
 Examples:
 
-- `op01.effects.ts` -> `op01.effects.spec.ts`
-- `op02.effects.ts` -> `op02.effects.spec.ts`
-- `st10.effects.ts` -> `st10.effects.spec.ts`
+- `OP-01.effects.ts` -> `OP-01.effects.spec.ts`
+- `OP-02.effects.ts` -> `OP-02.effects.spec.ts`
+- `ST-10.effects.ts` -> `ST-10.effects.spec.ts`
 
 ## Edition export naming
 
 Each edition file must export one `EditionEffectDefinitions` constant named:
 
-- lowercase edition id
+- lowercase edition id with any dashes removed
 - `EffectDefinitions` suffix
 
 Examples:
@@ -50,7 +50,7 @@ Each edition file must follow this structure:
 import type { EditionEffectDefinitions } from '../types/effect-definition-source';
 
 export const op01EffectDefinitions: EditionEffectDefinitions = {
-  editionId: 'OP01',
+  editionId: 'OP-01',
   cards: [
     // card blocks
   ],

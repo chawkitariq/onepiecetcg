@@ -19,7 +19,7 @@ Use this reference when you need the exact source files for the effect-definitio
 - Need to understand the precomputed indexes:
   Read `packages/api/src/card-effect/effect-indexes.ts`
 - Need to inspect example authored edition files:
-  Read `packages/api/src/card-effect/definitions/op01.effects.ts`
+  Read `packages/api/src/card-effect/definitions/OP-01.effects.ts`
 - Need to inspect a real special handler:
   Read `packages/api/src/card-effect/definitions/special/op01-047.special.ts`
 - Need to inspect helper accessors over resolved definitions:
@@ -144,7 +144,7 @@ Read it when a new authored definition should be discoverable through a trigger 
 
 ## Example authored definition files
 
-### `packages/api/src/card-effect/definitions/op01.effects.ts`
+### `packages/api/src/card-effect/definitions/OP-01.effects.ts`
 
 Use as the primary example for:
 

@@ -18,8 +18,8 @@ Generate and validate the effect-definition files used by this repository's back
 7. Read `docs/rule_comprehensive.md` before deciding what any effect should do. Treat it as the complete gameplay rules source of truth.
 8. Pick the task path:
    - Validate existing definitions: run `scripts/run-validate-effects.sh`.
-   - Generate from live card metadata: run `scripts/run-generate-effects.sh --edition OP01`.
-   - Generate from a local metadata snapshot: run `scripts/run-generate-effects.sh --edition OP01 --source-file /abs/path/cards.json`.
+    - Generate from live card metadata: run `scripts/run-generate-effects.sh --edition OP-01`.
+    - Generate from a local metadata snapshot: run `scripts/run-generate-effects.sh --edition OP-01 --source-file /abs/path/cards.json`.
    - Refine generated placeholders into authored effects in `packages/api/src/card-effect/definitions/`.
    - If you need to generate effects for multiple editions in one task, split the work by edition and use sub-agents so each edition can be generated and validated independently.
    - Keep the generated comment blocks that contain the card description/text in skeleton output; never delete those comments during refinement.
@@ -29,8 +29,8 @@ Generate and validate the effect-definition files used by this repository's back
    - family tests for reusable effect patterns shared by multiple cards
    - card-specific tests for special handlers, ambiguous texts, or uniquely complex cards
    - regression tests for the most critical or frequently exercised cards
-   Make the assertions match the card text itself: verify each meaningful clause the description expresses, including scope words such as "this character", optional wording such as "you may", quantity limits such as "up to", and ordering words such as "then" when present. Prefer `packages/api/src/card-effect/effect-engine.spec.ts` for reusable runtime behavior, edition-specific files such as `packages/api/src/card-effect/definitions/op01.effects.spec.ts` for card-level effect coverage, and add loader tests when bootstrap behavior changes.
-   Keep edition-specific test file names aligned with the edition definition file they cover: `op01.effects.ts` -> `op01.effects.spec.ts`, `op02.effects.ts` -> `op02.effects.spec.ts`, and so on.
+   Make the assertions match the card text itself: verify each meaningful clause the description expresses, including scope words such as "this character", optional wording such as "you may", quantity limits such as "up to", and ordering words such as "then" when present. Prefer `packages/api/src/card-effect/effect-engine.spec.ts` for reusable runtime behavior, edition-specific files such as `packages/api/src/card-effect/definitions/OP-01.effects.spec.ts` for card-level effect coverage, and add loader tests when bootstrap behavior changes.
+    Keep edition-specific test file names aligned with the edition definition file they cover: `OP-01.effects.ts` -> `OP-01.effects.spec.ts`, `OP-02.effects.ts` -> `OP-02.effects.spec.ts`, and so on.
 11. Run a validation loop:
    - run validation
    - fix every reported issue

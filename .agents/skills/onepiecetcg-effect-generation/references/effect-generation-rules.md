@@ -25,19 +25,19 @@ The `--edition` argument is required.
 
 Accepted examples:
 
-- `--edition OP01`
-- `--edition OP01,OP02`
+- `--edition OP-01`
+- `--edition OP-01,OP-02`
 
-The skill normalizes edition ids to uppercase before using them.
+The skill normalizes edition ids to the hyphenated catalog-sync format (e.g. `OP01` → `OP-01`).
 
 ## How to derive the edition from card metadata
 
-Take the prefix before the first `-` in the card id.
+Take the prefix before the first `-` in the card id and normalize it to hyphenated format.
 
 Examples:
 
-- `OP01-006` -> `OP01`
-- `ST10-001` -> `ST10`
+- `OP01-006` -> `OP-01`
+- `ST10-001` -> `ST-10`
 
 If a card id does not contain `-`, treat it as malformed for normal edition placement.
 

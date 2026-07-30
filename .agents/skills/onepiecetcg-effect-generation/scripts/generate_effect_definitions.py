@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--edition",
         "-e",
         required=True,
-        help="Comma-separated edition ids to generate, for example OP01 or OP01,OP02.",
+        help="Comma-separated edition ids to generate, for example OP-01 or OP-01,OP-02.",
     )
     parser.add_argument(
         "--source-file",
@@ -225,11 +225,11 @@ def main() -> int:
         )
         written_paths.append(edition_path)
 
-    final_edition_ids = sorted(
+    final_edition_ids = sorted(set(
         normalize_edition_id(path.stem.split(".")[0])
         for path in output_dir.glob("*.effects.ts")
         if path.name != "index.ts"
-    )
+    ))
     (output_dir / "index.ts").write_text(
         render_definitions_index(final_edition_ids),
         encoding="utf-8",
