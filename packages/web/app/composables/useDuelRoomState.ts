@@ -46,6 +46,11 @@ type WireDuelPlayer = {
   zones: WireDuelZones
 }
 
+type PartialWireDuelPlayer = Partial<WireDuelPlayer> & {
+  sessionId?: string
+  zones?: Partial<WireDuelZones>
+}
+
 export type WireDuelCombat = {
   attackerSessionId: string
   attackerInstanceId: string
@@ -132,6 +137,24 @@ function toOptionalPublicCard(card: WireDuelCard | undefined): PublicCard | null
   return card && card.instanceId ? toPublicCard(card) : null
 }
 
+function hasInitializedZones(
+  player: PartialWireDuelPlayer
+): player is WireDuelPlayer {
+  return Boolean(
+    player.sessionId
+    && player.zones
+    && player.zones.leader
+    && player.zones.stage
+    && player.zones.deck
+    && player.zones.donDeck
+    && player.zones.hand
+    && player.zones.life
+    && player.zones.characters
+    && player.zones.cost
+    && player.zones.trash
+  )
+}
+
 function toDuelPlayerView(player: WireDuelPlayer): DuelPlayerView {
   const zones = player.zones
 
@@ -211,7 +234,9 @@ export function useDuelRoomState(version: Ref<number>): DuelRoomState {
   const players = computed(() => {
     void version.value
 
-    return colyseusMapValues<WireDuelPlayer>(room.value?.state.players).map(toDuelPlayerView)
+    return colyseusMapValues<PartialWireDuelPlayer>(room.value?.state.players)
+      .filter(hasInitializedZones)
+      .map(toDuelPlayerView)
   })
 
   const selfSessionId = computed(() => room.value?.sessionId ?? null)

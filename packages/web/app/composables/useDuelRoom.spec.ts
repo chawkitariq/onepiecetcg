@@ -255,6 +255,37 @@ describe('useDuelRoom setup helpers', () => {
 
     expect(isSelfTurnToMulligan.value).toBe(false)
   })
+
+  it('ignores partially initialized player patches without crashing the duel view', () => {
+    const { room } = useColyseus()
+    room.value = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'mulligan',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      players: [
+        {
+          sessionId: 'session-a',
+          displayName: 'session-a',
+          deckId: 'deck-1',
+          ready: true,
+          connected: true,
+          mulliganDecided: false,
+          hasTakenFirstTurn: true,
+          handCount: 5,
+          deckCount: 45,
+          lifeCount: 0
+        } as never,
+        createFakePlayer('session-b', false)
+      ]
+    }) as never
+
+    const { players, self, opponent } = useDuelRoom()
+
+    expect(players.value).toHaveLength(1)
+    expect(self.value).toBe(null)
+    expect(opponent.value?.sessionId).toBe('session-b')
+  })
 })
 
 describe('useDuelRoom turn/phase helpers (stage 7)', () => {
