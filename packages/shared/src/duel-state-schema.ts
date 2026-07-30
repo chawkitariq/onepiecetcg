@@ -1,5 +1,12 @@
 import { ArraySchema, MapSchema, Schema, view, type } from '@colyseus/schema';
-import type { Card, CardColor, CardType, DuelEndReason, GamePhase } from './index.js';
+import type {
+  Card,
+  CardColor,
+  CardType,
+  DuelEndReason,
+  DuelLogLevel,
+  GamePhase,
+} from './index.js';
 
 /**
  * Colyseus room state for the `duel` room, shared between `packages/api`
@@ -236,6 +243,12 @@ export class DuelLog extends Schema {
   message = '';
 
   @type('string')
+  level: DuelLogLevel = 'info';
+
+  @type('string')
+  actorSessionId = '';
+
+  @type('string')
   createdAt = '';
 }
 
@@ -449,6 +462,8 @@ export function cloneDuelLog(source: DuelLog): DuelLog {
   const cloned = new DuelLog();
   cloned.id = source.id;
   cloned.message = source.message;
+  cloned.level = source.level;
+  cloned.actorSessionId = source.actorSessionId;
   cloned.createdAt = source.createdAt;
 
   return cloned;

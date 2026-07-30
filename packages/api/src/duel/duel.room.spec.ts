@@ -102,6 +102,10 @@ describe('DuelRoom', () => {
     expect(room.state.logs.at(-1)?.message).toContain(
       'choisir de jouer en premier ou en second',
     );
+    expect(room.state.logs.at(-1)?.level).toBe('system');
+    expect(['session-a', 'session-b']).toContain(
+      room.state.logs.at(-1)?.actorSessionId,
+    );
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();

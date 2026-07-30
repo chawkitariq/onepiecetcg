@@ -28,7 +28,7 @@ export type DuelTurnEngineDeps = {
   state: DuelState;
   maxClients: number;
   effectBoundary: DuelTurnEngineEffectBoundary;
-  addLog: (message: string) => void;
+  addLog: (message: string, actorSessionId?: string) => void;
   shuffle: (cards: {
     length: number;
     [index: number]: DuelCard | undefined;
@@ -75,6 +75,7 @@ export class DuelTurnEngine {
       : undefined;
     this.deps.addLog(
       `${startingPlayer?.displayName ?? 'Un joueur'} a ete designe pour choisir de jouer en premier ou en second.`,
+      startingPlayerSessionId,
     );
   }
 
@@ -120,6 +121,7 @@ export class DuelTurnEngine {
     const choosingPlayer = this.deps.state.players.get(clientSessionId);
     this.deps.addLog(
       `${choosingPlayer?.displayName ?? 'Le joueur designe'} choisit de jouer en ${choice === 'first' ? 'premier' : 'second'}. ${firstPlayer?.displayName ?? ''} commencera.`.trim(),
+      clientSessionId,
     );
   }
 
@@ -155,9 +157,15 @@ export class DuelTurnEngine {
       player.zones.deck.push(...player.zones.hand.splice(0));
       this.deps.shuffle(player.zones.deck);
       this.dealHand(player);
-      this.deps.addLog(`${player.displayName} fait un mulligan.`);
+      this.deps.addLog(
+        `${player.displayName} fait un mulligan.`,
+        clientSessionId,
+      );
     } else {
-      this.deps.addLog(`${player.displayName} garde sa main de depart.`);
+      this.deps.addLog(
+        `${player.displayName} garde sa main de depart.`,
+        clientSessionId,
+      );
     }
 
     player.mulliganDecided = true;
@@ -259,6 +267,7 @@ export class DuelTurnEngine {
 
     this.deps.addLog(
       `${player.displayName} redresse ses cartes en phase de Recharge.`,
+      sessionId,
     );
   }
 
@@ -309,6 +318,7 @@ export class DuelTurnEngine {
     );
     this.deps.addLog(
       `Mise en place terminee. ${firstPlayer?.displayName ?? 'Le premier joueur'} commence le premier tour.`,
+      this.deps.state.firstPlayerSessionId,
     );
 
     this.runRefreshPhase(this.deps.state.firstPlayerSessionId);
@@ -325,6 +335,7 @@ export class DuelTurnEngine {
     if (this.deps.state.turn === 1) {
       this.deps.addLog(
         `${player.displayName} ne pioche pas lors de son premier tour.`,
+        sessionId,
       );
       return;
     }
@@ -339,7 +350,7 @@ export class DuelTurnEngine {
     card.faceDown = false;
     player.zones.hand.push(card);
     this.deps.syncZoneCounts(player);
-    this.deps.addLog(`${player.displayName} pioche 1 carte.`);
+    this.deps.addLog(`${player.displayName} pioche 1 carte.`, sessionId);
   }
 
   private declareDefeatByDeckOut(player: DuelPlayer): void {
@@ -347,6 +358,7 @@ export class DuelTurnEngine {
       this.deps.finalizeMatch('deckOut', player.sessionId);
       this.deps.addLog(
         `${player.displayName} a reduit son deck a 0 et gagne a la place de perdre.`,
+        player.sessionId,
       );
       this.deps.recordMatchResult();
       return;
@@ -358,6 +370,7 @@ export class DuelTurnEngine {
     );
     this.deps.addLog(
       `${player.displayName} ne peut plus piocher : deck-out, defaite.`,
+      player.sessionId,
     );
     this.deps.recordMatchResult();
   }
@@ -384,6 +397,7 @@ export class DuelTurnEngine {
 
     this.deps.addLog(
       `${player.displayName} place ${count} carte(s) DON!! en zone de Cout.`,
+      sessionId,
     );
   }
 
@@ -392,7 +406,10 @@ export class DuelTurnEngine {
 
     if (endingPlayer) {
       endingPlayer.hasTakenFirstTurn = true;
-      this.deps.addLog(`${endingPlayer.displayName} termine son tour.`);
+      this.deps.addLog(
+        `${endingPlayer.displayName} termine son tour.`,
+        endingPlayer.sessionId,
+      );
     }
 
     this.deps.effectBoundary.emitWindowEffects('onTurnEnd');

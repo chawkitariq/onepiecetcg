@@ -52,7 +52,7 @@ type FindCardResult = { card: DuelCard; index: number } | null;
 export type DuelCombatEngineDeps = {
   state: DuelState;
   effectBoundary: CombatEffectBoundary;
-  addLog: (message: string) => void;
+  addLog: (message: string, actorSessionId?: string) => void;
   sendError: (message: string) => void;
   broadcastCardView: (card: DuelCard) => void;
   syncZoneCounts: (player: DuelPlayer) => void;
@@ -246,6 +246,7 @@ export class DuelCombatEngine {
 
     this.deps.addLog(
       `${attacker.displayName} attaque avec ${attackerCard.name} vers ${targetLabel}.`,
+      attacker.sessionId,
     );
 
     this.deps.effectBoundary.emitCardEvent(
@@ -314,6 +315,7 @@ export class DuelCombatEngine {
       combat.blockerInstanceId = blockerFound.card.instanceId;
       this.deps.addLog(
         `${defender.displayName} declare ${blockerFound.card.name} comme Bloqueur.`,
+        defender.sessionId,
       );
       this.deps.effectBoundary.emitCardEvent(
         'onBlock',
@@ -321,7 +323,10 @@ export class DuelCombatEngine {
         blockerFound.card,
       );
     } else {
-      this.deps.addLog(`${defender.displayName} ne bloque pas.`);
+      this.deps.addLog(
+        `${defender.displayName} ne bloque pas.`,
+        defender.sessionId,
+      );
     }
 
     if (!combat.blockerInstanceId && combat.targetType === 'leader') {
@@ -389,6 +394,7 @@ export class DuelCombatEngine {
 
     this.deps.addLog(
       `${defender.displayName} defausse ${found.card.name} et declare +${bonus} de Contre.`,
+      defender.sessionId,
     );
 
     if (hasCounterEffect || found.card.type === 'Event') {
@@ -510,20 +516,28 @@ export class DuelCombatEngine {
 
     this.deps.addLog(
       `Etape de Degats : ${attackerCard.name} (${attackerPower}) contre ${defendingCard.name} (${defenderPower}).`,
+      attacker.sessionId,
     );
 
     if (attackerPower < defenderPower) {
-      this.deps.addLog(`${attacker.displayName} perd le combat.`);
+      this.deps.addLog(
+        `${attacker.displayName} perd le combat.`,
+        attacker.sessionId,
+      );
       this.endCombat();
       return;
     }
 
-    this.deps.addLog(`${attacker.displayName} remporte le combat.`);
+    this.deps.addLog(
+      `${attacker.displayName} remporte le combat.`,
+      attacker.sessionId,
+    );
 
     if (combat.blockerInstanceId || combat.targetType === 'character') {
       if (this.deps.isProtectedFromBattleKo(defendingCard, attackerCard)) {
         this.deps.addLog(
           `${defendingCard.name} ne peut pas etre mis KO pendant ce combat.`,
+          defender.sessionId,
         );
       } else {
         this.deps.knockOutCharacter(defender, defendingCard);
@@ -559,6 +573,7 @@ export class DuelCombatEngine {
       );
       this.deps.addLog(
         `${defender.displayName} subit un degat sur une Vie deja vide : defaite.`,
+        defender.sessionId,
       );
       this.endCombat();
       this.deps.recordMatchResult();
@@ -580,6 +595,7 @@ export class DuelCombatEngine {
       this.deps.broadcastCardView(revealedCard);
       this.deps.addLog(
         `${defender.displayName} subit 1 degat en [Banish] et la carte de Vie est mise a la Defausse.`,
+        defender.sessionId,
       );
       return true;
     }

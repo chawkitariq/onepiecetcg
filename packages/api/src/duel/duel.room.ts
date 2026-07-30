@@ -16,6 +16,7 @@ import type { StatsService } from '../stats/stats.service';
 import {
   DuelCard,
   DuelLog,
+  type DuelLogLevel,
   DuelPlayer,
   DuelState,
   type DuelEndReason,
@@ -233,7 +234,8 @@ export class DuelRoom extends Room<DuelState> {
     this.lifecycle = new DuelRoomLifecycle({
       state: this.state,
       statsService: services?.statsService,
-      addLog: (message) => this.addLog(message),
+      addLog: (message, actorSessionId) =>
+        this.addLog(message, 'system', actorSessionId),
       getOpponentSessionId: (sessionId) =>
         this.runtimeState.getOpponentSessionId(sessionId),
       disconnectRoom: () => this.disconnect(),
@@ -257,7 +259,8 @@ export class DuelRoom extends Room<DuelState> {
     const gameplayRuntime = createDuelRoomGameplayRuntime({
       state: this.state,
       maxClients: this.maxClients,
-      addLog: (message) => this.addLog(message),
+      addLog: (message, level, actorSessionId) =>
+        this.addLog(message, level, actorSessionId),
       reportMainPhaseError: (message) =>
         this.notifier.sendMainPhaseError(message),
       reportCombatError: (message) => this.notifier.sendCombatError(message),
@@ -393,7 +396,11 @@ export class DuelRoom extends Room<DuelState> {
       this.state.players.values(),
     );
 
-    this.addLog(`${player.displayName} a rejoint la room avec un deck valide.`);
+    this.addLog(
+      `${player.displayName} a rejoint la room avec un deck valide.`,
+      'system',
+      player.sessionId,
+    );
     this.notifier.sendPendingEffectDecisionToClient(client);
 
     if (this.state.players.size === this.maxClients) {
@@ -413,7 +420,12 @@ export class DuelRoom extends Room<DuelState> {
       }
 
       player.connected = false;
-      this.appendLogToState(state, `${player.displayName} est deconnecte.`);
+      this.appendLogToState(
+        state,
+        `${player.displayName} est deconnecte.`,
+        'system',
+        player.sessionId,
+      );
       const snapshot = this.captureStateSnapshotFrom(state);
       lifecycle.declareForfeitIfMatchInProgress(player);
 
@@ -449,15 +461,27 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     player.connected = false;
-    this.addLog(`${player.displayName} est deconnecte.`);
+    this.addLog(
+      `${player.displayName} est deconnecte.`,
+      'system',
+      player.sessionId,
+    );
 
     try {
       await this.allowReconnection(client, RECONNECTION_SECONDS);
       player.connected = true;
-      this.addLog(`${player.displayName} est reconnecte.`);
+      this.addLog(
+        `${player.displayName} est reconnecte.`,
+        'system',
+        player.sessionId,
+      );
       this.notifier.sendPendingEffectDecisionToClient(client);
     } catch {
-      this.addLog(`${player.displayName} a perdu par forfait.`);
+      this.addLog(
+        `${player.displayName} a perdu par forfait.`,
+        'system',
+        player.sessionId,
+      );
       this.lifecycle.removePlayer(client.sessionId);
     }
   }
@@ -2206,10 +2230,10 @@ export class DuelRoom extends Room<DuelState> {
     return new DuelRoomLifecycle({
       state,
       statsService: options?.isolated ? undefined : services?.statsService,
-      addLog: (message) =>
+      addLog: (message, actorSessionId) =>
         options?.isolated
-          ? this.appendLogToState(state, message)
-          : this.addLog(message),
+          ? this.appendLogToState(state, message, 'system', actorSessionId)
+          : this.addLog(message, 'system', actorSessionId),
       getOpponentSessionId: (sessionId) => {
         const runtimeState = new DuelRoomRuntimeState({ state });
 
@@ -2238,7 +2262,8 @@ export class DuelRoom extends Room<DuelState> {
     const gameplayRuntime = createDuelRoomGameplayRuntime({
       state,
       maxClients: this.maxClients,
-      addLog: (message) => this.appendLogToState(state, message),
+      addLog: (message, level, actorSessionId) =>
+        this.appendLogToState(state, message, level, actorSessionId),
       reportMainPhaseError: (message) => {
         mainPhaseErrors.push(message);
       },
@@ -2552,10 +2577,17 @@ export class DuelRoom extends Room<DuelState> {
     }
   }
 
-  private appendLogToState(state: DuelState, message: string): void {
+  private appendLogToState(
+    state: DuelState,
+    message: string,
+    level: DuelLogLevel = 'info',
+    actorSessionId = '',
+  ): void {
     const log = new DuelLog();
     log.id = `${Date.now()}:${state.logs.length}`;
     log.message = message;
+    log.level = level;
+    log.actorSessionId = actorSessionId;
     log.createdAt = new Date().toISOString();
     state.logs.push(log);
   }
@@ -2605,6 +2637,8 @@ export class DuelRoom extends Room<DuelState> {
     this.appendLogToState(
       state,
       `${card.name} est mis KO et rejoint la Defausse.`,
+      reason === 'effect' ? 'effect' : 'action',
+      owner.sessionId,
     );
     effectBoundary.emitCardEvent('onKo', owner.sessionId, card);
     effectBoundary.reapplyContinuousEffects();
@@ -2637,10 +2671,16 @@ export class DuelRoom extends Room<DuelState> {
     return true;
   }
 
-  private addLog(message: string) {
+  private addLog(
+    message: string,
+    level: DuelLogLevel = 'info',
+    actorSessionId = '',
+  ) {
     const log = new DuelLog();
     log.id = `${Date.now()}:${this.state.logs.length}`;
     log.message = message;
+    log.level = level;
+    log.actorSessionId = actorSessionId;
     log.createdAt = new Date().toISOString();
     this.state.logs.push(log);
     this.logger.log(message);

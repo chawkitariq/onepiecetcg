@@ -296,6 +296,8 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     expect(room.state.phase).toBe('draw');
     expect(player?.handCount).toBe(handCountBeforeDraw);
     expect(room.state.logs.at(-1)?.message).toContain('ne pioche pas');
+    expect(room.state.logs.at(-1)?.level).toBe('system');
+    expect(room.state.logs.at(-1)?.actorSessionId).toBe(firstSessionId);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();

@@ -8,7 +8,7 @@ import type { StatsService } from '../../stats/stats.service';
 export type DuelRoomLifecycleDeps = {
   state: DuelState;
   statsService?: StatsService;
-  addLog: (message: string) => void;
+  addLog: (message: string, actorSessionId?: string) => void;
   getOpponentSessionId: (sessionId: string) => string | null;
   disconnectRoom: () => Promise<void> | void;
   reportStatsError: (error: unknown) => void;
@@ -120,7 +120,10 @@ export class DuelRoomLifecycle {
     }
 
     this.finalizeMatch('forfeit', winnerSessionId);
-    this.deps.addLog(`${quittingPlayer.displayName} abandonne la partie.`);
+    this.deps.addLog(
+      `${quittingPlayer.displayName} abandonne la partie.`,
+      quittingPlayer.sessionId,
+    );
     this.recordMatchResult();
   }
 

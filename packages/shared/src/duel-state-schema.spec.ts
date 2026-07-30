@@ -66,6 +66,8 @@ function createState(): DuelState {
   const log = new DuelLog();
   log.id = 'log-1';
   log.message = 'hello';
+  log.level = 'system';
+  log.actorSessionId = 'session-a';
   log.createdAt = '2026-07-30T10:00:01.000Z';
   state.logs.push(log);
   state.combat.attackerSessionId = 'session-a';
@@ -99,6 +101,8 @@ describe('cloneDuelState', () => {
       'session-a-hand-1-name',
     );
     expect(source.logs[0]?.message).toBe('hello');
+    expect(source.logs[0]?.level).toBe('system');
+    expect(source.logs[0]?.actorSessionId).toBe('session-a');
     expect(source.combat.counterPowerBonus).toBe(1000);
   });
 });
@@ -119,6 +123,8 @@ describe('adoptDuelState', () => {
       Object.assign(new DuelLog(), {
         id: 'log-2',
         message: 'adopted',
+        level: 'action',
+        actorSessionId: 'session-b',
         createdAt: '2026-07-30T10:00:02.000Z',
       }),
     );
@@ -132,6 +138,8 @@ describe('adoptDuelState', () => {
     expect(liveState.endReason).toBe('life');
     expect(liveState.players.get('session-a')?.zones.characters).toHaveLength(2);
     expect(liveState.logs).toHaveLength(2);
+    expect(liveState.logs[1]?.level).toBe('action');
+    expect(liveState.logs[1]?.actorSessionId).toBe('session-b');
     expect(liveState.players.get('session-a')).not.toBe(
       workingCopy.players.get('session-a'),
     );

@@ -36,7 +36,7 @@ type FindCardResult = { card: DuelCard; index: number } | null;
 export type DuelMainPhaseEngineDeps = {
   state: DuelState;
   effectBoundary: MainPhaseEffectBoundary;
-  addLog: (message: string) => void;
+  addLog: (message: string, actorSessionId?: string) => void;
   sendError: (message: string) => void;
   broadcastCardView: (card: DuelCard) => void;
   syncZoneCounts: (player: DuelPlayer) => void;
@@ -189,6 +189,7 @@ export class DuelMainPhaseEngine {
 
       this.deps.addLog(
         `${player.displayName} donne ${attachedCount} DON!! a son Leader (+${attachedCount * 1000} de puissance).`,
+        player.sessionId,
       );
       return true;
     }
@@ -212,6 +213,7 @@ export class DuelMainPhaseEngine {
     }
     this.deps.addLog(
       `${player.displayName} donne ${attachedCount} DON!! a ${found.card.name} (+${attachedCount * 1000} de puissance).`,
+      player.sessionId,
     );
     return true;
   }
@@ -265,6 +267,7 @@ export class DuelMainPhaseEngine {
         this.deps.returnDonToCost(player, clientSessionId, attachedDon);
         this.deps.addLog(
           `${player.displayName} defausse ${discarded.name} pour liberer la zone Personnage.`,
+          player.sessionId,
         );
       }
     }
@@ -275,6 +278,7 @@ export class DuelMainPhaseEngine {
     this.deps.broadcastCardView(card);
     this.deps.addLog(
       `${player.displayName} joue ${card.name} en zone Personnage.`,
+      player.sessionId,
     );
     this.deps.effectBoundary.reapplyContinuousEffects();
     this.deps.effectBoundary.emitPlayedCard(player.sessionId, card, 'hand');
@@ -296,7 +300,10 @@ export class DuelMainPhaseEngine {
     card.rested = false;
     player.zones.stage = card;
     this.deps.broadcastCardView(card);
-    this.deps.addLog(`${player.displayName} joue ${card.name} en zone Lieu.`);
+    this.deps.addLog(
+      `${player.displayName} joue ${card.name} en zone Lieu.`,
+      player.sessionId,
+    );
     this.deps.effectBoundary.reapplyContinuousEffects();
     this.deps.effectBoundary.emitPlayedCard(player.sessionId, card, 'hand');
   }
@@ -304,7 +311,10 @@ export class DuelMainPhaseEngine {
   private activateEvent(player: DuelPlayer, card: DuelCard): void {
     this.deps.unshiftIntoTrash(player, card);
     this.deps.broadcastCardView(card);
-    this.deps.addLog(`${player.displayName} active ${card.name}.`);
+    this.deps.addLog(
+      `${player.displayName} active ${card.name}.`,
+      player.sessionId,
+    );
     this.deps.effectBoundary.emitPlayedCard(player.sessionId, card, 'hand');
   }
 

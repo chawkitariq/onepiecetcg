@@ -1,6 +1,7 @@
 import type {
   DuelCard,
   DuelEndReason,
+  DuelLogLevel,
   DuelPlayer,
   DuelState,
   PendingEffectDecision,
@@ -33,7 +34,11 @@ export type DuelRoomGameplayRuntime = {
 export type CreateDuelRoomGameplayRuntimeInput = {
   state: DuelState;
   maxClients: number;
-  addLog: (message: string) => void;
+  addLog: (
+    message: string,
+    level?: DuelLogLevel,
+    actorSessionId?: string,
+  ) => void;
   reportMainPhaseError: (message: string) => void;
   reportCombatError: (message: string) => void;
   broadcastCardView: (card: DuelCard) => void;
@@ -71,6 +76,11 @@ export type CreateDuelRoomGameplayRuntimeInput = {
 export function createDuelRoomGameplayRuntime(
   input: CreateDuelRoomGameplayRuntimeInput,
 ): DuelRoomGameplayRuntime {
+  const addActionLog = (message: string, actorSessionId?: string) =>
+    input.addLog(message, 'action', actorSessionId);
+  const addEffectLog = (message: string) => input.addLog(message, 'effect');
+  const addSystemLog = (message: string, actorSessionId?: string) =>
+    input.addLog(message, 'system', actorSessionId);
   const runtimeState = new DuelRoomRuntimeState({
     state: input.state,
   });
@@ -84,7 +94,7 @@ export function createDuelRoomGameplayRuntime(
 
   const effectBoundary = new DuelRoomEffectBoundary({
     state: input.state,
-    addLog: input.addLog,
+    addLog: addEffectLog,
     onPendingEffectDecisionChange: input.onPendingEffectDecisionChange,
     getPlayer: (sessionId) => input.state.players.get(sessionId),
     getOpponentSessionId: (sessionId) =>
@@ -170,7 +180,7 @@ export function createDuelRoomGameplayRuntime(
   const mainPhaseEngine = new DuelMainPhaseEngine({
     state: input.state,
     effectBoundary,
-    addLog: input.addLog,
+    addLog: addActionLog,
     sendError: input.reportMainPhaseError,
     broadcastCardView: input.broadcastCardView,
     syncZoneCounts: (player) => runtimeState.syncZoneCounts(player),
@@ -186,7 +196,7 @@ export function createDuelRoomGameplayRuntime(
   const combatEngine = new DuelCombatEngine({
     state: input.state,
     effectBoundary,
-    addLog: input.addLog,
+    addLog: addActionLog,
     sendError: input.reportCombatError,
     broadcastCardView: input.broadcastCardView,
     syncZoneCounts: (player) => runtimeState.syncZoneCounts(player),
@@ -207,7 +217,7 @@ export function createDuelRoomGameplayRuntime(
     state: input.state,
     maxClients: input.maxClients,
     effectBoundary,
-    addLog: input.addLog,
+    addLog: addSystemLog,
     shuffle: input.shuffleCards,
     syncZoneCounts: (player) => runtimeState.syncZoneCounts(player),
     returnDonToCost: (player, sessionId, count) =>

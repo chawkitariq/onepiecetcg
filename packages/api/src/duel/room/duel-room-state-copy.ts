@@ -121,6 +121,8 @@ function cloneDuelLog(source: DuelLog): DuelLog {
   const cloned = new DuelLog();
   cloned.id = source.id;
   cloned.message = source.message;
+  cloned.level = source.level;
+  cloned.actorSessionId = source.actorSessionId;
   cloned.createdAt = source.createdAt;
 
   return cloned;

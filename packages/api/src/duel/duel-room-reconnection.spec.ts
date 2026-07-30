@@ -105,6 +105,8 @@ describe('DuelRoom reconnection', () => {
 
     expect(room.state.players.get('session-a')).toBeUndefined();
     expect(room.state.logs.at(-1)?.message).toContain('deconnecte');
+    expect(room.state.logs.at(-1)?.level).toBe('system');
+    expect(room.state.logs.at(-1)?.actorSessionId).toBe('session-a');
 
     await disposeRoom(room);
   });
@@ -120,6 +122,8 @@ describe('DuelRoom reconnection', () => {
 
     expect(room.state.players.get('session-a')?.connected).toBe(false);
     expect(room.state.logs.at(-1)?.message).toContain('deconnecte');
+    expect(room.state.logs.at(-1)?.level).toBe('system');
+    expect(room.state.logs.at(-1)?.actorSessionId).toBe('session-a');
     // The player entry itself must survive the initial disconnect -- only a
     // consented leave (or an expired reconnection window) removes it.
     expect(room.state.players.has('session-a')).toBe(true);
@@ -157,6 +161,8 @@ describe('DuelRoom reconnection', () => {
       aliceAfterReconnect?.zones.hand.map((card) => card.instanceId),
     ).toEqual(handBefore);
     expect(room.state.logs.at(-1)?.message).toContain('reconnecte');
+    expect(room.state.logs.at(-1)?.level).toBe('system');
+    expect(room.state.logs.at(-1)?.actorSessionId).toBe('session-a');
 
     await disposeRoom(room);
   });
@@ -180,6 +186,8 @@ describe('DuelRoom reconnection', () => {
 
     expect(room.state.players.get('session-a')).toBeUndefined();
     expect(room.state.logs.at(-1)?.message).toContain('forfait');
+    expect(room.state.logs.at(-1)?.level).toBe('system');
+    expect(room.state.logs.at(-1)?.actorSessionId).toBe('session-a');
 
     await disposeRoom(room);
   });
