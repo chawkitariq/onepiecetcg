@@ -1,4 +1,4 @@
-import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
+import type { DuelPlayerView, PendingEffectDecision, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import { mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { computed, defineComponent, h, ref } from 'vue'
@@ -14,6 +14,11 @@ const declareBlock = vi.fn()
 const declareCounter = vi.fn()
 const finishCounterStep = vi.fn()
 const resolveTrigger = vi.fn()
+const submitEffectDecision = vi.fn()
+const declineEffectDecision = vi.fn()
+const cancelEffectDecisionSelection = vi.fn()
+const toggleEffectCardSelection = vi.fn()
+const toggleEffectChoiceSelection = vi.fn()
 
 const phase = ref('main')
 const turn = ref(1)
@@ -29,6 +34,20 @@ const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
 const logs = ref<Array<{ id: string, message: string, createdAt: string }>>([])
 const errorMessage = ref<string | null>(null)
+const pendingEffectDecision = ref<PendingEffectDecision | null>(null)
+const activeDecision = ref<any>(null)
+const isAwaitingEffectDecision = ref(false)
+const selectedEffectCardIds = ref<string[]>([])
+const selectedEffectChoiceIds = ref<string[]>([])
+const selectableDecisionCardIds = ref<string[]>([])
+const selectableRevealedDecisionCardIds = ref<string[]>([])
+const selectableEffectCards = ref<PublicCard[]>([])
+const effectChoiceViews = ref<Array<{ id: string, label: string, selected: boolean, cardInstanceId?: string }>>([])
+const effectDecisionSubmitState = ref<{ canSubmit: boolean, reason: string | null }>({
+  canSubmit: true,
+  reason: null
+})
+const apiFetch = vi.fn()
 const combat = ref<{
   attackerSessionId: string
   attackerInstanceId: string
@@ -115,6 +134,7 @@ mockNuxtImport('useConfirmDialog', () => () => ({
 
 mockNuxtImport('navigateTo', () => vi.fn())
 mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
+mockNuxtImport('useApi', () => () => apiFetch)
 
 mockNuxtImport('useDuelRoom', () => () => ({
   self,
@@ -131,6 +151,21 @@ mockNuxtImport('useDuelRoom', () => () => ({
   isSelfCharacterZoneFull: computed(() => (self.value?.characters.length ?? 0) >= 5),
   logs,
   errorMessage,
+  pendingEffectDecision,
+  activeDecision,
+  isAwaitingEffectDecision: computed(() => isAwaitingEffectDecision.value),
+  selectedEffectCardIds,
+  selectedEffectChoiceIds,
+  selectableDecisionCardIds,
+  selectableRevealedDecisionCardIds,
+  selectableEffectCards,
+  effectChoiceViews,
+  effectDecisionSubmitState,
+  toggleEffectCardSelection,
+  toggleEffectChoiceSelection,
+  submitEffectDecision,
+  declineEffectDecision,
+  cancelEffectDecisionSelection,
   endPhase,
   playCard,
   attachDon,
@@ -162,6 +197,8 @@ const playZoneStub = defineComponent({
     draggedDonCardCount: { type: Number, default: 0 },
     attackerId: { type: String, default: undefined },
     isTargetable: { type: Boolean, default: false },
+    linkedPreviewInstanceId: { type: String, default: null },
+    linkedSelectedInstanceIds: { type: Array, default: () => [] },
     transitionGhosts: { type: Array, default: () => [] },
     deferredBoardCardIds: { type: Array, default: () => [] },
     deferredCostCardIds: { type: Array, default: () => [] },
@@ -193,7 +230,9 @@ const playZoneStub = defineComponent({
       'data-selected-don-card-ids': JSON.stringify(props.selectedDonCardIds),
       'data-dragged-don-card-count': String(props.draggedDonCardCount),
       'data-attacker-id': props.attackerId,
-      'data-is-targetable': String(props.isTargetable ?? false)
+      'data-is-targetable': String(props.isTargetable ?? false),
+      'data-linked-preview-instance-id': props.linkedPreviewInstanceId,
+      'data-linked-selected-instance-ids': JSON.stringify(props.linkedSelectedInstanceIds)
     }, [
       h('div', { 'data-life-side': props.side }, [
         h('div', { 'data-life-top': 'true' })
@@ -304,6 +343,26 @@ const playZoneStub = defineComponent({
       h('button', {
         'data-test': `drop-stage-${props.side}`,
         'onClick': () => emit('handCardDropOnStage', props.side)
+      }),
+      h('button', {
+        'data-test': `hover-card-${props.side}`,
+        'onClick': () => {
+          const character = (props.player as DuelPlayerView).characters[0]
+
+          if (!character) {
+            return
+          }
+
+          emit('cardHover', createPrivateCard(character.instanceId, {
+            ...character,
+            text: 'Board hover detail text',
+            trigger: null
+          }))
+        }
+      }),
+      h('button', {
+        'data-test': `leave-card-${props.side}`,
+        'onClick': () => emit('cardHover', null)
       })
     ])
   }
@@ -320,6 +379,8 @@ const duelHandStub = defineComponent({
     revealedHandCardIds: { type: Array, default: () => [] },
     deferredHandCardIds: { type: Array, default: () => [] },
     selectedHandCardIds: { type: Array, default: () => [] },
+    linkedPreviewInstanceId: { type: String, default: null },
+    linkedSelectedInstanceIds: { type: Array, default: () => [] },
     draggedHandCardCount: { type: Number, default: 0 }
   },
   emits: ['cardDragStart', 'cardDragEnd', 'cardClick'],
@@ -352,6 +413,8 @@ const duelHandStub = defineComponent({
       'data-draggable-hand-card-ids': JSON.stringify(props.draggableHandCardIds),
       'data-revealed-hand-card-ids': JSON.stringify(props.revealedHandCardIds),
       'data-selected-hand-card-ids': JSON.stringify(props.selectedHandCardIds),
+      'data-linked-preview-instance-id': props.linkedPreviewInstanceId,
+      'data-linked-selected-instance-ids': JSON.stringify(props.linkedSelectedInstanceIds),
       'data-dragged-hand-card-count': String(props.draggedHandCardCount)
     }, [
       ...(props.hidden ? hiddenCards : []),
@@ -483,6 +546,16 @@ describe('DuelBoard drag and drop', () => {
     })
     logs.value = []
     errorMessage.value = null
+    pendingEffectDecision.value = null
+    activeDecision.value = null
+    isAwaitingEffectDecision.value = false
+    selectedEffectCardIds.value = []
+    selectedEffectChoiceIds.value = []
+    selectableDecisionCardIds.value = []
+    selectableRevealedDecisionCardIds.value = []
+    selectableEffectCards.value = []
+    effectChoiceViews.value = []
+    effectDecisionSubmitState.value = { canSubmit: true, reason: null }
     combat.value = null
     playCard.mockReset()
     endPhase.mockReset()
@@ -493,6 +566,30 @@ describe('DuelBoard drag and drop', () => {
     declareCounter.mockReset()
     finishCounterStep.mockReset()
     resolveTrigger.mockReset()
+    submitEffectDecision.mockReset()
+    declineEffectDecision.mockReset()
+    cancelEffectDecisionSelection.mockReset()
+    toggleEffectCardSelection.mockReset()
+    toggleEffectChoiceSelection.mockReset()
+    apiFetch.mockReset()
+    apiFetch.mockResolvedValue({
+      id: 'effect-card',
+      number: 'OP00-001',
+      name: 'Effect Card',
+      type: 'Character',
+      colors: ['Red'],
+      cost: 4,
+      power: 5000,
+      life: null,
+      counter: 1000,
+      attributes: [],
+      families: [],
+      text: 'Prompt detail text',
+      trigger: null,
+      imageUrl: '/cards/effect-card.png',
+      set: { id: 'OP00', name: 'Test Set' },
+      rarity: null
+    })
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
       window.setTimeout(() => callback(performance.now()), 16)
     )
@@ -568,6 +665,22 @@ describe('DuelBoard drag and drop', () => {
 
     expect(wrapper.text()).toContain('Tour adverse')
     expect(findTurnButton().text()).toContain('Tour adverse')
+  })
+
+  it('shows a centered "Votre tour" feedback only when the turn comes back to the player', async () => {
+    isSelfTurn.value = false
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    expect(wrapper.find('[data-test="turn-feedback"]').exists()).toBe(false)
+    expect(document.body.textContent).not.toContain('Votre tour')
+
+    isSelfTurn.value = true
+    await wrapper.vm.$nextTick()
+
+    const feedback = wrapper.get('[data-test="turn-feedback"]')
+
+    expect(feedback.text()).toContain('Votre tour')
   })
 
   it('shows the opponent hidden hand lane during setup and mulligan while the owner hand waits for mulligan', () => {
@@ -1624,7 +1737,10 @@ describe('DuelBoard drag and drop', () => {
     ]
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="global-feedback"]').text()).toContain('Luffy attaque Nami')
+    const feedback = wrapper.get('[data-test="global-feedback"]')
+
+    expect(feedback.text()).toContain('Luffy attaque Nami')
+    expect(feedback.attributes('data-feedback-family')).toBe('narration')
   })
 
   it('shows an animated error feedback line when an action error arrives', async () => {
@@ -1634,7 +1750,10 @@ describe('DuelBoard drag and drop', () => {
     errorMessage.value = 'Pas assez de DON!!'
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="error-feedback"]').text()).toContain('Pas assez de DON!!')
+    const feedback = wrapper.get('[data-test="error-feedback"]')
+
+    expect(feedback.text()).toContain('Pas assez de DON!!')
+    expect(feedback.attributes('data-feedback-family')).toBe('error')
     expect(document.body.textContent).toContain('Action impossible')
     expect(document.body.textContent).toContain('Pas assez de DON!!')
     expect(document.body.textContent).toContain('Compris')
@@ -1745,7 +1864,10 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="card-feedback-+1000"]').text()).toContain('+1000')
+    const feedback = wrapper.get('[data-test="card-feedback-+1000"]')
+
+    expect(feedback.text()).toContain('+1000')
+    expect(feedback.attributes('data-feedback-family')).toBe('gain')
   })
 
   it('shows a blocker feedback chip on the declared blocker card', async () => {
@@ -1777,7 +1899,10 @@ describe('DuelBoard drag and drop', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="card-feedback-Blocker"]').text()).toContain('Blocker')
+    const feedback = wrapper.get('[data-test="card-feedback-Blocker"]')
+
+    expect(feedback.text()).toContain('Blocker')
+    expect(feedback.attributes('data-feedback-family')).toBe('status')
   })
 
   it('shows a KO feedback chip when a character leaves the board', async () => {
@@ -1788,7 +1913,10 @@ describe('DuelBoard drag and drop', () => {
     })
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('[data-test="card-feedback-KO"]').text()).toContain('KO')
+    const feedback = wrapper.get('[data-test="card-feedback-KO"]')
+
+    expect(feedback.text()).toContain('KO')
+    expect(feedback.attributes('data-feedback-family')).toBe('impact')
   })
 
   it('renders the finished duel modal with opponent deck, turn count, and duration', () => {
@@ -1831,6 +1959,9 @@ describe('DuelBoard leave to lobby', () => {
       characters: [createPublicCard('opponent-character-a', { rested: true })]
     })
     logs.value = []
+    pendingEffectDecision.value = null
+    activeDecision.value = null
+    isAwaitingEffectDecision.value = false
     leave.mockReset()
     confirm.mockReset()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
@@ -1870,6 +2001,248 @@ describe('DuelBoard leave to lobby', () => {
       }
     })
   }
+
+  it('renders a generic confirm prompt for an effect decision', () => {
+    pendingEffectDecision.value = {
+      id: 'decision-1',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'confirm',
+        message: 'Activer cet effet ?',
+        optional: true
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+
+    mountBoard({ attachToBody: true })
+
+    expect(document.body.textContent).toContain('Décision d’effet')
+    expect(document.body.textContent).toContain('Activer cet effet ?')
+    expect(document.body.textContent).toContain('Activer')
+    expect(document.body.textContent).toContain('Ignorer')
+  })
+
+  it('shows effect prompt card details in the details panel on hover and click', async () => {
+    apiFetch.mockReset()
+    apiFetch.mockResolvedValue({
+      id: 'effect-card',
+      number: 'OP00-001',
+      name: 'Effect Card',
+      type: 'Character',
+      colors: ['Red'],
+      cost: 4,
+      power: 5000,
+      life: null,
+      counter: 1000,
+      attributes: [],
+      families: [],
+      text: 'Prompt detail text',
+      trigger: null,
+      imageUrl: '/cards/effect-card.png',
+      set: { id: 'OP00', name: 'Test Set' },
+      rarity: null
+    })
+
+    const effectCard = createPublicCard('effect-card', {
+      cardId: 'effect-card',
+      number: 'OP00-001',
+      name: 'Effect Card',
+      type: 'Character',
+      cost: 4,
+      power: 5000
+    })
+
+    pendingEffectDecision.value = {
+      id: 'decision-cards',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez une carte.',
+        selector: {
+          player: 'self',
+          zones: ['characters'],
+          count: { kind: 'upTo', value: 1 }
+        },
+        min: 0,
+        max: 1,
+        revealedCards: []
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+    selectableEffectCards.value = [effectCard]
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const button = document.body.querySelector('[data-test="effect-decision-card-effect-card"]')
+
+    expect(button).not.toBeNull()
+
+    button?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(document.body.textContent).toContain('Effect Card')
+    expect(document.body.textContent).toContain('Prompt detail text')
+
+    button?.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }))
+    button?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(document.body.textContent).toContain('Effect Card')
+    expect(document.body.textContent).toContain('Prompt detail text')
+    expect(toggleEffectCardSelection).toHaveBeenCalledWith('effect-card')
+  })
+
+  it('links effect prompt selection states back to matching board elements', async () => {
+    const effectCard = createPublicCard('effect-card', {
+      cardId: 'effect-card',
+      number: 'OP00-001',
+      name: 'Effect Card',
+      type: 'Character',
+      cost: 4,
+      power: 5000
+    })
+
+    self.value = createPlayer('self', {
+      characters: [effectCard]
+    })
+    pendingEffectDecision.value = {
+      id: 'decision-cards',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez une carte.',
+        selector: {
+          player: 'self',
+          zones: ['characters'],
+          count: { kind: 'upTo', value: 1 }
+        },
+        min: 0,
+        max: 1,
+        revealedCards: []
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+    selectableEffectCards.value = [effectCard]
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const promptButton = document.body.querySelector('[data-test="effect-decision-card-effect-card"]') as HTMLButtonElement | null
+
+    expect(promptButton).not.toBeNull()
+
+    const selfPlayZone = wrapper.findAllComponents(playZoneStub)[1]
+
+    expect(selfPlayZone.props('linkedSelectedInstanceIds')).toEqual([])
+
+    promptButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    selectedEffectCardIds.value = ['effect-card']
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAllComponents(playZoneStub)[1]?.props('linkedSelectedInstanceIds')).toEqual(['effect-card'])
+  })
+
+  it('reuses board hover details after an effect prompt description fetch fails', async () => {
+    apiFetch.mockReset()
+    apiFetch.mockRejectedValue(new Error('catalog unavailable'))
+
+    const effectCard = createPublicCard('effect-card', {
+      cardId: 'effect-card',
+      number: 'OP00-001',
+      name: 'Effect Card',
+      type: 'Character',
+      cost: 4,
+      power: 5000
+    })
+
+    self.value = createPlayer('self', {
+      characters: [effectCard]
+    })
+    pendingEffectDecision.value = {
+      id: 'decision-cards',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez une carte.',
+        selector: {
+          player: 'self',
+          zones: ['characters'],
+          count: { kind: 'upTo', value: 1 }
+        },
+        min: 0,
+        max: 1,
+        revealedCards: []
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+    selectableEffectCards.value = [effectCard]
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const promptButton = document.body.querySelector('[data-test="effect-decision-card-effect-card"]') as HTMLButtonElement | null
+
+    expect(promptButton).not.toBeNull()
+
+    promptButton?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(document.body.textContent).toContain('Description indisponible.')
+
+    await wrapper.get('[data-test="hover-card-0"]').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(document.body.textContent).toContain('Board hover detail text')
+
+    await wrapper.get('[data-test="leave-card-0"]').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(document.body.textContent).toContain('Board hover detail text')
+  })
+
+  it('shows the opponent waiting toast while an effect decision is pending remotely', () => {
+    isAwaitingEffectDecision.value = true
+
+    const wrapper = mountBoard()
+
+    expect(wrapper.text()).toContain('En attente de la résolution de l’effet par l’adversaire')
+  })
 
   it('leaves the room and does not navigate away when the confirmation is dismissed', async () => {
     confirm.mockResolvedValue(false)

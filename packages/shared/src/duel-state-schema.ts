@@ -49,6 +49,10 @@ export class DuelCard extends Schema {
 
   @view()
   @type('number')
+  baseCost = -1;
+
+  @view()
+  @type('number')
   basePower = -1;
 
   @view()
@@ -94,6 +98,70 @@ export class DuelCard extends Schema {
 
   @type('boolean')
   playedThisTurn = false;
+
+  @view()
+  @type('boolean')
+  hasRush = false;
+
+  @view()
+  @type('boolean')
+  hasDoubleAttack = false;
+
+  @view()
+  @type('boolean')
+  hasBanish = false;
+
+  @view()
+  @type('boolean')
+  canAttackActiveCharacters = false;
+
+  @view()
+  @type('boolean')
+  mustBeAttackTarget = false;
+
+  @view()
+  @type('boolean')
+  cannotAttack = false;
+
+  @view()
+  @type('boolean')
+  cannotAttackLeaderOnTurnPlayed = false;
+
+  @view()
+  @type('boolean')
+  cannotBlock = false;
+
+  @view()
+  @type('boolean')
+  cannotBeKoedInBattle = false;
+
+  @view()
+  @type('boolean')
+  cannotBeKoedByEffects = false;
+
+  @view()
+  @type('boolean')
+  cannotBeKoedBySlashInBattle = false;
+
+  @view()
+  @type('boolean')
+  cannotBeKoedByStrikeInBattle = false;
+
+  @view()
+  @type('boolean')
+  winOnDeckOut = false;
+
+  @view()
+  @type('boolean')
+  cannotBeRemovedByOpponentEffects = false;
+
+  @view()
+  @type('number')
+  cannotAttackUntilTurn = 0;
+
+  @view()
+  @type('number')
+  skipNextRefreshPhases = 0;
 }
 
 export class DuelZones extends Schema {
@@ -233,6 +301,10 @@ export class DuelState extends Schema {
   @type('string')
   firstPlayerSessionId = '';
 
+  /** Session id that should immediately take an extra turn after the current one ends. */
+  @type('string')
+  pendingExtraTurnSessionId = '';
+
   @type({ map: DuelPlayer })
   players = new MapSchema<DuelPlayer>();
 
@@ -268,6 +340,7 @@ export function createDuelCard(
   duelCard.type = card.type;
   duelCard.colors.push(...card.colors);
   duelCard.cost = card.cost ?? -1;
+  duelCard.baseCost = card.cost ?? -1;
   duelCard.basePower = card.power ?? -1;
   duelCard.power = card.power ?? -1;
   duelCard.life = card.life ?? -1;

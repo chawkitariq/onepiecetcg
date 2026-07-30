@@ -34,7 +34,9 @@ function firstNonEmptyString(
   return undefined;
 }
 
-function normalizeProfileString(value: string | null | undefined): string | undefined {
+function normalizeProfileString(
+  value: string | null | undefined,
+): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
 

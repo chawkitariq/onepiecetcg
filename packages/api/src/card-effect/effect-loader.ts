@@ -23,7 +23,9 @@ function normalizeCardId(cardId: string): CardId {
   return cardId.trim().toUpperCase();
 }
 
-function cloneRuntimeDefinition(definition: CardEffectDefinition): CardEffectDefinition {
+function cloneRuntimeDefinition(
+  definition: CardEffectDefinition,
+): CardEffectDefinition {
   return {
     ...definition,
     cardId: normalizeCardId(definition.cardId),
@@ -56,7 +58,9 @@ function pushReplacementEffect(
   bucket.push(entry.effect);
 }
 
-function resolveCardDefinition(definition: CardEffectSource): CardEffectDefinition {
+function resolveCardDefinition(
+  definition: CardEffectSource,
+): CardEffectDefinition {
   const standard: StandardEffectDefinition[] = [];
   const continuous: ContinuousEffectDefinition[] = [];
   const replacements: ReplacementEffectDefinition[] = [];
@@ -109,11 +113,16 @@ function flattenEditionDefinitions(
 function indexSpecialHandlersById(
   specialHandlers: readonly SpecialHandlerDefinition[],
 ): Readonly<Record<string, SpecialHandlerDefinition>> {
-  const indexed = Object.create(null) as Record<string, SpecialHandlerDefinition>;
+  const indexed = Object.create(null) as Record<
+    string,
+    SpecialHandlerDefinition
+  >;
 
   for (const handler of specialHandlers) {
     if (indexed[handler.id]) {
-      throw new Error(`Duplicate special handler id "${handler.id}" during effect bootstrap.`);
+      throw new Error(
+        `Duplicate special handler id "${handler.id}" during effect bootstrap.`,
+      );
     }
 
     indexed[handler.id] = {
@@ -142,15 +151,21 @@ export function loadEffectSources(): EffectSourceBundle {
 export function buildEffectRegistry(
   sourceBundle = loadEffectSources(),
 ): EffectRegistry {
-  const effectsByCardId = Object.create(
-    null,
-  ) as Record<CardId, CardEffectDefinition>;
-  const specialHandlersByCardId = Object.create(
-    null,
-  ) as Record<CardId, SpecialHandlerDefinition>;
-  const specialHandlersById = indexSpecialHandlersById(sourceBundle.specialHandlers);
+  const effectsByCardId = Object.create(null) as Record<
+    CardId,
+    CardEffectDefinition
+  >;
+  const specialHandlersByCardId = Object.create(null) as Record<
+    CardId,
+    SpecialHandlerDefinition
+  >;
+  const specialHandlersById = indexSpecialHandlersById(
+    sourceBundle.specialHandlers,
+  );
 
-  for (const definition of flattenEditionDefinitions(sourceBundle.definitions)) {
+  for (const definition of flattenEditionDefinitions(
+    sourceBundle.definitions,
+  )) {
     const resolved = resolveCardDefinition(definition);
 
     if (effectsByCardId[resolved.cardId]) {

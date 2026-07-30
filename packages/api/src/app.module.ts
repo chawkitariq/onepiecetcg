@@ -11,9 +11,9 @@ import { BetterAuthSession } from './better-auth/better-auth-session.entity';
 import { BetterAuthUser } from './better-auth/better-auth-user.entity';
 import { BetterAuthVerification } from './better-auth/better-auth-verification.entity';
 import { CatalogModule } from './catalog/catalog.module';
+import { ColyseusService } from './colyseus/colyseus.service';
 import { DeckModule } from './deck/deck.module';
-import { ColyseusService } from './realtime/colyseus.service';
-import { LobbyController } from './realtime/lobby.controller';
+import { LobbyController } from './lobby/lobby.controller';
 import { getApiConfig } from './runtime-config';
 import { StatsModule } from './stats/stats.module';
 

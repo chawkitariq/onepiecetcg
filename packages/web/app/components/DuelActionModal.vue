@@ -71,7 +71,7 @@ const toneClasses: Record<DuelActionModalState['tone'], string> = {
                 {{ state.description }}
               </p>
 
-              <slot name="extra" />
+              <slot name="content" />
 
               <div class="mt-1 flex w-full flex-wrap items-center justify-center gap-2">
                 <UButton

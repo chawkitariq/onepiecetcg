@@ -1,0 +1,3237 @@
+{
+  "editionId": "OP-01",
+  "name": "Romance Dawn",
+  "cards": [
+    {
+      "id": "OP01-001",
+      "number": "OP01-001",
+      "name": "Roronoa Zoro (001)",
+      "type": "Leader",
+      "colors": [
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[DON!! x1] [Your Turn] All of your Characters gain +1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-001.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-002",
+      "number": "OP01-002",
+      "name": "Trafalgar Law (002)",
+      "type": "Leader",
+      "colors": [
+        "Green",
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Heart Pirates Supernovas"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] (2) (You may rest the specified number of DON!! cards in your cost area.): If you have 5 Characters, return 1 of your Characters to your hand. Then, play up to 1 Character with a cost of 5 or less from your hand that is a different color than the returned Character.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-002.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-003",
+      "number": "OP01-003",
+      "name": "Monkey.D.Luffy (003)",
+      "type": "Leader",
+      "colors": [
+        "Green",
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] (4) (You may rest the specified number of DON!! cards in your cost area): Set up to 1 of your \"Supernova\" or \"Straw Hat Crew\" type Character cards with a cost of 5 or less as active. It gains +1000 power during this turn.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-003.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-004",
+      "number": "OP01-004",
+      "name": "Usopp",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x1] [Your Turn] [Once Per Turn] Draw 1 card when your opponent activates an Event.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-004.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-005",
+      "number": "OP01-005",
+      "name": "Uta",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Film"
+      ],
+      "text": "[On Play] Add up to 1 red Character card other than [Uta] with a cost of 3 or less from your trash to your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-005.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-006",
+      "number": "OP01-006",
+      "name": "Otama",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[On Play] Give up to 1 of your opponent's Characters -2000 power during this turn.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-006.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-007",
+      "number": "OP01-007",
+      "name": "Caribou",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Caribou Pirates Supernovas"
+      ],
+      "text": "[On K.O.] K.O. up to 1 of your opponent's Characters with 4000 power or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-007.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-008",
+      "number": "OP01-008",
+      "name": "Cavendish (Box Topper)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Beautiful Pirates Straw Hat Crew Supernovas"
+      ],
+      "text": "[On Play] You may add 1 card from your Life area to your hand: This Character gains [Rush] during this turn. (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-008_p1.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-009",
+      "number": "OP01-009",
+      "name": "Carrot",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Minks"
+      ],
+      "text": "[Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-009.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-010",
+      "number": "OP01-010",
+      "name": "Komachiyo",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Land of Wano"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-010.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-011",
+      "number": "OP01-011",
+      "name": "Gordon",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Film"
+      ],
+      "text": "[On Play] You may place 1 card from your hand at the bottom of your deck: Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-011.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-012",
+      "number": "OP01-012",
+      "name": "Sai",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Happosui Army"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-012.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-013",
+      "number": "OP01-013",
+      "name": "Sanji",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] You may add 1 card from your Life area to your hand: This Character gains +2000 power during this turn. Then, give this Character up to 2 rested DON!! cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-013.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-014",
+      "number": "OP01-014",
+      "name": "Jinbe (014)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Straw Hat Crew"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [DON!! x1] [On Block] Play up to 1 red Character card with a cost of 2 or less from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-014.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-015",
+      "number": "OP01-015",
+      "name": "Tony Tony.Chopper",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Animal Straw Hat Crew"
+      ],
+      "text": "[DON!! x1] [When Attacking] You may trash 1 card from your hand: Add up to 1 \"Straw Hat Crew\" type Character card other than [Tony Tony.Chopper] with a cost of 4 or less from your trash to your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-015.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-016",
+      "number": "OP01-016",
+      "name": "Nami",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 \"Straw Hat Crew\" type Character card other than [Nami] and add it to your hand. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-016.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-017",
+      "number": "OP01-017",
+      "name": "Nico Robin",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x1] [When Attacking] K.O. up to 1 of your opponent's Characters with 3000 power or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-017.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-018",
+      "number": "OP01-018",
+      "name": "Hajrudin",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Giant New Giant Pirate Crew"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-018.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-019",
+      "number": "OP01-019",
+      "name": "Bartolomeo",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Barto Club Pirates Supernovas"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [DON!! x2] [Opponent's Turn] This Character gains +3000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-019.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-020",
+      "number": "OP01-020",
+      "name": "Hyogoro",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[Activate:Main] You may rest this Character: Up to 1 of your Leader or Character cards gains +2000 power during this turn.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-020.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-021",
+      "number": "OP01-021",
+      "name": "Franky",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x1] This Character can also attack your opponent's active Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-021.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-022",
+      "number": "OP01-022",
+      "name": "Brook",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[DON!! x1] [When Attacking] Give up to 2 of your opponent's Characters -2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-022.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-023",
+      "number": "OP01-023",
+      "name": "Marco",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Former Whitebeard Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-023.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-024",
+      "number": "OP01-024",
+      "name": "Monkey.D.Luffy (024)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[DON!! x2] This Character cannot be K.O.'d in battle by \"Strike\" attribute Characters. [Activate:Main] [Once Per Turn] Give this Character up to 2 rested DON!! cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-024.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-025",
+      "number": "OP01-025",
+      "name": "Roronoa Zoro (025)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[Rush] (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-025.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-026",
+      "number": "OP01-026",
+      "name": "Gum-Gum Fire-Fist Pistol Red Hawk",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew Supernovas"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, K.O. up to 1 of your opponent's Characters with 4000 power or less. [Trigger] Give up to 1 of your opponent's Leader or Character cards -10000 power during this turn.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-026.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-027",
+      "number": "OP01-027",
+      "name": "Round Table",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Beautiful Pirates Supernovas"
+      ],
+      "text": "[Main] Give up to 1 of your opponent's Characters -10000 power during this turn.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-027.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-028",
+      "number": "OP01-028",
+      "name": "Green Star Rafflesia",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Counter] Give up to 1 of your opponent's Leader or Character cards -2000 power during this turn. [Trigger] Activate this card's [Counter] effect.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-028.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-029",
+      "number": "OP01-029",
+      "name": "Radical Beam!!",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, if you have 2 or less Life cards, that card gains an additional +2000 power.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-029.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-030",
+      "number": "OP01-030",
+      "name": "In Two Years!! At the Sabaody Archipelago!!",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Main] Look at 5 cards from the top of your deck; reveal up to 1 \"Straw Hat Crew\" type Character card and add it to your hand. Then, place the rest at the bottom of your deck in any order. [Trigger] Activate this card's [Main] effect.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-030.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-031",
+      "number": "OP01-031",
+      "name": "Kouzuki Oden",
+      "type": "Leader",
+      "colors": [
+        "Green"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] You can trash 1 \"Land of Wano\" type card from your hand: Set up to 2 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-031.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-032",
+      "number": "OP01-032",
+      "name": "Ashura Doji",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano The Akazaya Nine"
+      ],
+      "text": "[DON!! x1] If your opponent has 2 or more rested Characters, this Character gains +2000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-032.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-033",
+      "number": "OP01-033",
+      "name": "Izo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Former Whitebeard Pirates Land of Wano"
+      ],
+      "text": "[On Play] Rest up to 1 of your opponent's Characters with a cost of 4 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-033.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-034",
+      "number": "OP01-034",
+      "name": "Inuarashi",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Former Whitebeard Pirates Land of Wano Minks The Akazaya Nine"
+      ],
+      "text": "[DON!! x2] [When Attacking] Set up to 1 of your DON!! cards as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-034.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-035",
+      "number": "OP01-035",
+      "name": "Okiku",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano The Akazaya Nine"
+      ],
+      "text": "[DON!! x1] [When Attacking] [Once Per Turn] Rest up to 1 of your opponent's Characters with a cost of 5 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-035.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-036",
+      "number": "OP01-036",
+      "name": "Otsuru",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-036.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-037",
+      "number": "OP01-037",
+      "name": "Kawamatsu",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Fish-Man Land of Wano The Akazaya Nine"
+      ],
+      "text": "[Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-037.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-038",
+      "number": "OP01-038",
+      "name": "Kanjuro",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano The Akazaya Nine"
+      ],
+      "text": "[DON!! x1] [When Attacking] K.O. up to 1 of your opponent's rested Characters with a cost of 2 or less. [On K.O.] Your opponent chooses 1 card from your hand; trash that card.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-038.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-039",
+      "number": "OP01-039",
+      "name": "Killer",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [DON!! x1] [On Block] If you have 3 or more Characters, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-039.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-040",
+      "number": "OP01-040",
+      "name": "Kin'emon",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 6,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano The Akazaya Nine"
+      ],
+      "text": "[On Play] If your Leader is [Kouzuki Oden], play up to 1 \"The Akazaya Nine\" type Character card with a cost of 3 or less from your hand. [DON!! x1] [When Attacking] [Once Per Turn] Set up to 1 of your \"The Akazaya Nine\" type Character cards with a cost of 3 or less as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-040.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-041",
+      "number": "OP01-041",
+      "name": "Kouzuki Momonosuke",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[Activate:Main] (1) (You may rest the specified number of DON!! cards in your cost area) You may rest this Character: Look at 5 cards from the top of your deck; reveal up to 1 \"Land of Wano\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-041.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-042",
+      "number": "OP01-042",
+      "name": "Komurasaki",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[On Play] (3) (You may rest the specified number of DON!! cards in your cost area): If your Leader is [Kouzuki Oden], set up to 1 of your \"Land of Wano\" type Character cards with a cost of 3 or less as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-042.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-043",
+      "number": "OP01-043",
+      "name": "Shinobu",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-043.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-044",
+      "number": "OP01-044",
+      "name": "Shachi",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] If you don't have [Penguin], play up to 1 [Penguin] from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-044.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-045",
+      "number": "OP01-045",
+      "name": "Jean Bart",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-045.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-046",
+      "number": "OP01-046",
+      "name": "Denjiro",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano The Akazaya Nine"
+      ],
+      "text": "[DON!! x1] [When Attacking] If your Leader is [Kouzuki Oden], set up to 2 of your DON!! cards as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-046.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-047",
+      "number": "OP01-047",
+      "name": "Trafalgar Law (047)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Heart Pirates Supernovas"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] You may return 1 Character to your hand: Play up to 1 Character card with a cost of 3 or less from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-047.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-048",
+      "number": "OP01-048",
+      "name": "Nekomamushi",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano Minks The Akazaya Nine"
+      ],
+      "text": "[On Play] Rest up to 1 of your opponent's Characters with a cost of 3 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-048.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-049",
+      "number": "OP01-049",
+      "name": "Bepo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates Minks"
+      ],
+      "text": "[DON!! x1] [When Attacking] Play up to 1 \"Heart Pirates\" type card other than [Bepo] with a cost of 4 or less from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-049.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-050",
+      "number": "OP01-050",
+      "name": "Penguin",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] If you don't have [Shachi], play up to 1 [Shachi] from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-050.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-051",
+      "number": "OP01-051",
+      "name": "Eustass\"Captain\"Kid",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 8,
+      "power": 8000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[DON!! x1] [Opponent's Turn] If this Character is rested, your opponent cannot attack any card other than the Character [Eustass\"Captain\"Kid]. [Activate:Main] [Once Per Turn] You may rest this Character: Play up to 1 Character card with a cost of 3 or less from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-051.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-052",
+      "number": "OP01-052",
+      "name": "Raizo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano The Akazaya Nine"
+      ],
+      "text": "[When Attacking] [Once Per Turn] If you have 2 or more rested Characters, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-052.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-053",
+      "number": "OP01-053",
+      "name": "Wire",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Kid Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-053.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-054",
+      "number": "OP01-054",
+      "name": "X.Drake (054)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Drake Pirates Navy Supernovas"
+      ],
+      "text": "[On Play] K.O. up to 1 of your opponent's rested Characters with a cost of 4 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-054.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-055",
+      "number": "OP01-055",
+      "name": "You Can Be My Samurai!!",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[Main] You may rest 2 of your Characters: Draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-055.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-056",
+      "number": "OP01-056",
+      "name": "Demon Face",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 6,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Hawkins Pirates Supernovas"
+      ],
+      "text": "[Main] K.O. up to 2 of your opponent's rested Characters with a cost of 5 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-056.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-057",
+      "number": "OP01-057",
+      "name": "Paradise Waterfall",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Land of Wano Kouzuki Clan"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, set up to 1 of your Characters as active. [Trigger] K.O. up to 1 of your opponent's rested Characters with a cost of 4 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-057.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-058",
+      "number": "OP01-058",
+      "name": "Punk Gibson",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Kid Pirates Supernovas"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, rest up to 1 of your opponent's Characters with a cost of 4 or less. [Trigger] Rest up to 1 of your opponent's Characters.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-058.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-059",
+      "number": "OP01-059",
+      "name": "BE-BENG!!",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[Main] You may trash 1 \"Land of Wano\" type card from your hand: Set up to 1 of your \"Land of Wano\" type Character cards with a cost of 3 or less as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-059.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-060",
+      "number": "OP01-060",
+      "name": "Donquixote Doflamingo (060)",
+      "type": "Leader",
+      "colors": [
+        "Blue"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[DON!! x2] [When Attacking] (1) (You may rest the specified number of DON!! cards in your cost area.): Reveal 1 card from the top of your deck. If that card is a \"The Seven Warlords of the Sea\" type Character card with a cost of 4 or less, you may play that card rested.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-060.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-061",
+      "number": "OP01-061",
+      "name": "Kaido (061)",
+      "type": "Leader",
+      "colors": [
+        "Blue",
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[DON!! x1] [Your Turn] [Once Per Turn] When your opponent's Character is K.O.'d, add up to 1 DON!! card from your DON!! deck and set it as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-061.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-062",
+      "number": "OP01-062",
+      "name": "Crocodile (062) (Parallel)",
+      "type": "Leader",
+      "colors": [
+        "Blue",
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[DON!! x1] When you activate an Event, you may draw 1 card if you have 4 or less cards in your hand and haven't drawn a card using this Leader's effect during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-062_p1.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-063",
+      "number": "OP01-063",
+      "name": "Arlong",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Fish-Man Arlong Pirates"
+      ],
+      "text": "[DON!! x1] [Activate:Main] You may rest this Character: Choose 1 card from your opponent's hand; your opponent reveals that card. If the revealed card is an Event, place up to 1 card from your opponent's Life area at the bottom of the owner's deck.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-063.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-064",
+      "number": "OP01-064",
+      "name": "Alvida",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Buggy Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] You may trash 1 card from your hand: Return up to 1 of your opponent's Characters with a cost of 3 or less to the owner's hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-064.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-065",
+      "number": "OP01-065",
+      "name": "Vergo",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Donquixote Pirates Navy Punk Hazard"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-065.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-066",
+      "number": "OP01-066",
+      "name": "Krieg",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Krieg Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-066.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-067",
+      "number": "OP01-067",
+      "name": "Crocodile (067)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[Banish] (When this card deals damage, the target card is trashed without activating its Trigger.) [DON!! x1] Give blue Events in your hand -1 cost.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-067.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-068",
+      "number": "OP01-068",
+      "name": "Gecko Moria",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "The Seven Warlords of the Sea Thriller Bark Pirates"
+      ],
+      "text": "[Your Turn] This Character gains [Double Attack] if you have 5 or more cards in your hand. (This card deals 2 damage.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-068.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-069",
+      "number": "OP01-069",
+      "name": "Caesar Clown",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Punk Hazard Scientist"
+      ],
+      "text": "[On K.O.] Play up to 1 [Smiley] from your deck, then shuffle your deck.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-069.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-070",
+      "number": "OP01-070",
+      "name": "Dracule Mihawk",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 9,
+      "power": 9000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "The Seven Warlords of the Sea"
+      ],
+      "text": "[On Play] Place up to 1 Character with a cost of 7 or less at the bottom of the owner's deck.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-070.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-071",
+      "number": "OP01-071",
+      "name": "Jinbe (071)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 2000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Straw Hat Crew"
+      ],
+      "text": "[On Play] Place up to 1 Character with a cost of 3 or less at the bottom of the owner's deck. [Trigger] Play this card.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-071.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-072",
+      "number": "OP01-072",
+      "name": "Smiley",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Biological Weapon Punk Hazard"
+      ],
+      "text": "[DON!! x1] [Your Turn] This Character gains +1000 power for every card in your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-072.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-073",
+      "number": "OP01-073",
+      "name": "Donquixote Doflamingo (073)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Play] Look at 5 cards from the top of your deck and place them at the top or bottom of the deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-073.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-074",
+      "number": "OP01-074",
+      "name": "Bartholomew Kuma",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Revolutionary Army The Seven Warlords of the Sea"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On K.O.] Play up to 1 [Pacifista] with a cost of 4 or less from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-074.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-075",
+      "number": "OP01-075",
+      "name": "Pacifista",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Biological Weapon Navy"
+      ],
+      "text": "Under the rules of this game, you may have any number of this card in your deck. [Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-075.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-076",
+      "number": "OP01-076",
+      "name": "Bellamy",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Dressrosa"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-076.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-077",
+      "number": "OP01-077",
+      "name": "Perona",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Thriller Bark Pirates"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck and place them at the top or bottom of the deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-077.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-078",
+      "number": "OP01-078",
+      "name": "Boa Hancock",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kuja Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [DON!! x1] [When Attacking]/[On Block] Draw 1 card if you have 5 or less cards in your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-078.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-079",
+      "number": "OP01-079",
+      "name": "Ms. All Sunday",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On K.O.] If your Leader has the \"Baroque Works\" type, add up to 1 Event from your trash to your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-079.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-080",
+      "number": "OP01-080",
+      "name": "Miss Doublefinger(Zala)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On K.O.] Draw a card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-080.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-081",
+      "number": "OP01-081",
+      "name": "Mocha",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Punk Hazard"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-081.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-082",
+      "number": "OP01-082",
+      "name": "Monet",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates Punk Hazard"
+      ],
+      "text": "[Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-082.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-083",
+      "number": "OP01-083",
+      "name": "Mr.1 (Daz.Bonez)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[DON!! x1] [Your Turn] If your Leader has the \"Baroque Works\" type, this Character gains +1000 power for every 2 Events in your trash.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-083.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-084",
+      "number": "OP01-084",
+      "name": "Mr.2.Bon.Kurei (Bentham)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[DON!! x1] [When Attacking] Look at 5 cards from the top of your deck; reveal up to 1 \"Baroque Works\" type Event card and add it to your hand. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-084.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-085",
+      "number": "OP01-085",
+      "name": "Mr.3 (Galdino)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[On Play] If your Leader has the \"Baroque Works\" type, select up to 1 of your opponent's Characters with a cost of 4 or less. The selected Character cannot attack until the end of your opponent's next turn.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-085.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-086",
+      "number": "OP01-086",
+      "name": "Overheat",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, return up to 1 active Character with a cost of 3 or less to the owner's hand. [Trigger] Return up to 1 card with a cost of 4 or less to the owner's hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-086.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-087",
+      "number": "OP01-087",
+      "name": "Officer Agents",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[Counter] Play up to 1 \"Baroque Works\" type card with a cost of 3 or less from your hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-087.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-088",
+      "number": "OP01-088",
+      "name": "Desert Spada",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, look at 3 cards from the top of your deck and place them at the top or bottom of the deck in any order.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-088.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-089",
+      "number": "OP01-089",
+      "name": "Crescent Cutlass",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea"
+      ],
+      "text": "[Counter] If your Leader has the \"The Seven Warlords of the Sea\" type, return up to 1 Character with a cost of 5 or less to the owner's hand.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-089.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-090",
+      "number": "OP01-090",
+      "name": "Baroque Works",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Baroque Works"
+      ],
+      "text": "[Main] Look at 5 cards from the top of your deck; reveal up to 1 \"Baroque Works\" type card other than [Baroque Works] and add it to your hand. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-090.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-091",
+      "number": "OP01-091",
+      "name": "King (091)",
+      "type": "Leader",
+      "colors": [
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Your Turn] If you have 10 DON!! cards on your field, give all of your opponent's Characters -1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-091.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP01-092",
+      "number": "OP01-092",
+      "name": "Urashima",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 7,
+      "power": 9000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-092.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-093",
+      "number": "OP01-093",
+      "name": "Ulti",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] (1) (You may rest the specified number of DON!! cards in your cost area.): Add up to 1 DON!! card from your DON!! deck and rest it.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-093.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-094",
+      "number": "OP01-094",
+      "name": "Kaido (094)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 10,
+      "power": 12000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[On Play] DON!! -6 (You may return the specified number of DON!! cards from your field to your DON!! deck.): If your Leader has the \"Animal Kingdom Pirates\" type, K.O. all Characters other than this Character.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-094.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-095",
+      "number": "OP01-095",
+      "name": "Kyoshirou",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "[On Play] Draw 1 card if you have 8 or more DON!! cards on your field.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-095.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-096",
+      "number": "OP01-096",
+      "name": "King (096)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] DON!! -2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): K.O. up to 1 of your opponent's Characters with a cost of 3 or less and up to 1 of your opponent's Characters with a cost of 2 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-096.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP01-097",
+      "number": "OP01-097",
+      "name": "Queen",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 6,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character gains [Rush] during this turn. Then, give up to 1 of your opponent's Characters -2000 power during this turn. (This card can attack on the turn in which it is played.)  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-097.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-098",
+      "number": "OP01-098",
+      "name": "Kurozumi Orochi",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Land of Wano Kurozumi Clan"
+      ],
+      "text": "[On Play] Reveal up to 1 [Artificial Devil Fruit SMILE] from your deck and add it to your hand. Then, shuffle your deck.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-098.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-099",
+      "number": "OP01-099",
+      "name": "Kurozumi Semimaru",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Land of Wano Kurozumi Clan"
+      ],
+      "text": "Kurozumi Clan type Characters other than your [Kurozumi Semimaru] cannot be K.O.'d in battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-099.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-100",
+      "number": "OP01-100",
+      "name": "Kurozumi Higurashi",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Land of Wano Kurozumi Clan"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-100.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-101",
+      "number": "OP01-101",
+      "name": "Sasaki",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] You may trash 1 card from your hand: Add up to 1 DON!! card from your DON!! deck and rest it.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-101.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-102",
+      "number": "OP01-102",
+      "name": "Jack",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[When Attacking] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Your opponent trashes 1 card from their hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-102.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-103",
+      "number": "OP01-103",
+      "name": "Scratchmen Apoo",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Animal Kingdom Pirates On-Air Pirates"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-103.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-104",
+      "number": "OP01-104",
+      "name": "Speed",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "[Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-104.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-105",
+      "number": "OP01-105",
+      "name": "Bao Huang",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "[On Play] Choose 2 cards from your opponent's hand; your opponent reveals those cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-105.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-106",
+      "number": "OP01-106",
+      "name": "Basil Hawkins",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Hawkins Pirates"
+      ],
+      "text": "[On Play] Add up to 1 DON!! card from your DON!! deck and rest it. [Trigger] Play this card.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-106.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-107",
+      "number": "OP01-107",
+      "name": "Babanuki",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-107.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-108",
+      "number": "OP01-108",
+      "name": "Hitokiri Kamazo",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 5000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Kid Pirates Supernovas SMILE"
+      ],
+      "text": "[On K.O.] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck): K.O. up to 1 of your opponent's Characters with a cost of 5 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-108.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-109",
+      "number": "OP01-109",
+      "name": "Who's.Who (Box Topper)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 3000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[DON!! x1] [Your Turn] If you have 8 or more DON!! cards on your field, this Character gains +1000 power.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-109_p1.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-110",
+      "number": "OP01-110",
+      "name": "Fukurokuju",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 6,
+      "power": 8000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Land of Wano"
+      ],
+      "text": "NULL",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-110.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-111",
+      "number": "OP01-111",
+      "name": "Black Maria",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.) [On Block] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-111.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-112",
+      "number": "OP01-112",
+      "name": "Page One",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Activate:Main] [Once Per Turn] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): This Character can also attack your opponent's active Characters during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-112.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-113",
+      "number": "OP01-113",
+      "name": "Holedem",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "[On K.O.] Add up to 1 DON!! card from your DON!! deck and rest it.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-113.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-114",
+      "number": "OP01-114",
+      "name": "X.Drake (114)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Animal Kingdom Pirates Drake Pirates Navy"
+      ],
+      "text": "[On Play] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Your opponent trashes 1 card from their hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-114.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-115",
+      "number": "OP01-115",
+      "name": "Elephant's Marchoo",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "[Main] K.O. up to 1 of your opponent's Characters with a cost of 2 or less, then add up to 1 DON!! card from your DON!! deck and set it as active. [Trigger] Activate this card's [Main] effect.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-115.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-116",
+      "number": "OP01-116",
+      "name": "Artificial Devil Fruit SMILE",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "[Main] Look at 5 cards from the top of your deck; play up to 1 \"SMILE\" type Character card with a cost of 3 or less. Then, place the rest at the bottom of your deck in any order.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-116.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-117",
+      "number": "OP01-117",
+      "name": "Sheep's Horn",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates SMILE"
+      ],
+      "text": "[Main] DON!! -1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Rest up to 1 of your opponent's Characters with a cost of 6 or less.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-117.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP01-118",
+      "number": "OP01-118",
+      "name": "Ulti-Mortar",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates"
+      ],
+      "text": "[Counter] DON!! -2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, draw 1 card. [Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-118.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP01-119",
+      "number": "OP01-119",
+      "name": "Thunder Bagua",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Animal Kingdom Pirates The Four Emperors"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, if you have 2 or less Life cards, add up to 1 DON!! card from your DON!! deck and rest it. [Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.  This card has been officially errata'd.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-119.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP01-120",
+      "number": "OP01-120",
+      "name": "Shanks",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 9,
+      "power": 10000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "The Four Emperors Red-Haired Pirates"
+      ],
+      "text": "[Rush] (This card can attack on the turn in which it is played.) [When Attacking] Your opponent cannot activate a [Blocker] Character that has 2000 or less power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-120.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SEC"
+    },
+    {
+      "id": "OP01-121",
+      "number": "OP01-121",
+      "name": "Yamato",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Land of Wano"
+      ],
+      "text": "Also treat this card's name as [Kouzuki Oden] according to the rules. [Double Attack] (This card deals 2 damage.) [Banish] (When this card deals damage, the target card is trashed without activating its Trigger.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP01-121.jpg",
+      "set": {
+        "id": "OP-01",
+        "name": "Romance Dawn"
+      },
+      "rarity": "SEC"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import { createHoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { getStackedCardLayout } from '~/utils/cardStack'
+import { resolveDuelHighlightClasses, resolveDuelHighlightState, type DuelHighlightState } from '~/utils/duelHighlight'
 
 /**
  * Renders a fixed hand strip docked outside the mirrored board (DuelBoard.vue), either as the
@@ -28,6 +29,8 @@ const props = defineProps<{
   revealedHandCardIds?: string[]
   deferredHandCardIds?: string[]
   selectedHandCardIds?: string[]
+  linkedPreviewInstanceId?: string | null
+  linkedSelectedInstanceIds?: string[]
   draggedHandCardCount?: number
   align?: 'start' | 'center'
 }>()
@@ -41,6 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const reducedMotion = usePreferredReducedMotion()
+const appConfig = useAppConfig()
 const handStackSize = useMeasuredStackSize('handStack')
 const handCardElements = new Map<string, HTMLElement>()
 const visibleHand = computed(() => props.hand ?? [])
@@ -130,6 +134,14 @@ function isDeferredHandCard(instanceId: string): boolean {
   return props.deferredHandCardIds?.includes(instanceId) ?? false
 }
 
+function isLinkedPreview(instanceId: string): boolean {
+  return props.linkedPreviewInstanceId === instanceId
+}
+
+function isLinkedSelected(instanceId: string): boolean {
+  return props.linkedSelectedInstanceIds?.includes(instanceId) ?? false
+}
+
 const selectedHandCount = computed(() => props.selectedHandCardIds?.length ?? 0)
 
 function shouldShowSelectedHandCount(instanceId: string): boolean {
@@ -142,6 +154,19 @@ function shouldShowSelectedHandCount(instanceId: string): boolean {
 
 function handRevealAnimation(instanceId: string) {
   return isRevealedHandCard(instanceId) && reducedMotion.value !== 'reduce'
+}
+
+function duelHighlightClasses(state: DuelHighlightState) {
+  return resolveDuelHighlightClasses(appConfig, state)
+}
+
+function handCardHighlightState(instanceId: string) {
+  return resolveDuelHighlightState({
+    invalid: isHandCardInvalid(instanceId),
+    selected: isHandCardSelected(instanceId) || isLinkedSelected(instanceId),
+    preview: isLinkedPreview(instanceId),
+    source: isHandCardDraggable(instanceId)
+  })
 }
 
 function setHandCardElement(instanceId: string, value: Element | null) {
@@ -259,11 +284,11 @@ watch(
         class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
         :class="[
           'duel-hand-card',
+          ...duelHighlightClasses(handCardHighlightState(card.instanceId)),
           isDeferredHandCard(card.instanceId) ? 'pointer-events-none opacity-0' : '',
           isHandCardDraggable(card.instanceId) ? 'cursor-grab active:cursor-grabbing' : '',
           handRevealAnimation(card.instanceId) ? 'duel-hand-card--revealed' : '',
-          isHandCardSelected(card.instanceId) ? 'rounded-lg ring-4 ring-info/70' : '',
-            isHandCardInvalid(card.instanceId) ? 'duel-invalid-target ring-4 ring-error' : ''
+          'rounded-lg'
           ]"
           :style="stackedCardStyle(index, visibleHand.length, handStackSize)"
           @click="onCardClick(card.instanceId, $event)"

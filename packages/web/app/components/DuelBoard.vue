@@ -6,8 +6,16 @@ import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
+import {
+  getDuelBannerFeedbackAnimation,
+  getDuelCardFeedbackAnimation,
+  resolveDuelFeedbackClasses,
+  type DuelBannerFeedbackFamily,
+  type DuelCardFeedbackFamily,
+  type DuelFloatingFeedbackFamily
+} from '~/utils/duelFeedback'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
-import { mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
+import { createHoveredDuelCard, mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
 
 type BoardTravelOverlay = {
@@ -28,22 +36,18 @@ type BoardTravelOverlay = {
   rotated?: boolean
 }
 
-type CardFeedbackTone = 'power' | 'warning' | 'danger'
-
 type CardFeedbackInstance = {
   key: number
   label: string
   x: number
   y: number
-  tone: CardFeedbackTone
+  family: DuelCardFeedbackFamily
 }
-
-type BannerFeedbackTone = 'action' | 'error'
 
 type BannerFeedbackInstance = {
   key: number
   message: string
-  tone: BannerFeedbackTone
+  family: DuelBannerFeedbackFamily
 }
 
 const BOARD_TRAVEL_MS = 520
@@ -52,6 +56,7 @@ const ATTACHED_DON_TRAVEL_STAGGER_MS = 70
 const DEFAULT_TRAVEL_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'
 const ATTACHED_DON_TRAVEL_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const AUTO_ADVANCE_PHASES = new Set(['refresh', 'draw', 'don', 'end'])
+const appConfig = useAppConfig()
 
 const {
   self,
@@ -68,6 +73,21 @@ const {
   isSelfCharacterZoneFull,
   logs,
   errorMessage,
+  pendingEffectDecision,
+  activeDecision,
+  isAwaitingEffectDecision,
+  selectedEffectCardIds,
+  selectedEffectChoiceIds,
+  selectableDecisionCardIds,
+  selectableRevealedDecisionCardIds,
+  selectableEffectCards,
+  effectChoiceViews,
+  effectDecisionSubmitState,
+  toggleEffectCardSelection,
+  toggleEffectChoiceSelection,
+  submitEffectDecision,
+  declineEffectDecision,
+  cancelEffectDecisionSelection,
   endPhase,
   playCard,
   attachDon,
@@ -136,9 +156,12 @@ type ScrollAreaInstance = {
 
 const api = useApi()
 const hoveredCard = ref<HoveredDuelCard | null>(null)
+const hoveredEffectPromptCard = ref<HoveredDuelCard | null>(null)
+const selectedEffectPromptCard = ref<HoveredDuelCard | null>(null)
 const hoveredCardCatalogDetails = reactive<Record<string, Pick<Card, 'text' | 'trigger'> | undefined>>({})
 const pendingHoveredCardDetailIds = ref<string[]>([])
-const failedHoveredCardDetailIds = new Set<string>()
+const hoveredCardDetailRetryTimestamps = reactive<Record<string, number | undefined>>({})
+const hoveredCardDetailRetryDelayMs = 5_000
 const reducedMotion = usePreferredReducedMotion()
 const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
 const isJournalOpen = ref(false)
@@ -334,6 +357,7 @@ const selectableHandCardIds = computed(() => {
     )
     .map(card => card.instanceId)
 })
+const selectableEffectCardIdSet = computed(() => new Set(selectableDecisionCardIds.value))
 const selectableDonCardIds = computed(() =>
   self.value?.cost
     .filter(card => !card.rested)
@@ -363,7 +387,9 @@ const isChoosingCounterCard = computed(() => pendingCounterCardInstanceId.value 
 const targetableOpponentCharacterIds = computed(() =>
   isChoosingTarget.value
     ? (opponent.value?.characters.filter(character => character.rested).map(character => character.instanceId) ?? [])
-    : []
+    : opponent.value?.characters
+      .filter(character => selectableEffectCardIdSet.value.has(character.instanceId))
+      .map(character => character.instanceId) ?? []
 )
 const selectableSelfCharacterIds = computed(() => {
   if (!self.value) {
@@ -380,8 +406,20 @@ const selectableSelfCharacterIds = computed(() => {
       .map(character => character.instanceId)
   }
 
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    return self.value.characters
+      .filter(character => selectableEffectCardIdSet.value.has(character.instanceId))
+      .map(character => character.instanceId)
+  }
+
   return []
 })
+const selectableSelfLeader = computed(() =>
+  Boolean(self.value?.leader && selectableEffectCardIdSet.value.has(self.value.leader.instanceId))
+)
+const selectableOpponentLeader = computed(() =>
+  Boolean(opponent.value?.leader && selectableEffectCardIdSet.value.has(opponent.value.leader.instanceId))
+)
 const invalidSelfLeaderPulse = ref(false)
 const invalidOpponentLeaderPulse = ref(false)
 const invalidSelfCharacterIds = ref<string[]>([])
@@ -421,7 +459,56 @@ function dismissTransientErrorModal() {
   transientErrorModalState.value = null
 }
 
+const effectDecisionActionModalState = computed<DuelActionModalState | null>(() => {
+  const decision = activeDecision.value
+
+  if (!decision || decision.source !== 'effect') {
+    return null
+  }
+
+  const prompt = decision.pending.prompt
+
+  if (prompt.type === 'confirm') {
+    return {
+      tone: prompt.optional ? 'decision' : 'danger',
+      title: 'Décision d’effet',
+      description: undefined,
+      actions: [
+        { label: prompt.optional ? 'Activer' : 'Confirmer', color: 'primary', onSelect: submitEffectDecision },
+        { label: prompt.optional ? 'Ignorer' : 'Annuler', color: 'neutral', onSelect: declineEffectDecision }
+      ]
+    }
+  }
+
+  if (prompt.type === 'selectCards') {
+    return {
+      tone: 'decision',
+      title: 'Choix de cartes',
+      description: undefined,
+      allowBoardInteraction: true,
+      actions: [
+        { label: 'Valider', color: 'primary', onSelect: submitEffectDecision },
+        { label: 'Réinitialiser', color: 'neutral', onSelect: cancelEffectDecisionSelection }
+      ]
+    }
+  }
+
+  return {
+    tone: 'decision',
+    title: 'Choix',
+    description: undefined,
+    actions: [
+      { label: 'Valider', color: 'primary', onSelect: submitEffectDecision },
+      { label: 'Réinitialiser', color: 'neutral', onSelect: cancelEffectDecisionSelection }
+    ]
+  }
+})
+
 const decisionActionModalState = computed<DuelActionModalState | null>(() => {
+  if (effectDecisionActionModalState.value) {
+    return effectDecisionActionModalState.value
+  }
+
   if (isBlockingStep.value && isSelfDefender.value) {
     return {
       tone: 'decision',
@@ -571,6 +658,10 @@ const waitingToastText = computed(() => {
     return 'En attente de la décision de Déclenchement du défenseur...'
   }
 
+  if (isAwaitingEffectDecision.value && !pendingEffectDecision.value) {
+    return 'En attente de la résolution de l’effet par l’adversaire...'
+  }
+
   return null
 })
 
@@ -594,18 +685,36 @@ const turnButtonLabel = computed(() => {
 })
 
 const turnButtonColor = computed(() => (isSelfTurn.value ? 'primary' : 'neutral'))
-const turnButtonVariant = computed(() => (isSelfTurn.value ? 'solid' : 'solid'))
+const turnButtonVariant = 'solid' as const
+
+const inspectedCard = computed(() =>
+  hoveredCard.value
+  ?? hoveredEffectPromptCard.value
+  ?? selectedEffectPromptCard.value
+)
+
+const effectPromptLinkedPreviewInstanceId = computed(() =>
+  hoveredEffectPromptCard.value?.instanceId
+  ?? selectedEffectPromptCard.value?.instanceId
+  ?? null
+)
+
+const effectPromptLinkedSelectedInstanceIds = computed(() =>
+  pendingEffectDecision.value?.prompt.type === 'selectCards'
+    ? [...selectedEffectCardIds.value]
+    : []
+)
 
 const resolvedHoveredCard = computed(() =>
   mergeHoveredDuelCardDetails(
-    hoveredCard.value,
-    hoveredCard.value ? hoveredCardCatalogDetails[hoveredCard.value.cardId] : null
+    inspectedCard.value,
+    inspectedCard.value ? hoveredCardCatalogDetails[inspectedCard.value.cardId] : null
   )
 )
 const isHoveredCardDetailPending = computed(() =>
   Boolean(
-    hoveredCard.value
-    && pendingHoveredCardDetailIds.value.includes(hoveredCard.value.cardId)
+    inspectedCard.value
+    && pendingHoveredCardDetailIds.value.includes(inspectedCard.value.cardId)
   )
 )
 const hoveredCardRows = computed<Array<[string, string | number]>>(() => {
@@ -626,9 +735,35 @@ const hoveredCardRows = computed<Array<[string, string | number]>>(() => {
 })
 
 watch(
-  () => hoveredCard.value?.cardId ?? null,
+  () => inspectedCard.value,
+  (card) => {
+    if (!card) {
+      return
+    }
+
+    if (card.text === undefined && card.trigger === undefined) {
+      return
+    }
+
+    hoveredCardCatalogDetails[card.cardId] = {
+      text: card.text ?? null,
+      trigger: card.trigger ?? null
+    }
+    delete hoveredCardDetailRetryTimestamps[card.cardId]
+  },
+  { immediate: true }
+)
+
+watch(
+  () => inspectedCard.value?.cardId ?? null,
   async (cardId) => {
-    if (!cardId || hoveredCardCatalogDetails[cardId] || failedHoveredCardDetailIds.has(cardId)) {
+    if (!cardId || hoveredCardCatalogDetails[cardId]) {
+      return
+    }
+
+    const nextRetryAt = hoveredCardDetailRetryTimestamps[cardId]
+
+    if (nextRetryAt && Date.now() < nextRetryAt) {
       return
     }
 
@@ -644,13 +779,31 @@ watch(
         trigger: card.trigger
       }
     } catch {
-      failedHoveredCardDetailIds.add(cardId)
+      hoveredCardDetailRetryTimestamps[cardId] = Date.now() + hoveredCardDetailRetryDelayMs
     } finally {
       pendingHoveredCardDetailIds.value = pendingHoveredCardDetailIds.value.filter(id => id !== cardId)
     }
   },
   { immediate: true }
 )
+
+watch(
+  () => pendingEffectDecision.value?.id ?? null,
+  () => {
+    hoveredEffectPromptCard.value = null
+    selectedEffectPromptCard.value = null
+  }
+)
+
+function previewEffectPromptCard(card: PublicCard) {
+  const preview = createHoveredDuelCard(card)
+  hoveredEffectPromptCard.value = preview
+  selectedEffectPromptCard.value = preview
+}
+
+function clearEffectPromptPreview() {
+  hoveredEffectPromptCard.value = null
+}
 
 function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) {
   if (ghosts.length === 0) {
@@ -786,15 +939,17 @@ type FloatingNumberInstance = {
   value: number
   x: number
   y: number
-  tone: 'damage' | 'gain'
+  family: DuelFloatingFeedbackFamily
 }
 
 const floatingNumbers = ref<FloatingNumberInstance[]>([])
 const cardFeedbacks = ref<CardFeedbackInstance[]>([])
 const bannerFeedbacks = ref<BannerFeedbackInstance[]>([])
+const isTurnFeedbackVisible = ref(false)
 let floatingNumberKey = 0
 let cardFeedbackKey = 0
 let bannerFeedbackKey = 0
+let turnFeedbackTimeoutHandle: number | null = null
 
 function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeLoss: number) {
   if (!leaderInstanceId || lifeLoss <= 0) {
@@ -814,7 +969,7 @@ function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeL
     value: lifeLoss,
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2,
-    tone: 'damage'
+    family: 'impact'
   }]
 }
 
@@ -826,7 +981,7 @@ function spawnCardFeedbackAtPosition(
   x: number,
   y: number,
   label: string,
-  tone: CardFeedbackTone
+  family: DuelCardFeedbackFamily
 ) {
   const key = cardFeedbackKey++
 
@@ -835,7 +990,7 @@ function spawnCardFeedbackAtPosition(
     label,
     x,
     y,
-    tone
+    family
   }]
 
   nextTick(() => {
@@ -845,25 +1000,14 @@ function spawnCardFeedbackAtPosition(
       return
     }
 
-    animate(element, reducedMotion.value === 'reduce'
-      ? {
-          opacity: [1, 1, 0],
-          duration: 700,
-          ease: 'linear',
-          onComplete: () => removeCardFeedback(key)
-        }
-      : {
-          opacity: [0, 1, 1, 0],
-          y: [6, -20, -28],
-          scale: [0.9, 1, 1],
-          duration: 1000,
-          ease: 'outCubic',
-          onComplete: () => removeCardFeedback(key)
-        })
+    animate(
+      element,
+      getDuelCardFeedbackAnimation(family, reducedMotion.value === 'reduce', () => removeCardFeedback(key))
+    )
   })
 }
 
-function spawnCardFeedback(instanceId: string | undefined, label: string, tone: CardFeedbackTone) {
+function spawnCardFeedback(instanceId: string | undefined, label: string, family: DuelCardFeedbackFamily) {
   const element = instanceId ? queryCardElement(instanceId) : null
 
   if (element) {
@@ -873,7 +1017,7 @@ function spawnCardFeedback(instanceId: string | undefined, label: string, tone: 
       rect.left + rect.width / 2,
       rect.top + Math.min(rect.height * 0.3, 44),
       label,
-      tone
+      family
     )
     return
   }
@@ -888,7 +1032,7 @@ function spawnCardFeedback(instanceId: string | undefined, label: string, tone: 
     containerRect.left + containerRect.width / 2,
     containerRect.top + Math.min(containerRect.height * 0.32, 180),
     label,
-    tone
+    family
   )
 }
 
@@ -897,13 +1041,13 @@ function removeCardFeedback(key: number) {
   cardFeedbacks.value = cardFeedbacks.value.filter(entry => entry.key !== key)
 }
 
-function spawnBannerFeedback(message: string, tone: BannerFeedbackTone) {
+function spawnBannerFeedback(message: string, family: DuelBannerFeedbackFamily) {
   const key = bannerFeedbackKey++
 
   bannerFeedbacks.value = [...bannerFeedbacks.value, {
     key,
     message,
-    tone
+    family
   }]
 
   nextTick(() => {
@@ -913,21 +1057,10 @@ function spawnBannerFeedback(message: string, tone: BannerFeedbackTone) {
       return
     }
 
-    animate(element, reducedMotion.value === 'reduce'
-      ? {
-          opacity: [1, 1, 0],
-          duration: 900,
-          ease: 'linear',
-          onComplete: () => removeBannerFeedback(key)
-        }
-      : {
-          opacity: [0, 1, 1, 0],
-          y: [-10, 0, 0, -6],
-          scale: [0.96, 1, 1, 0.99],
-          duration: 1400,
-          ease: 'outCubic',
-          onComplete: () => removeBannerFeedback(key)
-        })
+    animate(
+      element,
+      getDuelBannerFeedbackAnimation(family, reducedMotion.value === 'reduce', () => removeBannerFeedback(key))
+    )
   })
 }
 
@@ -936,18 +1069,28 @@ function removeBannerFeedback(key: number) {
   bannerFeedbacks.value = bannerFeedbacks.value.filter(entry => entry.key !== key)
 }
 
-function cardFeedbackToneClass(tone: CardFeedbackTone) {
-  return {
-    power: 'border-primary/40 bg-primary/15 text-primary',
-    warning: 'border-warning/40 bg-warning/15 text-warning',
-    danger: 'border-error/40 bg-error/15 text-error'
-  }[tone]
+function clearTurnFeedbackTimeout() {
+  if (turnFeedbackTimeoutHandle !== null) {
+    window.clearTimeout(turnFeedbackTimeoutHandle)
+    turnFeedbackTimeoutHandle = null
+  }
 }
 
-function bannerFeedbackToneClass(tone: BannerFeedbackTone) {
-  return tone === 'error'
-    ? 'border-error/50 bg-error/16 text-error'
-    : 'border-primary/40 bg-default/90 text-highlighted'
+function showTurnFeedback() {
+  clearTurnFeedbackTimeout()
+  isTurnFeedbackVisible.value = true
+  turnFeedbackTimeoutHandle = window.setTimeout(() => {
+    isTurnFeedbackVisible.value = false
+    turnFeedbackTimeoutHandle = null
+  }, reducedMotion.value === 'reduce' ? 720 : 980)
+}
+
+function cardFeedbackClasses(family: DuelCardFeedbackFamily) {
+  return resolveDuelFeedbackClasses(appConfig, 'card', family)
+}
+
+function bannerFeedbackClasses(family: DuelBannerFeedbackFamily) {
+  return resolveDuelFeedbackClasses(appConfig, 'banner', family)
 }
 
 function findPlayerByDisplayName(displayName: string) {
@@ -1039,7 +1182,7 @@ function queueAttachedDonFeedback(current: DuelPlayerView | null, previous: Duel
       continue
     }
 
-    nextTick(() => spawnCardFeedback(instanceId, `+${attachedDonGain * 1000}`, 'power'))
+    nextTick(() => spawnCardFeedback(instanceId, `+${attachedDonGain * 1000}`, 'gain'))
   }
 }
 
@@ -1066,7 +1209,7 @@ function queueKoFeedback(current: DuelPlayerView | null, previous: DuelPlayerVie
       rect.left + rect.width / 2,
       rect.top + rect.height / 2,
       'KO',
-      'danger'
+      'impact'
     )
   }
 }
@@ -1075,7 +1218,7 @@ function handleNewLogFeedback(message: string) {
   const globalActionMessage = resolveGlobalActionMessage(message)
 
   if (globalActionMessage) {
-    spawnBannerFeedback(globalActionMessage, 'action')
+    spawnBannerFeedback(globalActionMessage, 'narration')
   }
 
   const blockerMatch = message.match(/^(?<player>.+?) declare (?<card>.+?) comme Bloqueur\.$/u)
@@ -1085,7 +1228,7 @@ function handleNewLogFeedback(message: string) {
     nextTick(() => spawnCardFeedback(
       findVisibleCardInstanceIdByName(blockerCardName) ?? combat.value?.blockerInstanceId ?? undefined,
       'Blocker',
-      'warning'
+      'status'
     ))
   }
 
@@ -1098,7 +1241,7 @@ function handleNewLogFeedback(message: string) {
       ? player?.leader?.instanceId ?? undefined
       : findVisibleCardInstanceIdByName(donGainGroups.target) ?? undefined
 
-    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainGroups.power}`, 'power'))
+    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainGroups.power}`, 'gain'))
   }
 }
 
@@ -2089,6 +2232,18 @@ watch(
   { immediate: true }
 )
 
+watch(isSelfTurn, (selfTurn, previousSelfTurn) => {
+  if (!selfTurn || previousSelfTurn || phase.value === 'finished') {
+    return
+  }
+
+  showTurnFeedback()
+})
+
+onBeforeUnmount(() => {
+  clearTurnFeedbackTimeout()
+})
+
 watch(
   [phase, isSelfTurn, isCombatInProgress],
   ([currentPhase, selfTurn, combatInProgress]) => {
@@ -2560,6 +2715,16 @@ function onSelfHandCardClick(instanceId: string, options: { ctrlKey: boolean }) 
 }
 
 function onSelfLeaderClick(_side: 0 | 1) {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards' && self.value?.leader) {
+    if (!selectableEffectCardIdSet.value.has(self.value.leader.instanceId)) {
+      pulseLeader(invalidSelfLeaderPulse)
+      return
+    }
+
+    toggleEffectCardSelection(self.value.leader.instanceId)
+    return
+  }
+
   if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
     attachDonToTarget('leader')
   }
@@ -2583,16 +2748,46 @@ function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
     return
   }
 
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    if (!selectableEffectCardIdSet.value.has(instanceId)) {
+      pulseCharacter(invalidSelfCharacterIds, instanceId)
+      return
+    }
+
+    toggleEffectCardSelection(instanceId)
+    return
+  }
+
   if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
     attachDonToTarget('character', instanceId)
   }
 }
 
 function onOpponentLeaderClick() {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards' && opponent.value?.leader) {
+    if (!selectableEffectCardIdSet.value.has(opponent.value.leader.instanceId)) {
+      pulseLeader(invalidOpponentLeaderPulse)
+      return
+    }
+
+    toggleEffectCardSelection(opponent.value.leader.instanceId)
+    return
+  }
+
   onOpponentLeaderTargetClick()
 }
 
 function onOpponentCharacterClick(_side: 0 | 1, instanceId: string) {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    if (!selectableEffectCardIdSet.value.has(instanceId)) {
+      pulseCharacter(invalidOpponentCharacterIds, instanceId)
+      return
+    }
+
+    toggleEffectCardSelection(instanceId)
+    return
+  }
+
   onOpponentCharacterTargetClick(instanceId)
 }
 
@@ -3076,7 +3271,7 @@ defineShortcuts({
     <DuelActionModal :state="actionModalState">
       <template
         v-if="actionModalState?.slot === 'counter-input'"
-        #extra
+        #content
       >
         <UInputNumber
           v-model="counterPowerBonusInput"
@@ -3084,6 +3279,34 @@ defineShortcuts({
           :step="1000"
           size="lg"
           class="w-32"
+        />
+      </template>
+
+      <template
+        v-else-if="activeDecision?.source === 'effect' && pendingEffectDecision"
+        #content
+      >
+        <DuelDecisionConfirm
+          v-if="pendingEffectDecision.prompt.type === 'confirm'"
+          :message="pendingEffectDecision.prompt.message"
+        />
+        <DuelDecisionCardPicker
+          v-else-if="pendingEffectDecision.prompt.type === 'selectCards'"
+          :message="pendingEffectDecision.prompt.message"
+          :cards="selectableEffectCards"
+          :selected-card-ids="selectedEffectCardIds"
+          :revealed-card-ids="selectableRevealedDecisionCardIds"
+          :submit-disabled-reason="effectDecisionSubmitState.reason"
+          @inspect="previewEffectPromptCard"
+          @clear-inspect="clearEffectPromptPreview"
+          @toggle="toggleEffectCardSelection"
+        />
+        <DuelDecisionChoicePicker
+          v-else
+          :message="pendingEffectDecision.prompt.message"
+          :choices="effectChoiceViews"
+          :submit-disabled-reason="effectDecisionSubmitState.reason"
+          @toggle="toggleEffectChoiceSelection"
         />
       </template>
     </DuelActionModal>
@@ -3189,6 +3412,8 @@ defineShortcuts({
                 align="start"
                 :draggable-hand-card-ids="draggableHandCardIds"
                 :selected-hand-card-ids="selectedHandCardIds"
+                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
                 :dragged-hand-card-count="draggedHandCardCount"
                 :invalid-hand-card-ids="invalidHandCardIds"
                 :revealed-hand-card-ids="selfRevealedHandCardIds"
@@ -3233,8 +3458,9 @@ defineShortcuts({
                   :key="entry.key"
                   :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
                   :data-test="`card-feedback-${entry.label}`"
-                  class="duel-card-feedback absolute rounded-full border px-3 py-1 text-sm font-black uppercase tracking-[0.18em] shadow-lg backdrop-blur-[1px] sm:text-base"
-                  :class="cardFeedbackToneClass(entry.tone)"
+                  :data-feedback-family="entry.family"
+                  class="duel-card-feedback absolute rounded-full px-3 py-1 text-sm font-black uppercase tracking-[0.18em] sm:text-base"
+                  :class="cardFeedbackClasses(entry.family)"
                   :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
                 >
                   {{ entry.label }}
@@ -3245,12 +3471,31 @@ defineShortcuts({
                   v-for="entry in bannerFeedbacks"
                   :key="entry.key"
                   :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
-                  :data-test="entry.tone === 'error' ? 'error-feedback' : 'global-feedback'"
-                  class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full border px-4 py-2 text-center text-sm font-semibold shadow-lg backdrop-blur-sm sm:text-base"
-                  :class="bannerFeedbackToneClass(entry.tone)"
+                  :data-test="entry.family === 'error' ? 'error-feedback' : 'global-feedback'"
+                  :data-feedback-family="entry.family"
+                  class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full px-4 py-2 text-center text-sm font-semibold sm:text-base"
+                  :class="bannerFeedbackClasses(entry.family)"
                 >
                   {{ entry.message }}
                 </div>
+              </div>
+              <div class="pointer-events-none absolute inset-0 z-[137] flex items-center justify-center">
+                <Transition
+                  enter-active-class="transition duration-250 ease-out"
+                  enter-from-class="opacity-0 translate-y-3 scale-95"
+                  enter-to-class="opacity-100 translate-y-0 scale-100"
+                  leave-active-class="transition duration-200 ease-in"
+                  leave-from-class="opacity-100 translate-y-0 scale-100"
+                  leave-to-class="opacity-0 -translate-y-2 scale-[0.98]"
+                >
+                  <div
+                    v-if="isTurnFeedbackVisible"
+                    data-test="turn-feedback"
+                    class="duel-turn-feedback text-center"
+                  >
+                    Votre tour
+                  </div>
+                </Transition>
               </div>
               <DuelAttackArrow
                 v-if="shouldRenderAttackArrow"
@@ -3266,7 +3511,7 @@ defineShortcuts({
                 :value="entry.value"
                 :x="entry.x"
                 :y="entry.y"
-                :tone="entry.tone"
+                :family="entry.family"
                 @done="removeFloatingNumber(entry.key)"
               />
               <DuelSetupOverlay v-if="phase === 'mulligan'" />
@@ -3330,10 +3575,15 @@ defineShortcuts({
                 :deferred-cost-card-ids="opponentDeferredCostCardIds"
                 :deferred-trash-card-ids="opponentDeferredTrashCardIds"
                 :is-targetable="Boolean(opponent) && isChoosingTarget"
-                :targetable-leader="Boolean(opponent) && isChoosingTarget"
+                :is-selectable="selectableOpponentLeader || targetableOpponentCharacterIds.length > 0"
+                :targetable-leader="Boolean(opponent) && (isChoosingTarget || selectableOpponentLeader)"
                 :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+                :selectable-leader="selectableOpponentLeader"
+                :selectable-character-ids="opponent ? targetableOpponentCharacterIds : []"
                 :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
                 :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
+                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
                 @card-hover="hoveredCard = $event"
                 @trash-click="openTrashModal"
                 @leader-click="onOpponentLeaderClick"
@@ -3362,12 +3612,15 @@ defineShortcuts({
                 :can-drop-don-on-character="canAttachDon"
                 :transition-ghosts="selfTransitionGhosts"
                 :attacker-id="combat && isSelfAttacker ? combat.attackerInstanceId : null"
-                :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender)"
+                :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender) || selectableSelfCharacterIds.length > 0 || selectableSelfLeader"
                 :attackable-leader="Boolean(self.leader && canDeclareAttack && !isCombatInProgress && isMainPhase && isSelfTurn && !self.leader.rested)"
                 :attackable-character-ids="self.characters.filter(character => canDeclareAttack && isMainPhase && isSelfTurn && !isCombatInProgress && !character.rested && !character.playedThisTurn).map(character => character.instanceId)"
+                :selectable-leader="selectableSelfLeader"
                 :selectable-character-ids="selectableSelfCharacterIds"
                 :invalid-leader-pulse="invalidSelfLeaderPulse"
                 :invalid-character-ids="invalidSelfCharacterIds"
+                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
                 :deferred-board-card-ids="selfDeferredBoardCardIds"
                 :deferred-cost-card-ids="selfDeferredCostCardIds"
                 :deferred-trash-card-ids="selfDeferredTrashCardIds"
@@ -3421,6 +3674,18 @@ defineShortcuts({
   will-change: transform, opacity;
 }
 
+.duel-turn-feedback {
+  color: color-mix(in oklab, var(--ui-success) 68%, white 32%);
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 0.7),
+    0 3px 10px rgb(15 23 42 / 0.3),
+    0 12px 28px rgb(15 23 42 / 0.16);
+  font-size: clamp(1.75rem, 2vw + 1rem, 2.75rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .duel-trash-modal-card {
   animation: duel-trash-modal-card-appear 220ms ease-out both;
   animation-delay: calc(var(--trash-card-index, 0) * 35ms);
@@ -3442,7 +3707,8 @@ defineShortcuts({
 @media (prefers-reduced-motion: reduce) {
   .duel-trash-modal-card,
   .duel-card-feedback,
-  .duel-banner-feedback {
+  .duel-banner-feedback,
+  .duel-turn-feedback {
     animation: none;
     will-change: auto;
   }

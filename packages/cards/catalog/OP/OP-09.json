@@ -1,0 +1,3178 @@
+{
+  "editionId": "OP-09",
+  "name": "Emperors in the New World",
+  "cards": [
+    {
+      "id": "OP09-001",
+      "number": "OP09-001",
+      "name": "Shanks (001)",
+      "type": "Leader",
+      "colors": [
+        "Red"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "The Four Emperors Red-Haired Pirates"
+      ],
+      "text": "[Once Per Turn] This effect can be activated when your opponent attacks. Give up to 1 of your opponent's Leader or Character cards 1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-001.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP09-002",
+      "number": "OP09-002",
+      "name": "Uta",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "FILM"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 \"Red-Haired Pirates\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-002.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-003",
+      "number": "OP09-003",
+      "name": "Shachi & Penguin",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Heart Pirates"
+      ],
+      "text": "[When Attacking] Give up to 1 of your opponent's Characters 2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-003.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-004",
+      "number": "OP09-004",
+      "name": "Shanks (004)",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 10,
+      "power": 12000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "The Four Emperors Red-Haired Pirates"
+      ],
+      "text": "Give all of your opponent's Characters 1000 power.\n[Rush] (This card can attack on the turn in which it is played.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-004.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-005",
+      "number": "OP09-005",
+      "name": "Silvers Rayleigh",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Roger Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Play] If your opponent has 2 or more Characters with a base power of 5000 or more, draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-005.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-006",
+      "number": "OP09-006",
+      "name": "Howling Gab",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-006.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-007",
+      "number": "OP09-007",
+      "name": "Heat",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kid Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Play] Up to 1 of your Leader with 4000 power or less gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-007.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-008",
+      "number": "OP09-008",
+      "name": "Building Snake",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[Activate: Main] You may place this Character at the bottom of the owner's deck: Give up to 1 of your opponent's Characters 3000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-008.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-009",
+      "number": "OP09-009",
+      "name": "Benn.Beckman",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[On Play] Trash up to 1 of your opponent's Characters with 6000 power or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-009.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-010",
+      "number": "OP09-010",
+      "name": "Bonk Punch",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[On Play] Play up to 1 [Monster] from your hand.\n[DON!! x1] [When Attacking] This Character gains +2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-010.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-011",
+      "number": "OP09-011",
+      "name": "Hongo",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[Activate: Main] You may rest this Character: If your Leader has the \"Red-Haired Pirates\" type, give up to 1 of your opponent's Characters 2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-011.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-012",
+      "number": "OP09-012",
+      "name": "Monster",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Red-Haired Pirates"
+      ],
+      "text": "If your Character [Bonk Punch] would be K.O.'d by an effect, you may trash this Character instead.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-012.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-013",
+      "number": "OP09-013",
+      "name": "Yasopp",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[On Play] Up to 1 of your Leader gains +1000 power until the end of your opponent's next turn.\n[DON!! x1] [When Attacking] Give up to 1 of your opponent's Characters 1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-013.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-014",
+      "number": "OP09-014",
+      "name": "Limejuice",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": 3000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[On Play] Your opponent cannot activate up to 1 [Blocker] Character that has 4000 power or less during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-014.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-015",
+      "number": "OP09-015",
+      "name": "Lucky.Roux",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On K.O.] If your Leader has the \"Red-Haired Pirates\" type, K.O. up to 1 of your opponent's Characters with a base power of 6000 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-015.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-016",
+      "number": "OP09-016",
+      "name": "Rockstar",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-016.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-017",
+      "number": "OP09-017",
+      "name": "Wire",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 4,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Kid Pirates"
+      ],
+      "text": "[DON!! x1] If your Leader has 7000 power or more and the \"Kid Pirates\" type, this Character gains [Rush].",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-017.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-018",
+      "number": "OP09-018",
+      "name": "Get Out of Here!",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[Main] K.O. up to 2 of your opponent's Characters with a total power of 4000 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-018.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-019",
+      "number": "OP09-019",
+      "name": "Nobody Hurts a Friend of Mine!!!!",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[Main] If your Leader has the \"Red-Haired Pirates\" type, give up to 1 of your opponent's Characters -3000 power during this turn. Then, if your opponent has a Character with 5000 or more power, draw 1 card.\n[Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-019.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-020",
+      "number": "OP09-020",
+      "name": "Come On!! We'll Fight You!!",
+      "type": "Event",
+      "colors": [
+        "Red"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "The Four Emperors Red-Haired Pirates"
+      ],
+      "text": "[Main] Look at 5 cards from the top of your deck; reveal up to 1 \"Red-Haired Pirates\" type card other than [Come On!! We'll Fight You!!] and add it to your hand. Then, place the rest at the bottom of your deck in any order.\n[Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-020.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-021",
+      "number": "OP09-021",
+      "name": "Red Force",
+      "type": "Stage",
+      "colors": [
+        "Red"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [],
+      "families": [
+        "Red-Haired Pirates"
+      ],
+      "text": "[Activate: Main] You may rest this Stage: If your Leader has the \"Red-Haired Pirates\" type, give up to 1 of your opponent's Characters 1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-021.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-022",
+      "number": "OP09-022",
+      "name": "Lim (022) (Parallel)",
+      "type": "Leader",
+      "colors": [
+        "Green",
+        "Purple"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "ODYSSEY"
+      ],
+      "text": "Your Character cards are played rested.\n[Activate: Main] [Once Per Turn] You may rest 3 of your DON!! cards: Add up to 1 DON!! card from your DON!! deck and rest it, and play up to 1 \"ODYSSEY\" type Character card with a cost of 5 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-022_p1.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP09-023",
+      "number": "OP09-023",
+      "name": "Adio",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 9,
+      "power": 9000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "ODYSSEY"
+      ],
+      "text": "[On Play] If your Leader has the \"ODYSSEY\" type, set up to 3 of your DON!! cards as active.\n[On Your Opponent's Attack] [Once Per Turn] You may rest 1 of your DON!! cards: Up to 1 of your Leader or Character cards gains +2000 power during this battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-023.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-024",
+      "number": "OP09-024",
+      "name": "Usopp (024)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew ODYSSEY"
+      ],
+      "text": "[On Play] If you have 2 or more rested Characters, draw 2 cards and trash 2 cards from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-024.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-025",
+      "number": "OP09-025",
+      "name": "Crocodile (025)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Baroque Works The Seven Warlords of the Sea ODYSSEY"
+      ],
+      "text": "If your Leader has the \"ODYSSEY\" type, this Character cannot be K.O.'d in battle by Leaders.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-025.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-026",
+      "number": "OP09-026",
+      "name": "Sakazuki",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Navy ODYSSEY"
+      ],
+      "text": "[On Play] If you have 2 or more rested Characters, K.O. up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-026.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-027",
+      "number": "OP09-027",
+      "name": "Sabo (027)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Revolutionary Army ODYSSEY"
+      ],
+      "text": "[When Attacking] [Once Per Turn] If you have 3 or more rested Characters, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-027.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-028",
+      "number": "OP09-028",
+      "name": "Sanji (028)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew ODYSSEY"
+      ],
+      "text": "[On K.O.] You may add 1 card from the top or bottom of your Life cards to your hand: Play up to 1 \"ODYSSEY\" or \"Straw Hat Crew\" type Character card with a cost of 4 or less from your trash rested.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-028.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-029",
+      "number": "OP09-029",
+      "name": "Tony Tony.Chopper",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Straw Hat Crew ODYSSEY"
+      ],
+      "text": "[End of Your Turn] Set up to 1 of your \"ODYSSEY\" type Characters with a cost of 4 or less as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-029.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-030",
+      "number": "OP09-030",
+      "name": "Trafalgar Law",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Heart Pirates Supernovas ODYSSEY"
+      ],
+      "text": "[On Play] You may return 1 of your Characters to the owner's hand: Play up to 1 \"ODYSSEY\" type Character card with a cost of 3 or less other than [Trafalgar Law] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-030.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-031",
+      "number": "OP09-031",
+      "name": "Donquixote Doflamingo",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates The Seven Warlords of the Sea ODYSSEY"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[End of Your Turn] If you have 2 or more rested Characters, set this Character as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-031.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-032",
+      "number": "OP09-032",
+      "name": "Donquixote Rosinante (032)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Donquixote Pirates Navy ODYSSEY"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Your Opponent's Attack] [Once Per Turn] Set this Character as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-032.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-033",
+      "number": "OP09-033",
+      "name": "Nico Robin (033)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew ODYSSEY"
+      ],
+      "text": "[On Play] If you have 2 or more rested Characters, none of your \"ODYSSEY\" or \"Straw Hat Crew\" type Characters can be K.O.'d by effects until the end of your opponent's next turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-033.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-034",
+      "number": "OP09-034",
+      "name": "Perona",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Thriller Bark Pirates Muggy Kingdom"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 [Dracule Mihawk] or \"Thriller Bark Pirates\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-034.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-035",
+      "number": "OP09-035",
+      "name": "Portgas.D.Ace",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Whitebeard Pirates ODYSSEY"
+      ],
+      "text": "[On Play] If you have 2 or more rested Characters, rest up to 1 of your opponent's Characters with a cost of 5 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-035.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-036",
+      "number": "OP09-036",
+      "name": "Monkey.D.Luffy (036)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Supernovas ODYSSEY"
+      ],
+      "text": "[On Play] If you have 2 or more rested Characters, rest up to 1 of your opponent's DON!! cards or Characters with a cost of 6 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-036.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-037",
+      "number": "OP09-037",
+      "name": "Lim (037)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "ODYSSEY"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 \"ODYSSEY\" type card other than [Lim] and add it to your hand. Then, place the rest at the bottom of your deck in any order.\n[End of Your Turn] If you have 3 or more rested Characters, set this Character as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-037.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-038",
+      "number": "OP09-038",
+      "name": "Rob Lucci (038)",
+      "type": "Character",
+      "colors": [
+        "Green"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "CP9 ODYSSEY"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-038.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-039",
+      "number": "OP09-039",
+      "name": "Gum-Gum Cuatro Jet Cross Shock Bazooka",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew Supernovas ODYSSEY"
+      ],
+      "text": "[Counter] If your Leader has the \"ODYSSEY\" type and you have 2 or more rested Characters, up to 1 of your Leader or Character cards gains +2000 power during this turn.\n[Trigger] K.O. up to 1 of your opponent's rested Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-039.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-040",
+      "number": "OP09-040",
+      "name": "Thunder Lance Flip Caliber Phoenix Shot",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew Supernovas ODYSSEY"
+      ],
+      "text": "[Main] If you have 2 or more rested Characters, K.O. up to 1 of your opponent's Characters with a cost of 4 or less.\n[Trigger] Rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-040.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-041",
+      "number": "OP09-041",
+      "name": "Soul Franky Swing Arm Boxing Solid",
+      "type": "Event",
+      "colors": [
+        "Green"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew ODYSSEY"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle. Then, if your Leader has the \"ODYSSEY\" type and you have 2 or more rested Characters, set up to 2 of your Characters as active.\n[Trigger] Rest up to 1 of your opponent's Characters with a cost of 4 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-041.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-042",
+      "number": "OP09-042",
+      "name": "Buggy (042)",
+      "type": "Leader",
+      "colors": [
+        "Blue"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "The Four Emperors Cross Guild"
+      ],
+      "text": "[Activate: Main] You may rest 5 of your DON!! cards and trash 1 card from your hand: Play up to 1 \"Cross Guild\" type Character card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-042.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP09-043",
+      "number": "OP09-043",
+      "name": "Alvida",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Cross Guild"
+      ],
+      "text": "[On K.O.] If your Leader has the \"Cross Guild\" type, play up to 1 Character card with a cost of 5 or less other than [Alvida] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-043.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-044",
+      "number": "OP09-044",
+      "name": "Izo",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Land of Wano Whitebeard Pirates"
+      ],
+      "text": "[When Attacking] Look at 5 cards from the top of your deck; reveal up to 1 \"Land of Wano\" type card or card with a type including \"Whitebeard Pirates\" and add it to your hand. Then, place the rest at the bottom of your deck in any order and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-044.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-045",
+      "number": "OP09-045",
+      "name": "Cabaji",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Cross Guild"
+      ],
+      "text": "If you have a [Buggy] or [Mohji] Character, this Character cannot be K.O.'d in battle.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-045.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-046",
+      "number": "OP09-046",
+      "name": "Crocodile (046)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Former Baroque Works Cross Guild"
+      ],
+      "text": "[On Play] Play up to 1 \"Cross Guild\" type Character card or Character card with a type including \"Baroque Works\" with a cost of 5 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-046.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-047",
+      "number": "OP09-047",
+      "name": "Kouzuki Oden",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 9,
+      "power": 10000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Land of Wano Whitebeard Pirates"
+      ],
+      "text": "[Double Attack] (This card deals 2 damage.)\n[On K.O.] Draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-047.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-048",
+      "number": "OP09-048",
+      "name": "Dracule Mihawk",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Cross Guild"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Play] Draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-048.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-049",
+      "number": "OP09-049",
+      "name": "Jozu",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-049.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-050",
+      "number": "OP09-050",
+      "name": "Nami (050)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "East Blue"
+      ],
+      "text": "[When Attacking] Look at 5 cards from the top of your deck; reveal up to 1 blue Event and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-050.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-051",
+      "number": "OP09-051",
+      "name": "Buggy (051)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 10,
+      "power": 12000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "The Four Emperors Cross Guild"
+      ],
+      "text": "[On Play] Place up to 1 of your opponent's Characters at the bottom of the owner's deck. Then, if you do not have 5 Characters with a cost of 5 or more, place this Character at the bottom of the owner's deck.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-051.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-052",
+      "number": "OP09-052",
+      "name": "Marco",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Opponent's Turn] You may trash 1 card from your hand: When this Character is K.O.'d by your opponent's effect, play this Character card from your trash rested.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-052.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-053",
+      "number": "OP09-053",
+      "name": "Mohji",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Cross Guild"
+      ],
+      "text": "[On Play] Look at 5 cards from the top of your deck; reveal up to 1 [Richie] and add it to your hand. Then, place the rest at the bottom of your deck in any order and play up to 1 [Richie] from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-053.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-054",
+      "number": "OP09-054",
+      "name": "Richie",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Cross Guild"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-054.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-055",
+      "number": "OP09-055",
+      "name": "Mr.1(Daz.Bonez)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 5,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Former Baroque Works Cross Guild"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-055.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-056",
+      "number": "OP09-056",
+      "name": "Mr.3(Galdino)",
+      "type": "Character",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Former Baroque Works Cross Guild"
+      ],
+      "text": "[On Play] Look at 4 cards from the top of your deck; reveal up to 1 \"Cross Guild\" type card or card with a type including \"Baroque Works\" other than [Mr.3(Galdino)] and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-056.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-057",
+      "number": "OP09-057",
+      "name": "Cross Guild",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Cross Guild"
+      ],
+      "text": "[Main] Look at 4 cards from the top of your deck; reveal up to 1 \"Cross Guild\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.\n[Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-057.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-058",
+      "number": "OP09-058",
+      "name": "Special Muggy Ball",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Buggy Pirates"
+      ],
+      "text": "[Main] Your opponent chooses 1 of their Character with a cost of 6 or less and return to the owner's hand. [Trigger] Return up to 1 Character with a cost of 3 or less to the owner's hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/SPECIAL_BUGGY_BALL.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-059",
+      "number": "OP09-059",
+      "name": "Murder at the Steam Bath",
+      "type": "Event",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Buggy Pirates"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +3000 power during this battle. Then, trash up to 2 cards from your hand. Trash the same number of cards from the top of your deck as you did from your hand.\n[Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-059.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-060",
+      "number": "OP09-060",
+      "name": "Emptee Bluffs Island",
+      "type": "Stage",
+      "colors": [
+        "Blue"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [],
+      "families": [
+        "Cross Guild"
+      ],
+      "text": "[Activate: Main] You may place 2 cards from your hand at the bottom of your deck in any order and rest this Stage: If your Leader has the \"Cross Guild\" type, draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-060.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-061",
+      "number": "OP09-061",
+      "name": "Monkey.D.Luffy (061) (Parallel)",
+      "type": "Leader",
+      "colors": [
+        "Purple",
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[DON!! x1] All of your Characters gain +1 cost.\n[Your Turn] [Once Per Turn] When 2 or more DON!! cards on your field are returned to your DON!! deck, add up to 1 DON!! card from your DON!! deck and set it as active, and add up to 1 additional DON!! card and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-061_p1.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP09-062",
+      "number": "OP09-062",
+      "name": "Nico Robin (062)",
+      "type": "Leader",
+      "colors": [
+        "Purple",
+        "Yellow"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 4,
+      "counter": null,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Banish] (When this card deals damage, the target card is trashed without activating its Trigger.)\n[When Attacking] You may trash 1 card with a [Trigger] from your hand: Add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-062.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP09-063",
+      "number": "OP09-063",
+      "name": "Usopp (063)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-063.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-064",
+      "number": "OP09-064",
+      "name": "Killer",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Kid Pirates"
+      ],
+      "text": "[On Play] DON!! 1 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Set up to 1 of your \"Kid Pirates\" type Leader as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-064.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-065",
+      "number": "OP09-065",
+      "name": "Sanji (065)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] You may return 1 or more DON!! cards from your field to your DON!! deck: This Character gains [Rush] during this turn. Then, rest up to 1 of your opponent's Characters with a cost of 6 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-065.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-066",
+      "number": "OP09-066",
+      "name": "Jean Bart",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates"
+      ],
+      "text": "[On Play] If your opponent has more DON!! cards on their field than you, K.O. up to 1 of your opponent's Characters with a cost of 3 or less.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-066.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-067",
+      "number": "OP09-067",
+      "name": "Jinbe",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 7,
+      "power": 9000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Fish-Man Straw Hat Crew"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-067.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-068",
+      "number": "OP09-068",
+      "name": "Tony Tony.Chopper (068)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Straw Hat Crew"
+      ],
+      "text": "[End of Your Turn] You may return 1 or more DON!! cards from your field to your DON!! deck: Set this Character as active. Then, this Character gains [Blocker] until the end of your opponent's next turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-068.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-069",
+      "number": "OP09-069",
+      "name": "Trafalgar Law (069)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Heart Pirates"
+      ],
+      "text": "[On Play] Look at 4 cards from the top of your deck; reveal up to 1 \"Straw Hat Crew\" or \"Heart Pirates\" type card with a cost of 2 or more and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-069.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-070",
+      "number": "OP09-070",
+      "name": "Nami (070)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 2000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] You may return 1 or more DON!! cards from your field to your DON!! deck: Give up to 2 rested DON!! cards to your Leader or 1 of your Characters.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-070.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-071",
+      "number": "OP09-071",
+      "name": "Nico Robin (071)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-071.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-072",
+      "number": "OP09-072",
+      "name": "Franky",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[On Play] DON!! 2, You may trash 1 card from your hand: Draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-072.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-073",
+      "number": "OP09-073",
+      "name": "Brook (073)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 6,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[When Attacking] You may return 1 or more DON!! cards from your field to your DON!! deck: Give up to 2 of your opponent's Characters 2000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-073.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-074",
+      "number": "OP09-074",
+      "name": "Bepo",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Heart Pirates Minks"
+      ],
+      "text": "[Your Turn] [Once Per Turn] When a DON!! card on your field is returned to your DON!! deck, up to 1 of your Leader or Character cards gains +1000 power during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-074.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-075",
+      "number": "OP09-075",
+      "name": "Eustass\"Captain\"Kid",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Kid Pirates"
+      ],
+      "text": "[On Play] You may add 1 card from the top of your Life cards to your hand: If your Leader has the \"Kid Pirates\" type, add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-075.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-076",
+      "number": "OP09-076",
+      "name": "Roronoa Zoro (076)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] You may return 1 or more DON!! cards from your field to your DON!! deck: Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-076.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-077",
+      "number": "OP09-077",
+      "name": "Gum-Gum Lightning",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[Main] DON!! 2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): K.O. up to 1 of your opponent's Characters with 6000 power or less.\n[Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-077.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-078",
+      "number": "OP09-078",
+      "name": "Gum-Gum Giant",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[Counter] DON!! 2, You may trash 1 card from your hand: If your Leader has the \"Straw Hat Crew\" type, up to 1 of your Leader or Character cards gains +4000 power during this battle. Then, draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-078.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-079",
+      "number": "OP09-079",
+      "name": "Gum-Gum Jump Rope",
+      "type": "Event",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew The Four Emperors"
+      ],
+      "text": "[Main] DON!! 2 (You may return the specified number of DON!! cards from your field to your DON!! deck.): Rest up to 1 of your opponent's Characters with a cost of 5 or less. Then, draw 1 card.\n[Trigger] Add up to 1 DON!! card from your DON!! deck and set it as active.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-079.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-080",
+      "number": "OP09-080",
+      "name": "Thousand Sunny",
+      "type": "Stage",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[Opponent's Turn] You may rest this Stage: When your \"Straw Hat Crew\" type Character is removed from the field by your opponent's effect, add up to 1 DON!! card from your DON!! deck and rest it.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-080.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-081",
+      "number": "OP09-081",
+      "name": "Marshall.D.Teach (081) (Parallel)",
+      "type": "Leader",
+      "colors": [
+        "Black"
+      ],
+      "cost": null,
+      "power": 5000,
+      "life": 5,
+      "counter": null,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates The Four Emperors"
+      ],
+      "text": "Your [On Play] effects are negated.\n[Activate: Main] You may trash 1 card from your hand: Your opponent's [On Play] effects are negated until the end of your opponent's next turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-081_p1.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "L"
+    },
+    {
+      "id": "OP09-082",
+      "number": "OP09-082",
+      "name": "Avalo Pizarro",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-082.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-083",
+      "number": "OP09-083",
+      "name": "Van Augur",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Ranged"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate: Main] You may rest this Character: If your Leader has the \"Blackbeard Pirates\" type, give up to 1 of your opponent's Characters 3 cost during this turn.\n[On K.O.] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-083.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-084",
+      "number": "OP09-084",
+      "name": "Catarina Devon",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate: Main] [Once Per Turn] If your Leader has the \"Blackbeard Pirates\" type, this Character gains [Double Attack], [Banish] or [Blocker] until the end of your opponent's next turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-084.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-085",
+      "number": "OP09-085",
+      "name": "Gecko Moria",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Thriller Bark Pirates"
+      ],
+      "text": "[On Play] Play up to 1 \"Thriller Bark Pirates\" type Character card with a cost of 2 or less from your trash rested.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-085.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-086",
+      "number": "OP09-086",
+      "name": "Jesus Burgess",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "This Character cannot be K.O.'d by your opponent's effects.\nIf your Leader has the \"Blackbeard Pirates\" type, this Character gains +1000 power for every 4 cards in your trash.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-086.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-087",
+      "number": "OP09-087",
+      "name": "Charlotte Pudding",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Big Mom Pirates"
+      ],
+      "text": "[On Play] If your opponent has 5 or more cards in their hand, your opponent trashes 1 card from their hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-087.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-088",
+      "number": "OP09-088",
+      "name": "Shiryu",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[DON!! x1] [When Attacking] You may trash 2 cards from your hand: Draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-088.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-089",
+      "number": "OP09-089",
+      "name": "Stronger",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Animal Blackbeard Pirates"
+      ],
+      "text": "[Activate: Main] You may trash 1 card from your hand and trash this Character: If your Leader has the \"Blackbeard Pirates\" type, draw 1 card. Then, give up to 1 of your opponent's Characters –2 cost during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-089.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-090",
+      "number": "OP09-090",
+      "name": "Doc Q",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 0,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate: Main] You may rest this Character: If your Leader has the \"Blackbeard Pirates\" type, K.O. up to 1 of your opponent's Characters with a cost of 1 or less.[On K.O.] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-090.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-091",
+      "number": "OP09-091",
+      "name": "Vasco Shot",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-091.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-092",
+      "number": "OP09-092",
+      "name": "Marshall.D.Teach (092)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Whitebeard Pirates"
+      ],
+      "text": "[Activate: Main] You may rest this Character: If the number of cards in your hand is at least 3 less than the number in your opponent's hand, draw 2 cards and trash 1 card from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-092.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-093",
+      "number": "OP09-093",
+      "name": "Marshall.D.Teach (093)",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 10,
+      "power": 12000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Blackbeard Pirates The Four Emperors"
+      ],
+      "text": "[Blocker]\n[Activate: Main] [Once Per Turn] If your Leader has the \"Blackbeard Pirates\" type and this Character was played on this turn, negate the effect of up to 1 of your opponent's Leader during this turn. Then, negate the effect of up to 1 of your opponent's Characters and that Character cannot attack until the end of your opponent's next turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-093.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-094",
+      "number": "OP09-094",
+      "name": "Peachbeard",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Peachbeard Pirates Blackbeard Pirates Allies"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-094.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-095",
+      "number": "OP09-095",
+      "name": "Laffitte",
+      "type": "Character",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": 1000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate: Main] You may rest 1 of your DON!! cards and this Character: Look at 5 cards from the top of your deck; reveal up to 1 \"Blackbeard Pirates\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-095.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-096",
+      "number": "OP09-096",
+      "name": "My Era...Begins!!",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Main] Look at 3 cards from the top of your deck; reveal up to 1 \"Blackbeard Pirates\" type card other than [My Era...Begins!!] and add it to your hand. Then, trash the rest.\n[Trigger] Activate this card's [Main] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-096.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-097",
+      "number": "OP09-097",
+      "name": "Black Vortex",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 2,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Counter] Negate the effect of up to 1 of your opponent's Leader or Character cards and give that card 4000 power during this turn.\n[Trigger] Negate the effect of up to 1 of your opponent's Leader or Character cards during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-097.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-098",
+      "number": "OP09-098",
+      "name": "Black Hole",
+      "type": "Event",
+      "colors": [
+        "Black"
+      ],
+      "cost": 4,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Main] If your Leader has the \"Blackbeard Pirates\" type, negate the effect of up to 1 of your opponent's Characters during this turn. Then, if that Character has a cost of 4 or less, K.O. it.\n[Trigger] Negate the effect of up to 1 of your opponent's Leader or Character cards during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-098.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-099",
+      "number": "OP09-099",
+      "name": "Fullalead",
+      "type": "Stage",
+      "colors": [
+        "Black"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": 0,
+      "attributes": [],
+      "families": [
+        "Blackbeard Pirates"
+      ],
+      "text": "[Activate: Main] You may trash 1 card from your hand and rest this Stage: Look at 3 cards from the top of your deck; reveal up to 1 \"Blackbeard Pirates\" type card and add it to your hand. Then, place the rest at the bottom of your deck in any order.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-099.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-100",
+      "number": "OP09-100",
+      "name": "Karasu",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Revolutionary Army"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[Trigger] If your Leader has the \"Revolutionary Army\" type and you and your opponent have a total of 5 or less Life cards, play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-100.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-101",
+      "number": "OP09-101",
+      "name": "Kuzan",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Navy"
+      ],
+      "text": "[On Play] Place 1 of your opponent's Characters with a cost of 3 or less at the top or bottom of your opponent's Life cards face-up: Your opponent trashes 1 card from their hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-101.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-102",
+      "number": "OP09-102",
+      "name": "Professor Clover",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Ohara"
+      ],
+      "text": "[On Play] If your Leader is [Nico Robin], look at 3 cards from the top of your deck; reveal up to 1 card with a [Trigger] and add it to your hand. Then, place the rest at the bottom of your deck in any order.[Trigger] Activate this card's [On Play] effect.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-102.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-103",
+      "number": "OP09-103",
+      "name": "Koala",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 6,
+      "power": 6000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Revolutionary Army"
+      ],
+      "text": "[Blocker]\n[On Play] You may add 1 card from the top or bottom of your Life cards to your hand: Play up to 1 \"Revolutionary Army\" type Character card with a cost of 4 or less from your hand. If you do, draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-103.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SR"
+    },
+    {
+      "id": "OP09-104",
+      "number": "OP09-104",
+      "name": "Sabo (104)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 7,
+      "power": 7000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Revolutionary Army"
+      ],
+      "text": "[On Play] Add up to 1 \"Revolutionary Army\" type Character card from your hand to the top of your Life cards face-up. Then, if you have 2 or more Life cards, add 1 card from the top or bottom of your Life cards to your hand.\n[Trigger] If your Leader is multicolored, draw 2 cards.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-104.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-105",
+      "number": "OP09-105",
+      "name": "Sanji (105)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew Egghead"
+      ],
+      "text": "[Trigger] If your Leader has the \"Egghead\" type, add up to 1 card from the top of your deck to the top of your Life cards. Then, trash 2 cards from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-105.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-106",
+      "number": "OP09-106",
+      "name": "Nico Olvia",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": 0,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Wisdom"
+      ],
+      "families": [
+        "Ohara"
+      ],
+      "text": "[On Play] Up to 1 of your [Nico Robin] Leader gains +3000 power during this turn.[Trigger] If your Leader is [Nico Robin], draw 3 cards and trash 2 cards from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-106.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-107",
+      "number": "OP09-107",
+      "name": "Nico Robin (107)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 6,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] If your opponent has 3 or more Life cards, trash up to 1 card from the top of your opponent's Life cards.\n[Trigger] Play up to 1 yellow Character card with a cost of 3 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-107.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-108",
+      "number": "OP09-108",
+      "name": "Bartholomew Kuma",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 4,
+      "power": 5000,
+      "life": null,
+      "counter": 2000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Revolutionary Army The Seven Warlords of the Sea"
+      ],
+      "text": "[Trigger] If your Leader has the \"Revolutionary Army\" type and you and your opponent have a total of 5 or less Life cards, play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-108.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-109",
+      "number": "OP09-109",
+      "name": "Jaguar.D.Saul",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 5000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Giant Navy Ohara"
+      ],
+      "text": "[Blocker] (After your opponent declares an attack, you may rest this card to make it the new target of the attack.)\n[Trigger] If your Leader is [Nico Robin], play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-109.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-110",
+      "number": "OP09-110",
+      "name": "Pierre",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 2,
+      "power": 2000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Animal Sky Island"
+      ],
+      "text": "[On Play] Draw 2 cards and trash 2 cards from your hand.\n[Trigger] Play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-110.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-111",
+      "number": "OP09-111",
+      "name": "Brook (111)",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 5,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Straw Hat Crew Egghead"
+      ],
+      "text": "[Trigger] If your Leader has the \"Egghead\" type and your opponent has 6 or more cards in their hand, your opponent trashes 2 cards from their hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-111.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-112",
+      "number": "OP09-112",
+      "name": "Belo Betty",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Revolutionary Army"
+      ],
+      "text": "[On Play] If you have 2 or less Life cards, draw 1 card.\n[Trigger] If your Leader has the \"Revolutionary Army\" type and you and your opponent have a total of 5 or less Life cards, play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-112.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-113",
+      "number": "OP09-113",
+      "name": "Morley",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 4,
+      "power": 6000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Giant Revolutionary Army"
+      ],
+      "text": "",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-113.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-114",
+      "number": "OP09-114",
+      "name": "Lindbergh",
+      "type": "Character",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": 4000,
+      "life": null,
+      "counter": 1000,
+      "attributes": [
+        "Special"
+      ],
+      "families": [
+        "Minks Revolutionary Army"
+      ],
+      "text": "[On Play] If you and your opponent have a total of 5 or less Life cards, K.O. up to 1 of your opponent's Characters with 2000 power or less.\n[Trigger] If you and your opponent have a total of 5 or less Life cards, play this card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-114.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-115",
+      "number": "OP09-115",
+      "name": "Ice Block Partisan",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Navy"
+      ],
+      "text": "[Main] K.O. up to 1 of your opponent's Characters with a cost of 3 or less and a [Trigger].\n[Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-115.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "UC"
+    },
+    {
+      "id": "OP09-116",
+      "number": "OP09-116",
+      "name": "Never Underestimate the Power of Miracles!!",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 1,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Revolutionary Army"
+      ],
+      "text": "[Counter] Up to 1 of your Leader or Character cards gains +2000 power during this battle.\n[Trigger] Play up to 1 \"Revolutionary Army\" type Character card with a cost of 4 or less from your hand.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-116.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "C"
+    },
+    {
+      "id": "OP09-117",
+      "number": "OP09-117",
+      "name": "Dereshi!",
+      "type": "Event",
+      "colors": [
+        "Yellow"
+      ],
+      "cost": 3,
+      "power": null,
+      "life": null,
+      "counter": null,
+      "attributes": [],
+      "families": [
+        "Ohara"
+      ],
+      "text": "[Main] Look at 5 cards from the top of your deck; reveal up to 2 cards with a [Trigger] other than [Dereshi!] and add them to your hand. Then, place the rest at the bottom of your deck in any order.\n[Trigger] Draw 1 card.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-117.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "R"
+    },
+    {
+      "id": "OP09-118",
+      "number": "OP09-118",
+      "name": "Gol.D.Roger",
+      "type": "Character",
+      "colors": [
+        "Red"
+      ],
+      "cost": 10,
+      "power": 13000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Slash"
+      ],
+      "families": [
+        "Roger Pirates King of the Pirates"
+      ],
+      "text": "[Rush] (This card can attack on the turn in which it is played.)\nWhen your opponent activates [Blocker], if either you or your opponent has 0 Life cards, you win the game.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-118.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SEC"
+    },
+    {
+      "id": "OP09-119",
+      "number": "OP09-119",
+      "name": "Monkey.D.Luffy (119)",
+      "type": "Character",
+      "colors": [
+        "Purple"
+      ],
+      "cost": 9,
+      "power": 10000,
+      "life": null,
+      "counter": 0,
+      "attributes": [
+        "Strike"
+      ],
+      "families": [
+        "Straw Hat Crew"
+      ],
+      "text": "[On Play] You may return 1 or more DON!! cards from your field to your DON!! deck: Draw 1 card and this Character gains [Rush] during this turn.",
+      "trigger": null,
+      "imageUrl": "https://optcgapi.com/media/static/Card_Images/OP09-119.jpg",
+      "set": {
+        "id": "OP-09",
+        "name": "Emperors in the New World"
+      },
+      "rarity": "SEC"
+    }
+  ]
+}

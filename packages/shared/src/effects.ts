@@ -3,7 +3,17 @@ import type { CardColor, CardType, GameZone } from './index.js';
 export type EffectTriggerType =
   | 'onPlay'
   | 'activateMain'
+  | 'activateCounter'
+  | 'onEventActivated'
+  | 'onCardRemovedByEffect'
+  | 'onCharacterPlayed'
+  | 'onDonAttached'
+  | 'onDonReturned'
+  | 'onBattleKo'
+  | 'onLifeDamageDealt'
+  | 'onCardDrawn'
   | 'whenAttacking'
+  | 'onAttacked'
   | 'onKo'
   | 'trigger'
   | 'onBlock'
@@ -12,41 +22,103 @@ export type EffectTriggerType =
 
 export type EffectOwnerSelector = 'self' | 'opponent' | 'either';
 
+export type EffectKeyword =
+  | 'rush'
+  | 'doubleAttack'
+  | 'banish'
+  | 'canAttackActiveCharacters'
+  | 'mustBeAttackTarget'
+  | 'cannotAttack'
+  | 'cannotAttackLeaderOnTurnPlayed'
+  | 'cannotBlock'
+  | 'cannotBeKoedInBattle'
+  | 'cannotBeKoedByEffects'
+  | 'cannotBeKoedBySlashInBattle'
+  | 'cannotBeKoedByStrikeInBattle'
+  | 'cannotBeRemovedByOpponentEffects'
+  | 'winOnDeckOut';
+
 export type EffectCount =
   | { kind: 'exact'; value: number }
-  | { kind: 'upTo'; value: number };
+  | { kind: 'upTo'; value: number }
+  | { kind: 'any' };
 
 export type EffectCondition =
   | { type: 'controllerTurn'; value: boolean }
   | { type: 'sourceHasAttachedDonAtLeast'; value: number }
+  | { type: 'sourcePowerAtLeast'; value: number }
   | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLessLifeThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
+  | { type: 'playerHasMoreTotalDonThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
+  | {
+      type: 'playerHasAtLeastTotalDonLessThan';
+      player: EffectOwnerSelector;
+      thanPlayer: EffectOwnerSelector;
+      value: number;
+    }
+  | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasLeaderColorsAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasTotalDonAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasActiveDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasHandAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLifeAndHandAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playersHaveTotalLifeAtMost'; value: number }
+  | { type: 'playerHasOnlyCharactersWithTrait'; player: EffectOwnerSelector; trait: string }
+  | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
+  | { type: 'eventSourceZoneIs'; value: GameZone }
+  | { type: 'eventDestinationZoneIs'; value: GameZone }
+  | { type: 'eventEffectControllerIs'; player: EffectOwnerSelector }
+  | { type: 'eventPlayedByEffect'; value: boolean }
+  | { type: 'eventReasonIs'; value: 'battle' | 'effect' }
+  | { type: 'eventSourceHasNoBaseEffect' }
+  | { type: 'eventTargetMatchesFilter'; filter: EffectCardFilter }
   | { type: 'targetExists'; selector: EffectTargetSelector }
+  | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
+  | { type: 'targetCountAtMost'; selector: EffectTargetSelector; value: number }
   | { type: 'cardInZone'; zone: GameZone }
   | { type: 'sourceIsRested'; value: boolean };
 
 export type EffectCardFilter = {
   cardCategory?: CardType[];
   costMax?: number;
+  costMaxFromLifeOf?: EffectOwnerSelector;
   costMin?: number;
+  baseCostMax?: number;
+  baseCostMin?: number;
   powerMax?: number;
   powerMin?: number;
+  basePowerMax?: number;
+  basePowerMin?: number;
   color?: CardColor[];
+  attribute?: string[];
+  differentColorThanStoredSelection?: string;
   trait?: string[];
+  traitIncludes?: string[];
   name?: string[];
   excludeName?: string[];
+  hasNoBaseEffect?: boolean;
+  hasTrigger?: boolean;
   rested?: boolean;
   owner?: EffectOwnerSelector;
+  zonePosition?: 'top' | 'bottom' | 'topOrBottom';
 };
 
 export type EffectTargetSelector = {
   player: EffectOwnerSelector;
+  chooser?: EffectOwnerSelector;
+  source?: 'effectSource';
   zones: GameZone[];
   filter?: EffectCardFilter;
   count?: EffectCount;
+  distinctBy?: 'name';
 };
 
 export type EffectDuration =
   | { type: 'untilEndOfTurn' }
+  | { type: 'untilEndOfBattle' }
+  | { type: 'untilStartOfYourNextTurn' }
   | { type: 'whileSourceInPlay' }
   | { type: 'permanent' };
 
@@ -108,6 +180,11 @@ export type EffectAction =
       amount: number;
     }
   | {
+      type: 'drawUntilHandSize';
+      player: EffectOwnerSelector;
+      size: number;
+    }
+  | {
       type: 'play';
       selector: EffectTargetSelector;
       destination: 'characters' | 'stage';
@@ -117,6 +194,12 @@ export type EffectAction =
       type: 'ko';
       selector: EffectTargetSelector;
       upTo?: boolean;
+      reason?: 'battle' | 'effect';
+    }
+  | {
+      type: 'koAllCharacters';
+      selector: EffectTargetSelector;
+      excludeSource?: boolean;
       reason?: 'battle' | 'effect';
     }
   | {
@@ -170,10 +253,21 @@ export type EffectAction =
   | {
       type: 'moveCard';
       selector: EffectTargetSelector;
-      destinationPlayer: EffectOwnerSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
       destinationZone: GameZone;
       faceDown?: boolean;
       rested?: boolean;
+      toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
+    }
+  | {
+      type: 'moveFirstCard';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
     }
   | {
       type: 'modifyPower';
@@ -181,6 +275,39 @@ export type EffectAction =
       amount: number;
       duration: EffectDuration;
       description?: string;
+    }
+  | {
+      type: 'modifyPowerByStoredCount';
+      key: string;
+      selector: EffectTargetSelector;
+      amountPerCard: number;
+      duration: EffectDuration;
+      description?: string;
+    }
+  | {
+      type: 'modifyCost';
+      selector: EffectTargetSelector;
+      amount: number;
+      duration: EffectDuration;
+    }
+  | {
+      type: 'grantKeywords';
+      selector: EffectTargetSelector;
+      keywords: EffectKeyword[];
+      duration: EffectDuration;
+    }
+  | {
+      type: 'preventOwnEffectLifeToHand';
+      player: EffectOwnerSelector;
+      duration: Extract<
+        EffectDuration,
+        { type: 'untilEndOfTurn' } | { type: 'untilStartOfYourNextTurn' }
+      >;
+    }
+  | {
+      type: 'restrictAttack';
+      selector: EffectTargetSelector;
+      turns: number;
     }
   | {
       type: 'activateEffect';
@@ -192,11 +319,109 @@ export type EffectAction =
       selector: EffectTargetSelector;
       player: EffectOwnerSelector;
       amount: number;
+      rested?: boolean;
     }
   | {
       type: 'detachDon';
       selector: EffectTargetSelector;
       amount: number;
+    }
+  | {
+      type: 'shuffleDeck';
+      player: EffectOwnerSelector;
+    }
+  | {
+      type: 'arrangeDeckWindow';
+      player: EffectOwnerSelector;
+      amount: number;
+    }
+  | {
+      type: 'revealTopAndPlayIfMatches';
+      player: EffectOwnerSelector;
+      filter: EffectCardFilter;
+      destination: 'characters' | 'stage';
+      rested?: boolean;
+    }
+  | {
+      type: 'storeSelectedCards';
+      key: string;
+      selector: EffectTargetSelector;
+    }
+  | {
+      type: 'revealStoredCards';
+      key: string;
+    }
+  | {
+      type: 'moveStoredCards';
+      key: string;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
+    }
+  | {
+      type: 'scheduleMoveAtEndOfBattle';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+    }
+  | {
+      type: 'skipNextRefreshPhases';
+      selector: EffectTargetSelector;
+      amount: number;
+    }
+  | {
+      type: 'ifStoredSelectionMatches';
+      key: string;
+      filter: EffectCardFilter;
+      actions: EffectAction[];
+    }
+  | {
+      type: 'ifConditionsMatch';
+      conditions: EffectCondition[];
+      actions: EffectAction[];
+    }
+  | {
+      type: 'ifAnyConditionGroupMatches';
+      conditionGroups: EffectCondition[][];
+      actions: EffectAction[];
+    }
+  | {
+      type: 'modifyStoredCardsPower';
+      key: string;
+      amount: number;
+      duration: EffectDuration;
+      description?: string;
+    }
+  | {
+      type: 'registerNextPlayCostModifier';
+      player: EffectOwnerSelector;
+      filter: EffectCardFilter;
+      sourceZone: 'hand';
+      amount: number;
+    }
+  | {
+      type: 'chooseActionBranch';
+      message: string;
+      choices: Array<{
+        id: string;
+        label: string;
+        actions: EffectAction[];
+      }>;
+    }
+  | {
+      type: 'scheduleActionsAtTurnEnd';
+      actions: EffectAction[];
+    }
+  | {
+      type: 'returnDonToDonDeckMatchingOpponentCount';
+      player: EffectOwnerSelector;
+      referencePlayer: EffectOwnerSelector;
     };
 
 export type StandardEffectDefinition = {
@@ -215,6 +440,16 @@ export type ContinuousEffectDefinition = {
   modifier: {
     selector: EffectTargetSelector;
     power?: number;
+    cost?: number;
+    powerPerCount?:
+      | {
+          selector: EffectTargetSelector;
+          amount: number;
+          divisor?: number;
+        }
+      | undefined;
+    keywords?: EffectKeyword[];
+    skipNextRefreshPhases?: number;
   };
 };
 
@@ -223,6 +458,7 @@ export type ReplacementEffectDefinition = {
   text: string;
   event: 'wouldKoCharacter' | 'wouldMoveCard';
   optional?: boolean;
+  oncePerTurn?: boolean;
   conditions?: EffectCondition[];
   replacement: EffectAction[];
   priority?: number;

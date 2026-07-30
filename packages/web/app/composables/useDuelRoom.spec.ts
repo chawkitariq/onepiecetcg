@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import type { CardColor, CardType } from '@onepiecetcg/shared'
+import { describe, expect, it, vi } from 'vitest'
+import type { CardColor, CardType, PendingEffectDecision } from '@onepiecetcg/shared'
 
 type FakeCard = {
   instanceId: string
@@ -106,6 +106,7 @@ function createFakeRoom(options: {
   send?: (type: string, message: unknown) => void
 }) {
   let stateChangeListener: (() => void) | null = null
+  const messageListeners = new Map<string, (payload: any) => void>()
 
   return {
     sessionId: options.sessionId,
@@ -135,8 +136,31 @@ function createFakeRoom(options: {
     emitStatePatch() {
       stateChangeListener?.()
     },
-    onMessage: () => {},
+    onMessage: (type: string, listener: (payload: any) => void) => {
+      messageListeners.set(type, listener)
+    },
     send: options.send ?? (() => {})
+    ,
+    emitMessage(type: string, payload: any) {
+      messageListeners.get(type)?.(payload)
+    }
+  }
+}
+
+function createPendingEffectDecision(overrides: Partial<PendingEffectDecision> = {}): PendingEffectDecision {
+  return {
+    id: 'decision-1',
+    effectId: 'effect-1',
+    effectCardId: 'card-1',
+    sourceInstanceId: 'source-1',
+    playerSessionId: 'session-a',
+    createdAt: '2026-07-28T12:00:00.000Z',
+    prompt: {
+      type: 'confirm',
+      message: 'Activer cet effet ?',
+      optional: true
+    },
+    ...overrides
   }
 }
 
@@ -604,5 +628,99 @@ describe('useDuelRoom combat helpers (stage 8)', () => {
     resolveTrigger(true)
 
     expect(sent).toEqual([{ type: 'resolveTrigger', message: { activate: true } }])
+  })
+})
+
+describe('useDuelRoom effect decision helpers', () => {
+  it('exposes an active effect decision when Colyseus emits one', () => {
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)]
+    })
+    room.value = fakeRoom as never
+
+    const {
+      pendingEffectDecision,
+      activeDecision,
+      isAwaitingEffectDecision
+    } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision())
+
+    expect(pendingEffectDecision.value?.id).toBe('decision-1')
+    expect(activeDecision.value).toEqual({
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    })
+    expect(isAwaitingEffectDecision.value).toBe(true)
+  })
+
+  it('serializes a selectChoice decision response', () => {
+    const send = vi.fn()
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send
+    })
+    room.value = fakeRoom as never
+
+    const {
+      toggleEffectChoiceSelection,
+      submitEffectDecision,
+      selectedEffectChoiceIds
+    } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision({
+      prompt: {
+        type: 'selectChoice',
+        message: 'Choisissez.',
+        choices: [
+          { id: 'choice-a', label: 'A' },
+          { id: 'choice-b', label: 'B' }
+        ],
+        min: 1,
+        max: 2
+      }
+    }))
+
+    toggleEffectChoiceSelection('choice-a')
+    submitEffectDecision()
+
+    expect(selectedEffectChoiceIds.value).toEqual([])
+    expect(send).toHaveBeenCalledWith('resolveEffectDecision', {
+      decisionId: 'decision-1',
+      selectedChoiceIds: ['choice-a']
+    })
+  })
+
+  it('clears local effect decision state on clearPendingEffectDecision', () => {
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)]
+    })
+    room.value = fakeRoom as never
+
+    const { pendingEffectDecision, activeDecision } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision())
+    fakeRoom.emitMessage('clearPendingEffectDecision', {})
+
+    expect(pendingEffectDecision.value).toBeNull()
+    expect(activeDecision.value).toBeNull()
   })
 })

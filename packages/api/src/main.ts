@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import type { Server as HttpServer } from 'node:http';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
-import { ColyseusService } from './realtime/colyseus.service';
+import { ColyseusService } from './colyseus/colyseus.service';
 import { getApiConfig } from './runtime-config';
 
 async function bootstrap() {

@@ -15,6 +15,38 @@
   --color-green-800: #016538;
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
+
+  --duel-highlight-radius: 0.7rem;
+  --duel-highlight-border-width: 0.22rem;
+  --duel-highlight-interactive-border: color-mix(in oklab, var(--ui-border) 92%, white 8%);
+  --duel-highlight-interactive-bg: color-mix(in oklab, var(--ui-bg-elevated) 92%, white 8%);
+  --duel-highlight-preview-border: color-mix(in oklab, var(--ui-warning) 38%, white 62%);
+  --duel-highlight-preview-bg: color-mix(in oklab, var(--ui-warning) 10%, transparent);
+  --duel-highlight-selected-border: color-mix(in oklab, var(--ui-info) 58%, white 42%);
+  --duel-highlight-selected-bg: color-mix(in oklab, var(--ui-info) 16%, transparent);
+  --duel-highlight-source-border: color-mix(in oklab, var(--ui-primary) 52%, white 48%);
+  --duel-highlight-source-bg: color-mix(in oklab, var(--ui-primary) 14%, transparent);
+  --duel-highlight-targetable-border: color-mix(in oklab, var(--ui-success) 54%, white 46%);
+  --duel-highlight-targetable-bg: color-mix(in oklab, var(--ui-success) 16%, transparent);
+  --duel-highlight-drop-target-border: color-mix(in oklab, var(--ui-primary) 45%, var(--ui-success) 55%);
+  --duel-highlight-drop-target-bg: color-mix(in oklab, var(--ui-success) 22%, transparent);
+  --duel-highlight-invalid-border: color-mix(in oklab, var(--ui-error) 55%, white 45%);
+  --duel-highlight-invalid-bg: color-mix(in oklab, var(--ui-error) 14%, transparent);
+  --duel-feedback-impact-border: color-mix(in oklab, var(--ui-error) 46%, white 54%);
+  --duel-feedback-impact-bg: transparent;
+  --duel-feedback-impact-text: color-mix(in oklab, var(--ui-error) 74%, white 26%);
+  --duel-feedback-gain-border: color-mix(in oklab, var(--ui-success) 42%, white 58%);
+  --duel-feedback-gain-bg: transparent;
+  --duel-feedback-gain-text: color-mix(in oklab, var(--ui-success) 66%, white 34%);
+  --duel-feedback-status-border: color-mix(in oklab, var(--ui-info) 36%, white 64%);
+  --duel-feedback-status-bg: color-mix(in oklab, var(--ui-info) 11%, var(--ui-bg) 89%);
+  --duel-feedback-status-text: color-mix(in oklab, var(--ui-text-highlighted) 76%, var(--ui-info) 24%);
+  --duel-feedback-error-border: color-mix(in oklab, var(--ui-error) 52%, white 48%);
+  --duel-feedback-error-bg: color-mix(in oklab, var(--ui-error) 14%, var(--ui-bg) 86%);
+  --duel-feedback-error-text: color-mix(in oklab, var(--ui-error) 72%, white 28%);
+  --duel-feedback-narration-border: color-mix(in oklab, var(--ui-border) 74%, white 26%);
+  --duel-feedback-narration-bg: color-mix(in oklab, var(--ui-bg) 90%, white 10%);
+  --duel-feedback-narration-text: var(--ui-text-highlighted);
 }
 
 .duel-card-shell {
@@ -24,14 +56,125 @@
     filter 180ms ease-out;
 }
 
-.duel-targetable {
-  box-shadow:
-    0 0 0 0.24rem color-mix(in oklab, var(--ui-success) 16%, transparent),
-    0 0 1.2rem color-mix(in oklab, var(--ui-success) 18%, transparent);
+.duel-highlight {
+  transition:
+    outline-color 180ms ease-out,
+    outline-offset 180ms ease-out,
+    transform 180ms ease-out,
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    filter 180ms ease-out;
+  transform-origin: center;
+  border-radius: var(--duel-highlight-radius);
+  outline-offset: 0;
 }
 
+.duel-highlight--interactive {
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-interactive-border);
+  background: var(--duel-highlight-interactive-bg);
+}
+
+.duel-highlight--preview {
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-preview-border);
+  background: var(--duel-highlight-preview-bg);
+  transform: scale(1.02);
+  filter: saturate(1.03);
+}
+
+.duel-highlight--selected {
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-selected-border);
+  background: var(--duel-highlight-selected-bg);
+  transform: translateY(-2px) scale(1.03);
+  filter: saturate(1.05);
+}
+
+.duel-highlight--source {
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-source-border);
+  background: var(--duel-highlight-source-bg);
+}
+
+.duel-highlight--targetable,
+.duel-targetable {
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-targetable-border);
+  background: var(--duel-highlight-targetable-bg);
+}
+
+.duel-highlight--drop-target {
+  outline: calc(var(--duel-highlight-border-width) + 0.02rem) solid var(--duel-highlight-drop-target-border);
+  background: var(--duel-highlight-drop-target-bg);
+  outline-offset: 0.02rem;
+}
+
+.duel-highlight--invalid,
 .duel-invalid-target {
   animation: duel-invalid-target 220ms ease-out;
+  outline: var(--duel-highlight-border-width) solid var(--duel-highlight-invalid-border);
+  background: var(--duel-highlight-invalid-bg);
+}
+
+.duel-feedback {
+  border-style: solid;
+  border-width: 1px;
+  text-wrap: balance;
+}
+
+.duel-feedback--card,
+.duel-feedback--banner {
+  backdrop-filter: blur(4px);
+}
+
+.duel-feedback--floating {
+  text-shadow: 0 2px 4px rgb(15 23 42 / 0.42);
+}
+
+.duel-feedback--impact {
+  border-color: var(--duel-feedback-impact-border);
+  background: var(--duel-feedback-impact-bg);
+  color: var(--duel-feedback-impact-text);
+}
+
+.duel-feedback--gain {
+  border-color: var(--duel-feedback-gain-border);
+  background: var(--duel-feedback-gain-bg);
+  color: var(--duel-feedback-gain-text);
+}
+
+.duel-feedback--card.duel-feedback--impact,
+.duel-feedback--card.duel-feedback--gain,
+.duel-feedback--floating.duel-feedback--impact,
+.duel-feedback--floating.duel-feedback--gain {
+  border-color: transparent;
+  backdrop-filter: none;
+  text-shadow:
+    0 1px 1px rgb(15 23 42 / 0.32),
+    0 4px 10px rgb(15 23 42 / 0.18);
+}
+
+.duel-feedback--card.duel-feedback--impact {
+  letter-spacing: 0.14em;
+}
+
+.duel-feedback--card.duel-feedback--gain,
+.duel-feedback--floating.duel-feedback--gain {
+  letter-spacing: 0.06em;
+}
+
+.duel-feedback--status {
+  border-color: var(--duel-feedback-status-border);
+  background: var(--duel-feedback-status-bg);
+  color: var(--duel-feedback-status-text);
+}
+
+.duel-feedback--error {
+  border-color: var(--duel-feedback-error-border);
+  background: var(--duel-feedback-error-bg);
+  color: var(--duel-feedback-error-text);
+}
+
+.duel-feedback--narration {
+  border-color: var(--duel-feedback-narration-border);
+  background: var(--duel-feedback-narration-bg);
+  color: var(--duel-feedback-narration-text);
 }
 
 .duel-connection-waiting,
@@ -70,6 +213,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .duel-card-shell,
+  .duel-highlight,
   .duel-invalid-target,
   .duel-connection-waiting,
   .duel-connection-banner {

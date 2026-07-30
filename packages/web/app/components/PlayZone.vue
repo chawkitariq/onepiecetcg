@@ -6,6 +6,7 @@ import cardBackDon from '~/assets/card-back-don.png'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import donFront from '~/assets/don.png'
 import { createHoveredDuelCard } from '~/utils/hoveredDuelCard'
+import { resolveDuelHighlightClasses, resolveDuelHighlightState, type DuelHighlightState } from '~/utils/duelHighlight'
 
 type StackContainerSize = {
   width: number
@@ -34,6 +35,8 @@ const props = defineProps<{
   selectableCharacterIds?: string[]
   invalidLeaderPulse?: boolean
   invalidCharacterIds?: string[]
+  linkedPreviewInstanceId?: string | null
+  linkedSelectedInstanceIds?: string[]
   selectedDonCardIds?: string[]
   draggedHandCardInstanceId?: string | null
   draggedDonCardInstanceId?: string | null
@@ -57,6 +60,8 @@ const {
   targetableLeader,
   selectableLeader,
   invalidLeaderPulse,
+  linkedPreviewInstanceId,
+  linkedSelectedInstanceIds,
   selectedDonCardIds,
   draggedHandCardInstanceId,
   draggedDonCardInstanceId,
@@ -67,6 +72,7 @@ const {
   canDropDonOnCharacter,
   transitionGhosts
 } = toRefs(props)
+const appConfig = useAppConfig()
 
 /**
  * DON!! attached to a Leader/Character only grants +1000 power "during your
@@ -257,12 +263,33 @@ function isCharacterAttackable(instanceId: string) {
   return props.attackableCharacterIds?.includes(instanceId) ?? false
 }
 
+function duelHighlightClasses(state: DuelHighlightState) {
+  return resolveDuelHighlightClasses(appConfig, state)
+}
+
 function shouldPrioritizeSelectedDonAttach() {
   return selectedDonCount.value > 0
 }
 
+function shouldSuppressAttackDragForSelection(instanceId?: string) {
+  if (props.isSelectable) {
+    return true
+  }
+
+  if (instanceId && isCharacterSelectable(instanceId)) {
+    return true
+  }
+
+  return Boolean(props.selectableLeader)
+}
+
 function onCharacterPointerDown(instanceId: string, event: PointerEvent) {
-  if (event.button !== 0 || shouldPrioritizeSelectedDonAttach() || !isCharacterAttackable(instanceId)) {
+  if (
+    event.button !== 0
+    || shouldPrioritizeSelectedDonAttach()
+    || shouldSuppressAttackDragForSelection(instanceId)
+    || !isCharacterAttackable(instanceId)
+  ) {
     return
   }
 
@@ -278,7 +305,12 @@ function onCharacterClick(instanceId: string) {
 }
 
 function onLeaderPointerDown(event: PointerEvent) {
-  if (event.button !== 0 || shouldPrioritizeSelectedDonAttach() || !props.attackableLeader) {
+  if (
+    event.button !== 0
+    || shouldPrioritizeSelectedDonAttach()
+    || shouldSuppressAttackDragForSelection()
+    || !props.attackableLeader
+  ) {
     return
   }
 
@@ -315,6 +347,22 @@ function isCharacterInvalid(instanceId: string): boolean {
   return props.invalidCharacterIds?.includes(instanceId) ?? false
 }
 
+function isLinkedPreview(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return linkedPreviewInstanceId.value === instanceId
+}
+
+function isLinkedSelected(instanceId: string | null | undefined): boolean {
+  if (!instanceId) {
+    return false
+  }
+
+  return linkedSelectedInstanceIds.value?.includes(instanceId) ?? false
+}
+
 function isBoardCardDeferred(instanceId: string | null | undefined): boolean {
   if (!instanceId) {
     return false
@@ -337,6 +385,64 @@ function isTrashCardDeferred(instanceId: string | null | undefined): boolean {
   }
 
   return props.deferredTrashCardIds?.includes(instanceId) ?? false
+}
+
+function characterHighlightState(instanceId: string) {
+  return resolveDuelHighlightState({
+    invalid: isCharacterInvalid(instanceId),
+    'drop-target': isCharacterDonDropTargetActive(instanceId),
+    targetable: isCharacterTargetable(instanceId),
+    selected: isCharacterSelectable(instanceId) || isLinkedSelected(instanceId),
+    preview: isLinkedPreview(instanceId),
+    source: attackerId.value === instanceId,
+    interactive: isCharacterAttackable(instanceId)
+  })
+}
+
+function leaderHighlightState() {
+  return resolveDuelHighlightState({
+    invalid: props.invalidLeaderPulse,
+    'drop-target': isLeaderDonDropTargetActive.value,
+    targetable: props.targetableLeader,
+    selected: props.selectableLeader || isLinkedSelected(props.player.leader?.instanceId),
+    preview: isLinkedPreview(props.player.leader?.instanceId),
+    source: attackerId.value === props.player.leader?.instanceId,
+    interactive: props.attackableLeader
+  })
+}
+
+function characterZoneHighlightState() {
+  return resolveDuelHighlightState({
+    'drop-target': isCharacterZoneDropTargetActive.value
+  })
+}
+
+function stageZoneHighlightState() {
+  return resolveDuelHighlightState({
+    'drop-target': isStageZoneDropTargetActive.value
+  })
+}
+
+function donCardHighlightState(instanceId: string) {
+  return resolveDuelHighlightState({
+    selected: isDonCardSelected(instanceId) || isLinkedSelected(instanceId),
+    preview: isLinkedPreview(instanceId)
+  })
+}
+
+function stageHighlightState() {
+  return resolveDuelHighlightState({
+    'drop-target': isStageZoneDropTargetActive.value,
+    selected: isLinkedSelected(props.player.stage?.instanceId),
+    preview: isLinkedPreview(props.player.stage?.instanceId)
+  })
+}
+
+function trashHighlightState() {
+  return resolveDuelHighlightState({
+    selected: isLinkedSelected(visibleTrashCard.value?.instanceId),
+    preview: isLinkedPreview(visibleTrashCard.value?.instanceId)
+  })
 }
 
 function isDonCardSelected(instanceId: string): boolean {
@@ -679,7 +785,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
         :flipped="isAdversary"
         :count="player.characters.length"
         allow-overflow
-        :class="isCharacterZoneDropTargetActive ? 'border-success bg-success/5 ring-2 ring-success/70' : ''"
+        :class="duelHighlightClasses(characterZoneHighlightState())"
       >
         <div
           :data-character-side="side"
@@ -702,11 +808,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
               data-don-attach-target="true"
               class="duel-card-shell duel-layout-card relative h-full shrink-0 overflow-visible rounded-lg"
               :class="[
-                attackerId === character.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-                isCharacterTargetable(character.instanceId) ? 'duel-targetable ring-4 ring-success' : '',
-                isCharacterSelectable(character.instanceId) ? 'ring-4 ring-info/70' : '',
-                isCharacterDonDropTargetActive(character.instanceId) ? 'bg-success/5 ring-4 ring-success/70' : '',
-                isCharacterInvalid(character.instanceId) ? 'duel-invalid-target ring-4 ring-error' : '',
+                ...duelHighlightClasses(characterHighlightState(character.instanceId)),
                 isBoardCardDeferred(character.instanceId) ? 'pointer-events-none opacity-0' : '',
                 isTargetable && character.rested ? 'cursor-crosshair' : '',
                 isCharacterAttackable(character.instanceId) ? 'cursor-crosshair' : '',
@@ -770,12 +872,10 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           data-don-attach-target="true"
           class="duel-card-shell duel-layout-card relative h-full w-full overflow-visible rounded-lg"
           :class="[
-            attackerId === player.leader?.instanceId ? 'ring-4 ring-primary shadow-[0_0_0_0.25rem_color-mix(in_oklab,var(--ui-primary)_18%,transparent)]' : '',
-            targetableLeader ? 'duel-targetable ring-4 ring-success cursor-crosshair' : '',
+            ...duelHighlightClasses(leaderHighlightState()),
+            targetableLeader ? 'cursor-crosshair' : '',
             attackableLeader ? 'cursor-crosshair' : '',
-            selectableLeader ? 'ring-4 ring-info/70 cursor-pointer' : '',
-            isLeaderDonDropTargetActive ? 'bg-success/5 ring-4 ring-success/70' : '',
-            invalidLeaderPulse ? 'duel-invalid-target ring-4 ring-error' : ''
+            selectableLeader ? 'cursor-pointer' : ''
           ]"
           @pointerdown="onLeaderPointerDown"
           @click="onLeaderClick"
@@ -831,7 +931,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           data-drop-zone="stage"
           class="duel-card-shell duel-layout-card relative z-20 h-full w-full rounded-lg transition-colors duration-150"
           :class="[
-            isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : '',
+            ...duelHighlightClasses(stageHighlightState()),
             isBoardCardDeferred(player.stage.instanceId) ? 'pointer-events-none opacity-0' : ''
           ]"
           @click="emit('stageClick', side)"
@@ -850,7 +950,7 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
           type="button"
           data-drop-zone="stage"
           class="h-full w-full rounded-lg transition-colors duration-150"
-          :class="isStageZoneDropTargetActive ? 'bg-success/5 ring-2 ring-success/70' : ''"
+          :class="duelHighlightClasses(stageZoneHighlightState())"
           @click="emit('stageClick', side)"
           @dragenter="onStageZoneDragEnter"
           @dragleave="onStageZoneDragLeave"
@@ -953,7 +1053,8 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             class="duel-layout-card absolute top-0 h-full"
             :class="[
               isCostCardDeferred(entry.card.instanceId) ? 'pointer-events-none invisible' : '',
-              isDonCardSelected(entry.card.instanceId) ? 'ring-4 ring-info/70 rounded-lg' : '',
+              ...duelHighlightClasses(donCardHighlightState(entry.card.instanceId)),
+              'rounded-lg',
               isDonCardDraggable(entry.card.instanceId) ? 'cursor-grab active:cursor-grabbing' : ''
             ]"
             :style="costCardStyle(entry.index, entry.count, entry.state === 'rested')"
@@ -1008,8 +1109,11 @@ function onCharacterDonDrop(instanceId: string, event: DragEvent) {
             <div
               :data-layout-id="visibleLayoutId(visibleTrashCard.instanceId, isTrashCardDeferred(visibleTrashCard.instanceId))"
               :data-instance-id="visibleTrashCard.instanceId"
-              class="duel-layout-card h-full"
-              :class="isTrashCardDeferred(visibleTrashCard.instanceId) ? 'pointer-events-none opacity-0' : ''"
+              class="duel-layout-card h-full rounded-lg"
+              :class="[
+                ...duelHighlightClasses(trashHighlightState()),
+                isTrashCardDeferred(visibleTrashCard.instanceId) ? 'pointer-events-none opacity-0' : ''
+              ]"
             >
               <DuelCard :src="visibleTrashCard.imageUrl" />
             </div>

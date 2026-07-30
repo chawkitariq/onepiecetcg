@@ -166,6 +166,46 @@ describe('PlayZone transitions', () => {
     expect(zones.some(component => component.props('label') === 'Main')).toBe(false)
   })
 
+  it('applies the shared targetable highlight class to a valid character target', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a', { rested: true })]
+        }),
+        side: 0,
+        targetableCharacterIds: ['character-a']
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    expect(characterButton.classes()).toContain('duel-highlight')
+    expect(characterButton.classes()).toContain('duel-highlight--targetable')
+  })
+
+  it('applies the shared preview highlight class to a board card linked from an effect prompt hover', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        linkedPreviewInstanceId: 'character-a'
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    expect(characterButton.classes()).toContain('duel-highlight')
+    expect(characterButton.classes()).toContain('duel-highlight--preview')
+  })
+
   it('renders ghosts for hidden-zone transitions from life, deck and DON!! deck', () => {
     const wrapper = mount(PlayZone, {
       props: {
@@ -593,6 +633,31 @@ describe('PlayZone transitions', () => {
         side: 0,
         attackableCharacterIds: ['character-a'],
         selectedDonCardIds: ['don-ready-1', 'don-ready-2']
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const characterButton = wrapper.get('[data-instance-id="character-a"]')
+
+    await characterButton.trigger('pointerdown', { button: 0 })
+    await characterButton.trigger('click')
+
+    expect(wrapper.emitted('characterAttackStart')).toBeUndefined()
+    expect(wrapper.emitted('characterClick')).toEqual([[0, 'character-a']])
+  })
+
+  it('does not start an attack drag when an attackable character is being selected for replacement', async () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          characters: [createPublicCard('character-a')]
+        }),
+        side: 0,
+        isSelectable: true,
+        attackableCharacterIds: ['character-a'],
+        selectableCharacterIds: ['character-a']
       },
       global: {
         stubs: zoneTestStubs()

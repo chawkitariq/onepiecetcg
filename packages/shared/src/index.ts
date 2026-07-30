@@ -185,6 +185,7 @@ export type PublicCard = {
   type: CardType;
   colors: CardColor[];
   cost: number | null;
+  baseCost?: number | null;
   basePower?: number | null;
   power: number | null;
   life: number | null;
@@ -195,6 +196,21 @@ export type PublicCard = {
   rested: boolean;
   attachedDon: number;
   playedThisTurn: boolean;
+  hasRush: boolean;
+  hasDoubleAttack: boolean;
+  hasBanish: boolean;
+  canAttackActiveCharacters: boolean;
+  mustBeAttackTarget: boolean;
+  cannotAttack: boolean;
+  cannotAttackLeaderOnTurnPlayed: boolean;
+  cannotBlock: boolean;
+  cannotBeKoedInBattle: boolean;
+  cannotBeKoedByEffects: boolean;
+  cannotBeKoedBySlashInBattle: boolean;
+  cannotBeKoedByStrikeInBattle: boolean;
+  winOnDeckOut: boolean;
+  cannotAttackUntilTurn: number;
+  skipNextRefreshPhases: number;
 };
 
 export type PrivateCard = PublicCard & {
