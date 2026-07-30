@@ -1,4 +1,5 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DuelEventBusService } from './duel-event-bus.service';
@@ -15,10 +16,10 @@ const MAX_ATTEMPTS = 10;
  * marks them published or rescheduled.
  */
 @Injectable()
-export class DuelEventRelayService implements OnModuleDestroy {
+export class DuelEventRelayService {
   private readonly logger = new Logger(DuelEventRelayService.name);
 
-  private timer: NodeJS.Timeout | null = null;
+  private isProcessing = false;
 
   public constructor(
     @InjectRepository(DuelEventOutbox)
@@ -26,25 +27,20 @@ export class DuelEventRelayService implements OnModuleDestroy {
     private readonly bus: DuelEventBusService,
   ) {}
 
-  /** Starts the lightweight polling worker if it is not already running. */
-  public start(intervalMs = DEFAULT_RELAY_INTERVAL_MS): void {
-    if (this.timer) {
+  /** Runs the outbox polling worker on Nest's scheduler interval. */
+  @Interval(DEFAULT_RELAY_INTERVAL_MS)
+  public async runScheduledBatch(): Promise<void> {
+    if (this.isProcessing) {
       return;
     }
 
-    this.timer = setInterval(() => {
-      void this.processPendingBatch();
-    }, intervalMs);
-  }
+    this.isProcessing = true;
 
-  /** Stops the polling worker. */
-  public stop(): void {
-    if (!this.timer) {
-      return;
+    try {
+      await this.processPendingBatch();
+    } finally {
+      this.isProcessing = false;
     }
-
-    clearInterval(this.timer);
-    this.timer = null;
   }
 
   /** Publishes the next due batch of outbox rows. */
@@ -90,10 +86,6 @@ export class DuelEventRelayService implements OnModuleDestroy {
     await this.outbox.save(dueRows);
 
     return published;
-  }
-
-  public onModuleDestroy(): void {
-    this.stop();
   }
 
   private async claimPendingBatch(

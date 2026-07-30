@@ -9,6 +9,20 @@ type MockRelayManager = {
   save: jest.Mock;
 };
 
+type Deferred = {
+  promise: Promise<void>;
+  resolve: () => void;
+};
+
+function createDeferred(): Deferred {
+  let resolve = () => {};
+  const promise = new Promise<void>((innerResolve) => {
+    resolve = innerResolve;
+  });
+
+  return { promise, resolve };
+}
+
 function createOutboxRow(): DuelEventOutbox {
   return Object.assign(new DuelEventOutbox(), {
     eventId: 'evt-1',
@@ -38,6 +52,31 @@ function createOutboxRow(): DuelEventOutbox {
 }
 
 describe('DuelEventRelayService', () => {
+  it('runs the scheduled batch only once at a time', async () => {
+    const outbox = {} as jest.Mocked<Repository<DuelEventOutbox>>;
+    const bus = {} as jest.Mocked<DuelEventBusService>;
+    const relay = new DuelEventRelayService(outbox, bus);
+    const releaseFirstRun = createDeferred();
+    const firstRunStarted = createDeferred();
+    const processSpy = jest
+      .spyOn(relay, 'processPendingBatch')
+      .mockImplementationOnce(async () => {
+        firstRunStarted.resolve();
+        await releaseFirstRun.promise;
+        return 0;
+      })
+      .mockResolvedValue(0);
+
+    const firstRun = relay.runScheduledBatch();
+    await firstRunStarted.promise;
+
+    await relay.runScheduledBatch();
+    expect(processSpy).toHaveBeenCalledTimes(1);
+
+    releaseFirstRun.resolve();
+    await firstRun;
+  });
+
   it('publishes pending rows and marks them published', async () => {
     const row = createOutboxRow();
     const queryBuilder = {

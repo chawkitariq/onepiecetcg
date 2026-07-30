@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -24,6 +25,7 @@ import { StatsModule } from './stats/stats.module';
       envFilePath: ['packages/api/.env', '.env'],
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     AuthModule.forRoot({
       auth: createAuth(),
       disableGlobalAuthGuard: true,
