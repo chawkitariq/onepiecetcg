@@ -5,6 +5,8 @@ import { Encoder } from '@colyseus/schema';
 import type { Server as HttpServer } from 'node:http';
 import { createAuth } from '../auth';
 import { DeckService } from '../deck/deck.service';
+import { DuelDomainEventsService } from '../duel-events/duel-domain-events.service';
+import { DuelEventRelayService } from '../duel-events/duel-event-relay.service';
 import { StatsService } from '../stats/stats.service';
 import {
   DuelRoom,
@@ -19,6 +21,8 @@ export class ColyseusService implements OnModuleDestroy {
   constructor(
     private readonly decksService: DeckService,
     private readonly statsService: StatsService,
+    private readonly duelEventsService: DuelDomainEventsService,
+    private readonly duelEventRelay: DuelEventRelayService,
   ) {}
 
   attach(server: HttpServer): Server {
@@ -36,6 +40,7 @@ export class ColyseusService implements OnModuleDestroy {
     configureDuelRoomServices({
       decksService: this.decksService,
       statsService: this.statsService,
+      duelEventsService: this.duelEventsService,
     });
     configureDuelRoomAuth(async (requestHeaders) => {
       const headers = new Headers();
@@ -50,11 +55,13 @@ export class ColyseusService implements OnModuleDestroy {
       transport: new WebSocketTransport({ server }),
     });
     this.gameServer.define('duel', DuelRoom);
+    this.duelEventRelay.start();
 
     return this.gameServer;
   }
 
   async onModuleDestroy() {
+    this.duelEventRelay.stop();
     await this.gameServer?.gracefullyShutdown(false);
   }
 }

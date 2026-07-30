@@ -13,6 +13,7 @@ import { BetterAuthVerification } from './better-auth/better-auth-verification.e
 import { CatalogModule } from './catalog/catalog.module';
 import { ColyseusService } from './colyseus/colyseus.service';
 import { DeckModule } from './deck/deck.module';
+import { DuelEventsModule } from './duel-events/duel-events.module';
 import { LobbyController } from './lobby/lobby.controller';
 import { getApiConfig } from './runtime-config';
 import { StatsModule } from './stats/stats.module';
@@ -51,6 +52,7 @@ import { StatsModule } from './stats/stats.module';
     CatalogModule,
     DeckModule,
     StatsModule,
+    DuelEventsModule,
   ],
   controllers: [AppController, LobbyController],
   providers: [AppService, ColyseusService],
