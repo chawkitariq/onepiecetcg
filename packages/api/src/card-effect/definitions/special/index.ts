@@ -1,4 +1,12 @@
 import type { SpecialHandlerDefinition } from '../../types/effect-registry';
+import { eb01001CounterRuleSpecialHandler } from './eb01-001.special';
+import { eb01038CounterRedirectAttackSpecialHandler } from './eb01-038.special';
+import { eb01040LifeFaceUpKoCost0SpecialHandler } from './eb01-040.special';
+import { eb01052ChooseLifeManipulationSpecialHandler } from './eb01-052.special';
+import { eb01059MainKoAndTrashLifeSpecialHandler } from './eb01-059.special';
+import { eb01060MainPlayEnelAndTrashLifeSpecialHandler } from './eb01-060.special';
+import { eb01061WhenAttackingCopyPowerSpecialHandler } from './eb01-061.special';
+import { eb02039SpecialHandler } from './eb02-039.special';
 import { op04047SpecialHandler } from './op04-047.special';
 import { op04048SpecialHandler } from './op04-048.special';
 import { op05002SpecialHandler } from './op05-002.special';
@@ -96,6 +104,27 @@ import { op13114SpecialHandler } from './op13-114.special';
 import { op13117SpecialHandler } from './op13-117.special';
 import { op13118SpecialHandler } from './op13-118.special';
 import { op13119SpecialHandler } from './op13-119.special';
+import { op14001SpecialHandler } from './op14-001.special';
+import { op14009SpecialHandler } from './op14-009.special';
+import { op14017SpecialHandler } from './op14-017.special';
+import { op14020SpecialHandler } from './op14-020.special';
+import { op14021SpecialHandler } from './op14-021.special';
+import { op14033SpecialHandler } from './op14-033.special';
+import { op14035SpecialHandler } from './op14-035.special';
+import { op14053SpecialHandler } from './op14-053.special';
+import { op14056SpecialHandler } from './op14-056.special';
+import { op14060SpecialHandler } from './op14-060.special';
+import { op14062SpecialHandler } from './op14-062.special';
+import { op14069SpecialHandler } from './op14-069.special';
+import { op14070SpecialHandler } from './op14-070.special';
+import { op14079SpecialHandler } from './op14-079.special';
+import { op14096SpecialHandler } from './op14-096.special';
+import { op14103SpecialHandler } from './op14-103.special';
+import { op14104SpecialHandler } from './op14-104.special';
+import { op14105SpecialHandler } from './op14-105.special';
+import { op14111SpecialHandler } from './op14-111.special';
+import { op14115SpecialHandler } from './op14-115.special';
+import { op14119SpecialHandler } from './op14-119.special';
 import { op15001SpecialHandler } from './op15-001.special';
 import { op15002SpecialHandler } from './op15-002.special';
 import { op15008SpecialHandler } from './op15-008.special';
@@ -119,29 +148,16 @@ import { op16084SpecialHandler } from './op16-084.special';
 import { op16115SpecialHandler } from './op16-115.special';
 import { op16118SpecialHandler } from './op16-118.special';
 import { op16119SpecialHandler } from './op16-119.special';
-import { op14001SpecialHandler } from './op14-001.special';
-import { op14009SpecialHandler } from './op14-009.special';
-import { op14017SpecialHandler } from './op14-017.special';
-import { op14020SpecialHandler } from './op14-020.special';
-import { op14021SpecialHandler } from './op14-021.special';
-import { op14033SpecialHandler } from './op14-033.special';
-import { op14035SpecialHandler } from './op14-035.special';
-import { op14053SpecialHandler } from './op14-053.special';
-import { op14056SpecialHandler } from './op14-056.special';
-import { op14060SpecialHandler } from './op14-060.special';
-import { op14062SpecialHandler } from './op14-062.special';
-import { op14069SpecialHandler } from './op14-069.special';
-import { op14070SpecialHandler } from './op14-070.special';
-import { op14079SpecialHandler } from './op14-079.special';
-import { op14096SpecialHandler } from './op14-096.special';
-import { op14103SpecialHandler } from './op14-103.special';
-import { op14104SpecialHandler } from './op14-104.special';
-import { op14105SpecialHandler } from './op14-105.special';
-import { op14111SpecialHandler } from './op14-111.special';
-import { op14115SpecialHandler } from './op14-115.special';
-import { op14119SpecialHandler } from './op14-119.special';
 
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
+  eb01001CounterRuleSpecialHandler,
+  eb01038CounterRedirectAttackSpecialHandler,
+  eb01040LifeFaceUpKoCost0SpecialHandler,
+  eb01052ChooseLifeManipulationSpecialHandler,
+  eb01059MainKoAndTrashLifeSpecialHandler,
+  eb01060MainPlayEnelAndTrashLifeSpecialHandler,
+  eb01061WhenAttackingCopyPowerSpecialHandler,
+  eb02039SpecialHandler,
   op04047SpecialHandler,
   op04048SpecialHandler,
   op05002SpecialHandler,
@@ -239,6 +255,27 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op13117SpecialHandler,
   op13118SpecialHandler,
   op13119SpecialHandler,
+  op14001SpecialHandler,
+  op14009SpecialHandler,
+  op14017SpecialHandler,
+  op14020SpecialHandler,
+  op14021SpecialHandler,
+  op14033SpecialHandler,
+  op14035SpecialHandler,
+  op14053SpecialHandler,
+  op14056SpecialHandler,
+  op14060SpecialHandler,
+  op14062SpecialHandler,
+  op14069SpecialHandler,
+  op14070SpecialHandler,
+  op14079SpecialHandler,
+  op14096SpecialHandler,
+  op14103SpecialHandler,
+  op14104SpecialHandler,
+  op14105SpecialHandler,
+  op14111SpecialHandler,
+  op14115SpecialHandler,
+  op14119SpecialHandler,
   op15001SpecialHandler,
   op15002SpecialHandler,
   op15008SpecialHandler,
@@ -262,26 +299,4 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op16115SpecialHandler,
   op16118SpecialHandler,
   op16119SpecialHandler,
-
-  op14001SpecialHandler,
-  op14009SpecialHandler,
-  op14017SpecialHandler,
-  op14020SpecialHandler,
-  op14021SpecialHandler,
-  op14033SpecialHandler,
-  op14035SpecialHandler,
-  op14053SpecialHandler,
-  op14056SpecialHandler,
-  op14060SpecialHandler,
-  op14062SpecialHandler,
-  op14069SpecialHandler,
-  op14070SpecialHandler,
-  op14079SpecialHandler,
-  op14096SpecialHandler,
-  op14103SpecialHandler,
-  op14104SpecialHandler,
-  op14105SpecialHandler,
-  op14111SpecialHandler,
-  op14115SpecialHandler,
-  op14119SpecialHandler,
 ] as const;

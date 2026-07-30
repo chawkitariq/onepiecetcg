@@ -1808,7 +1808,7 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'edward-newgate-044-on-play-whitebeard-reveal-draw-2-trash-1',
-            text: "[On Play] Reveal 1 card from the top of your deck. If that card's type includes \"Whitebeard Pirates\", draw 2 cards and trash 1 card from your hand.",
+            text: '[On Play] Reveal 1 card from the top of your deck. If that card\'s type includes "Whitebeard Pirates", draw 2 cards and trash 1 card from your hand.',
             trigger: {
               type: 'onPlay',
             },
@@ -5107,6 +5107,17 @@ export const op14EffectDefinitions: EditionEffectDefinitions = {
               },
             ],
           },
+        },
+      ],
+    },
+    // OP14-035 Yosaku
+    // [Your Turn] When this Character becomes rested, up to 1 of your opponent's rested Characters with a cost of 4 or less will not become active in your opponent's next Refresh Phase.
+    {
+      cardId: 'OP14-035',
+      effects: [
+        {
+          kind: 'special-ref',
+          specialHandlerId: 'op14-035-special',
         },
       ],
     },

@@ -1,4 +1,8 @@
 import type { EditionEffectDefinitions } from '../types/effect-definition-source';
+import { eb01EffectDefinitions } from './eb01.effects';
+import { eb02EffectDefinitions } from './eb02.effects';
+import { eb03EffectDefinitions } from './eb03.effects';
+import { eb04EffectDefinitions } from './eb04.effects';
 import { op01EffectDefinitions } from './op01.effects';
 import { op02EffectDefinitions } from './op02.effects';
 import { op03EffectDefinitions } from './op03.effects';
@@ -17,6 +21,10 @@ import { op15EffectDefinitions } from './op15.effects';
 import { op16EffectDefinitions } from './op16.effects';
 
 export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [
+  eb01EffectDefinitions,
+  eb02EffectDefinitions,
+  eb03EffectDefinitions,
+  eb04EffectDefinitions,
   op01EffectDefinitions,
   op02EffectDefinitions,
   op03EffectDefinitions,
