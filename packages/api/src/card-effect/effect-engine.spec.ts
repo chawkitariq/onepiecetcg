@@ -1051,6 +1051,96 @@ describe('EffectEngine', () => {
     expect(target.cost).toBe(4);
   });
 
+  it('does not trigger onTurnEnd effects for matching cards controlled by the opponent', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+
+    const endTurnDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'TURN-END-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'turn-end-draw',
+                text: 'At the end of your turn, draw 1 card.',
+                trigger: { type: 'onTurnEnd' as const },
+                actions: [
+                  {
+                    type: 'draw' as const,
+                    player: 'self' as const,
+                    amount: 1,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'P1-DRAW',
+        number: 'P1-DRAW',
+        name: 'P1 Draw',
+        type: 'Character',
+      }),
+      'p1-draw',
+    );
+    host.addCardToZone(
+      'p2',
+      'deck',
+      makeCard({
+        id: 'P2-DRAW',
+        number: 'P2-DRAW',
+        name: 'P2 Draw',
+        type: 'Character',
+      }),
+      'p2-draw',
+    );
+
+    const p1Source = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'TURN-END-001',
+        number: 'TURN-END-001',
+        name: 'Turn End Source',
+        type: 'Character',
+      }),
+      'p1-turn-end-source',
+    );
+    host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'TURN-END-001',
+        number: 'TURN-END-001',
+        name: 'Turn End Source',
+        type: 'Character',
+      }),
+      'p2-turn-end-source',
+    );
+
+    const engine = new EffectEngine(createRegistry([endTurnDefinition]), host);
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p1',
+      sourceInstanceId: p1Source.instanceId,
+      sourceCardId: p1Source.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+    expect(host.getPlayer('p2')?.zones.hand).toHaveLength(0);
+  });
+
   it('keeps next-turn modifiers through end of turn, then clears them at your next turn start', () => {
     const host = new TestHost();
     host.addPlayer('p1');

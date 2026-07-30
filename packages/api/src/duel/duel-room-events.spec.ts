@@ -1203,6 +1203,7 @@ describe('DuelRoom event integration', () => {
   it('adopts an isolated end-phase runtime that pauses on an effect decision', async () => {
     const { room } = await createRoomFixture();
     const access = asPrivateRoom(room);
+    const liveStateBefore = room.state;
     const firstSessionId = room.state.startingPlayerSessionId;
     const secondSessionId =
       firstSessionId === 'session-a' ? 'session-b' : 'session-a';
@@ -1230,24 +1231,96 @@ describe('DuelRoom event integration', () => {
 
     const pendingDecision = (
       room as unknown as {
-        effectBoundary: {
-          getPendingEffectDecision: () => {
-            id: string;
-            playerSessionId: string;
-            prompt: { type: string };
-          } | null;
-        };
+        pendingInteractionRuntime?: {
+          gameplayRuntime: {
+            effectBoundary: {
+              getPendingEffectDecision: () => {
+                id: string;
+                playerSessionId: string;
+                prompt: { type: string };
+              } | null;
+            };
+          };
+        } | null;
       }
-    ).effectBoundary.getPendingEffectDecision();
+    ).pendingInteractionRuntime?.gameplayRuntime.effectBoundary.getPendingEffectDecision();
 
     expect(room.state.activePlayerSessionId).toBe(secondSessionId);
     expect(room.state.phase).toBe('refresh');
+    expect(room.state).toBe(liveStateBefore);
     expect(pendingDecision).toEqual(
       expect.objectContaining({
         playerSessionId: firstSessionId,
         prompt: expect.objectContaining({ type: 'confirm' }),
       }),
     );
+
+    await disposeRoom(room);
+  });
+
+  it('clears the pending interaction immediately after resolving an end-turn effect decision', async () => {
+    const { room } = await createRoomFixture();
+    const access = asPrivateRoom(room);
+    const firstSessionId = room.state.startingPlayerSessionId;
+    const secondSessionId =
+      firstSessionId === 'session-a' ? 'session-b' : 'session-a';
+
+    await access.handleChooseFirstOrSecond(
+      { sessionId: firstSessionId },
+      { choice: 'first' },
+    );
+    await access.handleMulligan(
+      { sessionId: firstSessionId },
+      { mulligan: false },
+    );
+    await access.handleMulligan(
+      { sessionId: secondSessionId },
+      { mulligan: false },
+    );
+    await advanceToMain(room, firstSessionId);
+
+    const player = room.state.players.get(firstSessionId);
+    const characterInstanceId = putCharacterInPlay(player, 'C-001', true);
+    retuneAsPicaEndTurnEffectCard(player, characterInstanceId);
+
+    await access.handleEndPhase(fakeClient(firstSessionId));
+    await access.handleEndPhase(fakeClient(firstSessionId));
+
+    const pendingDecision = (
+      room as unknown as {
+        pendingInteractionRuntime?: {
+          gameplayRuntime: {
+            effectBoundary: {
+              getPendingEffectDecision: () => {
+                id: string;
+              } | null;
+            };
+          };
+        } | null;
+        hasPendingPlayerInteraction: () => boolean;
+      }
+    ).pendingInteractionRuntime?.gameplayRuntime.effectBoundary.getPendingEffectDecision();
+
+    expect(pendingDecision?.id).toBeTruthy();
+
+    const nextTurnClient = fakeClient(secondSessionId);
+
+    await access.handleResolveEffectDecision(fakeClient(firstSessionId), {
+      decisionId: pendingDecision?.id ?? '',
+      confirmed: false,
+    });
+
+    expect(
+      (room as unknown as { hasPendingPlayerInteraction: () => boolean })
+        .hasPendingPlayerInteraction(),
+    ).toBe(false);
+
+    await access.handleEndPhase(nextTurnClient);
+
+    expect(nextTurnClient.send).not.toHaveBeenCalledWith('actionError', {
+      message: "Une decision d'effet est en attente.",
+    });
+    expect(room.state.phase).toBe('draw');
 
     await disposeRoom(room);
   });

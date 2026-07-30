@@ -211,6 +211,224 @@ describe('EB01 behavioral tests', () => {
     expect(host.getPlayer('p1')!.zones.hand.length).toBe(2);
   });
 
+  it('EB01-021 Hannyabal: declining the optional end-step effect leaves state unchanged', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+
+    host.addCardToZone(
+      'p1',
+      'donDeck',
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'don-1',
+    );
+
+    const target = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'IMP-1',
+        number: 'IMP-1',
+        name: 'Impel Down Target',
+        type: 'Character',
+        cost: 2,
+        power: 2000,
+        families: ['Impel Down'],
+      }),
+      'impel-down-target',
+    );
+
+    const hannyabal = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'EB01-021',
+        number: 'EB01-021',
+        name: 'Hannyabal',
+        type: 'Character',
+        cost: 4,
+        power: 5000,
+      }),
+      'hannyabal',
+    );
+
+    const registry = createRegistry([eb01EffectDefinitions]);
+    const engine = new EffectEngine(registry, host);
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p1',
+      sourceInstanceId: hannyabal.instanceId,
+      sourceCardId: 'EB01-021',
+    });
+
+    const decision = engine.getPendingDecision();
+    expect(decision?.prompt.type).toBe('confirm');
+
+    engine.answerDecision({
+      decisionId: decision!.id,
+      confirmed: false,
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+    expect(host.getPlayer('p1')!.zones.characters.some(card => card.instanceId === target.instanceId)).toBe(true);
+    expect(host.getPlayer('p1')!.zones.hand).toHaveLength(0);
+    expect(host.getPlayer('p1')!.zones.cost).toHaveLength(0);
+  });
+
+  it("EB01-021 Hannyabal: does not prompt during the opponent's end step", () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'EB01-021',
+        number: 'EB01-021',
+        name: 'Hannyabal',
+        type: 'Character',
+        cost: 4,
+        power: 5000,
+      }),
+      'hannyabal',
+    );
+
+    const registry = createRegistry([eb01EffectDefinitions]);
+    const engine = new EffectEngine(registry, host);
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p2',
+      sourceInstanceId: 'foreign-turn-window',
+      sourceCardId: 'TURN-WINDOW',
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+  });
+
+  it('EB01-021 Hannyabal: confirming the effect prompts for an Impel Down character and adds active DON!!', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+
+    host.addCardToZone(
+      'p1',
+      'donDeck',
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'don-1',
+    );
+
+    const validTarget = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'IMP-1',
+        number: 'IMP-1',
+        name: 'Impel Down Target',
+        type: 'Character',
+        cost: 2,
+        power: 2000,
+        families: ['Impel Down'],
+      }),
+      'impel-down-target',
+    );
+
+    const secondValidTarget = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'IMP-2',
+        number: 'IMP-2',
+        name: 'Second Impel Down Target',
+        type: 'Character',
+        cost: 3,
+        power: 3000,
+        families: ['Impel Down'],
+      }),
+      'second-impel-down-target',
+    );
+
+    host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'NAVY-1',
+        number: 'NAVY-1',
+        name: 'Invalid Target',
+        type: 'Character',
+        cost: 4,
+        power: 3000,
+        families: ['Navy'],
+      }),
+      'invalid-target',
+    );
+
+    const hannyabal = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'EB01-021',
+        number: 'EB01-021',
+        name: 'Hannyabal',
+        type: 'Character',
+        cost: 4,
+        power: 5000,
+      }),
+      'hannyabal',
+    );
+
+    const registry = createRegistry([eb01EffectDefinitions]);
+    const engine = new EffectEngine(registry, host);
+
+    engine.handleEvent({
+      type: 'onTurnEnd',
+      playerSessionId: 'p1',
+      sourceInstanceId: hannyabal.instanceId,
+      sourceCardId: 'EB01-021',
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+
+    engine.answerDecision({
+      decisionId: confirmDecision!.id,
+      confirmed: true,
+    });
+
+    const selectDecision = engine.getPendingDecision();
+    expect(selectDecision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: selectDecision!.id,
+      selectedCardInstanceIds: [validTarget.instanceId],
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+    expect(host.getPlayer('p1')!.zones.characters.some(card => card.instanceId === validTarget.instanceId)).toBe(false);
+    expect(host.getPlayer('p1')!.zones.characters.some(card => card.instanceId === secondValidTarget.instanceId)).toBe(true);
+    expect(host.getPlayer('p1')!.zones.hand.some(card => card.instanceId === validTarget.instanceId)).toBe(true);
+    expect(host.getPlayer('p1')!.zones.cost).toHaveLength(1);
+    expect(host.getPlayer('p1')!.zones.cost[0]?.rested).toBe(false);
+  });
+
   it('EB01-023: [On Play] draws 1 card (EB01-023 Weevil)', () => {
     const host = new TestHost();
     host.addPlayer('p1');

@@ -210,7 +210,7 @@ describe('DuelRoomEffectBoundary', () => {
     );
 
     expect(resolved).toEqual({ ok: true });
-    expect(restoredFixture.alice.zones.hand).toContain(restoredCard);
+    expect(restoredFixture.alice.zones.hand).toContainEqual(restoredCard);
     expect(restoredFixture.boundary.hasPendingPlayerInteraction()).toBe(false);
     expect(restoredFixture.state.combat.awaitingTriggerDecision).toBe(false);
   });

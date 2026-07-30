@@ -789,6 +789,7 @@ export const eb01EffectDefinitions: EditionEffectDefinitions = {
             id: 'hannyabal-end-of-turn-return-impel-down-to-add-don',
             text: '[End of Your Turn] You may return 1 of your "Impel Down" type Characters with a cost of 2 or more to the owner\'s hand: Add up to 1 DON!! card from your DON!! deck and set it as active.',
             trigger: { type: 'onTurnEnd', optional: true },
+            conditions: [{ type: 'controllerTurn', value: true }],
             costs: [
               {
                 type: 'moveCard',

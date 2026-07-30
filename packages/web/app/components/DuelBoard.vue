@@ -2240,11 +2240,12 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  [phase, isSelfTurn, isCombatInProgress],
-  ([currentPhase, selfTurn, combatInProgress]) => {
+  [phase, isSelfTurn, isCombatInProgress, isAwaitingEffectDecision, pendingEffectDecision],
+  ([currentPhase, selfTurn, combatInProgress, awaitingEffectDecision, decision]) => {
     if (
       !selfTurn
       || combatInProgress
+      || (awaitingEffectDecision && !decision)
       || !AUTO_ADVANCE_PHASES.has(currentPhase)
       || currentPhase === 'finished'
     ) {
@@ -2255,6 +2256,7 @@ watch(
       if (
         isSelfTurn.value
         && !isCombatInProgress.value
+        && !(isAwaitingEffectDecision.value && !pendingEffectDecision.value)
         && phase.value === currentPhase
         && AUTO_ADVANCE_PHASES.has(currentPhase)
       ) {

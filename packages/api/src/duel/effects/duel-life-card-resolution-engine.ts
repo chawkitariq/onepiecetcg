@@ -1,3 +1,4 @@
+import { ArraySchema } from '@colyseus/schema';
 import type { DuelCard, DuelPlayer } from '@onepiecetcg/shared';
 
 /**
@@ -24,6 +25,18 @@ export class DuelLifeCardResolutionEngine {
   public constructor(private readonly deps: DuelLifeCardResolutionEngineDeps) {}
 
   /**
+   * Prepends a moved card without detaching its Colyseus change tree.
+   */
+  private unshiftIntoZone(zone: ArraySchema<DuelCard>, card: DuelCard): void {
+    zone.push(card);
+    zone.move(() => {
+      for (let index = zone.length - 1; index > 0; index -= 1) {
+        [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
+      }
+    });
+  }
+
+  /**
    * Resolves a revealed life card into hand, trigger pipeline, or manual
    * fallback depending on authored support.
    */
@@ -32,7 +45,7 @@ export class DuelLifeCardResolutionEngine {
     revealedCard: DuelCard,
   ): 'addedToHand' | 'engineTrigger' | 'manualFallback' {
     if (this.deps.hasLocalTriggerDefinition(revealedCard.cardId)) {
-      defender.zones.trash.unshift(revealedCard);
+      this.unshiftIntoZone(defender.zones.trash, revealedCard);
       this.deps.broadcastCardView(revealedCard);
       this.deps.emitTriggerEvent(defender.sessionId, revealedCard);
       return 'engineTrigger';

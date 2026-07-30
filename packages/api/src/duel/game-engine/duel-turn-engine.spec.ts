@@ -126,6 +126,7 @@ describe('DuelTurnEngine', () => {
     expect(state.players.get('session-b')?.zones.hand).toHaveLength(5);
     expect(addLog).toHaveBeenCalledWith(
       'Alice a ete designe pour choisir de jouer en premier ou en second.',
+      'session-a',
     );
   });
 
@@ -146,7 +147,10 @@ describe('DuelTurnEngine', () => {
     expect(state.players.get('session-a')?.zones.life).toHaveLength(1);
     expect(state.players.get('session-b')?.zones.life).toHaveLength(1);
     expect(onMatchStarted).toHaveBeenCalledTimes(1);
-    expect(emitWindowEffects).toHaveBeenCalledWith('onTurnStart');
+    expect(emitWindowEffects).toHaveBeenCalledWith(
+      'onTurnStart',
+      'session-a',
+    );
   });
 
   it('awards the win to the drawing player when their Leader has winOnDeckOut', () => {
@@ -193,6 +197,7 @@ describe('DuelTurnEngine', () => {
     expect(effectBoundary.reapplyContinuousEffects).toHaveBeenCalledTimes(1);
     expect(effectBoundary.emitWindowEffects).toHaveBeenCalledWith(
       'onTurnStart',
+      'session-a',
     );
   });
 });

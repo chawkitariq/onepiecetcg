@@ -177,8 +177,11 @@ export class DuelRoomEffectBoundary {
     });
   }
 
-  public emitWindowEffects(type: 'onTurnStart' | 'onTurnEnd'): void {
-    this.dispatcher.emitWindowEffects(type);
+  public emitWindowEffects(
+    type: 'onTurnStart' | 'onTurnEnd',
+    playerSessionId: string,
+  ): void {
+    this.dispatcher.emitWindowEffects(type, playerSessionId);
   }
 
   public emitPlayedCard(

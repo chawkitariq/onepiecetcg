@@ -28,16 +28,29 @@ export function useDuelRoomTransport(): DuelRoomTransport {
   const errorMessage = ref<string | null>(null)
   const pendingEffectDecision = ref<PendingEffectDecision | null>(null)
   const effectDecisionWaitingOnSessionId = ref<string | null>(null)
+  const effectDecisionSubmissionInFlight = ref(false)
 
   function onRoomStateChange() {
     version.value += 1
   }
 
   function onActionError(payload: ActionErrorMessage) {
+    if (
+      payload.message === "Une decision d'effet est en attente."
+      && (
+        effectDecisionSubmissionInFlight.value
+        || Boolean(effectDecisionWaitingOnSessionId.value)
+      )
+    ) {
+      return
+    }
+
+    effectDecisionSubmissionInFlight.value = false
     errorMessage.value = payload.message
   }
 
   function onPendingEffectDecision(payload: PendingEffectDecision) {
+    effectDecisionSubmissionInFlight.value = false
     pendingEffectDecision.value = payload
     effectDecisionWaitingOnSessionId.value = payload.playerSessionId
   }
@@ -51,10 +64,12 @@ export function useDuelRoomTransport(): DuelRoomTransport {
   }
 
   function onClearEffectDecisionWaiting() {
+    effectDecisionSubmissionInFlight.value = false
     effectDecisionWaitingOnSessionId.value = null
   }
 
   function clearLocalDecisionState() {
+    effectDecisionSubmissionInFlight.value = false
     pendingEffectDecision.value = null
     effectDecisionWaitingOnSessionId.value = null
   }
@@ -65,6 +80,8 @@ export function useDuelRoomTransport(): DuelRoomTransport {
 
   function resolveEffectDecision(response: EffectDecisionResponse) {
     errorMessage.value = null
+    pendingEffectDecision.value = null
+    effectDecisionSubmissionInFlight.value = true
     sendMessage('resolveEffectDecision', response)
   }
 

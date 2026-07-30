@@ -98,11 +98,37 @@ function cardMatchesSelectorFilter(
     return false
   }
 
+  if (filter.trait && !filter.trait.some(trait => card.families?.includes(trait))) {
+    return false
+  }
+
+  if (filter.traitIncludes && !filter.traitIncludes.some(trait =>
+    card.families?.some(family => family.includes(trait))
+  )) {
+    return false
+  }
+
   if (filter.name && !filter.name.includes(card.name)) {
     return false
   }
 
   if (filter.excludeName && filter.excludeName.includes(card.name)) {
+    return false
+  }
+
+  if (typeof filter.baseCostMax === 'number' && (card.baseCost ?? card.cost ?? Number.POSITIVE_INFINITY) > filter.baseCostMax) {
+    return false
+  }
+
+  if (typeof filter.baseCostMin === 'number' && (card.baseCost ?? card.cost ?? Number.NEGATIVE_INFINITY) < filter.baseCostMin) {
+    return false
+  }
+
+  if (typeof filter.basePowerMax === 'number' && (card.basePower ?? card.power ?? Number.POSITIVE_INFINITY) > filter.basePowerMax) {
+    return false
+  }
+
+  if (typeof filter.basePowerMin === 'number' && (card.basePower ?? card.power ?? Number.NEGATIVE_INFINITY) < filter.basePowerMin) {
     return false
   }
 

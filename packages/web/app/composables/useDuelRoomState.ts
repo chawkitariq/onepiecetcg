@@ -115,13 +115,32 @@ function toPublicCard(card: WireDuelCard): PublicCard {
     type: card.type,
     colors: card.colors,
     cost: card.cost === -1 ? null : card.cost,
+    baseCost: card.baseCost === -1 ? null : card.baseCost,
+    basePower: card.basePower === -1 ? null : card.basePower,
     power: card.power === -1 ? null : card.power,
     life: card.life === -1 ? null : card.life,
     counter: card.counter === -1 ? null : card.counter,
+    attributes: [...card.attributes],
+    families: [...card.families],
     imageUrl: card.imageUrl || null,
     rested: card.rested,
     attachedDon: card.attachedDon,
-    playedThisTurn: card.playedThisTurn
+    playedThisTurn: card.playedThisTurn,
+    hasRush: card.hasRush,
+    hasDoubleAttack: card.hasDoubleAttack,
+    hasBanish: card.hasBanish,
+    canAttackActiveCharacters: card.canAttackActiveCharacters,
+    mustBeAttackTarget: card.mustBeAttackTarget,
+    cannotAttack: card.cannotAttack,
+    cannotAttackLeaderOnTurnPlayed: card.cannotAttackLeaderOnTurnPlayed,
+    cannotBlock: card.cannotBlock,
+    cannotBeKoedInBattle: card.cannotBeKoedInBattle,
+    cannotBeKoedByEffects: card.cannotBeKoedByEffects,
+    cannotBeKoedBySlashInBattle: card.cannotBeKoedBySlashInBattle,
+    cannotBeKoedByStrikeInBattle: card.cannotBeKoedByStrikeInBattle,
+    winOnDeckOut: card.winOnDeckOut,
+    cannotAttackUntilTurn: card.cannotAttackUntilTurn,
+    skipNextRefreshPhases: card.skipNextRefreshPhases
   }
 }
 

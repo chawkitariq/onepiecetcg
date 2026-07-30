@@ -208,6 +208,8 @@ export class DuelRoom extends Room<DuelState> {
 
   private runtimeState!: DuelRoomRuntimeState;
 
+  private pendingInteractionRuntime: IsolatedGameplayRuntime | null = null;
+
   private seatBootstrap!: DuelRoomSeatBootstrap;
 
   private notifier!: DuelRoomClientNotifier;
@@ -253,7 +255,7 @@ export class DuelRoom extends Room<DuelState> {
       getClients: () => this.clients,
       broadcast: (type, message) => this.broadcast(type, message),
       getPendingEffectDecision: () =>
-        this.effectBoundary.getPendingEffectDecision(),
+        this.getActiveEffectBoundary().getPendingEffectDecision(),
     });
     this.seatBootstrap = new DuelRoomSeatBootstrap({
       syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
@@ -427,7 +429,7 @@ export class DuelRoom extends Room<DuelState> {
       this.lifecycle.removePlayer(client.sessionId);
       this.rebuildAllClientViews();
       this.notifier.syncPendingEffectDecision(
-        this.effectBoundary.getPendingEffectDecision(),
+        this.getActiveEffectBoundary().getPendingEffectDecision(),
       );
       return;
     }
@@ -1342,7 +1344,14 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     message: ResolveEffectDecisionMessage,
   ) {
-    const decision = this.effectBoundary.getPendingEffectDecision();
+    const pendingRuntime = this.pendingInteractionRuntime;
+    const activeState = pendingRuntime?.state ?? this.state;
+    const activeRuntimeState = pendingRuntime?.runtimeState ?? this.runtimeState;
+    const activeEffectBoundary =
+      pendingRuntime?.gameplayRuntime.effectBoundary ?? this.effectBoundary;
+    const activeCombatEngine =
+      pendingRuntime?.gameplayRuntime.combatEngine ?? this.combatEngine;
+    const decision = activeEffectBoundary.getPendingEffectDecision();
 
     if (!decision) {
       this.notifier.sendActionError(
@@ -1364,24 +1373,28 @@ export class DuelRoom extends Room<DuelState> {
       decisionId: decision.id,
       promptType: decision.prompt.type,
     };
-    const before = this.captureStateSnapshot();
-    const beforeLocations = this.captureCardLocationsFrom(this.state);
+    const before = this.captureStateSnapshotFrom(activeState);
+    const beforeLocations = this.captureCardLocationsFrom(activeState);
     const beforeDeckOrder = this.captureOrderedZoneSnapshotFrom(
-      this.state,
+      activeState,
       'deck',
     );
     const beforeLifeOrder = this.captureOrderedZoneSnapshotFrom(
-      this.state,
+      activeState,
       'life',
     );
-    this.effectBoundary.answerEffectDecision(message);
+    activeEffectBoundary.answerEffectDecision(message);
 
     if (
-      this.runtimeState.isCombatInProgress() &&
-      this.state.combat.step === 'resolving' &&
-      !this.effectBoundary.hasPendingPlayerInteraction()
+      activeRuntimeState.isCombatInProgress() &&
+      activeState.combat.step === 'resolving' &&
+      !activeEffectBoundary.hasPendingPlayerInteraction()
     ) {
-      this.combatEngine.endCombat();
+      activeCombatEngine.endCombat();
+    }
+
+    if (pendingRuntime) {
+      this.syncPendingInteractionRuntime();
     }
 
     await this.recordRoomEvents(client.sessionId, [
@@ -1401,7 +1414,7 @@ export class DuelRoom extends Room<DuelState> {
         beforeLocations,
         beforeDeckOrder,
         beforeLifeOrder,
-        this.state,
+        pendingRuntime?.state ?? this.state,
       ),
       ...this.buildTerminalEventDrafts(before),
     ]);
@@ -2241,6 +2254,17 @@ export class DuelRoom extends Room<DuelState> {
     this.runtimeState = gameplayRuntime.runtimeState;
   }
 
+  private getActiveEffectBoundary(): DuelRoomEffectBoundary {
+    return (
+      this.pendingInteractionRuntime?.gameplayRuntime.effectBoundary ??
+      this.effectBoundary
+    );
+  }
+
+  private hasPendingPlayerInteraction(): boolean {
+    return this.getActiveEffectBoundary().hasPendingPlayerInteraction();
+  }
+
   private createLiveGameplayRuntime(state: DuelState): DuelRoomGameplayRuntime {
     return createDuelRoomGameplayRuntime({
       state,
@@ -2465,7 +2489,7 @@ export class DuelRoom extends Room<DuelState> {
       | { handled: true; eventDrafts: DomainEventDraft[] },
     outboxFailureMessage: string,
   ): Promise<void> {
-    if (this.effectBoundary.hasPendingPlayerInteraction()) {
+    if (this.hasPendingPlayerInteraction()) {
       this.notifier.sendActionError(
         client,
         "Une decision d'effet est en attente.",
@@ -2506,7 +2530,7 @@ export class DuelRoom extends Room<DuelState> {
     options?: { allowPendingInteraction?: boolean },
   ): Promise<void> {
     if (
-      this.effectBoundary.hasPendingPlayerInteraction() &&
+      this.hasPendingPlayerInteraction() &&
       !options?.allowPendingInteraction
     ) {
       this.notifier.sendActionError(
@@ -2548,21 +2572,22 @@ export class DuelRoom extends Room<DuelState> {
   private adoptIsolatedRuntime(runtime: IsolatedGameplayRuntime): void {
     const lifecycleState = runtime.lifecycle.exportState();
     if (runtime.gameplayRuntime.effectBoundary.getPendingEffectDecision()) {
-      // The effect engine still carries a non-serializable continuation while
-      // a player decision is pending, so we must keep the isolated runtime as
-      // the active engine bundle until that decision is answered.
-      this.setState(runtime.state);
-      this.installGameplayRuntime(runtime.gameplayRuntime);
+      // Keep the paused isolated runtime off to the side for its
+      // non-serializable continuation, but mirror its visible state back into
+      // the live Colyseus root so client schema refs stay stable.
+      this.pendingInteractionRuntime = runtime;
+      adoptRoomDuelState(this.state, runtime.state);
       this.lifecycle = this.createLifecycleForState(this.state);
       this.lifecycle.importState(lifecycleState);
       this.lifecycle.recordMatchResult();
       this.rebuildAllClientViews();
       this.notifier.syncPendingEffectDecision(
-        this.effectBoundary.getPendingEffectDecision(),
+        runtime.gameplayRuntime.effectBoundary.getPendingEffectDecision(),
       );
       return;
     }
 
+    this.pendingInteractionRuntime = null;
     const effectBoundaryState =
       runtime.gameplayRuntime.effectBoundary.exportState();
     adoptRoomDuelState(this.state, runtime.state);
@@ -2572,6 +2597,39 @@ export class DuelRoom extends Room<DuelState> {
     liveGameplayRuntime.effectBoundary.importState(effectBoundaryState);
     this.installGameplayRuntime(liveGameplayRuntime);
     this.lifecycle.recordMatchResult();
+    this.rebuildAllClientViews();
+    this.notifier.syncPendingEffectDecision(
+      this.effectBoundary.getPendingEffectDecision(),
+    );
+  }
+
+  private syncPendingInteractionRuntime(): void {
+    const runtime = this.pendingInteractionRuntime;
+
+    if (!runtime) {
+      return;
+    }
+
+    adoptRoomDuelState(this.state, runtime.state);
+    this.lifecycle = this.createLifecycleForState(this.state);
+    this.lifecycle.importState(runtime.lifecycle.exportState());
+    this.lifecycle.recordMatchResult();
+
+    const pendingDecision =
+      runtime.gameplayRuntime.effectBoundary.getPendingEffectDecision();
+
+    if (pendingDecision) {
+      this.rebuildAllClientViews();
+      this.notifier.syncPendingEffectDecision(pendingDecision);
+      return;
+    }
+
+    const effectBoundaryState =
+      runtime.gameplayRuntime.effectBoundary.exportState();
+    const liveGameplayRuntime = this.createLiveGameplayRuntime(this.state);
+    liveGameplayRuntime.effectBoundary.importState(effectBoundaryState);
+    this.installGameplayRuntime(liveGameplayRuntime);
+    this.pendingInteractionRuntime = null;
     this.rebuildAllClientViews();
     this.notifier.syncPendingEffectDecision(
       this.effectBoundary.getPendingEffectDecision(),

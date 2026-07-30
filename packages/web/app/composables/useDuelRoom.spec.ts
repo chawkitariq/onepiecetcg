@@ -9,12 +9,16 @@ type FakeCard = {
   type: CardType
   colors: CardColor[]
   cost: number
+  baseCost?: number
   power: number
+  basePower?: number
   life: number
   counter: number
   imageUrl: string
   text: string
   trigger: string
+  attributes?: string[]
+  families?: string[]
   rested: boolean
   attachedDon: number
   playedThisTurn: boolean
@@ -29,12 +33,16 @@ function createFakeCard(overrides: Partial<FakeCard> = {}): FakeCard {
     type: 'Character',
     colors: [],
     cost: -1,
+    baseCost: -1,
     power: -1,
+    basePower: -1,
     life: -1,
     counter: -1,
     imageUrl: '',
     text: '',
     trigger: '',
+    attributes: [],
+    families: [],
     rested: false,
     attachedDon: 0,
     playedThisTurn: false,
@@ -732,6 +740,179 @@ describe('useDuelRoom effect decision helpers', () => {
       decisionId: 'decision-1',
       selectedChoiceIds: ['choice-a']
     })
+  })
+
+  it('clears the local effect prompt immediately after submitting a decision', () => {
+    const send = vi.fn()
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send
+    })
+    room.value = fakeRoom as never
+
+    const {
+      pendingEffectDecision,
+      isAwaitingEffectDecision,
+      submitEffectDecision
+    } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision())
+
+    submitEffectDecision()
+
+    expect(pendingEffectDecision.value).toBeNull()
+    expect(isAwaitingEffectDecision.value).toBe(true)
+    expect(send).toHaveBeenCalledWith('resolveEffectDecision', {
+      decisionId: 'decision-1',
+      confirmed: true
+    })
+  })
+
+  it('keeps waiting for the server to clear the effect decision after submit', () => {
+    const send = vi.fn()
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send
+    })
+    room.value = fakeRoom as never
+
+    const {
+      pendingEffectDecision,
+      isAwaitingEffectDecision,
+      submitEffectDecision
+    } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision())
+    submitEffectDecision()
+
+    expect(pendingEffectDecision.value).toBeNull()
+    expect(isAwaitingEffectDecision.value).toBe(true)
+
+    fakeRoom.emitMessage('clearEffectDecisionWaiting', {})
+
+    expect(isAwaitingEffectDecision.value).toBe(false)
+  })
+
+  it('suppresses stale pending-interaction errors while an effect decision submission is still in flight', () => {
+    const send = vi.fn()
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)],
+      send
+    })
+    room.value = fakeRoom as never
+
+    const {
+      errorMessage,
+      submitEffectDecision
+    } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision())
+    submitEffectDecision()
+    fakeRoom.emitMessage('actionError', {
+      message: "Une decision d'effet est en attente."
+    })
+
+    expect(errorMessage.value).toBeNull()
+  })
+
+  it('still surfaces normal action errors outside the effect-decision wait flow', () => {
+    const { room } = useColyseus()
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), createFakePlayer('session-b', true)]
+    })
+    room.value = fakeRoom as never
+
+    const { errorMessage } = useDuelRoom()
+
+    fakeRoom.emitMessage('actionError', {
+      message: 'Pas assez de DON!!'
+    })
+
+    expect(errorMessage.value).toBe('Pas assez de DON!!')
+  })
+
+  it('filters effect card selections by trait for EB01-021 style prompts', () => {
+    const { room } = useColyseus()
+    const selfPlayer = createFakePlayer('session-a', true)
+    selfPlayer.zones.characters = [
+      createFakeCard({
+        instanceId: 'valid-impel-down',
+        cardId: 'char-1',
+        number: 'CHAR-001',
+        name: 'Valid Target',
+        type: 'Character',
+        cost: 2,
+        families: ['Impel Down']
+      }),
+      createFakeCard({
+        instanceId: 'invalid-navy',
+        cardId: 'char-2',
+        number: 'CHAR-002',
+        name: 'Invalid Target',
+        type: 'Character',
+        cost: 5,
+        families: ['Navy']
+      })
+    ]
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-a',
+      phase: 'end',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [selfPlayer, createFakePlayer('session-b', true)]
+    })
+    room.value = fakeRoom as never
+
+    const {
+      selectableDecisionCardIds,
+      selectableEffectCards
+    } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision({
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez la carte a renvoyer.',
+        selector: {
+          player: 'self',
+          zones: ['characters'],
+          filter: {
+            cardCategory: ['Character'],
+            trait: ['Impel Down'],
+            costMin: 2
+          },
+          count: { kind: 'exact', value: 1 }
+        },
+        min: 1,
+        max: 1
+      }
+    }))
+
+    expect(selectableDecisionCardIds.value).toEqual(['valid-impel-down'])
+    expect(selectableEffectCards.value.map(card => card.instanceId)).toEqual(['valid-impel-down'])
   })
 
   it('clears local effect decision state on clearPendingEffectDecision', () => {

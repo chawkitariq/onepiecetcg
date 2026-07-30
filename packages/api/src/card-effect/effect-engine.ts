@@ -462,8 +462,6 @@ export class EffectEngine {
       type === 'onBattleKo' ||
       type === 'onLifeDamageDealt' ||
       type === 'onCardDrawn' ||
-      type === 'onTurnStart' ||
-      type === 'onTurnEnd' ||
       type === 'onKo'
     );
   }

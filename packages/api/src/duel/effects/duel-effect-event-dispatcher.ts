@@ -30,19 +30,27 @@ export class DuelEffectEventDispatcher {
   public constructor(private readonly deps: DuelEffectEventDispatcherDeps) {}
 
   /**
-   * Emits a turn-window event for every public permanent currently in play.
+   * Emits a turn-window event for every public permanent controlled by one
+   * player currently in play.
    */
-  public emitWindowEffects(type: 'onTurnStart' | 'onTurnEnd'): void {
-    for (const player of this.deps.state.players.values()) {
-      this.deps.emitCardEvent(type, player.sessionId, player.zones.leader);
+  public emitWindowEffects(
+    type: 'onTurnStart' | 'onTurnEnd',
+    playerSessionId: string,
+  ): void {
+    const player = this.deps.state.players.get(playerSessionId);
 
-      for (const character of player.zones.characters) {
-        this.deps.emitCardEvent(type, player.sessionId, character);
-      }
+    if (!player) {
+      return;
+    }
 
-      if (player.zones.stage.instanceId) {
-        this.deps.emitCardEvent(type, player.sessionId, player.zones.stage);
-      }
+    this.deps.emitCardEvent(type, player.sessionId, player.zones.leader);
+
+    for (const character of player.zones.characters) {
+      this.deps.emitCardEvent(type, player.sessionId, character);
+    }
+
+    if (player.zones.stage.instanceId) {
+      this.deps.emitCardEvent(type, player.sessionId, player.zones.stage);
     }
   }
 

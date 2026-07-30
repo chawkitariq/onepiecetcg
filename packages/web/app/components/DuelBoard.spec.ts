@@ -666,6 +666,17 @@ describe('DuelBoard drag and drop', () => {
     expect(endPhase).toHaveBeenCalled()
   })
 
+  it('does not auto-advance phases while the opponent is resolving an effect decision', async () => {
+    phase.value = 'refresh'
+    pendingEffectDecision.value = null
+    isAwaitingEffectDecision.value = true
+
+    mountBoard()
+    await vi.runAllTimersAsync()
+
+    expect(endPhase).not.toHaveBeenCalled()
+  })
+
   it('renders a single active/inactive turn button label', async () => {
     const wrapper = mountBoard()
     const findTurnButton = () => wrapper.get('[data-test="turn-toggle"]')
@@ -2101,6 +2112,70 @@ describe('DuelBoard leave to lobby', () => {
     expect(document.body.textContent).toContain('Activer cet effet ?')
     expect(document.body.textContent).toContain('Activer')
     expect(document.body.textContent).toContain('Ignorer')
+  })
+
+  it('does not trigger the turn action when confirming an effect prompt', async () => {
+    pendingEffectDecision.value = {
+      id: 'decision-1',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'confirm',
+        message: 'Activer cet effet ?',
+        optional: true
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const buttons = Array.from(document.body.querySelectorAll('button'))
+    const activateButton = buttons.find(button => button.textContent?.includes('Activer'))
+
+    expect(activateButton).toBeTruthy()
+
+    activateButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(submitEffectDecision).toHaveBeenCalledTimes(1)
+    expect(endPhase).not.toHaveBeenCalled()
+  })
+
+  it('does not trigger the turn action when declining an effect prompt', async () => {
+    pendingEffectDecision.value = {
+      id: 'decision-1',
+      effectId: 'effect-1',
+      effectCardId: 'card-1',
+      sourceInstanceId: 'source-1',
+      playerSessionId: 'self',
+      createdAt: '2026-07-28T12:00:00.000Z',
+      prompt: {
+        type: 'confirm',
+        message: 'Activer cet effet ?',
+        optional: true
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+
+    const wrapper = mountBoard({ attachToBody: true })
+    const buttons = Array.from(document.body.querySelectorAll('button'))
+    const ignoreButton = buttons.find(button => button.textContent?.includes('Ignorer'))
+
+    expect(ignoreButton).toBeTruthy()
+
+    ignoreButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(declineEffectDecision).toHaveBeenCalledTimes(1)
+    expect(endPhase).not.toHaveBeenCalled()
   })
 
   it('shows effect prompt card details in the details panel on hover and click', async () => {
