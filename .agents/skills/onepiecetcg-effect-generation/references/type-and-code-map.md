@@ -21,7 +21,7 @@ Use this reference when you need the exact source files for the effect-definitio
 - Need to inspect example authored edition files:
   Read `packages/api/src/card-effect/definitions/OP-01.effects.ts`
 - Need to inspect a real special handler:
-  Read `packages/api/src/card-effect/definitions/special/op01-047.special.ts`
+  Read `packages/api/src/card-effect/definitions/special/OP01-047.special.ts`
 - Need to inspect helper accessors over resolved definitions:
   Read `packages/api/src/card-effect/effect-definition-dispatch.ts`
 - Need to inspect runtime event and special-handler host types:
@@ -162,7 +162,7 @@ Use as the example for:
 
 ## Example special-handler files
 
-### `packages/api/src/card-effect/definitions/special/op01-047.special.ts`
+### `packages/api/src/card-effect/definitions/special/OP01-047.special.ts`
 
 Use as the primary example for:
 

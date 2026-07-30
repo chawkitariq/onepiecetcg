@@ -80,12 +80,12 @@ It must:
 
 Special-handler files must use:
 
-- normalized lowercase card id
+- uppercase card id
 - `.special.ts` suffix
 
 Example:
 
-- card id `OP01-047` -> file `op01-047.special.ts`
+- card id `OP01-047` -> file `OP01-047.special.ts`
 
 ## Special handler export naming
 
@@ -93,7 +93,7 @@ Keep exports stable and card-specific.
 
 Example from the repo:
 
-- file `op01-047.special.ts`
+- file `OP01-047.special.ts`
 - export `op01047SpecialHandler`
 
 ## Special handler index
