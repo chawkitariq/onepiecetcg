@@ -2591,10 +2591,12 @@ export class DuelRoom extends Room<DuelState> {
     const effectBoundaryState =
       runtime.gameplayRuntime.effectBoundary.exportState();
     adoptRoomDuelState(this.state, runtime.state);
+    const keywordSnapshot = this.captureCardKeywordSnapshot(this.state);
     const liveGameplayRuntime = this.createLiveGameplayRuntime(this.state);
     this.lifecycle = this.createLifecycleForState(this.state);
     this.lifecycle.importState(lifecycleState);
     liveGameplayRuntime.effectBoundary.importState(effectBoundaryState);
+    this.restoreCardKeywordSnapshot(this.state, keywordSnapshot);
     this.installGameplayRuntime(liveGameplayRuntime);
     this.lifecycle.recordMatchResult();
     this.rebuildAllClientViews();
@@ -2626,8 +2628,10 @@ export class DuelRoom extends Room<DuelState> {
 
     const effectBoundaryState =
       runtime.gameplayRuntime.effectBoundary.exportState();
+    const keywordSnapshot = this.captureCardKeywordSnapshot(this.state);
     const liveGameplayRuntime = this.createLiveGameplayRuntime(this.state);
     liveGameplayRuntime.effectBoundary.importState(effectBoundaryState);
+    this.restoreCardKeywordSnapshot(this.state, keywordSnapshot);
     this.installGameplayRuntime(liveGameplayRuntime);
     this.pendingInteractionRuntime = null;
     this.rebuildAllClientViews();

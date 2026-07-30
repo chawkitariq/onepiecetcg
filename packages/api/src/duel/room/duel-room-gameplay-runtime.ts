@@ -4,6 +4,7 @@ import type {
   DuelLogLevel,
   DuelPlayer,
   DuelState,
+  GameZone,
   PendingEffectDecision,
 } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
@@ -92,6 +93,36 @@ export function createDuelRoomGameplayRuntime(
     current: null,
   };
 
+  const findCardZone = (
+    instanceId: string,
+  ): { playerSessionId: string; zone: GameZone } | null => {
+    for (const player of input.state.players.values()) {
+      if (player.zones.leader.instanceId === instanceId) {
+        return { playerSessionId: player.sessionId, zone: 'leader' };
+      }
+
+      if (player.zones.stage.instanceId === instanceId) {
+        return { playerSessionId: player.sessionId, zone: 'stage' };
+      }
+
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        if (player.zones[zone].some((card) => card.instanceId === instanceId)) {
+          return { playerSessionId: player.sessionId, zone };
+        }
+      }
+    }
+
+    return null;
+  };
+
   const effectBoundary = new DuelRoomEffectBoundary({
     state: input.state,
     addLog: addEffectLog,
@@ -106,6 +137,52 @@ export function createDuelRoomGameplayRuntime(
         selector,
         controllerSessionId,
       ) ?? [],
+    playCard: (card, playerSessionId, zone, options) => {
+      const player = input.state.players.get(playerSessionId);
+
+      if (!player) {
+        return false;
+      }
+
+      if (zone === 'characters' && player.zones.characters.length >= 5) {
+        return false;
+      }
+
+      const originZone = findCardZone(card.instanceId)?.zone;
+
+      if (zone === 'stage' && player.zones.stage.instanceId) {
+        zoneEngineRef.current?.moveCardToZone(
+          player.zones.stage,
+          playerSessionId,
+          'trash',
+        );
+      }
+
+      zoneEngineRef.current?.moveCardToZone(card, playerSessionId, zone, {
+        rested: options?.rested ?? false,
+      });
+
+      card.playedThisTurn = true;
+
+      if (card.type === 'Character') {
+        effectBoundary.emitCardEvent(
+          'onCharacterPlayed',
+          playerSessionId,
+          card,
+          {
+            sourceZone: originZone,
+            playedByEffect: true,
+          },
+        );
+      }
+
+      effectBoundary.emitCardEvent('onPlay', playerSessionId, card, {
+        sourceZone: originZone,
+        playedByEffect: true,
+      });
+
+      return true;
+    },
     moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
       zoneEngineRef.current?.moveCardToZone(
         card,
@@ -153,6 +230,115 @@ export function createDuelRoomGameplayRuntime(
       if (player) {
         runtimeState.syncZoneCounts(player);
       }
+    },
+    patchPlayerStatus: (playerSessionId, patch) => {
+      const player = input.state.players.get(playerSessionId);
+
+      if (!player) {
+        return undefined;
+      }
+
+      if (patch.cannotPlayCharacters !== undefined) {
+        player.cannotPlayCharacters = patch.cannotPlayCharacters;
+      }
+
+      return player;
+    },
+    patchCardStatus: (instanceId, patch) => {
+      const card = cardQueryEngineRef.current?.getCardByInstanceId(instanceId);
+
+      if (!card) {
+        return null;
+      }
+
+      if (patch.rested !== undefined) {
+        card.rested = patch.rested;
+      }
+      if (patch.playedThisTurn !== undefined) {
+        card.playedThisTurn = patch.playedThisTurn;
+      }
+      if (patch.cannotAttack !== undefined) {
+        card.cannotAttack = patch.cannotAttack;
+      }
+      if (patch.cannotAttackLeaderOnTurnPlayed !== undefined) {
+        card.cannotAttackLeaderOnTurnPlayed =
+          patch.cannotAttackLeaderOnTurnPlayed;
+      }
+      if (patch.cannotBlock !== undefined) {
+        card.cannotBlock = patch.cannotBlock;
+      }
+      if (patch.cannotBeKoedInBattle !== undefined) {
+        card.cannotBeKoedInBattle = patch.cannotBeKoedInBattle;
+      }
+      if (patch.cannotBeKoedByEffects !== undefined) {
+        card.cannotBeKoedByEffects = patch.cannotBeKoedByEffects;
+      }
+      if (patch.cannotBeKoedBySlashInBattle !== undefined) {
+        card.cannotBeKoedBySlashInBattle =
+          patch.cannotBeKoedBySlashInBattle;
+      }
+      if (patch.cannotBeKoedByStrikeInBattle !== undefined) {
+        card.cannotBeKoedByStrikeInBattle =
+          patch.cannotBeKoedByStrikeInBattle;
+      }
+      if (patch.hasRush !== undefined) {
+        card.hasRush = patch.hasRush;
+      }
+      if (patch.hasDoubleAttack !== undefined) {
+        card.hasDoubleAttack = patch.hasDoubleAttack;
+      }
+      if (patch.hasBanish !== undefined) {
+        card.hasBanish = patch.hasBanish;
+      }
+      if (patch.canAttackActiveCharacters !== undefined) {
+        card.canAttackActiveCharacters = patch.canAttackActiveCharacters;
+      }
+      if (patch.mustBeAttackTarget !== undefined) {
+        card.mustBeAttackTarget = patch.mustBeAttackTarget;
+      }
+      if (patch.winOnDeckOut !== undefined) {
+        card.winOnDeckOut = patch.winOnDeckOut;
+      }
+      if (patch.cannotBeRemovedByOpponentEffects !== undefined) {
+        card.cannotBeRemovedByOpponentEffects =
+          patch.cannotBeRemovedByOpponentEffects;
+      }
+      if (patch.effectNegated !== undefined) {
+        card.effectNegated = patch.effectNegated;
+      }
+      if (patch.cannotAttackUntilTurn !== undefined) {
+        card.cannotAttackUntilTurn = patch.cannotAttackUntilTurn;
+      }
+      if (patch.skipNextRefreshPhases !== undefined) {
+        card.skipNextRefreshPhases = patch.skipNextRefreshPhases;
+      }
+
+      return card;
+    },
+    patchCardStats: (instanceId, patch) => {
+      const card = cardQueryEngineRef.current?.getCardByInstanceId(instanceId);
+
+      if (!card) {
+        return null;
+      }
+
+      if (patch.basePower !== undefined) {
+        card.basePower = patch.basePower;
+      }
+      if (patch.baseCost !== undefined) {
+        card.baseCost = patch.baseCost;
+      }
+      if (patch.power !== undefined) {
+        card.power = patch.power;
+      }
+      if (patch.cost !== undefined) {
+        card.cost = patch.cost;
+      }
+      if (patch.attachedDon !== undefined) {
+        card.attachedDon = patch.attachedDon;
+      }
+
+      return card;
     },
     broadcastCardView: input.broadcastCardView,
   });
