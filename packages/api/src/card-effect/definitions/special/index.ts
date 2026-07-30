@@ -150,6 +150,15 @@ import { op16118SpecialHandler } from './op16-118.special';
 import { op16119SpecialHandler } from './op16-119.special';
 import { st01016SpecialHandler } from './st01-016.special';
 import { st08013SpecialHandler } from './st08-013.special';
+import { st13002SpecialHandler } from './st13-002.special';
+import { st13003SpecialHandler } from './st13-003.special';
+import { st13004SpecialHandler } from './st13-004.special';
+import { st13007SpecialHandler } from './st13-007.special';
+import { st13009SpecialHandler } from './st13-009.special';
+import { st13010SpecialHandler } from './st13-010.special';
+import { st13012SpecialHandler } from './st13-012.special';
+import { st13014SpecialHandler } from './st13-014.special';
+import { st13016SpecialHandler } from './st13-016.special';
 
 export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   eb01001CounterRuleSpecialHandler,
@@ -303,4 +312,13 @@ export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [
   op16119SpecialHandler,
   st01016SpecialHandler,
   st08013SpecialHandler,
+  st13002SpecialHandler,
+  st13003SpecialHandler,
+  st13004SpecialHandler,
+  st13007SpecialHandler,
+  st13009SpecialHandler,
+  st13010SpecialHandler,
+  st13012SpecialHandler,
+  st13014SpecialHandler,
+  st13016SpecialHandler,
 ] as const;

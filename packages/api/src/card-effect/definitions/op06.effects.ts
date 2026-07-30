@@ -1604,7 +1604,7 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
                 message: 'Choose one:',
                 choices: [
                   {
-                    id: 'rest',
+                    id: 'op06-039-rest',
                     label:
                       "Rest up to 1 of your opponent's Characters with a cost of 6 or less",
                     actions: [
@@ -1623,7 +1623,7 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
                     ],
                   },
                   {
-                    id: 'ko',
+                    id: 'op06-039-ko',
                     label:
                       "K.O. up to 1 of your opponent's rested Characters with a cost of 6 or less",
                     actions: [

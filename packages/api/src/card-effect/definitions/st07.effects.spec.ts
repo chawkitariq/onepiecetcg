@@ -46,13 +46,27 @@ describe('ST07 effect definitions', () => {
       host.addCardToZone(
         'p1',
         'life',
-        makeCard({ id: 'life-0', number: 'life-0', name: 'Life Card', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'life-0',
+          number: 'life-0',
+          name: 'Life Card',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'life-0',
       );
       host.addCardToZone(
         'p1',
         'hand',
-        makeCard({ id: 'hand-0', number: 'hand-0', name: 'Hand Card', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'hand-0',
+          number: 'hand-0',
+          name: 'Hand Card',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'hand-0',
       );
 
@@ -77,11 +91,17 @@ describe('ST07 effect definitions', () => {
   });
 
   describe('ST07-003 Charlotte Katakuri', () => {
-    const answerDestinationChoice = (engine: EffectEngine, choiceId: string): void => {
+    const answerDestinationChoice = (
+      engine: EffectEngine,
+      choiceId: string,
+    ): void => {
       const decision = engine.getPendingDecision();
-      if (decision?.prompt.type === 'selectChoice' && (decision.prompt as any).choices?.[0]?.id === 'top') {
+      if (
+        decision?.prompt.type === 'selectChoice' &&
+        (decision.prompt as any).choices?.[0]?.id === 'top'
+      ) {
         engine.answerDecision({
-          decisionId: decision!.id,
+          decisionId: decision.id,
           selectedChoiceIds: [choiceId],
         });
       }
@@ -101,19 +121,40 @@ describe('ST07 effect definitions', () => {
       host.addCardToZone(
         'p1',
         'life',
-        makeCard({ id: 'p1-life', number: 'p1-life', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p1-life',
+          number: 'p1-life',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p1-life',
       );
       host.addCardToZone(
         'p2',
         'life',
-        makeCard({ id: 'p2-life-0', number: 'p2-life-0', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p2-life-0',
+          number: 'p2-life-0',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p2-life-0',
       );
       host.addCardToZone(
         'p2',
         'life',
-        makeCard({ id: 'p2-life-1', number: 'p2-life-1', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p2-life-1',
+          number: 'p2-life-1',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p2-life-1',
       );
 
@@ -159,13 +200,27 @@ describe('ST07 effect definitions', () => {
       host.addCardToZone(
         'p1',
         'life',
-        makeCard({ id: 'p1-life', number: 'p1-life', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p1-life',
+          number: 'p1-life',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p1-life',
       );
       host.addCardToZone(
         'p2',
         'life',
-        makeCard({ id: 'p2-life', number: 'p2-life', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p2-life',
+          number: 'p2-life',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p2-life',
       );
 
@@ -216,7 +271,14 @@ describe('ST07 effect definitions', () => {
       host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'deck-card', number: 'deck-card', name: 'Deck Card', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'deck-card',
+          number: 'deck-card',
+          name: 'Deck Card',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'deck-card',
       );
 
@@ -254,7 +316,14 @@ describe('ST07 effect definitions', () => {
       host.addCardToZone(
         'p2',
         'life',
-        makeCard({ id: 'p2-life', number: 'p2-life', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p2-life',
+          number: 'p2-life',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p2-life',
       );
 
@@ -291,7 +360,7 @@ describe('ST07 effect definitions', () => {
           name: 'Soul Pocus',
           type: 'Event',
           cost: 2,
-          text: '[Main] Your opponent chooses one: \u2022 Trash 1 card from the top of your opponent\'s Life cards. \u2022 Add 1 card from the top of your deck to the top of your Life cards.',
+          text: "[Main] Your opponent chooses one: \u2022 Trash 1 card from the top of your opponent's Life cards. \u2022 Add 1 card from the top of your deck to the top of your Life cards.",
         }),
         'soul-pocus',
       );
@@ -322,14 +391,21 @@ describe('ST07 effect definitions', () => {
           name: 'Soul Pocus',
           type: 'Event',
           cost: 2,
-          text: '[Trigger] Activate this card\'s [Main] effect.',
+          text: "[Trigger] Activate this card's [Main] effect.",
         }),
         'soul-pocus-trigger',
       );
       host.addCardToZone(
         'p1',
         'deck',
-        makeCard({ id: 'deck-card', number: 'deck-card', name: 'Deck Card', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'deck-card',
+          number: 'deck-card',
+          name: 'Deck Card',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'deck-card',
       );
 
@@ -346,7 +422,7 @@ describe('ST07 effect definitions', () => {
     });
   });
 
-  describe('ST07-009 Charlotte Mont-d\'Or', () => {
+  describe("ST07-009 Charlotte Mont-d'Or", () => {
     it('activate main rests self, adds life to hand, then KOs cost 3 or less', () => {
       const host = new TestHost();
       host.addPlayer('p1');
@@ -363,7 +439,14 @@ describe('ST07 effect definitions', () => {
       host.addCardToZone(
         'p1',
         'life',
-        makeCard({ id: 'p1-life', number: 'p1-life', name: 'Life', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'p1-life',
+          number: 'p1-life',
+          name: 'Life',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'p1-life',
       );
 
@@ -422,7 +505,14 @@ describe('ST07 effect definitions', () => {
       const handCard = host.addCardToZone(
         'p1',
         'hand',
-        makeCard({ id: 'trash-me', number: 'trash-me', name: 'Trash Me', type: 'Character', cost: 0, power: 0 }),
+        makeCard({
+          id: 'trash-me',
+          number: 'trash-me',
+          name: 'Trash Me',
+          type: 'Character',
+          cost: 0,
+          power: 0,
+        }),
         'trash-me',
       );
 
