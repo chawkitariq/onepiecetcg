@@ -70,7 +70,7 @@ export const op14033SpecialHandler: SpecialHandlerDefinition = {
               zones: ['hand'],
               filter: {
                 cardCategory: ['Character'],
-                colors: ['Green'],
+                color: ['Green'],
                 costMax: 5,
               },
               count: { kind: 'upTo', value: 1 },

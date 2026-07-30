@@ -27,12 +27,10 @@ type CardPatchHost = {
 
 type PatchableCard = {
   instanceId: string;
-  [key: string]: unknown;
 };
 
 type PatchablePlayer = {
   sessionId: string;
-  [key: string]: unknown;
 };
 
 /**
@@ -106,7 +104,7 @@ export function patchSpecialHandlerCardStatus(
     return;
   }
 
-  Object.assign(card, patch);
+  Object.assign(card as object, patch);
 }
 
 /**
@@ -123,7 +121,7 @@ export function patchSpecialHandlerCardStats(
     return;
   }
 
-  Object.assign(card, patch);
+  Object.assign(card as object, patch);
 }
 
 /**
@@ -141,5 +139,5 @@ export function patchSpecialHandlerPlayerStatus(
     return;
   }
 
-  Object.assign(player, patch);
+  Object.assign(player as object, patch);
 }

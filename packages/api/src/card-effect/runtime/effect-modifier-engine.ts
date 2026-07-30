@@ -612,7 +612,7 @@ export class EffectModifierEngine {
   }
 
   private patchCardStatus(
-    card: { instanceId: string } & Record<string, unknown>,
+    card: { instanceId: string },
     patch: Parameters<
       NonNullable<EffectEngineHost['patchCardStatus']>
     >[1],
@@ -622,11 +622,11 @@ export class EffectModifierEngine {
       return;
     }
 
-    Object.assign(card, patch);
+    Object.assign(card as object, patch);
   }
 
   private patchCardStats(
-    card: { instanceId: string } & Record<string, unknown>,
+    card: { instanceId: string },
     patch: Parameters<NonNullable<EffectEngineHost['patchCardStats']>>[1],
   ): void {
     if (this.host.patchCardStats) {
@@ -634,6 +634,6 @@ export class EffectModifierEngine {
       return;
     }
 
-    Object.assign(card, patch);
+    Object.assign(card as object, patch);
   }
 }

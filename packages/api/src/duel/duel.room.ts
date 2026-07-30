@@ -150,6 +150,7 @@ type CardKeywordSnapshot = {
   cannotBeKoedByStrikeInBattle: boolean;
   winOnDeckOut: boolean;
   cannotBeRemovedByOpponentEffects: boolean;
+  effectNegated: boolean;
   skipNextRefreshPhases: number;
 };
 
@@ -2379,6 +2380,7 @@ export class DuelRoom extends Room<DuelState> {
           winOnDeckOut: card.winOnDeckOut,
           cannotBeRemovedByOpponentEffects:
             card.cannotBeRemovedByOpponentEffects,
+          effectNegated: card.effectNegated,
           skipNextRefreshPhases: card.skipNextRefreshPhases,
         });
       }
@@ -2418,6 +2420,7 @@ export class DuelRoom extends Room<DuelState> {
         card.winOnDeckOut ||= cardSnapshot.winOnDeckOut;
         card.cannotBeRemovedByOpponentEffects ||=
           cardSnapshot.cannotBeRemovedByOpponentEffects;
+        card.effectNegated ||= cardSnapshot.effectNegated;
         card.skipNextRefreshPhases = Math.max(
           card.skipNextRefreshPhases,
           cardSnapshot.skipNextRefreshPhases,

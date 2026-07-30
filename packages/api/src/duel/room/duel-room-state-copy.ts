@@ -64,6 +64,7 @@ function assignDuelCard(target: DuelCard, source: DuelCard): DuelCard {
   target.winOnDeckOut = source.winOnDeckOut;
   target.cannotBeRemovedByOpponentEffects =
     source.cannotBeRemovedByOpponentEffects;
+  target.effectNegated = source.effectNegated;
   target.cannotAttackUntilTurn = source.cannotAttackUntilTurn;
   target.skipNextRefreshPhases = source.skipNextRefreshPhases;
 
@@ -130,6 +131,7 @@ function assignDuelPlayer(target: DuelPlayer, source: DuelPlayer): DuelPlayer {
   target.handCount = source.handCount;
   target.deckCount = source.deckCount;
   target.lifeCount = source.lifeCount;
+  target.cannotPlayCharacters = source.cannotPlayCharacters;
   assignDuelZones(target.zones, source.zones);
 
   return target;

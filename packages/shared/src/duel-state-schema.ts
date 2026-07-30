@@ -163,6 +163,10 @@ export class DuelCard extends Schema {
   cannotBeRemovedByOpponentEffects = false;
 
   @view()
+  @type('boolean')
+  effectNegated = false;
+
+  @view()
   @type('number')
   cannotAttackUntilTurn = 0;
 
@@ -230,6 +234,9 @@ export class DuelPlayer extends Schema {
 
   @type('number')
   lifeCount = 0;
+
+  @type('boolean')
+  cannotPlayCharacters = false;
 
   @type(DuelZones)
   zones = new DuelZones();
