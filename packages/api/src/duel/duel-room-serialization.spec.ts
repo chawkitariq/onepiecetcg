@@ -44,6 +44,37 @@ async function waitUntil(
   }
 }
 
+async function advancePhase(client: {
+  send: (type: string, message: Record<string, never>) => void;
+  state: DuelState;
+}): Promise<void> {
+  const previousPhase = client.state.phase;
+  const previousActivePlayer = client.state.activePlayerSessionId;
+  client.send('endPhase', {});
+  await waitUntil(
+    () =>
+      client.state.phase !== previousPhase ||
+      client.state.activePlayerSessionId !== previousActivePlayer,
+  );
+}
+
+async function advanceToMainPhase(client: {
+  send: (type: string, message: Record<string, never>) => void;
+  state: DuelState;
+}): Promise<void> {
+  while (client.state.phase !== 'main') {
+    await advancePhase(client);
+  }
+}
+
+async function finishTurnFromMainPhase(client: {
+  send: (type: string, message: Record<string, never>) => void;
+  state: DuelState;
+}): Promise<void> {
+  await advancePhase(client);
+  await advancePhase(client);
+}
+
 const leader: Card = {
   id: 'L-001',
   number: 'L-001',
@@ -304,32 +335,21 @@ describe('DuelRoom per-viewpoint serialization', () => {
     const defenderClient = attackerClient === alice ? bob : alice;
 
     // First turn cannot attack -- burn it, then take a second full turn cycle.
-    attackerClient.send('endPhase', {}); // draw
-    attackerClient.send('endPhase', {}); // don
-    attackerClient.send('endPhase', {}); // main
-    await waitUntil(() => attackerClient.state.phase === 'main');
-    attackerClient.send('endPhase', {}); // end
-    attackerClient.send('endPhase', {}); // ends turn -> defender becomes active
+    await advanceToMainPhase(attackerClient);
+    await finishTurnFromMainPhase(attackerClient);
 
     await waitUntil(
       () =>
         defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
     );
-    defenderClient.send('endPhase', {}); // draw
-    defenderClient.send('endPhase', {}); // don
-    defenderClient.send('endPhase', {}); // main
-    await waitUntil(() => defenderClient.state.phase === 'main');
-    defenderClient.send('endPhase', {}); // end
-    defenderClient.send('endPhase', {}); // ends turn -> attacker active again, its second turn
+    await advanceToMainPhase(defenderClient);
+    await finishTurnFromMainPhase(defenderClient);
 
     await waitUntil(
       () =>
         attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
     );
-    attackerClient.send('endPhase', {}); // draw
-    attackerClient.send('endPhase', {}); // don
-    attackerClient.send('endPhase', {}); // main
-    await waitUntil(() => attackerClient.state.phase === 'main');
+    await advanceToMainPhase(attackerClient);
 
     const attackerLeaderInstanceId = attackerClient.state.players.get(
       attackerClient.sessionId,
@@ -422,32 +442,21 @@ describe('DuelRoom per-viewpoint serialization', () => {
     const defenderClient = attackerClient === alice ? bob : alice;
 
     // First turn cannot attack -- burn it, then take a second full turn cycle.
-    attackerClient.send('endPhase', {}); // draw
-    attackerClient.send('endPhase', {}); // don
-    attackerClient.send('endPhase', {}); // main
-    await waitUntil(() => attackerClient.state.phase === 'main');
-    attackerClient.send('endPhase', {}); // end
-    attackerClient.send('endPhase', {}); // ends turn -> defender becomes active
+    await advanceToMainPhase(attackerClient);
+    await finishTurnFromMainPhase(attackerClient);
 
     await waitUntil(
       () =>
         defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
     );
-    defenderClient.send('endPhase', {}); // draw
-    defenderClient.send('endPhase', {}); // don
-    defenderClient.send('endPhase', {}); // main
-    await waitUntil(() => defenderClient.state.phase === 'main');
-    defenderClient.send('endPhase', {}); // end
-    defenderClient.send('endPhase', {}); // ends turn -> attacker active again, its second turn
+    await advanceToMainPhase(defenderClient);
+    await finishTurnFromMainPhase(defenderClient);
 
     await waitUntil(
       () =>
         attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
     );
-    attackerClient.send('endPhase', {}); // draw
-    attackerClient.send('endPhase', {}); // don
-    attackerClient.send('endPhase', {}); // main
-    await waitUntil(() => attackerClient.state.phase === 'main');
+    await advanceToMainPhase(attackerClient);
 
     const attackerLeaderInstanceId = attackerClient.state.players.get(
       attackerClient.sessionId,
@@ -579,10 +588,7 @@ describe('DuelRoom per-viewpoint serialization', () => {
     otherClient.send('mulligan', { mulligan: false });
 
     await waitUntil(() => startingClient.state.phase === 'refresh');
-    startingClient.send('endPhase', {}); // refresh -> draw
-    startingClient.send('endPhase', {}); // draw -> don
-    startingClient.send('endPhase', {}); // don -> main
-    await waitUntil(() => startingClient.state.phase === 'main');
+    await advanceToMainPhase(startingClient);
 
     const handCard = startingClient.state.players
       .get(startingClient.sessionId)
@@ -848,32 +854,21 @@ describe('DuelRoom per-viewpoint serialization', () => {
       alice.state.activePlayerSessionId === alice.sessionId ? alice : bob;
     const defenderClient = attackerClient === alice ? bob : alice;
 
-    attackerClient.send('endPhase', {});
-    attackerClient.send('endPhase', {});
-    attackerClient.send('endPhase', {});
-    await waitUntil(() => attackerClient.state.phase === 'main');
-    attackerClient.send('endPhase', {});
-    attackerClient.send('endPhase', {});
+    await advanceToMainPhase(attackerClient);
+    await finishTurnFromMainPhase(attackerClient);
 
     await waitUntil(
       () =>
         defenderClient.state.activePlayerSessionId === defenderClient.sessionId,
     );
-    defenderClient.send('endPhase', {});
-    defenderClient.send('endPhase', {});
-    defenderClient.send('endPhase', {});
-    await waitUntil(() => defenderClient.state.phase === 'main');
-    defenderClient.send('endPhase', {});
-    defenderClient.send('endPhase', {});
+    await advanceToMainPhase(defenderClient);
+    await finishTurnFromMainPhase(defenderClient);
 
     await waitUntil(
       () =>
         attackerClient.state.activePlayerSessionId === attackerClient.sessionId,
     );
-    attackerClient.send('endPhase', {});
-    attackerClient.send('endPhase', {});
-    attackerClient.send('endPhase', {});
-    await waitUntil(() => attackerClient.state.phase === 'main');
+    await advanceToMainPhase(attackerClient);
 
     const attackerLeaderInstanceId = attackerClient.state.players.get(
       attackerClient.sessionId,
