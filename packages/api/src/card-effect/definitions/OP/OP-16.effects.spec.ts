@@ -3,7 +3,7 @@ import type { CardEffectDefinition } from '@onepiecetcg/shared';
 import type { EffectRegistry } from '../../types/effect-registry';
 import { EffectEngine } from '../../effect-engine';
 import { op16EffectDefinitions } from './OP-16.effects';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 import {
   createRegistry as createFullRegistry,
   makeCard,

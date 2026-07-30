@@ -4,7 +4,7 @@ import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 import { op10EffectDefinitions } from './OP-10.effects';
 import { EffectEngine } from '../../effect-engine';
 import { TestHost, makeCard, createRegistry } from '../test-utils';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 
 describe('OP10 effect definitions', () => {
   it('exports the edition definitions', () => {

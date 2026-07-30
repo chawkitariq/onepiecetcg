@@ -14,7 +14,7 @@ import type {
   SpecialHandlerDefinition,
 } from '../../types/effect-registry';
 import { op04EffectDefinitions } from './OP-04.effects';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 
 const makeCard = (
   overrides: Partial<Card> & Pick<Card, 'id' | 'number' | 'name' | 'type'>,

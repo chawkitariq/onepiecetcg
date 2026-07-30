@@ -8,7 +8,7 @@ import type { SpecialHandlerDefinition } from '../../types/effect-registry';
 import { EffectEngine } from '../../effect-engine';
 import { TestHost, makeCard, createRegistry } from '../test-utils';
 import { op09EffectDefinitions } from './OP-09.effects';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 
 describe('OP09 effect definitions', () => {
   it('exports the edition definitions', () => {

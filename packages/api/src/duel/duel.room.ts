@@ -1111,6 +1111,7 @@ export class DuelRoom extends Room<DuelState> {
         };
       },
       'Impossible de resoudre le declenchement pour le moment.',
+      { allowPendingInteraction: true },
     );
   }
 
@@ -2253,7 +2254,9 @@ export class DuelRoom extends Room<DuelState> {
     });
   }
 
-  private installGameplayRuntime(gameplayRuntime: DuelRoomGameplayRuntime): void {
+  private installGameplayRuntime(
+    gameplayRuntime: DuelRoomGameplayRuntime,
+  ): void {
     this.effectBoundary = gameplayRuntime.effectBoundary;
     this.turnEngine = gameplayRuntime.turnEngine;
     this.cardQueryEngine = gameplayRuntime.cardQueryEngine;
@@ -2459,7 +2462,10 @@ export class DuelRoom extends Room<DuelState> {
     outboxFailureMessage: string,
   ): Promise<void> {
     if (this.effectBoundary.hasPendingPlayerInteraction()) {
-      this.notifier.sendActionError(client, "Une decision d'effet est en attente.");
+      this.notifier.sendActionError(
+        client,
+        "Une decision d'effet est en attente.",
+      );
       return;
     }
 
@@ -2493,9 +2499,16 @@ export class DuelRoom extends Room<DuelState> {
       | { handled: false; errorMessage?: string }
       | { handled: true; eventDrafts: DomainEventDraft[] },
     outboxFailureMessage: string,
+    options?: { allowPendingInteraction?: boolean },
   ): Promise<void> {
-    if (this.effectBoundary.hasPendingPlayerInteraction()) {
-      this.notifier.sendActionError(client, "Une decision d'effet est en attente.");
+    if (
+      this.effectBoundary.hasPendingPlayerInteraction() &&
+      !options?.allowPendingInteraction
+    ) {
+      this.notifier.sendActionError(
+        client,
+        "Une decision d'effet est en attente.",
+      );
       return;
     }
 

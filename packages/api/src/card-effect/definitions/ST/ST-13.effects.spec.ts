@@ -6,7 +6,7 @@ import type {
 } from '../../types/effect-registry';
 import { buildEffectIndexes } from '../../effect-indexes';
 import { st13EffectDefinitions } from './ST-13.effects';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 import { EffectEngine } from '../../effect-engine';
 import {
   type TestHost,

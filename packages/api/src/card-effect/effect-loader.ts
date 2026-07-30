@@ -4,8 +4,10 @@ import type {
   ReplacementEffectDefinition,
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
-import { effectDefinitionEditions } from './definitions';
-import { specialHandlerDefinitions } from './definitions/special';
+import {
+  effectDefinitionEditions,
+  specialHandlerDefinitions,
+} from './definitions';
 import { buildEffectIndexes } from './effect-indexes';
 import type {
   CardEffectEntry,

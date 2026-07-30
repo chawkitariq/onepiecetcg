@@ -10,7 +10,7 @@ import type {
   SpecialHandlerDefinition,
 } from '../../types/effect-registry';
 import { op13EffectDefinitions } from './OP-13.effects';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 import { EffectEngine } from '../../effect-engine';
 import { createRegistry, makeCard, TestHost } from '../test-utils';
 

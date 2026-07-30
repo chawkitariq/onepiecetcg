@@ -198,8 +198,7 @@ function retuneAsPicaEndTurnEffectCard(
   card.basePower = 5000;
   card.power = 5000;
   card.counter = 1000;
-  card.text =
-    '[End of Your Turn] (1): Set this Character as active.';
+  card.text = '[End of Your Turn] (1): Set this Character as active.';
 }
 
 async function createRoomFixture(options?: {
@@ -1267,9 +1266,7 @@ describe('DuelRoom event integration', () => {
     const phaseBefore = room.state.phase;
     const turnBefore = room.state.turn;
 
-    jest
-      .spyOn(boundary, 'hasPendingPlayerInteraction')
-      .mockReturnValue(true);
+    jest.spyOn(boundary, 'hasPendingPlayerInteraction').mockReturnValue(true);
 
     await access.handleEndPhase(requester);
 

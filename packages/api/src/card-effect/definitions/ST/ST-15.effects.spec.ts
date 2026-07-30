@@ -7,7 +7,7 @@ import type {
 import { buildEffectIndexes } from '../../effect-indexes';
 import { EffectEngine } from '../../effect-engine';
 import { st15EffectDefinitions } from './ST-15.effects';
-import { specialHandlerDefinitions } from '../special';
+import { specialHandlerDefinitions } from '..';
 import {
   makeCard,
   TestHost,
