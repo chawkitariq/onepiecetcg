@@ -149,6 +149,22 @@ type CardKeywordSnapshot = {
   skipNextRefreshPhases: number;
 };
 
+type RefreshStepSnapshot = {
+  attachedDonSources: Map<
+    string,
+    {
+      ownerSessionId: string;
+      cardDefinitionId: string;
+      attachedDon: number;
+    }
+  >;
+  restedCostCardIds: Set<string>;
+};
+
+type CostZoneRestSnapshot = Map<string, boolean>;
+
+type OrderedZoneSnapshot = Map<string, string[]>;
+
 let services: DuelRoomServices | null = null;
 let resolveSession: DuelSessionResolver | null = null;
 
@@ -463,8 +479,10 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private async initializeGame() {
-    this.turnEngine.initializeGame();
-    await this.ensureEventStreamInitialized();
+    const runtime = this.createIsolatedGameplayRuntime();
+    runtime.gameplayRuntime.turnEngine.initializeGame();
+    await this.ensureEventStreamInitialized(runtime.state);
+    this.adoptIsolatedRuntime(runtime);
     void this.lock();
   }
 
@@ -537,6 +555,10 @@ export class DuelRoom extends Room<DuelState> {
       client,
       (runtime) => {
         const before = this.captureStateSnapshotFrom(runtime.state);
+        const beforeLocations = this.captureCardLocationsFrom(runtime.state);
+        const beforeRefresh = this.captureRefreshStepSnapshotFrom(
+          runtime.state,
+        );
         const error = runtime.gameplayRuntime.turnEngine.handleEndPhase(
           client.sessionId,
         );
@@ -548,6 +570,12 @@ export class DuelRoom extends Room<DuelState> {
         return {
           handled: true,
           eventDrafts: [
+            ...this.buildTurnStepDraftsFor(
+              before,
+              beforeLocations,
+              beforeRefresh,
+              runtime.state,
+            ),
             ...this.buildTurnTransitionDraftsFor(before, runtime.state),
             ...this.buildTerminalEventDraftsFor(before, runtime.state),
           ],
@@ -650,6 +678,15 @@ export class DuelRoom extends Room<DuelState> {
       client,
       (runtime) => {
         const before = this.captureStateSnapshotFrom(runtime.state);
+        const defender = runtime.state.players.get(client.sessionId);
+        const discardedCard =
+          defender && message.discardInstanceId
+            ? runtime.runtimeState.findCardInZone(
+                defender,
+                'hand',
+                message.discardInstanceId,
+              )?.card
+            : null;
         const handled =
           runtime.gameplayRuntime.combatEngine.handleDeclareCounter(
             client.sessionId,
@@ -675,6 +712,32 @@ export class DuelRoom extends Room<DuelState> {
                 ),
               },
             },
+            ...(discardedCard
+              ? [
+                  {
+                    type: 'CardMoved',
+                    version: 1,
+                    payload: {
+                      playerId: this.getPlayerId(client.sessionId),
+                      cardInstanceId: discardedCard.instanceId,
+                      cardDefinitionId: discardedCard.cardId,
+                      fromZone: 'HAND',
+                      toZone: 'TRASH',
+                    },
+                  } satisfies DomainEventDraft,
+                  {
+                    type: 'CardDiscarded',
+                    version: 1,
+                    payload: {
+                      playerId: this.getPlayerId(client.sessionId),
+                      cardInstanceId: discardedCard.instanceId,
+                      cardDefinitionId: discardedCard.cardId,
+                      fromZone: 'HAND',
+                      toZone: 'TRASH',
+                    },
+                  } satisfies DomainEventDraft,
+                ]
+              : []),
             ...this.buildTerminalEventDraftsFor(before, runtime.state),
           ],
         };
@@ -726,8 +789,13 @@ export class DuelRoom extends Room<DuelState> {
         }
 
         const drafts: DomainEventDraft[] = [];
+        const pendingManualTrigger =
+          runtime.gameplayRuntime.effectBoundary.exportState().manualTrigger ??
+          null;
+        const attackWasCancelled =
+          attackerPower === null || defenderPower === null;
 
-        if (attackerPower !== null && defenderPower !== null) {
+        if (!attackWasCancelled) {
           drafts.push({
             type: 'BattleResolved',
             version: 1,
@@ -745,6 +813,27 @@ export class DuelRoom extends Room<DuelState> {
               defenderPower,
               outcome:
                 attackerPower >= defenderPower ? 'attackerWon' : 'attackerLost',
+            },
+          });
+        }
+
+        if (attackWasCancelled) {
+          drafts.push({
+            type: 'AttackCancelled',
+            version: 1,
+            payload: {
+              attackerPlayerId: this.getPlayerId(
+                combatBefore.attackerSessionId,
+              ),
+              attackerInstanceId: combatBefore.attackerInstanceId,
+              defenderPlayerId: this.getPlayerId(
+                combatBefore.defenderSessionId,
+              ),
+              targetType: combatBefore.targetType,
+              targetInstanceId: combatBefore.targetInstanceId,
+              blockerInstanceId: combatBefore.blockerInstanceId || null,
+              reason:
+                attackerPower === null ? 'attackerMissing' : 'targetMissing',
             },
           });
         }
@@ -771,9 +860,36 @@ export class DuelRoom extends Room<DuelState> {
           this.captureCardLocationsFrom(runtime.state),
         )) {
           if (
+            movedCard.from.zone === 'life' &&
+            (movedCard.to.zone === 'hand' || movedCard.to.zone === 'trash')
+          ) {
+            drafts.push({
+              type: 'CardRevealed',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+                cardInstanceId: movedCard.instanceId,
+                cardDefinitionId: movedCard.to.cardId,
+                fromZone: 'LIFE',
+              },
+            });
+          }
+
+          if (
             movedCard.from.zone === 'characters' &&
             movedCard.to.zone === 'trash'
           ) {
+            drafts.push({
+              type: 'CardMoved',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+                cardInstanceId: movedCard.instanceId,
+                cardDefinitionId: movedCard.to.cardId,
+                fromZone: 'CHARACTER_AREA',
+                toZone: 'TRASH',
+              },
+            });
             drafts.push({
               type: 'CharacterKOD',
               version: 1,
@@ -790,6 +906,17 @@ export class DuelRoom extends Room<DuelState> {
             (movedCard.to.zone === 'hand' || movedCard.to.zone === 'trash')
           ) {
             drafts.push({
+              type: 'CardMoved',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+                cardInstanceId: movedCard.instanceId,
+                cardDefinitionId: movedCard.to.cardId,
+                fromZone: 'LIFE',
+                toZone: movedCard.to.zone === 'hand' ? 'HAND' : 'TRASH',
+              },
+            });
+            drafts.push({
               type: 'LifeCardTaken',
               version: 1,
               payload: {
@@ -802,6 +929,19 @@ export class DuelRoom extends Room<DuelState> {
               },
             });
           }
+        }
+
+        if (pendingManualTrigger) {
+          drafts.unshift({
+            type: 'CardRevealed',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(pendingManualTrigger.ownerSessionId),
+              cardInstanceId: pendingManualTrigger.card.instanceId,
+              cardDefinitionId: pendingManualTrigger.card.cardId,
+              fromZone: 'LIFE',
+            },
+          });
         }
 
         return {
@@ -914,6 +1054,17 @@ export class DuelRoom extends Room<DuelState> {
 
         if (pendingManualTrigger) {
           drafts.push({
+            type: 'CardMoved',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(client.sessionId),
+              cardInstanceId: pendingManualTrigger.card.instanceId,
+              cardDefinitionId: pendingManualTrigger.card.cardId,
+              fromZone: 'LIFE',
+              toZone: message.activate ? 'TRASH' : 'HAND',
+            },
+          });
+          drafts.push({
             type: 'LifeCardTaken',
             version: 1,
             payload: {
@@ -944,6 +1095,9 @@ export class DuelRoom extends Room<DuelState> {
       client,
       (runtime) => {
         const before = this.captureStateSnapshotFrom(runtime.state);
+        const beforeCostRest = this.captureCostZoneRestSnapshotFrom(
+          runtime.state,
+        );
         const player = runtime.state.players.get(client.sessionId);
         const playedCard =
           player && message.instanceId
@@ -985,7 +1139,40 @@ export class DuelRoom extends Room<DuelState> {
           return { handled: false };
         }
 
+        const restedDonCount = this.countNewlyRestedCostDonCards(
+          beforeCostRest,
+          runtime.state,
+          client.sessionId,
+        );
         const drafts: DomainEventDraft[] = [
+          ...(restedDonCount > 0
+            ? [
+                {
+                  type: 'DonRested',
+                  version: 1,
+                  payload: {
+                    playerId: this.getPlayerId(client.sessionId),
+                    count: restedDonCount,
+                  },
+                } satisfies DomainEventDraft,
+              ]
+            : []),
+          {
+            type: 'CardMoved',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(client.sessionId),
+              cardInstanceId: playedCard.instanceId,
+              cardDefinitionId: playedCard.cardId,
+              fromZone: 'HAND',
+              toZone:
+                playedCard.type === 'Character'
+                  ? 'CHARACTER_AREA'
+                  : playedCard.type === 'Stage'
+                    ? 'STAGE_AREA'
+                    : 'TRASH',
+            },
+          },
           {
             type: 'CostPaid',
             version: 1,
@@ -1017,6 +1204,17 @@ export class DuelRoom extends Room<DuelState> {
 
         if (discardedCharacter) {
           drafts.push({
+            type: 'CardMoved',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(client.sessionId),
+              cardInstanceId: discardedCharacter.instanceId,
+              cardDefinitionId: discardedCharacter.cardId,
+              fromZone: 'CHARACTER_AREA',
+              toZone: 'TRASH',
+            },
+          });
+          drafts.push({
             type: 'CardDiscarded',
             version: 1,
             payload: {
@@ -1030,6 +1228,17 @@ export class DuelRoom extends Room<DuelState> {
         }
 
         if (replacedStage) {
+          drafts.push({
+            type: 'CardMoved',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(client.sessionId),
+              cardInstanceId: replacedStage.instanceId,
+              cardDefinitionId: replacedStage.cardId,
+              fromZone: 'STAGE_AREA',
+              toZone: 'TRASH',
+            },
+          });
           drafts.push({
             type: 'CardDiscarded',
             version: 1,
@@ -1057,6 +1266,13 @@ export class DuelRoom extends Room<DuelState> {
     await this.executeIsolatedMainPhaseCommand(
       client,
       (runtime) => {
+        const beforeCostDonCards = Array.from(
+          runtime.state.players.get(client.sessionId)?.zones.cost ?? [],
+          (card) => ({
+            instanceId: card.instanceId,
+            cardId: card.cardId,
+          }),
+        );
         const handled = runtime.gameplayRuntime.mainPhaseEngine.handleAttachDon(
           client.sessionId,
           message,
@@ -1074,10 +1290,37 @@ export class DuelRoom extends Room<DuelState> {
             ? runtime.state.players.get(client.sessionId)?.zones.leader
                 .instanceId
             : message.targetInstanceId;
+        const targetCardId =
+          targetInstanceId &&
+          this.findCardByInstanceIdInState(runtime.state, targetInstanceId)
+            ?.cardId;
+        const remainingCostIds = new Set(
+          Array.from(
+            runtime.state.players.get(client.sessionId)?.zones.cost ?? [],
+            (card) => card.instanceId,
+          ),
+        );
+        const attachedDonCards = beforeCostDonCards
+          .filter((card) => !remainingCostIds.has(card.instanceId))
+          .slice(0, count);
 
         return {
           handled: true,
           eventDrafts: [
+            ...attachedDonCards.map(
+              (donCard) =>
+                ({
+                  type: 'CardPlacedUnderCard',
+                  version: 1,
+                  payload: {
+                    playerId: this.getPlayerId(client.sessionId),
+                    cardInstanceId: donCard.instanceId,
+                    cardDefinitionId: donCard.cardId,
+                    parentInstanceId: targetInstanceId ?? null,
+                    parentCardId: targetCardId ?? null,
+                  },
+                }) satisfies DomainEventDraft,
+            ),
             {
               type: 'DonAttached',
               version: 1,
@@ -1098,7 +1341,6 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     message: ResolveEffectDecisionMessage,
   ) {
-    const before = this.captureStateSnapshot();
     const decision = this.effectBoundary.getPendingEffectDecision();
 
     if (!decision) {
@@ -1121,6 +1363,16 @@ export class DuelRoom extends Room<DuelState> {
       decisionId: decision.id,
       promptType: decision.prompt.type,
     };
+    const before = this.captureStateSnapshot();
+    const beforeLocations = this.captureCardLocationsFrom(this.state);
+    const beforeDeckOrder = this.captureOrderedZoneSnapshotFrom(
+      this.state,
+      'deck',
+    );
+    const beforeLifeOrder = this.captureOrderedZoneSnapshotFrom(
+      this.state,
+      'life',
+    );
     this.effectBoundary.answerEffectDecision(message);
 
     if (
@@ -1144,6 +1396,12 @@ export class DuelRoom extends Room<DuelState> {
           confirmed: message.confirmed ?? null,
         },
       },
+      ...this.buildCardMovementDraftsFor(
+        beforeLocations,
+        beforeDeckOrder,
+        beforeLifeOrder,
+        this.state,
+      ),
       ...this.buildTerminalEventDrafts(before),
     ]);
   }
@@ -1260,6 +1518,25 @@ export class DuelRoom extends Room<DuelState> {
   ): DomainEventDraft[] {
     const drafts: DomainEventDraft[] = [
       {
+        type: 'MulliganRequested',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(actorSessionId),
+          tookMulligan,
+        },
+      },
+      ...(tookMulligan
+        ? [
+            {
+              type: 'DeckShuffled',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(actorSessionId),
+              },
+            } satisfies DomainEventDraft,
+          ]
+        : []),
+      {
         type: 'MulliganResolved',
         version: 1,
         payload: {
@@ -1346,6 +1623,462 @@ export class DuelRoom extends Room<DuelState> {
     return drafts;
   }
 
+  private buildTurnStepDraftsFor(
+    before: DuelStateSnapshot,
+    beforeLocations: Map<string, CardLocation>,
+    beforeRefresh: RefreshStepSnapshot,
+    state: DuelState,
+  ): DomainEventDraft[] {
+    const movedCards = this.findMovedCards(
+      beforeLocations,
+      this.captureCardLocationsFrom(state),
+    );
+    const drafts: DomainEventDraft[] = [];
+
+    if (before.phase === 'refresh' && state.phase === 'draw') {
+      for (const movedCard of movedCards) {
+        if (movedCard.from.zone !== 'deck' || movedCard.to.zone !== 'hand') {
+          continue;
+        }
+
+        drafts.push({
+          type: 'CardDrawn',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+            count: 1,
+            cardInstanceId: movedCard.instanceId,
+            cardDefinitionId: movedCard.to.cardId,
+          },
+        });
+      }
+    }
+
+    if (before.phase === 'draw' && state.phase === 'don') {
+      const donAddedByPlayer = new Map<string, number>();
+
+      for (const movedCard of movedCards) {
+        if (movedCard.from.zone !== 'donDeck' || movedCard.to.zone !== 'cost') {
+          continue;
+        }
+
+        donAddedByPlayer.set(
+          movedCard.to.ownerSessionId,
+          (donAddedByPlayer.get(movedCard.to.ownerSessionId) ?? 0) + 1,
+        );
+      }
+
+      for (const [ownerSessionId, count] of donAddedByPlayer.entries()) {
+        drafts.push({
+          type: 'DonAdded',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(ownerSessionId),
+            count,
+          },
+        });
+      }
+    }
+
+    if (before.phase === 'end' && state.phase === 'refresh') {
+      for (const [instanceId, source] of beforeRefresh.attachedDonSources) {
+        const card = this.findCardByInstanceIdInState(state, instanceId);
+
+        if (!card || card.attachedDon >= source.attachedDon) {
+          continue;
+        }
+
+        drafts.push({
+          type: 'DonDetached',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(source.ownerSessionId),
+            sourceInstanceId: instanceId,
+            sourceCardId: source.cardDefinitionId,
+            count: source.attachedDon - card.attachedDon,
+          },
+        });
+      }
+
+      const refreshedByPlayer = new Map<string, number>();
+
+      for (const player of state.players.values()) {
+        for (const donCard of player.zones.cost) {
+          if (
+            beforeRefresh.restedCostCardIds.has(donCard.instanceId) &&
+            !donCard.rested
+          ) {
+            refreshedByPlayer.set(
+              player.sessionId,
+              (refreshedByPlayer.get(player.sessionId) ?? 0) + 1,
+            );
+          }
+        }
+      }
+
+      for (const [ownerSessionId, count] of refreshedByPlayer.entries()) {
+        drafts.push({
+          type: 'DonRefreshed',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(ownerSessionId),
+            count,
+          },
+        });
+      }
+    }
+
+    return drafts;
+  }
+
+  private buildCardMovementDraftsFor(
+    beforeLocations: Map<string, CardLocation>,
+    beforeDeckOrder: OrderedZoneSnapshot,
+    beforeLifeOrder: OrderedZoneSnapshot,
+    state: DuelState,
+  ): DomainEventDraft[] {
+    const drafts: DomainEventDraft[] = [];
+    const shuffledPlayers = this.findShuffledDeckPlayers(
+      beforeDeckOrder,
+      state,
+    );
+
+    for (const movedCard of this.findMovedCards(
+      beforeLocations,
+      this.captureCardLocationsFrom(state),
+    )) {
+      const fromZone = this.toEventZoneName(movedCard.from.zone);
+      const toZone = this.toEventZoneName(movedCard.to.zone);
+      const playerId = this.getPlayerId(movedCard.to.ownerSessionId);
+
+      drafts.push({
+        type: 'CardMoved',
+        version: 1,
+        payload: {
+          playerId,
+          cardInstanceId: movedCard.instanceId,
+          cardDefinitionId: movedCard.to.cardId,
+          fromZone,
+          toZone,
+        },
+      });
+
+      if (movedCard.to.zone === 'hand' && movedCard.from.zone !== 'hand') {
+        drafts.push({
+          type: 'CardReturnedToHand',
+          version: 1,
+          payload: {
+            playerId,
+            cardInstanceId: movedCard.instanceId,
+            cardDefinitionId: movedCard.to.cardId,
+            fromZone,
+          },
+        });
+      }
+
+      if (movedCard.to.zone === 'deck') {
+        drafts.push({
+          type: 'CardPlacedOnDeck',
+          version: 1,
+          payload: {
+            playerId,
+            cardInstanceId: movedCard.instanceId,
+            cardDefinitionId: movedCard.to.cardId,
+            fromZone,
+            placement: this.inferZonePlacement(
+              movedCard.instanceId,
+              state.players.get(movedCard.to.ownerSessionId)?.zones.deck,
+              beforeDeckOrder.get(movedCard.to.ownerSessionId),
+            ),
+          },
+        });
+      }
+
+      if (movedCard.to.zone === 'life') {
+        drafts.push({
+          type: 'CardAddedToLife',
+          version: 1,
+          payload: {
+            playerId,
+            cardInstanceId: movedCard.instanceId,
+            cardDefinitionId: movedCard.to.cardId,
+            fromZone,
+            placement: this.inferZonePlacement(
+              movedCard.instanceId,
+              state.players.get(movedCard.to.ownerSessionId)?.zones.life,
+              beforeLifeOrder.get(movedCard.to.ownerSessionId),
+            ),
+          },
+        });
+      }
+    }
+
+    for (const ownerSessionId of shuffledPlayers) {
+      drafts.push({
+        type: 'DeckShuffled',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(ownerSessionId),
+        },
+      });
+    }
+
+    return drafts;
+  }
+
+  private captureRefreshStepSnapshotFrom(
+    state: DuelState,
+  ): RefreshStepSnapshot {
+    const attachedDonSources = new Map<
+      string,
+      {
+        ownerSessionId: string;
+        cardDefinitionId: string;
+        attachedDon: number;
+      }
+    >();
+    const restedCostCardIds = new Set<string>();
+
+    for (const player of state.players.values()) {
+      if (player.zones.leader.attachedDon > 0) {
+        attachedDonSources.set(player.zones.leader.instanceId, {
+          ownerSessionId: player.sessionId,
+          cardDefinitionId: player.zones.leader.cardId,
+          attachedDon: player.zones.leader.attachedDon,
+        });
+      }
+
+      for (const character of player.zones.characters) {
+        if (character.attachedDon > 0) {
+          attachedDonSources.set(character.instanceId, {
+            ownerSessionId: player.sessionId,
+            cardDefinitionId: character.cardId,
+            attachedDon: character.attachedDon,
+          });
+        }
+      }
+
+      for (const donCard of player.zones.cost) {
+        if (donCard.rested) {
+          restedCostCardIds.add(donCard.instanceId);
+        }
+      }
+    }
+
+    return {
+      attachedDonSources,
+      restedCostCardIds,
+    };
+  }
+
+  private captureOrderedZoneSnapshotFrom(
+    state: DuelState,
+    zone: 'deck' | 'life',
+  ): OrderedZoneSnapshot {
+    const snapshot: OrderedZoneSnapshot = new Map();
+
+    for (const player of state.players.values()) {
+      snapshot.set(
+        player.sessionId,
+        Array.from(player.zones[zone], (card) => card.instanceId),
+      );
+    }
+
+    return snapshot;
+  }
+
+  private inferZonePlacement(
+    instanceId: string,
+    cards: ArrayLike<DuelCard> | undefined,
+    beforeOrder: string[] | undefined,
+  ): 'top' | 'bottom' | 'unknown' {
+    const afterOrder = cards
+      ? Array.from(cards, (card) => card.instanceId)
+      : [];
+
+    if (afterOrder[0] === instanceId) {
+      return 'top';
+    }
+
+    if (afterOrder.at(-1) === instanceId) {
+      return 'bottom';
+    }
+
+    if (!beforeOrder) {
+      return 'unknown';
+    }
+
+    const afterIndex = afterOrder.indexOf(instanceId);
+
+    if (afterIndex === -1) {
+      return 'unknown';
+    }
+
+    const firstSharedBefore = beforeOrder.find((existingId) =>
+      afterOrder.includes(existingId),
+    );
+
+    if (firstSharedBefore) {
+      const firstSharedAfterIndex = afterOrder.indexOf(firstSharedBefore);
+
+      if (afterIndex < firstSharedAfterIndex) {
+        return 'top';
+      }
+    }
+
+    const lastSharedBefore = [...beforeOrder]
+      .reverse()
+      .find((existingId) => afterOrder.includes(existingId));
+
+    if (lastSharedBefore) {
+      const lastSharedAfterIndex = afterOrder.indexOf(lastSharedBefore);
+
+      if (afterIndex > lastSharedAfterIndex) {
+        return 'bottom';
+      }
+    }
+
+    return 'unknown';
+  }
+
+  private findShuffledDeckPlayers(
+    beforeDeckOrder: OrderedZoneSnapshot,
+    state: DuelState,
+  ): string[] {
+    const shuffledPlayers: string[] = [];
+
+    for (const player of state.players.values()) {
+      const beforeOrder = beforeDeckOrder.get(player.sessionId) ?? [];
+      const afterOrder = Array.from(
+        player.zones.deck,
+        (card) => card.instanceId,
+      );
+      const sharedCardIds = beforeOrder.filter((cardId) =>
+        afterOrder.includes(cardId),
+      );
+
+      if (sharedCardIds.length < 2) {
+        continue;
+      }
+
+      const afterSharedOrder = afterOrder.filter((cardId) =>
+        sharedCardIds.includes(cardId),
+      );
+
+      if (
+        !sharedCardIds.every(
+          (cardId, index) => afterSharedOrder[index] === cardId,
+        )
+      ) {
+        shuffledPlayers.push(player.sessionId);
+      }
+    }
+
+    return shuffledPlayers;
+  }
+
+  private toEventZoneName(
+    zone: CardLocation['zone'],
+  ):
+    | 'LEADER'
+    | 'STAGE_AREA'
+    | 'DECK'
+    | 'DON_DECK'
+    | 'HAND'
+    | 'LIFE'
+    | 'CHARACTER_AREA'
+    | 'COST_AREA'
+    | 'TRASH' {
+    switch (zone) {
+      case 'leader':
+        return 'LEADER';
+      case 'stage':
+        return 'STAGE_AREA';
+      case 'deck':
+        return 'DECK';
+      case 'donDeck':
+        return 'DON_DECK';
+      case 'hand':
+        return 'HAND';
+      case 'life':
+        return 'LIFE';
+      case 'characters':
+        return 'CHARACTER_AREA';
+      case 'cost':
+        return 'COST_AREA';
+      case 'trash':
+        return 'TRASH';
+    }
+  }
+
+  private captureCostZoneRestSnapshotFrom(
+    state: DuelState,
+  ): CostZoneRestSnapshot {
+    const snapshot: CostZoneRestSnapshot = new Map();
+
+    for (const player of state.players.values()) {
+      for (const donCard of player.zones.cost) {
+        snapshot.set(donCard.instanceId, donCard.rested);
+      }
+    }
+
+    return snapshot;
+  }
+
+  private countNewlyRestedCostDonCards(
+    before: CostZoneRestSnapshot,
+    state: DuelState,
+    ownerSessionId: string,
+  ): number {
+    let count = 0;
+    const player = state.players.get(ownerSessionId);
+
+    if (!player) {
+      return 0;
+    }
+
+    for (const donCard of player.zones.cost) {
+      if (before.get(donCard.instanceId) === false && donCard.rested) {
+        count += 1;
+      }
+    }
+
+    return count;
+  }
+
+  private findCardByInstanceIdInState(
+    state: DuelState,
+    instanceId: string,
+  ): DuelCard | null {
+    for (const player of state.players.values()) {
+      if (player.zones.leader.instanceId === instanceId) {
+        return player.zones.leader;
+      }
+
+      if (player.zones.stage.instanceId === instanceId) {
+        return player.zones.stage;
+      }
+
+      for (const zone of [
+        player.zones.deck,
+        player.zones.donDeck,
+        player.zones.hand,
+        player.zones.life,
+        player.zones.characters,
+        player.zones.cost,
+        player.zones.trash,
+      ]) {
+        const match = zone.find((card) => card.instanceId === instanceId);
+
+        if (match) {
+          return match;
+        }
+      }
+    }
+
+    return null;
+  }
+
   private buildTerminalEventDrafts(
     before: DuelStateSnapshot,
   ): DomainEventDraft[] {
@@ -1373,7 +2106,9 @@ export class DuelRoom extends Room<DuelState> {
     ];
   }
 
-  private async ensureEventStreamInitialized(): Promise<void> {
+  private async ensureEventStreamInitialized(
+    state = this.state,
+  ): Promise<void> {
     if (this.eventStreamCreated || !services?.duelEventsService) {
       return;
     }
@@ -1387,13 +2122,14 @@ export class DuelRoom extends Room<DuelState> {
         roomId: this.roomId,
         createdAt: new Date().toISOString(),
       },
+      participants: this.lifecycle.listParticipants(),
     });
 
     this.eventStreamCreated = true;
 
     const drafts: DomainEventDraft[] = [];
 
-    for (const player of this.state.players.values()) {
+    for (const player of state.players.values()) {
       const playerId = this.getPlayerId(player.sessionId);
       drafts.push(
         {
@@ -1424,7 +2160,7 @@ export class DuelRoom extends Room<DuelState> {
       );
     }
 
-    await this.recordRoomEvents(undefined, drafts);
+    await this.persistRoomEventsOrThrow(undefined, drafts);
   }
 
   private async recordRoomEvents(

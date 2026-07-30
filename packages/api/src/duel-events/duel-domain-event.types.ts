@@ -4,6 +4,15 @@
  */
 export type PlayerId = string;
 
+/** Lifecycle status of one duel event stream. */
+export type DuelEventStreamStatus = 'OPEN' | 'COMPLETED' | 'ABORTED';
+
+/** Private stream-side binding used to authorize owner views. */
+export type DuelEventStreamParticipant = {
+  authUserId: string;
+  playerId: PlayerId;
+};
+
 /**
  * Draft domain event emitted by gameplay code before infrastructure metadata
  * such as sequence numbers and timestamps are attached.
@@ -81,6 +90,7 @@ export type CreateDuelEventStreamInput = {
   engineVersion: string;
   rulesetVersion: string;
   matchCreatedPayload: Record<string, unknown>;
+  participants?: DuelEventStreamParticipant[];
 };
 
 /**

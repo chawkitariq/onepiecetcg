@@ -12,7 +12,10 @@ type CombatEffectBoundary = {
     event: EffectEventType,
     playerSessionId: string,
     card: DuelCard,
-    context?: Pick<EffectEvent, 'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'>,
+    context?: Pick<
+      EffectEvent,
+      'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'
+    >,
   ): void;
   emitBattleKo(playerSessionId: string, card: DuelCard): void;
   emitCounterUsage(playerSessionId: string, card: DuelCard): void;

@@ -66,6 +66,17 @@ export class DuelRoomLifecycle {
     return this.playerIdBySession.get(sessionId);
   }
 
+  /** Returns the current auth-user/player bindings for stream authorization. */
+  public listParticipants(): Array<{ authUserId: string; playerId: string }> {
+    return Array.from(this.authUserIdBySession.entries()).flatMap(
+      ([sessionId, authUserId]) => {
+        const playerId = this.playerIdBySession.get(sessionId);
+
+        return playerId ? [{ authUserId, playerId }] : [];
+      },
+    );
+  }
+
   /**
    * Records the actual match start time once mulligans are finished.
    */

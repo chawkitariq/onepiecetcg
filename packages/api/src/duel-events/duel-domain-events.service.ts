@@ -5,6 +5,7 @@ import { DuelEventStreamService } from './duel-event-stream.service';
 import type {
   CanonicalDomainEvent,
   CreateDuelEventStreamInput,
+  DuelEventStreamStatus,
   ListPublishedDuelEventsInput,
   RecordValidatedDuelEventsInput,
   RecordedDuelEvents,
@@ -27,6 +28,21 @@ export class DuelDomainEventsService {
     input: CreateDuelEventStreamInput,
   ): Promise<CanonicalDomainEvent<'MatchCreated'>> {
     return this.streamService.createStream(input);
+  }
+
+  /** Returns the current lifecycle status of one match stream, if it exists. */
+  public getStreamStatus(
+    matchId: string,
+  ): Promise<DuelEventStreamStatus | null> {
+    return this.streamService.getStreamStatus(matchId);
+  }
+
+  /** Returns the duel-local player id for an authenticated stream participant. */
+  public getPlayerIdForAuthUser(
+    matchId: string,
+    authUserId: string,
+  ): Promise<string | null> {
+    return this.streamService.getPlayerIdForAuthUser(matchId, authUserId);
   }
 
   /** Appends validated event drafts to an existing match stream. */

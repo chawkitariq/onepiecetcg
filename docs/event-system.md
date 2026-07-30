@@ -3,7 +3,7 @@
 **Statut :** Draft
 **Version :** 1.1
 **Projet :** One Piece TCG Web App
-**Périmètre :** `DuelRoom`, moteur de duel, moteur d’effets, Event Outbox, Event Relay, exposition aux services internes et tiers
+**Périmètre :** `DuelRoom`, moteur de duel, moteur d’effets interne, Event Outbox, Event Relay, exposition aux services internes et tiers
 
 ---
 
@@ -135,7 +135,7 @@ Même si `DuelState` est utilisé, les règles suivantes sont obligatoires :
 
 Le système doit permettre de :
 
-1. produire des événements métier depuis les moteurs ;
+1. produire des événements métier depuis la `DuelRoom` et le moteur de duel ;
 2. conserver l’ordre des événements à l’intérieur d’un match ;
 3. persister les événements avant leur diffusion ;
 4. publier les événements de manière asynchrone ;
@@ -220,7 +220,7 @@ Duel Engine
       ├── applique les règles
       ├── appelle le moteur d’effets
       ├── produit le nouvel état
-      └── produit DomainEventDraft[]
+      └── dérive DomainEventDraft[] à partir des faits observables
       │
       ▼
 DuelEventRecorder
@@ -428,7 +428,7 @@ Le moteur de duel est responsable de :
 * modifier la copie de travail ;
 * produire les événements métier ;
 * conserver leur ordre logique ;
-* appeler le moteur d’effets.
+* appeler le moteur d’effets et traduire ses conséquences observables en événements métier.
 
 Il ne connaît pas :
 
@@ -462,23 +462,26 @@ Le moteur d’effets est responsable de :
 
 * résoudre les effets ;
 * modifier la copie de travail ;
-* produire les événements métier liés aux effets ;
 * demander les choix nécessaires ;
+* émettre, si besoin, des signaux internes utiles au gameplay ;
 * rester déterministe pour les mêmes entrées.
+
+Il n’est pas responsable de :
+
+* produire des `DomainEventDraft` destinés à l’outbox ;
+* publier des événements métier ;
+* définir le contrat canonique consommé par les services tiers.
 
 Interface conceptuelle :
 
 ```ts
 export interface EffectEngineResult {
   state: DuelState;
-  events: DomainEventDraft[];
   pendingChoice?: PendingChoice;
 }
 ```
 
-Le moteur d’effets ne publie rien directement.
-
-Ses événements sont agrégés avec ceux du moteur de duel.
+Les conséquences métier d’un effet sont enregistrées plus haut, au niveau de la `DuelRoom` et du moteur de duel, quand elles se matérialisent sous forme d’actions observables déjà couvertes par le gameplay.
 
 ---
 
@@ -514,7 +517,7 @@ CardPlayed
 AttackDeclared
 DamageDealt
 CharacterKOD
-EffectResolved
+ChoiceSubmitted
 ```
 
 Seuls les événements métier destinés aux consommateurs sont enregistrés dans l’outbox.
@@ -900,11 +903,11 @@ En cas d’échec :
 
 6. Le DuelEngine exécute la commande.
 
-7. Le moteur d’effets résout les effets.
+7. Le moteur d’effets résout les effets et modifie la copie de travail.
 
-8. Les moteurs retournent :
+8. La DuelRoom et le moteur de duel dérivent :
    - le nouvel état de travail ;
-   - DomainEventDraft[].
+   - `DomainEventDraft[]` à partir des faits observables.
 
 9. Le DuelEventRecorder :
    - verrouille le stream ;
@@ -935,10 +938,8 @@ Exemple sans choix :
 ```text
 PlayCard
 → CostPaid
-→ CardMoved
 → CardPlayed
-→ EffectActivated
-→ EffectResolved
+→ CardDiscarded
 ```
 
 Tous les événements partagent :
@@ -950,10 +951,10 @@ transactionId
 Exemple avec choix :
 
 ```text
-PlayCard
-→ CardPlayed
-→ EffectActivated
-→ ChoiceRequested
+AttackDeclared
+→ AttackTargetSelected
+→ BattleResolved
+→ LifeCardTaken
 → commit
 ```
 
@@ -961,8 +962,7 @@ Puis :
 
 ```text
 ChoiceSubmitted
-→ EffectTargetSelected
-→ EffectResolved
+→ LifeCardTaken
 → commit
 ```
 
@@ -1024,15 +1024,8 @@ ChoiceSubmitted
 * `CharacterKOD`
 * `AttackCancelled`
 
-## Effets
+## Décisions
 
-* `EffectTriggered`
-* `EffectActivated`
-* `EffectTargetSelected`
-* `EffectResolved`
-* `EffectCancelled`
-* `EffectFailed`
-* `ChoiceRequested`
 * `ChoiceSubmitted`
 
 ---
@@ -1047,7 +1040,7 @@ Exemples valides :
 CostPaid
 CardMoved
 CardPlayed
-EffectActivated
+DamageDealt
 ```
 
 Exemples interdits :
@@ -1668,7 +1661,7 @@ Le système est conforme lorsque :
 1. la `DuelRoom` reste l’orchestrateur principal ;
 2. le moteur utilise explicitement `DuelStateSchema` en v1 ;
 3. le caractère transitoire de ce choix est documenté ;
-4. les moteurs produisent des `DomainEventDraft[]` ;
+4. la `DuelRoom` et le moteur de duel produisent les `DomainEventDraft[]` observables ;
 5. les moteurs travaillent sur une copie isolée ;
 6. l’état vivant n’est jamais muté avant le commit ;
 7. aucune restauration manuelle de l’état n’est utilisée ;

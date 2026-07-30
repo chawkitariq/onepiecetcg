@@ -122,11 +122,17 @@ export class DuelEventRecorderService {
       stream.lastSequenceNumber = lastSequenceNumber;
 
       const closesStream = canonicalEvents.some(
-        (event) => event.eventType === 'MatchEnded',
+        (event) =>
+          event.eventType === 'MatchEnded' ||
+          event.eventType === 'MatchAborted',
       );
 
       if (closesStream) {
-        stream.status = 'COMPLETED';
+        stream.status = canonicalEvents.some(
+          (event) => event.eventType === 'MatchAborted',
+        )
+          ? 'ABORTED'
+          : 'COMPLETED';
       }
 
       await manager.save(DuelEventStream, stream);

@@ -1,5 +1,8 @@
 import type { DuelCard, DuelState } from '@onepiecetcg/shared';
-import type { EffectEvent, EffectEventType } from '../../card-effect/effect-engine';
+import type {
+  EffectEvent,
+  EffectEventType,
+} from '../../card-effect/effect-engine';
 import { effectRegistry } from '../../card-effect/effect-registry';
 
 /**

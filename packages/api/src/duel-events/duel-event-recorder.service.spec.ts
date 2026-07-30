@@ -15,8 +15,9 @@ describe('DuelEventRecorderService', () => {
       status: 'OPEN' as const,
     });
     const savedRows: DuelEventOutbox[] = [];
+    const findOne = jest.fn(() => Promise.resolve(stream));
     const manager = {
-      findOne: jest.fn(() => Promise.resolve(stream)),
+      findOne,
       create: jest.fn(<T>(_: new () => T, value: Partial<T>) =>
         Object.assign(new DuelEventOutbox(), value),
       ),
@@ -67,6 +68,10 @@ describe('DuelEventRecorderService', () => {
     expect(stream.status).toBe('COMPLETED');
     expect(savedRows).toHaveLength(2);
     expect(savedRows.map((row) => row.sequenceNumber)).toEqual([4, 5]);
+    expect(findOne).toHaveBeenCalledWith(DuelEventStream, {
+      where: { matchId: 'match-1' },
+      lock: { mode: 'pessimistic_write' },
+    });
   });
 
   it('rejects recording when the match stream does not exist', async () => {
@@ -253,5 +258,98 @@ describe('DuelEventRecorderService', () => {
         rulesetVersion: 'ruleset-test',
       }),
     ).rejects.toBeInstanceOf(DuelEventStreamClosedError);
+  });
+
+  it('rejects recording when the match stream is already aborted', async () => {
+    const stream = Object.assign(new DuelEventStream(), {
+      matchId: 'match-aborted',
+      lastSequenceNumber: 8,
+      status: 'ABORTED' as const,
+    });
+    const manager = {
+      findOne: jest.fn(() => Promise.resolve(stream)),
+    } as unknown as jest.Mocked<EntityManager>;
+    const dataSource = {
+      transaction: jest.fn(
+        <T>(callback: (innerManager: EntityManager) => Promise<T>) =>
+          callback(manager),
+      ),
+      getRepository: jest.fn(() => ({
+        findOne: jest.fn(() => Promise.resolve(stream)),
+      })),
+    } as unknown as jest.Mocked<DataSource>;
+    const service = new DuelEventRecorderService(dataSource);
+
+    await expect(
+      service.record({
+        matchId: 'match-aborted',
+        commandId: 'cmd-2',
+        actionId: 'act-2',
+        actorPlayerId: 'player-1',
+        eventDrafts: [
+          { type: 'PhaseChanged', version: 1, payload: { from: 'a', to: 'b' } },
+        ],
+        engineVersion: 'engine-test',
+        rulesetVersion: 'ruleset-test',
+      }),
+    ).rejects.toBeInstanceOf(DuelEventStreamClosedError);
+  });
+
+  it('marks the stream as aborted when MatchAborted is recorded', async () => {
+    const stream = Object.assign(new DuelEventStream(), {
+      matchId: 'match-2',
+      lastSequenceNumber: 7,
+      status: 'OPEN' as const,
+    });
+    const savedRows: DuelEventOutbox[] = [];
+    const manager = {
+      findOne: jest.fn(() => Promise.resolve(stream)),
+      create: jest.fn(<T>(_: new () => T, value: Partial<T>) =>
+        Object.assign(new DuelEventOutbox(), value),
+      ),
+      save: jest.fn((_entity: unknown, value: unknown) => {
+        if (Array.isArray(value)) {
+          savedRows.push(...(value as DuelEventOutbox[]));
+        }
+
+        return Promise.resolve(value);
+      }),
+    } as unknown as jest.Mocked<EntityManager>;
+    const dataSource = {
+      transaction: jest.fn(
+        <T>(callback: (innerManager: EntityManager) => Promise<T>) =>
+          callback(manager),
+      ),
+      getRepository: jest.fn(() => ({
+        findOne: jest.fn(),
+      })),
+    } as unknown as jest.Mocked<DataSource>;
+    const service = new DuelEventRecorderService(dataSource);
+
+    const result = await service.record({
+      matchId: 'match-2',
+      actorPlayerId: 'player-1',
+      commandId: 'cmd-abort',
+      actionId: 'act-abort',
+      eventDrafts: [
+        {
+          type: 'MatchAborted',
+          version: 1,
+          payload: {
+            reason: 'roomLost',
+          },
+        },
+      ],
+      engineVersion: 'engine-test',
+      rulesetVersion: 'ruleset-test',
+    });
+
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]?.eventType).toBe('MatchAborted');
+    expect(result.lastSequenceNumber).toBe(8);
+    expect(stream.lastSequenceNumber).toBe(8);
+    expect(stream.status).toBe('ABORTED');
+    expect(savedRows).toHaveLength(1);
+    expect(savedRows[0]?.eventType).toBe('MatchAborted');
   });
 });

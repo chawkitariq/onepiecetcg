@@ -114,4 +114,44 @@ describe('DuelEventRelayService', () => {
     expect(row.nextAttemptAt).toBeInstanceOf(Date);
     expect(row.lastError).toBe('bus unavailable');
   });
+
+  it('marks a row as failed after the maximum retry count is reached', async () => {
+    const row = createOutboxRow();
+    row.attemptCount = 9;
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      setOnLocked: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn(() => Promise.resolve([row])),
+    };
+    const manager: MockRelayManager = {
+      transaction: jest.fn(
+        <T>(callback: (innerManager: EntityManager) => Promise<T>) =>
+          callback(manager as unknown as EntityManager),
+      ),
+      createQueryBuilder: jest.fn(() => queryBuilder),
+      save: jest.fn((_: unknown, value: unknown) => Promise.resolve(value)),
+    };
+    const outbox = {
+      manager: manager as unknown as EntityManager,
+      save: jest.fn((value: unknown) => Promise.resolve(value)),
+    } as unknown as jest.Mocked<Repository<DuelEventOutbox>>;
+    const bus = {
+      publish: jest.fn(() => {
+        throw new Error('bus unavailable');
+      }),
+    } as unknown as jest.Mocked<DuelEventBusService>;
+    const relay = new DuelEventRelayService(outbox, bus);
+
+    const published = await relay.processPendingBatch();
+
+    expect(published).toBe(0);
+    expect(row.attemptCount).toBe(10);
+    expect(row.status).toBe('FAILED');
+    expect(row.nextAttemptAt).toBeNull();
+    expect(row.lastError).toBe('bus unavailable');
+  });
 });

@@ -5,6 +5,10 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type {
+  DuelEventStreamParticipant,
+  DuelEventStreamStatus,
+} from './duel-domain-event.types';
 
 /**
  * One ordered domain-event stream per duel match. Sequence numbers are scoped
@@ -19,7 +23,10 @@ export class DuelEventStream {
   lastSequenceNumber!: number;
 
   @Column({ type: 'varchar', default: 'OPEN' })
-  status!: 'OPEN' | 'COMPLETED' | 'ABORTED';
+  status!: DuelEventStreamStatus;
+
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  participants!: DuelEventStreamParticipant[];
 
   @CreateDateColumn()
   createdAt!: Date;

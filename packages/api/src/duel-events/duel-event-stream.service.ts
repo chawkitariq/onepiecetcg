@@ -7,6 +7,7 @@ import type {
   CanonicalDomainEvent,
   CanonicalDomainEventMetadata,
   CreateDuelEventStreamInput,
+  DuelEventStreamStatus,
 } from './duel-domain-event.types';
 import { assertSupportedDomainEvent } from './duel-event-registry';
 
@@ -17,6 +18,39 @@ import { assertSupportedDomainEvent } from './duel-event-registry';
 @Injectable()
 export class DuelEventStreamService {
   public constructor(private readonly dataSource: DataSource) {}
+
+  /** Returns the current lifecycle status of one match stream, if it exists. */
+  public async getStreamStatus(
+    matchId: string,
+  ): Promise<DuelEventStreamStatus | null> {
+    const stream = await this.dataSource
+      .getRepository(DuelEventStream)
+      .findOne({
+        where: { matchId },
+        select: ['matchId', 'status'],
+      });
+
+    return stream?.status ?? null;
+  }
+
+  /** Returns the duel-local player id bound to one authenticated user. */
+  public async getPlayerIdForAuthUser(
+    matchId: string,
+    authUserId: string,
+  ): Promise<string | null> {
+    const stream = await this.dataSource
+      .getRepository(DuelEventStream)
+      .findOne({
+        where: { matchId },
+        select: ['matchId', 'participants'],
+      });
+
+    return (
+      stream?.participants.find(
+        (participant) => participant.authUserId === authUserId,
+      )?.playerId ?? null
+    );
+  }
 
   /** Atomically opens a new match stream and inserts sequence 1. */
   public async createStream(
@@ -57,6 +91,7 @@ export class DuelEventStreamService {
         matchId: input.matchId,
         lastSequenceNumber: 1,
         status: 'OPEN',
+        participants: input.participants ?? [],
       });
       const outboxRow = manager.create(DuelEventOutbox, {
         eventId,
