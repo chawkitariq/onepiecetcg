@@ -43,12 +43,15 @@ type PrivateRoomAccess = {
   handleChooseFirstOrSecond: (
     client: { sessionId: string },
     message: { choice: 'first' | 'second' },
-  ) => void;
+  ) => Promise<void>;
   handleMulligan: (
     client: { sessionId: string },
     message: { mulligan: boolean },
-  ) => void;
-  handleEndPhase: (client: { sessionId: string; send: jest.Mock }) => void;
+  ) => Promise<void>;
+  handleEndPhase: (client: {
+    sessionId: string;
+    send: jest.Mock;
+  }) => Promise<void>;
   handleDeclareAttack: (
     client: { sessionId: string; send: jest.Mock },
     message: {
@@ -56,15 +59,15 @@ type PrivateRoomAccess = {
       targetType: 'leader' | 'character';
       targetInstanceId?: string;
     },
-  ) => void;
+  ) => Promise<void>;
   handleDeclareBlock: (
     client: { sessionId: string; send: jest.Mock },
     message: { blockerInstanceId?: string | null },
-  ) => void;
+  ) => Promise<void>;
   handleFinishCounterStep: (client: {
     sessionId: string;
     send: jest.Mock;
-  }) => void;
+  }) => Promise<void>;
 };
 
 function asPrivateRoom(room: DuelRoom): PrivateRoomAccess {
@@ -107,7 +110,7 @@ async function createRoomAtFirstTurn(statsService?: {
     remove: jest.fn(),
     metadata: {},
   };
-  room.onCreate();
+  await room.onCreate();
   jest.spyOn(room, 'lock').mockImplementation(() => undefined);
 
   await room.onJoin(
@@ -126,38 +129,44 @@ async function createRoomAtFirstTurn(statsService?: {
   const secondSessionId =
     firstSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-  access.handleChooseFirstOrSecond(
+  await access.handleChooseFirstOrSecond(
     { sessionId: firstSessionId },
     { choice: 'first' },
   );
-  access.handleMulligan({ sessionId: firstSessionId }, { mulligan: false });
-  access.handleMulligan({ sessionId: secondSessionId }, { mulligan: false });
+  await access.handleMulligan(
+    { sessionId: firstSessionId },
+    { mulligan: false },
+  );
+  await access.handleMulligan(
+    { sessionId: secondSessionId },
+    { mulligan: false },
+  );
 
   return { room, firstSessionId, secondSessionId };
 }
 
-function advanceToMain(room: DuelRoom, sessionId: string): void {
+async function advanceToMain(room: DuelRoom, sessionId: string): Promise<void> {
   const access = asPrivateRoom(room);
   const client = fakeClient(sessionId);
 
-  access.handleEndPhase(client); // draw
-  access.handleEndPhase(client); // don
-  access.handleEndPhase(client); // main
+  await access.handleEndPhase(client); // draw
+  await access.handleEndPhase(client); // don
+  await access.handleEndPhase(client); // main
 }
 
-function advanceToSecondMainTurn(
+async function advanceToSecondMainTurn(
   room: DuelRoom,
   firstSessionId: string,
   secondSessionId: string,
-): void {
-  advanceToMain(room, firstSessionId);
+): Promise<void> {
+  await advanceToMain(room, firstSessionId);
   const access = asPrivateRoom(room);
-  access.handleEndPhase(fakeClient(firstSessionId));
-  access.handleEndPhase(fakeClient(firstSessionId));
-  advanceToMain(room, secondSessionId);
-  access.handleEndPhase(fakeClient(secondSessionId));
-  access.handleEndPhase(fakeClient(secondSessionId));
-  advanceToMain(room, firstSessionId);
+  await access.handleEndPhase(fakeClient(firstSessionId));
+  await access.handleEndPhase(fakeClient(firstSessionId));
+  await advanceToMain(room, secondSessionId);
+  await access.handleEndPhase(fakeClient(secondSessionId));
+  await access.handleEndPhase(fakeClient(secondSessionId));
+  await advanceToMain(room, firstSessionId);
 }
 
 async function disposeRoom(room: DuelRoom): Promise<void> {
@@ -170,7 +179,7 @@ describe('DuelRoom match result recording (stage 13)', () => {
     const recordMatchResult = jest.fn().mockResolvedValue(undefined);
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn({ recordMatchResult });
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -178,14 +187,14 @@ describe('DuelRoom match result recording (stage 13)', () => {
     defender!.zones.life.splice(0);
     defender!.lifeCount = 0;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(room.state.phase).toBe('finished');
     expect(room.state.endReason).toBe('life');
@@ -227,7 +236,7 @@ describe('DuelRoom match result recording (stage 13)', () => {
     const recordMatchResult = jest.fn().mockResolvedValue(undefined);
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn({ recordMatchResult });
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -235,14 +244,14 @@ describe('DuelRoom match result recording (stage 13)', () => {
     defender!.zones.life.splice(0);
     defender!.lifeCount = 0;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     await Promise.resolve();
     await Promise.resolve();
@@ -256,7 +265,7 @@ describe('DuelRoom match result recording (stage 13)', () => {
     const recordMatchResult = jest.fn().mockResolvedValue(undefined);
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn({ recordMatchResult });
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     jest
       .spyOn(room, 'allowReconnection')
@@ -276,7 +285,7 @@ describe('DuelRoom match result recording (stage 13)', () => {
     const recordMatchResult = jest.fn().mockResolvedValue(undefined);
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn({ recordMatchResult });
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     await room.onLeave(fakeClient(firstSessionId) as never, true);
 
@@ -329,7 +338,7 @@ describe('DuelRoom match result recording (stage 13)', () => {
       remove: jest.fn(),
       metadata: {},
     };
-    room.onCreate();
+    await room.onCreate();
     jest.spyOn(room, 'lock').mockImplementation(() => undefined);
 
     await room.onJoin(
@@ -359,7 +368,7 @@ describe('DuelRoom match result recording (stage 13)', () => {
     const recordMatchResult = jest.fn().mockResolvedValue(undefined);
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn({ recordMatchResult });
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -367,14 +376,14 @@ describe('DuelRoom match result recording (stage 13)', () => {
     defender!.zones.life.splice(0);
     defender!.lifeCount = 0;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     await Promise.resolve();
     await Promise.resolve();

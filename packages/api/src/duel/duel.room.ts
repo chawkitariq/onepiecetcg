@@ -131,6 +131,24 @@ type IsolatedGameplayRuntime = ReturnType<
   DuelRoom['createIsolatedGameplayRuntime']
 >;
 
+type CardKeywordSnapshot = {
+  hasRush: boolean;
+  hasDoubleAttack: boolean;
+  hasBanish: boolean;
+  canAttackActiveCharacters: boolean;
+  mustBeAttackTarget: boolean;
+  cannotAttack: boolean;
+  cannotAttackLeaderOnTurnPlayed: boolean;
+  cannotBlock: boolean;
+  cannotBeKoedInBattle: boolean;
+  cannotBeKoedByEffects: boolean;
+  cannotBeKoedBySlashInBattle: boolean;
+  cannotBeKoedByStrikeInBattle: boolean;
+  winOnDeckOut: boolean;
+  cannotBeRemovedByOpponentEffects: boolean;
+  skipNextRefreshPhases: number;
+};
+
 let services: DuelRoomServices | null = null;
 let resolveSession: DuelSessionResolver | null = null;
 
@@ -368,6 +386,46 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   async onLeave(client: Client, consented: boolean) {
+    if (consented) {
+      const state = cloneRoomDuelState(this.state);
+      const lifecycle = this.createLifecycleForState(state, { isolated: true });
+      lifecycle.importState(this.lifecycle.exportState());
+      const player = state.players.get(client.sessionId);
+
+      if (!player) {
+        return;
+      }
+
+      player.connected = false;
+      this.appendLogToState(state, `${player.displayName} est deconnecte.`);
+      const snapshot = this.captureStateSnapshotFrom(state);
+      lifecycle.declareForfeitIfMatchInProgress(player);
+
+      try {
+        await this.persistRoomEventsOrThrow(client.sessionId, [
+          {
+            type: 'PlayerConceded',
+            version: 1,
+            payload: { playerId: this.getPlayerId(client.sessionId) },
+          },
+          ...this.buildTerminalEventDraftsFor(snapshot, state),
+        ]);
+      } catch (error) {
+        this.logger.error('Failed to persist duel domain events', error);
+        return;
+      }
+
+      adoptRoomDuelState(this.state, state);
+      this.lifecycle.importState(lifecycle.exportState());
+      this.lifecycle.recordMatchResult();
+      this.lifecycle.removePlayer(client.sessionId);
+      this.rebuildAllClientViews();
+      this.notifier.syncPendingEffectDecision(
+        this.effectBoundary.getPendingEffectDecision(),
+      );
+      return;
+    }
+
     const player = this.state.players.get(client.sessionId);
 
     if (!player) {
@@ -376,21 +434,6 @@ export class DuelRoom extends Room<DuelState> {
 
     player.connected = false;
     this.addLog(`${player.displayName} est deconnecte.`);
-
-    if (consented) {
-      const snapshot = this.captureStateSnapshot();
-      this.lifecycle.declareForfeitIfMatchInProgress(player);
-      await this.recordRoomEvents(client.sessionId, [
-        {
-          type: 'PlayerConceded',
-          version: 1,
-          payload: { playerId: this.getPlayerId(client.sessionId) },
-        },
-        ...this.buildTerminalEventDrafts(snapshot),
-      ]);
-      this.lifecycle.removePlayer(client.sessionId);
-      return;
-    }
 
     try {
       await this.allowReconnection(client, RECONNECTION_SECONDS);
@@ -429,90 +472,89 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     message: ChooseFirstOrSecondMessage,
   ) {
-    const beforeFirstPlayerSessionId = this.state.firstPlayerSessionId;
-    this.turnEngine.handleChooseFirstOrSecond(client.sessionId, message.choice);
+    const runtime = this.createIsolatedGameplayRuntime();
+    const beforeFirstPlayerSessionId = runtime.state.firstPlayerSessionId;
+    runtime.gameplayRuntime.turnEngine.handleChooseFirstOrSecond(
+      client.sessionId,
+      message.choice,
+    );
 
     if (
-      !beforeFirstPlayerSessionId &&
-      this.state.firstPlayerSessionId &&
-      this.eventStreamCreated
+      beforeFirstPlayerSessionId ||
+      !runtime.state.firstPlayerSessionId ||
+      !this.eventStreamCreated
     ) {
-      await this.recordRoomEvents(client.sessionId, [
+      this.adoptIsolatedRuntime(runtime);
+      return;
+    }
+
+    try {
+      await this.persistRoomEventsOrThrow(client.sessionId, [
         {
           type: 'StartingPlayerDetermined',
           version: 1,
           payload: {
             chooserPlayerId: this.getPlayerId(client.sessionId),
-            firstPlayerId: this.getPlayerId(this.state.firstPlayerSessionId),
+            firstPlayerId: this.getPlayerId(runtime.state.firstPlayerSessionId),
             choice: message.choice,
           },
         },
       ]);
-    }
-  }
-
-  private async handleMulligan(client: Client, message: MulliganMessage) {
-    const before = this.captureStateSnapshot();
-    this.turnEngine.handleMulligan(client.sessionId, message.mulligan);
-
-    const drafts: DomainEventDraft[] = [
-      {
-        type: 'MulliganResolved',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(client.sessionId),
-          tookMulligan: message.mulligan,
-        },
-      },
-    ];
-
-    if (!before.startedAt && this.state.startedAt) {
-      drafts.push(
-        {
-          type: 'MatchStarted',
-          version: 1,
-          payload: {
-            startedAt: this.state.startedAt,
-            firstPlayerId: this.getPlayerId(this.state.firstPlayerSessionId),
-          },
-        },
-        {
-          type: 'TurnStarted',
-          version: 1,
-          payload: {
-            turn: this.state.turn,
-            playerId: this.getPlayerId(this.state.activePlayerSessionId),
-          },
-        },
-        {
-          type: 'PhaseChanged',
-          version: 1,
-          payload: {
-            turn: this.state.turn,
-            playerId: this.getPlayerId(this.state.activePlayerSessionId),
-            fromPhase: before.phase,
-            toPhase: this.state.phase,
-          },
-        },
-      );
-    }
-
-    await this.recordRoomEvents(client.sessionId, drafts);
-  }
-
-  private async handleEndPhase(client: Client) {
-    const before = this.captureStateSnapshot();
-    const error = this.turnEngine.handleEndPhase(client.sessionId);
-
-    if (error) {
-      this.notifier.sendActionError(client, error);
+    } catch (error) {
+      this.logger.error('Failed to persist duel domain events', error);
       return;
     }
 
-    await this.recordRoomEvents(client.sessionId, [
-      ...this.buildTurnTransitionDrafts(before),
-      ...this.buildTerminalEventDrafts(before),
-    ]);
+    this.adoptIsolatedRuntime(runtime);
+  }
+
+  private async handleMulligan(client: Client, message: MulliganMessage) {
+    await this.executeIsolatedTurnCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        runtime.gameplayRuntime.turnEngine.handleMulligan(
+          client.sessionId,
+          message.mulligan,
+        );
+
+        return {
+          handled: true,
+          eventDrafts: this.buildMulliganEventDraftsFor(
+            before,
+            runtime.state,
+            client.sessionId,
+            message.mulligan,
+          ),
+        };
+      },
+      'Impossible de resoudre le mulligan pour le moment.',
+    );
+  }
+
+  private async handleEndPhase(client: Client) {
+    await this.executeIsolatedTurnCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        const error = runtime.gameplayRuntime.turnEngine.handleEndPhase(
+          client.sessionId,
+        );
+
+        if (error) {
+          return { handled: false, errorMessage: error };
+        }
+
+        return {
+          handled: true,
+          eventDrafts: [
+            ...this.buildTurnTransitionDraftsFor(before, runtime.state),
+            ...this.buildTerminalEventDraftsFor(before, runtime.state),
+          ],
+        };
+      },
+      'Impossible de terminer la phase pour le moment.',
+    );
   }
 
   private async handleDeclareAttack(
@@ -520,36 +562,46 @@ export class DuelRoom extends Room<DuelState> {
     message: DeclareAttackMessage,
   ) {
     this.notifier.bindCombatClient(client);
-    const before = this.captureStateSnapshot();
-    const handled = this.combatEngine.handleDeclareAttack(
-      client.sessionId,
-      message,
+    await this.executeIsolatedCombatCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        const handled =
+          runtime.gameplayRuntime.combatEngine.handleDeclareAttack(
+            client.sessionId,
+            message,
+          );
+
+        if (!handled) {
+          return { handled: false };
+        }
+
+        return {
+          handled: true,
+          eventDrafts: [
+            {
+              type: 'AttackDeclared',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(client.sessionId),
+                attackerInstanceId: message.attackerInstanceId,
+              },
+            },
+            {
+              type: 'AttackTargetSelected',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(client.sessionId),
+                targetType: message.targetType,
+                targetInstanceId: runtime.state.combat.targetInstanceId,
+              },
+            },
+            ...this.buildTerminalEventDraftsFor(before, runtime.state),
+          ],
+        };
+      },
+      "Impossible de declarer l'attaque pour le moment.",
     );
-
-    if (!handled) {
-      return;
-    }
-
-    await this.recordRoomEvents(client.sessionId, [
-      {
-        type: 'AttackDeclared',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(client.sessionId),
-          attackerInstanceId: message.attackerInstanceId,
-        },
-      },
-      {
-        type: 'AttackTargetSelected',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(client.sessionId),
-          targetType: message.targetType,
-          targetInstanceId: this.state.combat.targetInstanceId,
-        },
-      },
-      ...this.buildTerminalEventDrafts(before),
-    ]);
   }
 
   private async handleDeclareBlock(
@@ -557,27 +609,36 @@ export class DuelRoom extends Room<DuelState> {
     message: DeclareBlockMessage,
   ) {
     this.notifier.bindCombatClient(client);
-    const before = this.captureStateSnapshot();
-    const handled = this.combatEngine.handleDeclareBlock(
-      client.sessionId,
-      message,
-    );
+    await this.executeIsolatedCombatCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        const handled = runtime.gameplayRuntime.combatEngine.handleDeclareBlock(
+          client.sessionId,
+          message,
+        );
 
-    if (!handled) {
-      return;
-    }
+        if (!handled) {
+          return { handled: false };
+        }
 
-    await this.recordRoomEvents(client.sessionId, [
-      {
-        type: 'BlockerDeclared',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(client.sessionId),
-          blockerInstanceId: message.blockerInstanceId ?? null,
-        },
+        return {
+          handled: true,
+          eventDrafts: [
+            {
+              type: 'BlockerDeclared',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(client.sessionId),
+                blockerInstanceId: message.blockerInstanceId ?? null,
+              },
+            },
+            ...this.buildTerminalEventDraftsFor(before, runtime.state),
+          ],
+        };
       },
-      ...this.buildTerminalEventDrafts(before),
-    ]);
+      'Impossible de declarer le blocage pour le moment.',
+    );
   }
 
   private async handleDeclareCounter(
@@ -585,141 +646,174 @@ export class DuelRoom extends Room<DuelState> {
     message: DeclareCounterMessage,
   ) {
     this.notifier.bindCombatClient(client);
-    const before = this.captureStateSnapshot();
-    const handled = this.combatEngine.handleDeclareCounter(
-      client.sessionId,
-      message,
-    );
+    await this.executeIsolatedCombatCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        const handled =
+          runtime.gameplayRuntime.combatEngine.handleDeclareCounter(
+            client.sessionId,
+            message,
+          );
 
-    if (!handled) {
-      return;
-    }
+        if (!handled) {
+          return { handled: false };
+        }
 
-    await this.recordRoomEvents(client.sessionId, [
-      {
-        type: 'CounterUsed',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(client.sessionId),
-          discardInstanceId: message.discardInstanceId,
-          counterPowerBonus: Math.max(0, Math.trunc(message.counterPowerBonus)),
-        },
+        return {
+          handled: true,
+          eventDrafts: [
+            {
+              type: 'CounterUsed',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(client.sessionId),
+                discardInstanceId: message.discardInstanceId,
+                counterPowerBonus: Math.max(
+                  0,
+                  Math.trunc(message.counterPowerBonus),
+                ),
+              },
+            },
+            ...this.buildTerminalEventDraftsFor(before, runtime.state),
+          ],
+        };
       },
-      ...this.buildTerminalEventDrafts(before),
-    ]);
+      'Impossible de declarer le contre pour le moment.',
+    );
   }
 
   private async handleFinishCounterStep(client: Client) {
     this.notifier.bindCombatClient(client);
-    const before = this.captureStateSnapshot();
-    const beforeLocations = this.captureCardLocations();
-    const combatBefore = {
-      attackerSessionId: this.state.combat.attackerSessionId,
-      attackerInstanceId: this.state.combat.attackerInstanceId,
-      defenderSessionId: this.state.combat.defenderSessionId,
-      targetType: this.state.combat.targetType,
-      targetInstanceId: this.state.combat.targetInstanceId,
-      blockerInstanceId: this.state.combat.blockerInstanceId,
-      counterPowerBonus: this.state.combat.counterPowerBonus,
-    };
-    const attackerCard = this.cardQueryEngine.getCardByInstanceId(
-      combatBefore.attackerInstanceId,
+    await this.executeIsolatedCombatCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        const beforeLocations = this.captureCardLocationsFrom(runtime.state);
+        const combatBefore = {
+          attackerSessionId: runtime.state.combat.attackerSessionId,
+          attackerInstanceId: runtime.state.combat.attackerInstanceId,
+          defenderSessionId: runtime.state.combat.defenderSessionId,
+          targetType: runtime.state.combat.targetType,
+          targetInstanceId: runtime.state.combat.targetInstanceId,
+          blockerInstanceId: runtime.state.combat.blockerInstanceId,
+          counterPowerBonus: runtime.state.combat.counterPowerBonus,
+        };
+        const attackerCard =
+          runtime.gameplayRuntime.cardQueryEngine.getCardByInstanceId(
+            combatBefore.attackerInstanceId,
+          );
+        const defendingInstanceId =
+          combatBefore.blockerInstanceId || combatBefore.targetInstanceId;
+        const defendingCard =
+          runtime.gameplayRuntime.cardQueryEngine.getCardByInstanceId(
+            defendingInstanceId,
+          );
+        const attackerPower = attackerCard
+          ? runtime.runtimeState.cardPower(attackerCard)
+          : null;
+        const defenderPower = defendingCard
+          ? runtime.runtimeState.cardPower(defendingCard) +
+            combatBefore.counterPowerBonus
+          : null;
+        const handled =
+          runtime.gameplayRuntime.combatEngine.handleFinishCounterStep(
+            client.sessionId,
+          );
+
+        if (!handled) {
+          return { handled: false };
+        }
+
+        const drafts: DomainEventDraft[] = [];
+
+        if (attackerPower !== null && defenderPower !== null) {
+          drafts.push({
+            type: 'BattleResolved',
+            version: 1,
+            payload: {
+              attackerPlayerId: this.getPlayerId(
+                combatBefore.attackerSessionId,
+              ),
+              attackerInstanceId: combatBefore.attackerInstanceId,
+              defenderPlayerId: this.getPlayerId(
+                combatBefore.defenderSessionId,
+              ),
+              defendingInstanceId,
+              targetType: combatBefore.targetType,
+              attackerPower,
+              defenderPower,
+              outcome:
+                attackerPower >= defenderPower ? 'attackerWon' : 'attackerLost',
+            },
+          });
+        }
+
+        if (
+          attackerPower !== null &&
+          defenderPower !== null &&
+          attackerPower >= defenderPower &&
+          combatBefore.targetType === 'leader' &&
+          attackerCard
+        ) {
+          drafts.push({
+            type: 'DamageDealt',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(combatBefore.defenderSessionId),
+              amount: attackerCard.hasDoubleAttack ? 2 : 1,
+            },
+          });
+        }
+
+        for (const movedCard of this.findMovedCards(
+          beforeLocations,
+          this.captureCardLocationsFrom(runtime.state),
+        )) {
+          if (
+            movedCard.from.zone === 'characters' &&
+            movedCard.to.zone === 'trash'
+          ) {
+            drafts.push({
+              type: 'CharacterKOD',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+                cardInstanceId: movedCard.instanceId,
+                cardDefinitionId: movedCard.to.cardId,
+              },
+            });
+          }
+
+          if (
+            movedCard.from.zone === 'life' &&
+            (movedCard.to.zone === 'hand' || movedCard.to.zone === 'trash')
+          ) {
+            drafts.push({
+              type: 'LifeCardTaken',
+              version: 1,
+              payload: {
+                playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+                count: 1,
+                cardInstanceId: movedCard.instanceId,
+                cardDefinitionId: movedCard.to.cardId,
+                destinationZone:
+                  movedCard.to.zone === 'hand' ? 'HAND' : 'TRASH',
+              },
+            });
+          }
+        }
+
+        return {
+          handled: true,
+          eventDrafts: [
+            ...drafts,
+            ...this.buildTerminalEventDraftsFor(before, runtime.state),
+          ],
+        };
+      },
+      'Impossible de resoudre le combat pour le moment.',
     );
-    const defendingInstanceId =
-      combatBefore.blockerInstanceId || combatBefore.targetInstanceId;
-    const defendingCard =
-      this.cardQueryEngine.getCardByInstanceId(defendingInstanceId);
-    const attackerPower = attackerCard
-      ? this.runtimeState.cardPower(attackerCard)
-      : null;
-    const defenderPower = defendingCard
-      ? this.runtimeState.cardPower(defendingCard) +
-        combatBefore.counterPowerBonus
-      : null;
-    const handled = this.combatEngine.handleFinishCounterStep(client.sessionId);
-
-    if (!handled) {
-      return;
-    }
-
-    const drafts: DomainEventDraft[] = [];
-
-    if (attackerPower !== null && defenderPower !== null) {
-      drafts.push({
-        type: 'BattleResolved',
-        version: 1,
-        payload: {
-          attackerPlayerId: this.getPlayerId(combatBefore.attackerSessionId),
-          attackerInstanceId: combatBefore.attackerInstanceId,
-          defenderPlayerId: this.getPlayerId(combatBefore.defenderSessionId),
-          defendingInstanceId,
-          targetType: combatBefore.targetType,
-          attackerPower,
-          defenderPower,
-          outcome:
-            attackerPower >= defenderPower ? 'attackerWon' : 'attackerLost',
-        },
-      });
-    }
-
-    if (
-      attackerPower !== null &&
-      defenderPower !== null &&
-      attackerPower >= defenderPower &&
-      combatBefore.targetType === 'leader' &&
-      attackerCard
-    ) {
-      drafts.push({
-        type: 'DamageDealt',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(combatBefore.defenderSessionId),
-          amount: attackerCard.hasDoubleAttack ? 2 : 1,
-        },
-      });
-    }
-
-    for (const movedCard of this.findMovedCards(
-      beforeLocations,
-      this.captureCardLocations(),
-    )) {
-      if (
-        movedCard.from.zone === 'characters' &&
-        movedCard.to.zone === 'trash'
-      ) {
-        drafts.push({
-          type: 'CharacterKOD',
-          version: 1,
-          payload: {
-            playerId: this.getPlayerId(movedCard.to.ownerSessionId),
-            cardInstanceId: movedCard.instanceId,
-            cardDefinitionId: movedCard.to.cardId,
-          },
-        });
-      }
-
-      if (
-        movedCard.from.zone === 'life' &&
-        (movedCard.to.zone === 'hand' || movedCard.to.zone === 'trash')
-      ) {
-        drafts.push({
-          type: 'LifeCardTaken',
-          version: 1,
-          payload: {
-            playerId: this.getPlayerId(movedCard.to.ownerSessionId),
-            count: 1,
-            cardInstanceId: movedCard.instanceId,
-            cardDefinitionId: movedCard.to.cardId,
-            destinationZone: movedCard.to.zone === 'hand' ? 'HAND' : 'TRASH',
-          },
-        });
-      }
-    }
-
-    await this.recordRoomEvents(client.sessionId, [
-      ...drafts,
-      ...this.buildTerminalEventDrafts(before),
-    ]);
   }
 
   private knockOutCharacter(
@@ -786,55 +880,62 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     message: ResolveTriggerMessage,
   ) {
-    const before = this.captureStateSnapshot();
-    const pendingManualTrigger =
-      this.effectBoundary.exportState().manualTrigger?.cardInstanceId ?? null;
-    const result = this.effectBoundary.resolveManualTriggerDecision(
-      client.sessionId,
-      message.activate,
-    );
+    this.notifier.bindCombatClient(client);
+    await this.executeIsolatedCombatCommand(
+      client,
+      (runtime) => {
+        const before = this.captureStateSnapshotFrom(runtime.state);
+        const pendingManualTrigger =
+          runtime.gameplayRuntime.effectBoundary.exportState().manualTrigger ??
+          null;
+        const result =
+          runtime.gameplayRuntime.effectBoundary.resolveManualTriggerDecision(
+            client.sessionId,
+            message.activate,
+          );
 
-    if (!result.ok) {
-      this.notifier.sendActionError(client, result.error);
-      return;
-    }
+        if (!result.ok) {
+          return { handled: false, errorMessage: result.error };
+        }
 
-    this.combatEngine.endCombat();
-    const drafts: DomainEventDraft[] = [
-      {
-        type: 'ChoiceSubmitted',
-        version: 1,
-        payload: {
-          playerId: this.getPlayerId(client.sessionId),
-          decisionType: 'trigger',
-          activate: message.activate,
-        },
-      },
-    ];
+        runtime.gameplayRuntime.combatEngine.endCombat();
 
-    if (pendingManualTrigger) {
-      const resolvedCard =
-        this.cardQueryEngine.getCardByInstanceId(pendingManualTrigger);
-
-      if (resolvedCard) {
-        drafts.push({
-          type: 'LifeCardTaken',
-          version: 1,
-          payload: {
-            playerId: this.getPlayerId(client.sessionId),
-            count: 1,
-            cardInstanceId: resolvedCard.instanceId,
-            cardDefinitionId: resolvedCard.cardId,
-            destinationZone: message.activate ? 'TRASH' : 'HAND',
+        const drafts: DomainEventDraft[] = [
+          {
+            type: 'ChoiceSubmitted',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(client.sessionId),
+              decisionType: 'trigger',
+              activate: message.activate,
+            },
           },
-        });
-      }
-    }
+        ];
 
-    await this.recordRoomEvents(client.sessionId, [
-      ...drafts,
-      ...this.buildTerminalEventDrafts(before),
-    ]);
+        if (pendingManualTrigger) {
+          drafts.push({
+            type: 'LifeCardTaken',
+            version: 1,
+            payload: {
+              playerId: this.getPlayerId(client.sessionId),
+              count: 1,
+              cardInstanceId: pendingManualTrigger.card.instanceId,
+              cardDefinitionId: pendingManualTrigger.card.cardId,
+              destinationZone: message.activate ? 'TRASH' : 'HAND',
+            },
+          });
+        }
+
+        return {
+          handled: true,
+          eventDrafts: [
+            ...drafts,
+            ...this.buildTerminalEventDraftsFor(before, runtime.state),
+          ],
+        };
+      },
+      'Impossible de resoudre le declenchement pour le moment.',
+    );
   }
 
   private async handlePlayCard(client: Client, message: PlayCardMessage) {
@@ -1067,9 +1168,15 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private captureCardLocations(): Map<string, CardLocation> {
+    return this.captureCardLocationsFrom(this.state);
+  }
+
+  private captureCardLocationsFrom(
+    state: DuelState,
+  ): Map<string, CardLocation> {
     const locations = new Map<string, CardLocation>();
 
-    for (const player of this.state.players.values()) {
+    for (const player of state.players.values()) {
       locations.set(player.zones.leader.instanceId, {
         ownerSessionId: player.sessionId,
         zone: 'leader',
@@ -1142,9 +1249,67 @@ export class DuelRoom extends Room<DuelState> {
   private buildTurnTransitionDrafts(
     before: DuelStateSnapshot,
   ): DomainEventDraft[] {
+    return this.buildTurnTransitionDraftsFor(before, this.state);
+  }
+
+  private buildMulliganEventDraftsFor(
+    before: DuelStateSnapshot,
+    state: DuelState,
+    actorSessionId: string,
+    tookMulligan: boolean,
+  ): DomainEventDraft[] {
+    const drafts: DomainEventDraft[] = [
+      {
+        type: 'MulliganResolved',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(actorSessionId),
+          tookMulligan,
+        },
+      },
+    ];
+
+    if (!before.startedAt && state.startedAt) {
+      drafts.push(
+        {
+          type: 'MatchStarted',
+          version: 1,
+          payload: {
+            startedAt: state.startedAt,
+            firstPlayerId: this.getPlayerId(state.firstPlayerSessionId),
+          },
+        },
+        {
+          type: 'TurnStarted',
+          version: 1,
+          payload: {
+            turn: state.turn,
+            playerId: this.getPlayerId(state.activePlayerSessionId),
+          },
+        },
+        {
+          type: 'PhaseChanged',
+          version: 1,
+          payload: {
+            turn: state.turn,
+            playerId: this.getPlayerId(state.activePlayerSessionId),
+            fromPhase: before.phase,
+            toPhase: state.phase,
+          },
+        },
+      );
+    }
+
+    return drafts;
+  }
+
+  private buildTurnTransitionDraftsFor(
+    before: DuelStateSnapshot,
+    state: DuelState,
+  ): DomainEventDraft[] {
     const drafts: DomainEventDraft[] = [];
 
-    if (before.phase === 'end' && this.state.turn > before.turn) {
+    if (before.phase === 'end' && state.turn > before.turn) {
       drafts.push(
         {
           type: 'TurnEnded',
@@ -1158,22 +1323,22 @@ export class DuelRoom extends Room<DuelState> {
           type: 'TurnStarted',
           version: 1,
           payload: {
-            turn: this.state.turn,
-            playerId: this.getPlayerId(this.state.activePlayerSessionId),
+            turn: state.turn,
+            playerId: this.getPlayerId(state.activePlayerSessionId),
           },
         },
       );
     }
 
-    if (before.phase !== this.state.phase || before.turn !== this.state.turn) {
+    if (before.phase !== state.phase || before.turn !== state.turn) {
       drafts.push({
         type: 'PhaseChanged',
         version: 1,
         payload: {
-          turn: this.state.turn,
-          playerId: this.getPlayerId(this.state.activePlayerSessionId),
+          turn: state.turn,
+          playerId: this.getPlayerId(state.activePlayerSessionId),
           fromPhase: before.phase,
-          toPhase: this.state.phase,
+          toPhase: state.phase,
         },
       });
     }
@@ -1184,7 +1349,14 @@ export class DuelRoom extends Room<DuelState> {
   private buildTerminalEventDrafts(
     before: DuelStateSnapshot,
   ): DomainEventDraft[] {
-    if (before.phase === 'finished' || this.state.phase !== 'finished') {
+    return this.buildTerminalEventDraftsFor(before, this.state);
+  }
+
+  private buildTerminalEventDraftsFor(
+    before: DuelStateSnapshot,
+    state: DuelState,
+  ): DomainEventDraft[] {
+    if (before.phase === 'finished' || state.phase !== 'finished') {
       return [];
     }
 
@@ -1193,9 +1365,9 @@ export class DuelRoom extends Room<DuelState> {
         type: 'MatchEnded',
         version: 1,
         payload: {
-          winnerPlayerId: this.getPlayerId(this.state.winnerSessionId),
-          endReason: this.state.endReason,
-          finishedAt: this.state.finishedAt,
+          winnerPlayerId: this.getPlayerId(state.winnerSessionId),
+          endReason: state.endReason,
+          finishedAt: state.finishedAt,
         },
       },
     ];
@@ -1322,6 +1494,7 @@ export class DuelRoom extends Room<DuelState> {
 
   private createIsolatedGameplayRuntime() {
     const state = cloneRoomDuelState(this.state);
+    const keywordSnapshot = this.captureCardKeywordSnapshot(state);
     const lifecycle = this.createLifecycleForState(state, { isolated: true });
     lifecycle.importState(this.lifecycle.exportState());
     const mainPhaseErrors: string[] = [];
@@ -1368,6 +1541,7 @@ export class DuelRoom extends Room<DuelState> {
     gameplayRuntime.effectBoundary.importState(
       this.effectBoundary.exportState(),
     );
+    this.restoreCardKeywordSnapshot(state, keywordSnapshot);
 
     return {
       state,
@@ -1377,6 +1551,98 @@ export class DuelRoom extends Room<DuelState> {
       mainPhaseErrors,
       combatErrors,
     };
+  }
+
+  private captureCardKeywordSnapshot(
+    state: DuelState,
+  ): Map<string, CardKeywordSnapshot> {
+    const snapshot = new Map<string, CardKeywordSnapshot>();
+
+    for (const player of state.players.values()) {
+      for (const card of this.iteratePlayerCards(player)) {
+        snapshot.set(card.instanceId, {
+          hasRush: card.hasRush,
+          hasDoubleAttack: card.hasDoubleAttack,
+          hasBanish: card.hasBanish,
+          canAttackActiveCharacters: card.canAttackActiveCharacters,
+          mustBeAttackTarget: card.mustBeAttackTarget,
+          cannotAttack: card.cannotAttack,
+          cannotAttackLeaderOnTurnPlayed: card.cannotAttackLeaderOnTurnPlayed,
+          cannotBlock: card.cannotBlock,
+          cannotBeKoedInBattle: card.cannotBeKoedInBattle,
+          cannotBeKoedByEffects: card.cannotBeKoedByEffects,
+          cannotBeKoedBySlashInBattle: card.cannotBeKoedBySlashInBattle,
+          cannotBeKoedByStrikeInBattle: card.cannotBeKoedByStrikeInBattle,
+          winOnDeckOut: card.winOnDeckOut,
+          cannotBeRemovedByOpponentEffects:
+            card.cannotBeRemovedByOpponentEffects,
+          skipNextRefreshPhases: card.skipNextRefreshPhases,
+        });
+      }
+    }
+
+    return snapshot;
+  }
+
+  private restoreCardKeywordSnapshot(
+    state: DuelState,
+    snapshot: Map<string, CardKeywordSnapshot>,
+  ): void {
+    for (const player of state.players.values()) {
+      for (const card of this.iteratePlayerCards(player)) {
+        const cardSnapshot = snapshot.get(card.instanceId);
+
+        if (!cardSnapshot) {
+          continue;
+        }
+
+        card.hasRush ||= cardSnapshot.hasRush;
+        card.hasDoubleAttack ||= cardSnapshot.hasDoubleAttack;
+        card.hasBanish ||= cardSnapshot.hasBanish;
+        card.canAttackActiveCharacters ||=
+          cardSnapshot.canAttackActiveCharacters;
+        card.mustBeAttackTarget ||= cardSnapshot.mustBeAttackTarget;
+        card.cannotAttack ||= cardSnapshot.cannotAttack;
+        card.cannotAttackLeaderOnTurnPlayed ||=
+          cardSnapshot.cannotAttackLeaderOnTurnPlayed;
+        card.cannotBlock ||= cardSnapshot.cannotBlock;
+        card.cannotBeKoedInBattle ||= cardSnapshot.cannotBeKoedInBattle;
+        card.cannotBeKoedByEffects ||= cardSnapshot.cannotBeKoedByEffects;
+        card.cannotBeKoedBySlashInBattle ||=
+          cardSnapshot.cannotBeKoedBySlashInBattle;
+        card.cannotBeKoedByStrikeInBattle ||=
+          cardSnapshot.cannotBeKoedByStrikeInBattle;
+        card.winOnDeckOut ||= cardSnapshot.winOnDeckOut;
+        card.cannotBeRemovedByOpponentEffects ||=
+          cardSnapshot.cannotBeRemovedByOpponentEffects;
+        card.skipNextRefreshPhases = Math.max(
+          card.skipNextRefreshPhases,
+          cardSnapshot.skipNextRefreshPhases,
+        );
+      }
+    }
+  }
+
+  private *iteratePlayerCards(player: DuelPlayer): Iterable<DuelCard> {
+    yield player.zones.leader;
+
+    if (player.zones.stage.instanceId) {
+      yield player.zones.stage;
+    }
+
+    for (const zone of [
+      player.zones.deck,
+      player.zones.donDeck,
+      player.zones.hand,
+      player.zones.life,
+      player.zones.characters,
+      player.zones.cost,
+      player.zones.trash,
+    ]) {
+      for (const card of zone) {
+        yield card;
+      }
+    }
   }
 
   private async executeIsolatedMainPhaseCommand(
@@ -1411,12 +1677,84 @@ export class DuelRoom extends Room<DuelState> {
     this.adoptIsolatedRuntime(runtime);
   }
 
+  private async executeIsolatedTurnCommand(
+    client: Client,
+    executor: (
+      runtime: IsolatedGameplayRuntime,
+    ) =>
+      | { handled: false; errorMessage?: string }
+      | { handled: true; eventDrafts: DomainEventDraft[] },
+    outboxFailureMessage: string,
+  ): Promise<void> {
+    const runtime = this.createIsolatedGameplayRuntime();
+    const result = executor(runtime);
+
+    if (!result.handled) {
+      if (result.errorMessage) {
+        this.notifier.sendActionError(client, result.errorMessage);
+      }
+
+      return;
+    }
+
+    try {
+      await this.persistRoomEventsOrThrow(client.sessionId, result.eventDrafts);
+    } catch (error) {
+      this.logger.error('Failed to persist duel domain events', error);
+      this.notifier.sendActionError(client, outboxFailureMessage);
+      return;
+    }
+
+    this.adoptIsolatedRuntime(runtime);
+  }
+
+  private async executeIsolatedCombatCommand(
+    client: Client,
+    executor: (
+      runtime: IsolatedGameplayRuntime,
+    ) =>
+      | { handled: false; errorMessage?: string }
+      | { handled: true; eventDrafts: DomainEventDraft[] },
+    outboxFailureMessage: string,
+  ): Promise<void> {
+    const runtime = this.createIsolatedGameplayRuntime();
+    const result = executor(runtime);
+
+    if (!result.handled) {
+      if (result.errorMessage) {
+        this.notifier.sendActionError(client, result.errorMessage);
+        return;
+      }
+
+      const errorMessage = runtime.combatErrors.at(-1);
+
+      if (errorMessage) {
+        this.notifier.sendActionError(client, errorMessage);
+      }
+
+      return;
+    }
+
+    try {
+      await this.persistRoomEventsOrThrow(client.sessionId, result.eventDrafts);
+    } catch (error) {
+      this.logger.error('Failed to persist duel domain events', error);
+      this.notifier.sendActionError(client, outboxFailureMessage);
+      return;
+    }
+
+    this.adoptIsolatedRuntime(runtime);
+  }
+
   private adoptIsolatedRuntime(runtime: IsolatedGameplayRuntime): void {
     adoptRoomDuelState(this.state, runtime.state);
     this.lifecycle.importState(runtime.lifecycle.exportState());
+    this.lifecycle.recordMatchResult();
+    const keywordSnapshot = this.captureCardKeywordSnapshot(this.state);
     this.effectBoundary.importState(
       runtime.gameplayRuntime.effectBoundary.exportState(),
     );
+    this.restoreCardKeywordSnapshot(this.state, keywordSnapshot);
     this.rebuildAllClientViews();
     this.notifier.syncPendingEffectDecision(
       this.effectBoundary.getPendingEffectDecision(),

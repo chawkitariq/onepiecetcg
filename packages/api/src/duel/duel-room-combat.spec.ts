@@ -80,16 +80,19 @@ type PrivateRoomAccess = {
   handleChooseFirstOrSecond: (
     client: { sessionId: string },
     message: { choice: 'first' | 'second' },
-  ) => void;
+  ) => Promise<void>;
   handleMulligan: (
     client: { sessionId: string },
     message: { mulligan: boolean },
-  ) => void;
-  handleEndPhase: (client: { sessionId: string; send: jest.Mock }) => void;
+  ) => Promise<void>;
+  handleEndPhase: (client: {
+    sessionId: string;
+    send: jest.Mock;
+  }) => Promise<void>;
   handlePlayCard: (
     client: { sessionId: string; send: jest.Mock },
     message: { instanceId: string; discardCharacterInstanceId?: string },
-  ) => void;
+  ) => Promise<void>;
   handleDeclareAttack: (
     client: { sessionId: string; send: jest.Mock },
     message: {
@@ -97,23 +100,23 @@ type PrivateRoomAccess = {
       targetType: 'leader' | 'character';
       targetInstanceId?: string;
     },
-  ) => void;
+  ) => Promise<void>;
   handleDeclareBlock: (
     client: { sessionId: string; send: jest.Mock },
     message: { blockerInstanceId?: string | null },
-  ) => void;
+  ) => Promise<void>;
   handleDeclareCounter: (
     client: { sessionId: string; send: jest.Mock },
     message: { discardInstanceId: string; counterPowerBonus: number },
-  ) => void;
+  ) => Promise<void>;
   handleFinishCounterStep: (client: {
     sessionId: string;
     send: jest.Mock;
-  }) => void;
+  }) => Promise<void>;
   handleResolveTrigger: (
     client: { sessionId: string; send: jest.Mock },
     message: { activate: boolean },
-  ) => void;
+  ) => Promise<void>;
 };
 
 function asPrivateRoom(room: DuelRoom): PrivateRoomAccess {
@@ -223,6 +226,22 @@ function placeUntappedDon(player: RoomAccessPlayer, amount: number): void {
   }
 }
 
+function findCharacterInPlay(
+  room: DuelRoom,
+  sessionId: string,
+  instanceId: string,
+) {
+  const character = room.state.players
+    .get(sessionId)
+    ?.zones.characters.find((card) => card.instanceId === instanceId);
+
+  if (!character) {
+    throw new Error(`character ${instanceId} missing for ${sessionId}`);
+  }
+
+  return character;
+}
+
 async function createRoomAtFirstTurn(): Promise<{
   room: DuelRoom;
   firstSessionId: string;
@@ -267,7 +286,7 @@ async function createRoomAtFirstTurn(): Promise<{
     remove: jest.fn(),
     metadata: {},
   };
-  room.onCreate();
+  await room.onCreate();
   jest.spyOn(room, 'lock').mockImplementation(() => undefined);
 
   await room.onJoin(
@@ -286,24 +305,30 @@ async function createRoomAtFirstTurn(): Promise<{
   const secondSessionId =
     firstSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-  access.handleChooseFirstOrSecond(
+  await access.handleChooseFirstOrSecond(
     { sessionId: firstSessionId },
     { choice: 'first' },
   );
-  access.handleMulligan({ sessionId: firstSessionId }, { mulligan: false });
-  access.handleMulligan({ sessionId: secondSessionId }, { mulligan: false });
+  await access.handleMulligan(
+    { sessionId: firstSessionId },
+    { mulligan: false },
+  );
+  await access.handleMulligan(
+    { sessionId: secondSessionId },
+    { mulligan: false },
+  );
 
   return { room, firstSessionId, secondSessionId };
 }
 
 /** Advances the active player through refresh/draw/don into the main phase. */
-function advanceToMain(room: DuelRoom, sessionId: string): void {
+async function advanceToMain(room: DuelRoom, sessionId: string): Promise<void> {
   const access = asPrivateRoom(room);
   const client = fakeClient(sessionId);
 
-  access.handleEndPhase(client); // draw
-  access.handleEndPhase(client); // don
-  access.handleEndPhase(client); // main
+  await access.handleEndPhase(client); // draw
+  await access.handleEndPhase(client); // don
+  await access.handleEndPhase(client); // main
 }
 
 /**
@@ -312,19 +337,19 @@ function advanceToMain(room: DuelRoom, sessionId: string): void {
  * back in the main phase with `hasTakenFirstTurn` set and characters
  * un-rested from the intervening refresh.
  */
-function advanceToSecondMainTurn(
+async function advanceToSecondMainTurn(
   room: DuelRoom,
   firstSessionId: string,
   secondSessionId: string,
-): void {
-  advanceToMain(room, firstSessionId);
+): Promise<void> {
+  await advanceToMain(room, firstSessionId);
   const access = asPrivateRoom(room);
-  access.handleEndPhase(fakeClient(firstSessionId)); // main -> end
-  access.handleEndPhase(fakeClient(firstSessionId)); // end -> ends turn 1, opponent becomes active
-  advanceToMain(room, secondSessionId);
-  access.handleEndPhase(fakeClient(secondSessionId)); // main -> end
-  access.handleEndPhase(fakeClient(secondSessionId)); // end -> back to firstSessionId, turn 3 (its second turn)
-  advanceToMain(room, firstSessionId);
+  await access.handleEndPhase(fakeClient(firstSessionId)); // main -> end
+  await access.handleEndPhase(fakeClient(firstSessionId)); // end -> ends turn 1, opponent becomes active
+  await advanceToMain(room, secondSessionId);
+  await access.handleEndPhase(fakeClient(secondSessionId)); // main -> end
+  await access.handleEndPhase(fakeClient(secondSessionId)); // end -> back to firstSessionId, turn 3 (its second turn)
+  await advanceToMain(room, firstSessionId);
 }
 
 async function disposeRoom(room: DuelRoom): Promise<void> {
@@ -336,13 +361,13 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('declares an attack with a Leader against the opposing Leader and moves to the Blocking step', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     const defender = room.state.players.get(secondSessionId);
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
@@ -353,20 +378,22 @@ describe('DuelRoom structural combat (stage 8)', () => {
       defender!.zones.leader.instanceId,
     );
     expect(room.state.combat.step).toBe('blocked');
-    expect(attacker!.zones.leader.rested).toBe(true);
+    expect(room.state.players.get(firstSessionId)!.zones.leader.rested).toBe(
+      true,
+    );
 
     await disposeRoom(room);
   });
 
   it('rejects declaring an attack during the attacker own first turn', async () => {
     const { room, firstSessionId } = await createRoomAtFirstTurn();
-    advanceToMain(room, firstSessionId);
+    await advanceToMain(room, firstSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     const client = fakeClient(firstSessionId);
 
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
@@ -380,18 +407,18 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects attacking with a Personnage played this turn', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     placeUntappedDon(attacker, 1);
     const characterInstanceId = ensureHandContains(attacker, 'C-001');
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: characterInstanceId,
     });
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: characterInstanceId,
       targetType: 'leader',
     });
@@ -405,7 +432,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects targeting an untapped opposing Personnage', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -417,7 +444,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
     );
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'character',
       targetInstanceId: defenderCharacterInstanceId,
@@ -432,7 +459,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('allows targeting a rested opposing Personnage', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -444,7 +471,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
     );
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'character',
       targetInstanceId: defenderCharacterInstanceId,
@@ -461,28 +488,29 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('lets the defender declare a Blocker who takes the target place for the power comparison', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     const defender = room.state.players.get(secondSessionId);
     const blockerInstanceId = putCharacterInPlay(defender, 'C-002', false);
-    const blocker = defender!.zones.characters.find(
-      (card) => card.instanceId === blockerInstanceId,
-    )!;
-
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId,
     });
 
     expect(room.state.combat.blockerInstanceId).toBe(blockerInstanceId);
     expect(room.state.combat.step).toBe('countering');
-    expect(blocker.rested).toBe(true);
+    expect(
+      room.state.players
+        .get(secondSessionId)
+        ?.zones.characters.find((card) => card.instanceId === blockerInstanceId)
+        ?.rested,
+    ).toBe(true);
 
     await disposeRoom(room);
   });
@@ -490,17 +518,17 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects a Blocker declaration from anyone but the defender', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareBlock(client, { blockerInstanceId: null });
+    await access.handleDeclareBlock(client, { blockerInstanceId: null });
 
     expectErrorMessage(client, 'defenseur');
 
@@ -510,47 +538,50 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('lets the defender discard a Contre card to boost defending power and win the combat', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    const defender = room.state.players.get(secondSessionId);
+    let defender = room.state.players.get(secondSessionId);
     placeUntappedDon(attacker, 1);
     const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: attackerCharacterInstanceId,
     });
-    const attackerCharacter = attacker!.zones.characters.find(
-      (card) => card.instanceId === attackerCharacterInstanceId,
-    )!;
+    const attackerCharacter = findCharacterInPlay(
+      room,
+      firstSessionId,
+      attackerCharacterInstanceId,
+    );
     attackerCharacter.rested = false;
     attackerCharacter.playedThisTurn = false;
 
+    defender = room.state.players.get(secondSessionId);
     const counterInstanceId = ensureHandContains(defender, 'E-001');
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attackerCharacterInstanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleDeclareCounter(fakeClient(secondSessionId), {
+    await access.handleDeclareCounter(fakeClient(secondSessionId), {
       discardInstanceId: counterInstanceId,
       counterPowerBonus: 2000,
     });
 
     expect(room.state.combat.counterPowerBonus).toBe(2000);
     expect(
-      defender!.zones.trash.some(
-        (card) => card.instanceId === counterInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.trash.some((card) => card.instanceId === counterInstanceId),
     ).toBe(true);
 
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     // attacker power 1000 vs defender leader 5000 + 2000 counter -> attacker loses, no life lost
-    expect(defender!.zones.life.length).toBe(2);
+    expect(room.state.players.get(secondSessionId)!.zones.life.length).toBe(2);
     expect(room.state.combat.attackerInstanceId).toBe('');
 
     await disposeRoom(room);
@@ -559,32 +590,32 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('resolves a won combat against a Personnage target as a KO', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     const defender = room.state.players.get(secondSessionId);
     const targetInstanceId = putCharacterInPlay(defender, 'C-001', true);
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'character',
       targetInstanceId,
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(
-      defender!.zones.characters.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.characters.some((card) => card.instanceId === targetInstanceId),
     ).toBe(false);
     expect(
-      defender!.zones.trash.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.trash.some((card) => card.instanceId === targetInstanceId),
     ).toBe(true);
     expect(room.state.combat.attackerInstanceId).toBe('');
 
@@ -594,32 +625,40 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('deals 1 damage to Leader life on a won combat and reveals the top life card only via the defender own zone', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     const defender = room.state.players.get(secondSessionId);
     const lifeCountBefore = defender!.zones.life.length;
+    const topLifeCardInstanceId = defender!.zones.life[0]?.instanceId;
     const topLifeCard = defender!.zones.life[0];
     topLifeCard.trigger = '';
     expect(topLifeCard.trigger).toBeFalsy();
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
-    expect(defender!.zones.life.length).toBe(lifeCountBefore - 1);
+    expect(room.state.players.get(secondSessionId)!.zones.life.length).toBe(
+      lifeCountBefore - 1,
+    );
     expect(
-      defender!.zones.hand.some(
-        (card) => card.instanceId === topLifeCard.instanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.hand.some((card) => card.instanceId === topLifeCardInstanceId),
     ).toBe(true);
-    expect(topLifeCard.faceDown).toBe(false);
+    expect(
+      room.state.players
+        .get(secondSessionId)
+        ?.zones.hand.find((card) => card.instanceId === topLifeCardInstanceId)
+        ?.faceDown,
+    ).toBe(false);
     expect(room.state.combat.attackerInstanceId).toBe('');
 
     await disposeRoom(room);
@@ -628,7 +667,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('holds combat resolution for a manual Declenchement decision when the revealed life card has a trigger', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -662,27 +701,27 @@ describe('DuelRoom structural combat (stage 8)', () => {
       defender!.zones.deck.push(displacedTopLifeCard);
     }
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(room.state.combat.awaitingTriggerDecision).toBe(true);
     expect(room.state.combat.attackerInstanceId).not.toBe('');
 
     const client = fakeClient(secondSessionId);
-    access.handleResolveTrigger(client, { activate: true });
+    await access.handleResolveTrigger(client, { activate: true });
 
     expect(room.state.combat.awaitingTriggerDecision).toBe(false);
     expect(room.state.combat.attackerInstanceId).toBe('');
     expect(
-      defender!.zones.trash.some(
-        (card) => card.instanceId === triggerCard.instanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.trash.some((card) => card.instanceId === triggerCard.instanceId),
     ).toBe(true);
 
     await disposeRoom(room);
@@ -691,7 +730,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('ends the game immediately when a Leader with empty life takes damage', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -699,14 +738,14 @@ describe('DuelRoom structural combat (stage 8)', () => {
     defender!.zones.life.splice(0);
     defender!.lifeCount = 0;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(room.state.phase).toBe('finished');
 
@@ -716,7 +755,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('excludes a defending Personnage DON!! bonus carried over from a previous turn (6-5-5-2, "during your turn" only)', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -733,25 +772,25 @@ describe('DuelRoom structural combat (stage 8)', () => {
     // weakCharacter has 1000 base power; without the (incorrect) DON!!
     // bonus it stays at 1000, so the attacking Leader (5000) still wins.
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'character',
       targetInstanceId,
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(
-      defender!.zones.trash.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.trash.some((card) => card.instanceId === targetInstanceId),
     ).toBe(true);
     expect(
-      defender!.zones.characters.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.characters.some((card) => card.instanceId === targetInstanceId),
     ).toBe(false);
 
     await disposeRoom(room);
@@ -760,17 +799,17 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects a target-less combat action for a non-attacker/defender session', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareBlock(client, { blockerInstanceId: null });
+    await access.handleDeclareBlock(client, { blockerInstanceId: null });
 
     expectErrorMessage(client, 'defenseur');
 
@@ -780,17 +819,17 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects a second attack declaration while a combat is already in progress', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
@@ -803,17 +842,17 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects ending the phase while combat is in progress', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
     const client = fakeClient(firstSessionId);
-    access.handleEndPhase(client);
+    await access.handleEndPhase(client);
 
     expectErrorMessage(client, 'combat est en cours');
     expect(room.state.phase).toBe('main');
@@ -824,21 +863,23 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('allows a Character with Rush to attack on the turn it entered play', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     placeUntappedDon(attacker, 1);
     const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: attackerCharacterInstanceId,
     });
-    const attackerCharacter = attacker!.zones.characters.find(
-      (card) => card.instanceId === attackerCharacterInstanceId,
-    )!;
+    const attackerCharacter = findCharacterInPlay(
+      room,
+      firstSessionId,
+      attackerCharacterInstanceId,
+    );
     attackerCharacter.hasRush = true;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attackerCharacterInstanceId,
       targetType: 'leader',
     });
@@ -853,18 +894,20 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('allows a Character that can attack active Characters to target one', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     placeUntappedDon(attacker, 1);
     const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: attackerCharacterInstanceId,
     });
-    const attackerCharacter = attacker!.zones.characters.find(
-      (card) => card.instanceId === attackerCharacterInstanceId,
-    )!;
+    const attackerCharacter = findCharacterInPlay(
+      room,
+      firstSessionId,
+      attackerCharacterInstanceId,
+    );
     attackerCharacter.rested = false;
     attackerCharacter.playedThisTurn = false;
     attackerCharacter.canAttackActiveCharacters = true;
@@ -872,7 +915,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
     const defender = room.state.players.get(secondSessionId);
     const targetInstanceId = putCharacterInPlay(defender, 'C-001', false);
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attackerCharacterInstanceId,
       targetType: 'character',
       targetInstanceId,
@@ -886,7 +929,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('deals 2 life damage when the attacker has Double Attack', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -896,16 +939,18 @@ describe('DuelRoom structural combat (stage 8)', () => {
     defender!.zones.life[1].trigger = '';
     const lifeBefore = defender!.zones.life.length;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
-    expect(defender!.zones.life.length).toBe(lifeBefore - 2);
+    expect(room.state.players.get(secondSessionId)!.zones.life.length).toBe(
+      lifeBefore - 2,
+    );
 
     await disposeRoom(room);
   });
@@ -913,7 +958,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('trashes the life card instead of adding it to hand when the attacker has Banish', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -921,23 +966,27 @@ describe('DuelRoom structural combat (stage 8)', () => {
     const defender = room.state.players.get(secondSessionId);
     const lifeBefore = defender!.zones.life.length;
     const handBefore = defender!.zones.hand.length;
-    const topLifeCard = defender!.zones.life[0];
+    const topLifeCardInstanceId = defender!.zones.life[0]?.instanceId;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
-    expect(defender!.zones.life.length).toBe(lifeBefore - 1);
-    expect(defender!.zones.hand.length).toBe(handBefore);
+    expect(room.state.players.get(secondSessionId)!.zones.life.length).toBe(
+      lifeBefore - 1,
+    );
+    expect(room.state.players.get(secondSessionId)!.zones.hand.length).toBe(
+      handBefore,
+    );
     expect(
-      defender!.zones.trash.some(
-        (card) => card.instanceId === topLifeCard.instanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.trash.some((card) => card.instanceId === topLifeCardInstanceId),
     ).toBe(true);
 
     await disposeRoom(room);
@@ -946,7 +995,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('forces attacks to target a character marked as the mandatory target', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -958,7 +1007,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
     forcedTarget.mustBeAttackTarget = true;
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: attacker!.zones.leader.instanceId,
       targetType: 'leader',
     });
@@ -971,24 +1020,26 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects attacking with a character restricted until the current turn', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
     placeUntappedDon(attacker, 1);
     const attackerCharacterInstanceId = ensureHandContains(attacker, 'C-001');
-    access.handlePlayCard(fakeClient(firstSessionId), {
+    await access.handlePlayCard(fakeClient(firstSessionId), {
       instanceId: attackerCharacterInstanceId,
     });
-    const attackerCharacter = attacker!.zones.characters.find(
-      (card) => card.instanceId === attackerCharacterInstanceId,
-    )!;
+    const attackerCharacter = findCharacterInPlay(
+      room,
+      firstSessionId,
+      attackerCharacterInstanceId,
+    );
     attackerCharacter.rested = false;
     attackerCharacter.playedThisTurn = false;
     attackerCharacter.cannotAttackUntilTurn = room.state.turn;
 
     const client = fakeClient(firstSessionId);
-    access.handleDeclareAttack(client, {
+    await access.handleDeclareAttack(client, {
       attackerInstanceId: attackerCharacterInstanceId,
       targetType: 'leader',
     });
@@ -1001,7 +1052,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('rejects declaring a blocker that cannot block during this combat', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const defender = room.state.players.get(secondSessionId);
@@ -1011,14 +1062,14 @@ describe('DuelRoom structural combat (stage 8)', () => {
     )!;
     blocker.cannotBlock = true;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId:
         room.state.players.get(firstSessionId)!.zones.leader.instanceId,
       targetType: 'leader',
     });
 
     const client = fakeClient(secondSessionId);
-    access.handleDeclareBlock(client, { blockerInstanceId });
+    await access.handleDeclareBlock(client, { blockerInstanceId });
 
     expectErrorMessage(client, 'ne peut pas bloquer');
 
@@ -1028,7 +1079,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('prevents a Strike attacker from K.O.ing a character protected from Strike battle K.O.', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -1051,25 +1102,25 @@ describe('DuelRoom structural combat (stage 8)', () => {
     )!;
     targetCharacter.cannotBeKoedByStrikeInBattle = true;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attackerCharacterInstanceId,
       targetType: 'character',
       targetInstanceId,
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(
-      defender!.zones.characters.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.characters.some((card) => card.instanceId === targetInstanceId),
     ).toBe(true);
     expect(
-      defender!.zones.trash.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.trash.some((card) => card.instanceId === targetInstanceId),
     ).toBe(false);
 
     await disposeRoom(room);
@@ -1078,7 +1129,7 @@ describe('DuelRoom structural combat (stage 8)', () => {
   it('prevents battle K.O. on a character protected from all battle K.O.s', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
+    await advanceToSecondMainTurn(room, firstSessionId, secondSessionId);
 
     const access = asPrivateRoom(room);
     const attacker = room.state.players.get(firstSessionId);
@@ -1100,20 +1151,20 @@ describe('DuelRoom structural combat (stage 8)', () => {
     )!;
     targetCharacter.cannotBeKoedInBattle = true;
 
-    access.handleDeclareAttack(fakeClient(firstSessionId), {
+    await access.handleDeclareAttack(fakeClient(firstSessionId), {
       attackerInstanceId: attackerCharacterInstanceId,
       targetType: 'character',
       targetInstanceId,
     });
-    access.handleDeclareBlock(fakeClient(secondSessionId), {
+    await access.handleDeclareBlock(fakeClient(secondSessionId), {
       blockerInstanceId: null,
     });
-    access.handleFinishCounterStep(fakeClient(secondSessionId));
+    await access.handleFinishCounterStep(fakeClient(secondSessionId));
 
     expect(
-      defender!.zones.characters.some(
-        (card) => card.instanceId === targetInstanceId,
-      ),
+      room.state.players
+        .get(secondSessionId)!
+        .zones.characters.some((card) => card.instanceId === targetInstanceId),
     ).toBe(true);
 
     await disposeRoom(room);

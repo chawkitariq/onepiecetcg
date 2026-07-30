@@ -6,7 +6,7 @@ type ManualTriggerFallbackState = {
 };
 
 export type SerializedManualTriggerFallbackState = {
-  cardInstanceId: string;
+  card: DuelCard;
   ownerSessionId: string;
 };
 
@@ -126,7 +126,7 @@ export class DuelManualTriggerManager {
     }
 
     return {
-      cardInstanceId: this.pendingManualTrigger.card.instanceId,
+      card: this.pendingManualTrigger.card,
       ownerSessionId: this.pendingManualTrigger.ownerSessionId,
     };
   }
@@ -138,50 +138,10 @@ export class DuelManualTriggerManager {
       return;
     }
 
-    const card = this.findCardByInstanceId(state.cardInstanceId);
-
-    if (!card) {
-      throw new Error(
-        `Manual trigger fallback card ${state.cardInstanceId} is missing from state.`,
-      );
-    }
-
     this.deps.state.combat.awaitingTriggerDecision = true;
     this.pendingManualTrigger = {
-      card,
+      card: state.card,
       ownerSessionId: state.ownerSessionId,
     };
-  }
-
-  private findCardByInstanceId(instanceId: string): DuelCard | null {
-    for (const player of this.deps.state.players.values()) {
-      if (player.zones.leader.instanceId === instanceId) {
-        return player.zones.leader;
-      }
-
-      if (player.zones.stage.instanceId === instanceId) {
-        return player.zones.stage;
-      }
-
-      for (const zone of [
-        'deck',
-        'donDeck',
-        'hand',
-        'life',
-        'characters',
-        'cost',
-        'trash',
-      ] as const) {
-        const card = player.zones[zone].find(
-          (candidate) => candidate.instanceId === instanceId,
-        );
-
-        if (card) {
-          return card;
-        }
-      }
-    }
-
-    return null;
   }
 }

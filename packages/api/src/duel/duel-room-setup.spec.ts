@@ -43,11 +43,11 @@ type PrivateRoomAccess = {
   handleChooseFirstOrSecond: (
     client: { sessionId: string },
     message: { choice: 'first' | 'second' },
-  ) => void;
+  ) => Promise<void>;
   handleMulligan: (
     client: { sessionId: string },
     message: { mulligan: boolean },
-  ) => void;
+  ) => Promise<void>;
 };
 
 function asPrivateRoom(room: DuelRoom): PrivateRoomAccess {
@@ -79,7 +79,7 @@ async function createReadyRoom(): Promise<DuelRoom> {
     remove: jest.fn(),
     metadata: {},
   };
-  room.onCreate();
+  await room.onCreate();
   jest.spyOn(room, 'lock').mockImplementation(() => undefined);
 
   await room.onJoin(
@@ -102,7 +102,7 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const access = asPrivateRoom(room);
     const startingSessionId = room.state.startingPlayerSessionId;
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'first' },
     );
@@ -120,7 +120,7 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const otherSessionId =
       startingSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'second' },
     );
@@ -138,7 +138,7 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const otherSessionId =
       startingSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: otherSessionId },
       { choice: 'first' },
     );
@@ -154,11 +154,11 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const access = asPrivateRoom(room);
     const startingSessionId = room.state.startingPlayerSessionId;
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'first' },
     );
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'second' },
     );
@@ -176,12 +176,15 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const secondSessionId =
       startingSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'first' },
     );
 
-    access.handleMulligan({ sessionId: secondSessionId }, { mulligan: false });
+    await access.handleMulligan(
+      { sessionId: secondSessionId },
+      { mulligan: false },
+    );
 
     const secondPlayer = room.state.players.get(secondSessionId);
     expect(secondPlayer?.mulliganDecided).toBe(false);
@@ -195,7 +198,7 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const access = asPrivateRoom(room);
     const firstSessionId = room.state.startingPlayerSessionId;
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: firstSessionId },
       { choice: 'first' },
     );
@@ -205,14 +208,18 @@ describe('DuelRoom setup sequence (stage 6)', () => {
       (card) => card.instanceId,
     );
 
-    access.handleMulligan({ sessionId: firstSessionId }, { mulligan: true });
+    await access.handleMulligan(
+      { sessionId: firstSessionId },
+      { mulligan: true },
+    );
+    const updatedPlayer = room.state.players.get(firstSessionId);
 
-    expect(player?.zones.hand).toHaveLength(5);
-    expect(player?.handCount).toBe(5);
-    expect(player?.zones.deck).toHaveLength(45);
-    expect(player?.mulliganDecided).toBe(true);
+    expect(updatedPlayer?.zones.hand).toHaveLength(5);
+    expect(updatedPlayer?.handCount).toBe(5);
+    expect(updatedPlayer?.zones.deck).toHaveLength(45);
+    expect(updatedPlayer?.mulliganDecided).toBe(true);
 
-    const newHandIds = Array.from(player?.zones.hand ?? []).map(
+    const newHandIds = Array.from(updatedPlayer?.zones.hand ?? []).map(
       (card) => card.instanceId,
     );
     expect(newHandIds.sort()).not.toEqual(originalHandIds.sort());
@@ -226,18 +233,24 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const access = asPrivateRoom(room);
     const firstSessionId = room.state.startingPlayerSessionId;
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: firstSessionId },
       { choice: 'first' },
     );
 
-    access.handleMulligan({ sessionId: firstSessionId }, { mulligan: true });
+    await access.handleMulligan(
+      { sessionId: firstSessionId },
+      { mulligan: true },
+    );
     const player = room.state.players.get(firstSessionId);
     const handAfterFirstMulligan = Array.from(player?.zones.hand ?? []).map(
       (card) => card.instanceId,
     );
 
-    access.handleMulligan({ sessionId: firstSessionId }, { mulligan: true });
+    await access.handleMulligan(
+      { sessionId: firstSessionId },
+      { mulligan: true },
+    );
     const handAfterSecondAttempt = Array.from(player?.zones.hand ?? []).map(
       (card) => card.instanceId,
     );
@@ -255,16 +268,22 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const secondSessionId =
       firstSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: firstSessionId },
       { choice: 'first' },
     );
-    access.handleMulligan({ sessionId: firstSessionId }, { mulligan: false });
+    await access.handleMulligan(
+      { sessionId: firstSessionId },
+      { mulligan: false },
+    );
 
     expect(room.state.phase).toBe('mulligan');
     expect(room.state.turn).toBe(0);
 
-    access.handleMulligan({ sessionId: secondSessionId }, { mulligan: true });
+    await access.handleMulligan(
+      { sessionId: secondSessionId },
+      { mulligan: true },
+    );
 
     const firstPlayer = room.state.players.get(firstSessionId);
     const secondPlayer = room.state.players.get(secondSessionId);
@@ -302,7 +321,7 @@ describe('DuelRoom setup sequence (stage 6)', () => {
 
     await room.onLeave({ sessionId: otherSessionId } as never, true);
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'second' },
     );
@@ -317,14 +336,14 @@ describe('DuelRoom setup sequence (stage 6)', () => {
     const otherSessionId =
       startingSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-    access.handleChooseFirstOrSecond(
+    await access.handleChooseFirstOrSecond(
       { sessionId: startingSessionId },
       { choice: 'first' },
     );
 
     await room.onLeave({ sessionId: otherSessionId } as never, true);
 
-    access.handleMulligan(
+    await access.handleMulligan(
       { sessionId: startingSessionId },
       { mulligan: false },
     );

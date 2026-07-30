@@ -74,12 +74,15 @@ type PrivateRoomAccess = {
   handleChooseFirstOrSecond: (
     client: { sessionId: string },
     message: { choice: 'first' | 'second' },
-  ) => void;
+  ) => Promise<void>;
   handleMulligan: (
     client: { sessionId: string },
     message: { mulligan: boolean },
-  ) => void;
-  handleEndPhase: (client: { sessionId: string; send: jest.Mock }) => void;
+  ) => Promise<void>;
+  handleEndPhase: (client: {
+    sessionId: string;
+    send: jest.Mock;
+  }) => Promise<void>;
   handlePlayCard: (
     client: { sessionId: string; send: jest.Mock },
     message: { instanceId: string; discardCharacterInstanceId?: string },
@@ -254,12 +257,18 @@ async function createRoomAtFirstTurn(): Promise<{
   const secondSessionId =
     firstSessionId === 'session-a' ? 'session-b' : 'session-a';
 
-  access.handleChooseFirstOrSecond(
+  await access.handleChooseFirstOrSecond(
     { sessionId: firstSessionId },
     { choice: 'first' },
   );
-  access.handleMulligan({ sessionId: firstSessionId }, { mulligan: false });
-  access.handleMulligan({ sessionId: secondSessionId }, { mulligan: false });
+  await access.handleMulligan(
+    { sessionId: firstSessionId },
+    { mulligan: false },
+  );
+  await access.handleMulligan(
+    { sessionId: secondSessionId },
+    { mulligan: false },
+  );
 
   return { room, firstSessionId, secondSessionId };
 }
@@ -282,7 +291,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const player = room.state.players.get(firstSessionId);
     const handCountBeforeDraw = player?.handCount;
 
-    access.handleEndPhase(fakeClient(firstSessionId));
+    await access.handleEndPhase(fakeClient(firstSessionId));
 
     expect(room.state.phase).toBe('draw');
     expect(player?.handCount).toBe(handCountBeforeDraw);
@@ -297,8 +306,8 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const access = asPrivateRoom(room);
     const client = fakeClient(firstSessionId);
 
-    access.handleEndPhase(client); // -> draw
-    access.handleEndPhase(client); // -> don
+    await access.handleEndPhase(client); // -> draw
+    await access.handleEndPhase(client); // -> don
 
     const player = room.state.players.get(firstSessionId);
     expect(room.state.phase).toBe('don');
@@ -316,37 +325,39 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const firstClient = fakeClient(firstSessionId);
     const secondClient = fakeClient(secondSessionId);
 
-    access.handleEndPhase(firstClient); // draw (skipped, game turn 1)
-    access.handleEndPhase(firstClient); // don (1 only)
-    access.handleEndPhase(firstClient); // main
-    access.handleEndPhase(firstClient); // end
-    access.handleEndPhase(firstClient); // ends turn -> second player's refresh
+    await access.handleEndPhase(firstClient); // draw (skipped, game turn 1)
+    await access.handleEndPhase(firstClient); // don (1 only)
+    await access.handleEndPhase(firstClient); // main
+    await access.handleEndPhase(firstClient); // end
+    await access.handleEndPhase(firstClient); // ends turn -> second player's refresh
 
     expect(room.state.activePlayerSessionId).toBe(secondSessionId);
     expect(room.state.phase).toBe('refresh');
 
-    access.handleEndPhase(secondClient); // draw, turn 2: second player draws normally
+    await access.handleEndPhase(secondClient); // draw, turn 2: second player draws normally
     const secondPlayer = room.state.players.get(secondSessionId);
     expect(secondPlayer?.handCount).toBe(5 + 1);
 
-    access.handleEndPhase(secondClient); // don, 2 this time
+    await access.handleEndPhase(secondClient); // don, 2 this time
+    const secondPlayerAfterDon = room.state.players.get(secondSessionId);
     expect(
-      secondPlayer?.zones.cost.filter((card) => !card.rested),
+      secondPlayerAfterDon?.zones.cost.filter((card) => !card.rested),
     ).toHaveLength(2);
 
-    access.handleEndPhase(secondClient); // main
-    access.handleEndPhase(secondClient); // end
-    access.handleEndPhase(secondClient); // ends turn -> first player's refresh (turn 3)
+    await access.handleEndPhase(secondClient); // main
+    await access.handleEndPhase(secondClient); // end
+    await access.handleEndPhase(secondClient); // ends turn -> first player's refresh (turn 3)
 
-    access.handleEndPhase(firstClient); // draw, now past first turn
+    await access.handleEndPhase(firstClient); // draw, now past first turn
     const firstPlayer = room.state.players.get(firstSessionId);
     expect(firstPlayer?.handCount).toBe(5 + 1);
 
-    access.handleEndPhase(firstClient); // don, 2 this time
+    await access.handleEndPhase(firstClient); // don, 2 this time
+    const firstPlayerAfterDon = room.state.players.get(firstSessionId);
     // 1 DON!! placed on turn 1 (untapped after refresh) + 2 placed this turn.
-    expect(firstPlayer?.zones.cost.filter((card) => !card.rested)).toHaveLength(
-      3,
-    );
+    expect(
+      firstPlayerAfterDon?.zones.cost.filter((card) => !card.rested),
+    ).toHaveLength(3);
 
     const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
     await disposableRoom._dispose();
@@ -365,7 +376,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     // exercise the draw-phase deck-out path directly.
     room.state.turn = 2;
 
-    access.handleEndPhase(fakeClient(firstSessionId)); // draw phase now runs
+    await access.handleEndPhase(fakeClient(firstSessionId)); // draw phase now runs
 
     expect(room.state.phase).toBe('finished');
     expect(room.state.logs.at(-1)?.message).toContain('deck-out');
@@ -380,7 +391,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const access = asPrivateRoom(room);
     const client = fakeClient(secondSessionId);
 
-    access.handleEndPhase(client);
+    await access.handleEndPhase(client);
 
     expect(room.state.phase).toBe('refresh');
     expectErrorMessage(client);
@@ -390,18 +401,21 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     await disposableRoom._dispose();
   });
 
-  function advanceToMain(room: DuelRoom, sessionId: string): void {
+  async function advanceToMain(
+    room: DuelRoom,
+    sessionId: string,
+  ): Promise<void> {
     const access = asPrivateRoom(room);
     const client = fakeClient(sessionId);
 
-    access.handleEndPhase(client); // draw
-    access.handleEndPhase(client); // don
-    access.handleEndPhase(client); // main
+    await access.handleEndPhase(client); // draw
+    await access.handleEndPhase(client); // don
+    await access.handleEndPhase(client); // main
   }
 
   it('plays a Character card from hand, paying its cost with untapped DON!!', async () => {
     const { room, firstSessionId } = await createRoomAtFirstTurn();
-    advanceToMain(room, firstSessionId);
+    await advanceToMain(room, firstSessionId);
 
     const access = asPrivateRoom(room);
     const player = room.state.players.get(firstSessionId);
@@ -788,13 +802,13 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     const firstClient = fakeClient(firstSessionId);
     await access.handleAttachDon(firstClient, { target: 'leader' });
 
-    access.handleEndPhase(firstClient); // -> end
-    access.handleEndPhase(firstClient); // ends turn -> second player refresh
-    access.handleEndPhase(fakeClient(secondSessionId)); // draw
-    access.handleEndPhase(fakeClient(secondSessionId)); // don
-    access.handleEndPhase(fakeClient(secondSessionId)); // main
-    access.handleEndPhase(fakeClient(secondSessionId)); // end
-    access.handleEndPhase(fakeClient(secondSessionId)); // ends turn -> first player refresh
+    await access.handleEndPhase(firstClient); // -> end
+    await access.handleEndPhase(firstClient); // ends turn -> second player refresh
+    await access.handleEndPhase(fakeClient(secondSessionId)); // draw
+    await access.handleEndPhase(fakeClient(secondSessionId)); // don
+    await access.handleEndPhase(fakeClient(secondSessionId)); // main
+    await access.handleEndPhase(fakeClient(secondSessionId)); // end
+    await access.handleEndPhase(fakeClient(secondSessionId)); // ends turn -> first player refresh
 
     expect(room.state.activePlayerSessionId).toBe(firstSessionId);
     const updatedPlayer = room.state.players.get(firstSessionId);
@@ -813,7 +827,7 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
   it('clears playedThisTurn on Characters during the next Refresh phase', async () => {
     const { room, firstSessionId, secondSessionId } =
       await createRoomAtFirstTurn();
-    advanceToMain(room, firstSessionId);
+    await advanceToMain(room, firstSessionId);
 
     const access = asPrivateRoom(room);
     const player = room.state.players.get(firstSessionId);
@@ -831,13 +845,13 @@ describe('DuelRoom turn/phase engine (stage 7)', () => {
     expect(playedCharacter?.playedThisTurn).toBe(true);
 
     const firstClient = fakeClient(firstSessionId);
-    access.handleEndPhase(firstClient); // end
-    access.handleEndPhase(firstClient); // ends turn -> second player refresh
-    access.handleEndPhase(fakeClient(secondSessionId)); // draw
-    access.handleEndPhase(fakeClient(secondSessionId)); // don
-    access.handleEndPhase(fakeClient(secondSessionId)); // main
-    access.handleEndPhase(fakeClient(secondSessionId)); // end
-    access.handleEndPhase(fakeClient(secondSessionId)); // ends turn -> first player refresh
+    await access.handleEndPhase(firstClient); // end
+    await access.handleEndPhase(firstClient); // ends turn -> second player refresh
+    await access.handleEndPhase(fakeClient(secondSessionId)); // draw
+    await access.handleEndPhase(fakeClient(secondSessionId)); // don
+    await access.handleEndPhase(fakeClient(secondSessionId)); // main
+    await access.handleEndPhase(fakeClient(secondSessionId)); // end
+    await access.handleEndPhase(fakeClient(secondSessionId)); // ends turn -> first player refresh
 
     playedCharacter = room.state.players
       .get(firstSessionId)
