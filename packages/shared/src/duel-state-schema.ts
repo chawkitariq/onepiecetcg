@@ -352,48 +352,54 @@ function replaceArraySchema<T>(
  */
 export function cloneDuelCard(source: DuelCard): DuelCard {
   const cloned = new DuelCard();
-  cloned.instanceId = source.instanceId;
-  cloned.ownerSessionId = source.ownerSessionId;
-  cloned.privateToOwner = source.privateToOwner;
-  cloned.cardId = source.cardId;
-  cloned.number = source.number;
-  cloned.name = source.name;
-  cloned.type = source.type;
-  replaceArraySchema(cloned.colors, source.colors);
-  cloned.cost = source.cost;
-  cloned.baseCost = source.baseCost;
-  cloned.basePower = source.basePower;
-  cloned.power = source.power;
-  cloned.life = source.life;
-  cloned.counter = source.counter;
-  replaceArraySchema(cloned.attributes, source.attributes);
-  replaceArraySchema(cloned.families, source.families);
-  cloned.imageUrl = source.imageUrl;
-  cloned.text = source.text;
-  cloned.trigger = source.trigger;
-  cloned.faceDown = source.faceDown;
-  cloned.rested = source.rested;
-  cloned.attachedDon = source.attachedDon;
-  cloned.playedThisTurn = source.playedThisTurn;
-  cloned.hasRush = source.hasRush;
-  cloned.hasDoubleAttack = source.hasDoubleAttack;
-  cloned.hasBanish = source.hasBanish;
-  cloned.canAttackActiveCharacters = source.canAttackActiveCharacters;
-  cloned.mustBeAttackTarget = source.mustBeAttackTarget;
-  cloned.cannotAttack = source.cannotAttack;
-  cloned.cannotAttackLeaderOnTurnPlayed = source.cannotAttackLeaderOnTurnPlayed;
-  cloned.cannotBlock = source.cannotBlock;
-  cloned.cannotBeKoedInBattle = source.cannotBeKoedInBattle;
-  cloned.cannotBeKoedByEffects = source.cannotBeKoedByEffects;
-  cloned.cannotBeKoedBySlashInBattle = source.cannotBeKoedBySlashInBattle;
-  cloned.cannotBeKoedByStrikeInBattle = source.cannotBeKoedByStrikeInBattle;
-  cloned.winOnDeckOut = source.winOnDeckOut;
-  cloned.cannotBeRemovedByOpponentEffects =
-    source.cannotBeRemovedByOpponentEffects;
-  cloned.cannotAttackUntilTurn = source.cannotAttackUntilTurn;
-  cloned.skipNextRefreshPhases = source.skipNextRefreshPhases;
+  assignDuelCard(cloned, source);
 
   return cloned;
+}
+
+function assignDuelCard(target: DuelCard, source: DuelCard): DuelCard {
+  target.instanceId = source.instanceId;
+  target.ownerSessionId = source.ownerSessionId;
+  target.privateToOwner = source.privateToOwner;
+  target.cardId = source.cardId;
+  target.number = source.number;
+  target.name = source.name;
+  target.type = source.type;
+  replaceArraySchema(target.colors, source.colors);
+  target.cost = source.cost;
+  target.baseCost = source.baseCost;
+  target.basePower = source.basePower;
+  target.power = source.power;
+  target.life = source.life;
+  target.counter = source.counter;
+  replaceArraySchema(target.attributes, source.attributes);
+  replaceArraySchema(target.families, source.families);
+  target.imageUrl = source.imageUrl;
+  target.text = source.text;
+  target.trigger = source.trigger;
+  target.faceDown = source.faceDown;
+  target.rested = source.rested;
+  target.attachedDon = source.attachedDon;
+  target.playedThisTurn = source.playedThisTurn;
+  target.hasRush = source.hasRush;
+  target.hasDoubleAttack = source.hasDoubleAttack;
+  target.hasBanish = source.hasBanish;
+  target.canAttackActiveCharacters = source.canAttackActiveCharacters;
+  target.mustBeAttackTarget = source.mustBeAttackTarget;
+  target.cannotAttack = source.cannotAttack;
+  target.cannotAttackLeaderOnTurnPlayed = source.cannotAttackLeaderOnTurnPlayed;
+  target.cannotBlock = source.cannotBlock;
+  target.cannotBeKoedInBattle = source.cannotBeKoedInBattle;
+  target.cannotBeKoedByEffects = source.cannotBeKoedByEffects;
+  target.cannotBeKoedBySlashInBattle = source.cannotBeKoedBySlashInBattle;
+  target.cannotBeKoedByStrikeInBattle = source.cannotBeKoedByStrikeInBattle;
+  target.winOnDeckOut = source.winOnDeckOut;
+  target.cannotBeRemovedByOpponentEffects =
+    source.cannotBeRemovedByOpponentEffects;
+  target.cannotAttackUntilTurn = source.cannotAttackUntilTurn;
+  target.skipNextRefreshPhases = source.skipNextRefreshPhases;
+
+  return target;
 }
 
 /**
@@ -401,38 +407,44 @@ export function cloneDuelCard(source: DuelCard): DuelCard {
  */
 export function cloneDuelZones(source: DuelZones): DuelZones {
   const cloned = new DuelZones();
+  assignDuelZones(cloned, source);
+
+  return cloned;
+}
+
+function assignDuelZones(target: DuelZones, source: DuelZones): DuelZones {
   replaceArraySchema(
-    cloned.deck,
+    target.deck,
     Array.from(source.deck, (card) => cloneDuelCard(card)),
   );
   replaceArraySchema(
-    cloned.donDeck,
+    target.donDeck,
     Array.from(source.donDeck, (card) => cloneDuelCard(card)),
   );
   replaceArraySchema(
-    cloned.hand,
+    target.hand,
     Array.from(source.hand, (card) => cloneDuelCard(card)),
   );
   replaceArraySchema(
-    cloned.life,
+    target.life,
     Array.from(source.life, (card) => cloneDuelCard(card)),
   );
   replaceArraySchema(
-    cloned.characters,
+    target.characters,
     Array.from(source.characters, (card) => cloneDuelCard(card)),
   );
   replaceArraySchema(
-    cloned.cost,
+    target.cost,
     Array.from(source.cost, (card) => cloneDuelCard(card)),
   );
   replaceArraySchema(
-    cloned.trash,
+    target.trash,
     Array.from(source.trash, (card) => cloneDuelCard(card)),
   );
-  cloned.leader = cloneDuelCard(source.leader);
-  cloned.stage = cloneDuelCard(source.stage);
+  assignDuelCard(target.leader, source.leader);
+  assignDuelCard(target.stage, source.stage);
 
-  return cloned;
+  return target;
 }
 
 /**
@@ -440,19 +452,25 @@ export function cloneDuelZones(source: DuelZones): DuelZones {
  */
 export function cloneDuelPlayer(source: DuelPlayer): DuelPlayer {
   const cloned = new DuelPlayer();
-  cloned.sessionId = source.sessionId;
-  cloned.displayName = source.displayName;
-  cloned.deckId = source.deckId;
-  cloned.ready = source.ready;
-  cloned.connected = source.connected;
-  cloned.mulliganDecided = source.mulliganDecided;
-  cloned.hasTakenFirstTurn = source.hasTakenFirstTurn;
-  cloned.handCount = source.handCount;
-  cloned.deckCount = source.deckCount;
-  cloned.lifeCount = source.lifeCount;
-  cloned.zones = cloneDuelZones(source.zones);
+  assignDuelPlayer(cloned, source);
 
   return cloned;
+}
+
+function assignDuelPlayer(target: DuelPlayer, source: DuelPlayer): DuelPlayer {
+  target.sessionId = source.sessionId;
+  target.displayName = source.displayName;
+  target.deckId = source.deckId;
+  target.ready = source.ready;
+  target.connected = source.connected;
+  target.mulliganDecided = source.mulliganDecided;
+  target.hasTakenFirstTurn = source.hasTakenFirstTurn;
+  target.handCount = source.handCount;
+  target.deckCount = source.deckCount;
+  target.lifeCount = source.lifeCount;
+  assignDuelZones(target.zones, source.zones);
+
+  return target;
 }
 
 /**
@@ -474,17 +492,23 @@ export function cloneDuelLog(source: DuelLog): DuelLog {
  */
 export function cloneDuelCombat(source: DuelCombat): DuelCombat {
   const cloned = new DuelCombat();
-  cloned.attackerSessionId = source.attackerSessionId;
-  cloned.attackerInstanceId = source.attackerInstanceId;
-  cloned.defenderSessionId = source.defenderSessionId;
-  cloned.targetType = source.targetType;
-  cloned.targetInstanceId = source.targetInstanceId;
-  cloned.blockerInstanceId = source.blockerInstanceId;
-  cloned.step = source.step;
-  cloned.counterPowerBonus = source.counterPowerBonus;
-  cloned.awaitingTriggerDecision = source.awaitingTriggerDecision;
+  assignDuelCombat(cloned, source);
 
   return cloned;
+}
+
+function assignDuelCombat(target: DuelCombat, source: DuelCombat): DuelCombat {
+  target.attackerSessionId = source.attackerSessionId;
+  target.attackerInstanceId = source.attackerInstanceId;
+  target.defenderSessionId = source.defenderSessionId;
+  target.targetType = source.targetType;
+  target.targetInstanceId = source.targetInstanceId;
+  target.blockerInstanceId = source.blockerInstanceId;
+  target.step = source.step;
+  target.counterPowerBonus = source.counterPowerBonus;
+  target.awaitingTriggerDecision = source.awaitingTriggerDecision;
+
+  return target;
 }
 
 /**
@@ -508,7 +532,7 @@ export function cloneDuelState(source: DuelState): DuelState {
     cloned.logs,
     Array.from(source.logs, (log) => cloneDuelLog(log)),
   );
-  cloned.combat = cloneDuelCombat(source.combat);
+  assignDuelCombat(cloned.combat, source.combat);
   cloned.winnerSessionId = source.winnerSessionId;
   cloned.endReason = source.endReason;
 
@@ -536,7 +560,7 @@ export function adoptDuelState(target: DuelState, source: DuelState): DuelState 
     target.logs,
     Array.from(source.logs, (log) => cloneDuelLog(log)),
   );
-  target.combat = cloneDuelCombat(source.combat);
+  assignDuelCombat(target.combat, source.combat);
   target.winnerSessionId = source.winnerSessionId;
   target.endReason = source.endReason;
 
