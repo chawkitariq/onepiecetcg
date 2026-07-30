@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import type { Card, DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
+import type { Card, DuelLogEntry, DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { animate } from 'animejs'
 import cardBackRegular from '~/assets/card-back-regular.png'
 import cardFrontDon from '~/assets/don.png'
 import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
+import {
+  getDuelLogLevelPresentation,
+  getDuelLogMessageText,
+  resolveDuelLogActorPresentation
+} from '~/utils/duelLogs'
 import {
   getDuelBannerFeedbackAnimation,
   getDuelCardFeedbackAnimation,
@@ -1366,29 +1371,19 @@ function formatLogTime(createdAt: string): string {
   })
 }
 
-const logToneClasses = {
-  positive: 'text-success',
-  negative: 'text-error',
-  special: 'text-warning',
-  neutral: 'text-muted'
-} as const
+function resolveLogActor(sessionId: string) {
+  return resolveDuelLogActorPresentation(sessionId, {
+    self: self.value,
+    opponent: opponent.value
+  })
+}
 
-type LogTone = keyof typeof logToneClasses
+function getLogActor(entry: DuelLogEntry) {
+  return resolveLogActor(entry.actorSessionId)
+}
 
-function getLogTone(message: string): LogTone {
-  if (/(attaque|dégât|dégats|KO|perd|défausse|détruit|impossible|invalide|insuffisant|ne peut|deck-out|pleine|Aucun DON)/i.test(message)) {
-    return 'negative'
-  }
-
-  if (/(trigger|déclenche|déclenchement|révèle|active|rare|jalon|milestone)/i.test(message)) {
-    return 'special'
-  }
-
-  if (/(joue|soigne|gagne|récupère|renforce|boost|augmente|remporte)/i.test(message)) {
-    return 'positive'
-  }
-
-  return 'neutral'
+function getLogMessageText(entry: DuelLogEntry) {
+  return getDuelLogMessageText(entry, getLogActor(entry))
 }
 
 async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
@@ -3360,15 +3355,30 @@ defineShortcuts({
                       <time
                         :datetime="entry.createdAt"
                         class="shrink-0 tabular-nums text-[11px]"
-                        :class="logToneClasses[getLogTone(entry.message)]"
+                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
                       >
                         {{ formatLogTime(entry.createdAt) }}
                       </time>
                       <p
                         class="min-w-0 flex-1 leading-relaxed"
-                        :class="logToneClasses[getLogTone(entry.message)]"
+                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
                       >
-                        {{ entry.message }}
+                        <span
+                          class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
+                          :class="getDuelLogLevelPresentation(entry.level).badgeClass"
+                          data-test="journal-level"
+                        >
+                          {{ getDuelLogLevelPresentation(entry.level).label }}
+                        </span>
+                        <span
+                          v-if="getLogActor(entry)"
+                          class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
+                          :class="getLogActor(entry)?.classes"
+                          data-test="journal-actor"
+                        >
+                          {{ getLogActor(entry)?.displayName }}
+                        </span>
+                        <span>{{ getLogMessageText(entry) }}</span>
                       </p>
                     </div>
                   </li>

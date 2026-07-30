@@ -32,7 +32,7 @@ const isOpponentDisconnected = ref(false)
 const reducedMotion = ref<'reduce' | 'no-preference'>('no-preference')
 const self = ref<DuelPlayerView | null>(null)
 const opponent = ref<DuelPlayerView | null>(null)
-const logs = ref<Array<{ id: string, message: string, createdAt: string }>>([])
+const logs = ref<Array<{ id: string, message: string, level: string, actorSessionId: string, createdAt: string }>>([])
 const errorMessage = ref<string | null>(null)
 const pendingEffectDecision = ref<PendingEffectDecision | null>(null)
 const activeDecision = ref<any>(null)
@@ -115,6 +115,20 @@ function createPlayer(sessionId: string, overrides: Partial<DuelPlayerView> = {}
     life: [],
     lifeCount: 4,
     ...overrides
+  }
+}
+
+function createLogEntry(
+  id: string,
+  message: string,
+  overrides: Partial<{ level: string, actorSessionId: string, createdAt: string }> = {}
+) {
+  return {
+    id,
+    message,
+    level: overrides.level ?? 'system',
+    actorSessionId: overrides.actorSessionId ?? '',
+    createdAt: overrides.createdAt ?? '2026-07-24T10:00:00.000Z'
   }
 }
 
@@ -1029,11 +1043,11 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.findAll('[data-board-travel-instance-id="revealed-life"]')).toHaveLength(1)
 
     logs.value = [
-      {
-        id: 'later-log',
-        message: 'self attaque avec Luffy vers Nami.',
+      createLogEntry('later-log', 'self attaque avec Luffy vers Nami.', {
+        level: 'action',
+        actorSessionId: 'self',
         createdAt: '2026-07-26T10:03:00.000Z'
-      }
+      })
     ]
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
@@ -1646,8 +1660,14 @@ describe('DuelBoard drag and drop', () => {
 
   it('renders journal entries in chronological order', () => {
     logs.value = [
-      { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' },
-      { id: 'log-2', message: 'DON!! insuffisant pour jouer Zoro.', createdAt: '2026-07-24T10:01:00.000Z' }
+      createLogEntry('log-1', 'self commence la partie.', {
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:00:00.000Z'
+      }),
+      createLogEntry('log-2', 'DON!! insuffisant pour jouer Zoro.', {
+        level: 'error',
+        createdAt: '2026-07-24T10:01:00.000Z'
+      })
     ]
 
     const wrapper = mountBoard()
@@ -1660,27 +1680,74 @@ describe('DuelBoard drag and drop', () => {
     expect(journalEntries[0]?.classes()).not.toContain('rounded-lg')
   })
 
-  it('applies the requested color coding to journal entries', () => {
+  it('applies the standardized level color coding to journal entries', () => {
     logs.value = [
-      { id: 'log-positive', message: 'self joue Zoro.', createdAt: '2026-07-24T10:00:00.000Z' },
-      { id: 'log-negative', message: 'self attaque avec Luffy.', createdAt: '2026-07-24T10:01:00.000Z' },
-      { id: 'log-special', message: 'self révèle un Trigger.', createdAt: '2026-07-24T10:02:00.000Z' },
-      { id: 'log-neutral', message: 'self commence la partie.', createdAt: '2026-07-24T10:03:00.000Z' }
+      createLogEntry('log-action', 'self joue Zoro.', {
+        level: 'action',
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:00:00.000Z'
+      }),
+      createLogEntry('log-error', 'DON!! insuffisant pour jouer Zoro.', {
+        level: 'error',
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:01:00.000Z'
+      }),
+      createLogEntry('log-effect', 'self révèle un Trigger.', {
+        level: 'effect',
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:02:00.000Z'
+      }),
+      createLogEntry('log-system', 'La partie commence.', {
+        level: 'system',
+        createdAt: '2026-07-24T10:03:00.000Z'
+      }),
+      createLogEntry('log-info', 'self consulte le journal.', {
+        level: 'info',
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:04:00.000Z'
+      })
     ]
 
     const wrapper = mountBoard()
     const journalEntries = wrapper.findAll('[data-test="journal-entry"]')
+    const levelBadges = wrapper.findAll('[data-test="journal-level"]')
 
-    expect(journalEntries[0]?.find('p').classes()).toContain('text-success')
+    expect(journalEntries[0]?.find('p').classes()).toContain('text-primary')
     expect(journalEntries[1]?.find('p').classes()).toContain('text-error')
     expect(journalEntries[2]?.find('p').classes()).toContain('text-warning')
-    expect(journalEntries[3]?.find('p').classes()).toContain('text-muted')
+    expect(journalEntries[3]?.find('p').classes()).toContain('text-info')
+    expect(journalEntries[4]?.find('p').classes()).toContain('text-muted')
+    expect(levelBadges.map(badge => badge.text())).toEqual(['Action', 'Erreur', 'Effet', 'Système', 'Info'])
+  })
+
+  it('renders the actor badge separately from the journal text when actorSessionId is present', () => {
+    logs.value = [
+      createLogEntry('log-actor', 'self joue Zoro en zone Personnage.', {
+        level: 'action',
+        actorSessionId: 'self'
+      })
+    ]
+
+    const wrapper = mountBoard()
+    const actorBadge = wrapper.get('[data-test="journal-actor"]')
+    const journalEntry = wrapper.get('[data-test="journal-entry"]')
+
+    expect(actorBadge.text()).toBe('self')
+    expect(journalEntry.text()).toContain('joue Zoro en zone Personnage.')
+    expect(journalEntry.text()).not.toContain('self joue Zoro en zone Personnage.')
   })
 
   it('scrolls the journal to the latest entry when the slideover opens', async () => {
     logs.value = [
-      { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' },
-      { id: 'log-2', message: 'self joue Zoro.', createdAt: '2026-07-24T10:01:00.000Z' }
+      createLogEntry('log-1', 'self commence la partie.', {
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:00:00.000Z'
+      }),
+      createLogEntry('log-2', 'self joue Zoro.', {
+        level: 'action',
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:01:00.000Z'
+      })
     ]
 
     const wrapper = mountBoard()
@@ -1699,7 +1766,10 @@ describe('DuelBoard drag and drop', () => {
 
   it('scrolls the journal to the latest entry when a new log arrives and the slideover is open', async () => {
     logs.value = [
-      { id: 'log-1', message: 'self commence la partie.', createdAt: '2026-07-24T10:00:00.000Z' }
+      createLogEntry('log-1', 'self commence la partie.', {
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:00:00.000Z'
+      })
     ]
 
     const wrapper = mountBoard()
@@ -1713,7 +1783,11 @@ describe('DuelBoard drag and drop', () => {
 
     logs.value = [
       ...logs.value,
-      { id: 'log-2', message: 'self joue Zoro.', createdAt: '2026-07-24T10:01:00.000Z' }
+      createLogEntry('log-2', 'self joue Zoro.', {
+        level: 'action',
+        actorSessionId: 'self',
+        createdAt: '2026-07-24T10:01:00.000Z'
+      })
     ]
     await wrapper.vm.$nextTick()
     await vi.runAllTimersAsync()
@@ -1729,11 +1803,11 @@ describe('DuelBoard drag and drop', () => {
     const wrapper = mountBoard({ attachToBody: true })
 
     logs.value = [
-      {
-        id: 'log-attack',
-        message: 'self attaque avec Luffy vers Nami.',
+      createLogEntry('log-attack', 'self attaque avec Luffy vers Nami.', {
+        level: 'action',
+        actorSessionId: 'self',
         createdAt: '2026-07-26T10:00:00.000Z'
-      }
+      })
     ]
     await wrapper.vm.$nextTick()
 
@@ -1853,11 +1927,11 @@ describe('DuelBoard drag and drop', () => {
     })
     await wrapper.vm.$nextTick()
     logs.value = [
-      {
-        id: 'log-don-gain',
-        message: 'self donne 1 DON!! a character-a (+1000 de puissance).',
+      createLogEntry('log-don-gain', 'self donne 1 DON!! a character-a (+1000 de puissance).', {
+        level: 'action',
+        actorSessionId: 'self',
         createdAt: '2026-07-26T10:00:00.000Z'
-      }
+      })
     ]
     await Promise.resolve()
     await wrapper.vm.$nextTick()
@@ -1888,11 +1962,11 @@ describe('DuelBoard drag and drop', () => {
     }
     await wrapper.vm.$nextTick()
     logs.value = [
-      {
-        id: 'log-blocker',
-        message: 'self declare character-a comme Bloqueur.',
+      createLogEntry('log-blocker', 'self declare character-a comme Bloqueur.', {
+        level: 'action',
+        actorSessionId: 'self',
         createdAt: '2026-07-26T10:01:00.000Z'
-      }
+      })
     ]
     await Promise.resolve()
     await wrapper.vm.$nextTick()

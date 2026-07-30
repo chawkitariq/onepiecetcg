@@ -2,6 +2,11 @@
 import type { Card, CardSearchResponse, Deck, DeckListResponse, DescribedRoomListResponse, DescribedRoomSummary, DuelLogEntry, DuelPlayerView } from '@onepiecetcg/shared'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import * as z from 'zod'
+import {
+  getDuelLogLevelPresentation,
+  getDuelLogMessageText,
+  resolveDuelLogActorPresentation
+} from '~/utils/duelLogs'
 
 definePageMeta({
   layout: 'lobby',
@@ -106,6 +111,17 @@ await loadDescribedRooms()
 
 function dotClass(leader: Card | null) {
   return (colorTokens[leader?.colors[0] ?? ''] ?? fallbackColorToken).dot
+}
+
+function resolveLogActor(sessionId: string) {
+  return resolveDuelLogActorPresentation(sessionId, {
+    self: players.value[0] ?? null,
+    opponent: players.value[1] ?? null
+  })
+}
+
+function getLogMessageText(log: DuelLogEntry) {
+  return getDuelLogMessageText(log, resolveLogActor(log.actorSessionId))
 }
 
 function selectDeck(deckId: string) {
@@ -720,8 +736,22 @@ async function copyRoomCode() {
           <li
             v-for="log in logs"
             :key="log.id"
+            class="flex items-start gap-2"
           >
-            {{ log.message }}
+            <span
+              class="mt-0.5 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+              :class="getDuelLogLevelPresentation(log.level).badgeClass"
+            >
+              {{ getDuelLogLevelPresentation(log.level).label }}
+            </span>
+            <span
+              v-if="resolveLogActor(log.actorSessionId)"
+              class="mt-0.5 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+              :class="resolveLogActor(log.actorSessionId)?.classes"
+            >
+              {{ resolveLogActor(log.actorSessionId)?.displayName }}
+            </span>
+            <span :class="getDuelLogLevelPresentation(log.level).toneClass">{{ getLogMessageText(log) }}</span>
           </li>
           <li
             v-if="logs.length === 0"
