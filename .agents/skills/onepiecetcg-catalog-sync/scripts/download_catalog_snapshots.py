@@ -38,7 +38,7 @@ def main() -> int:
 
     if requested_editions is not None:
         is_don_requested = "DON" in requested_editions
-        is_promo_requested = "PROMOS" in requested_editions
+        is_promo_requested = "P" in requested_editions
         standard_editions = requested_editions - SPECIAL_EDITION_IDS
     else:
         is_don_requested = True
@@ -81,7 +81,7 @@ def main() -> int:
         if is_promo_requested:
             promo_cards = fetch_promo_cards()
             promo_path = write_special_snapshot(
-                promo_cards, "PROMOS", "One Piece Promotion Cards", output_dir
+                promo_cards, "P", "One Piece Promotion Cards", output_dir
             )
             print(f"- {promo_path} (promo cards)")
             written_paths.append(promo_path)

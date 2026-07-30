@@ -14,7 +14,7 @@ from typing import Any
 
 ALLOWED_CARD_TYPES = {'Leader', 'Character', 'Event', 'Stage', 'DON!!'}
 ALLOWED_CARD_COLORS = {'Red', 'Green', 'Blue', 'Purple', 'Black', 'Yellow'}
-SPECIAL_EDITION_IDS = {'DON', 'PROMOS'}
+SPECIAL_EDITION_IDS = {'DON', 'P'}
 
 
 CATALOG_ENDPOINTS = (

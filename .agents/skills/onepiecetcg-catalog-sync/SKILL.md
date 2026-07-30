@@ -18,7 +18,7 @@ Use this skill when you need an offline catalog snapshot for effect generation, 
 5. Use `scripts/run-validate-catalog.sh` to validate the downloaded snapshots before reusing them.
 6. Normalize each card to the `@onepiecetcg/shared` `Card` shape.
 7. Group cards by edition family prefix and write each edition into its matching folder, for example `packages/cards/catalog/OP/OP-01.json` or `packages/cards/catalog/EB/EB-01.json`.
-8. For promo cards, write every card returned by `https://www.optcgapi.com/api/allPromos/` into `packages/cards/catalog/PROMOS/PROMOS.json` without removing or adding entries.
+8. For promo cards, write every card returned by `https://www.optcgapi.com/api/allPromos/` into `packages/cards/catalog/P/P.json` without removing or adding entries.
 9. For DON!! cards, write every card returned by `https://www.optcgapi.com/api/allDonCards/` into `packages/cards/catalog/DON/DON.json` without removing or adding entries.
 10. Keep the output deterministic: stable ordering, stable ids, and no duplicate cards inside the same edition file.
 11. When the snapshot is ready, pass it to `onepiecetcg-effect-generation` with `--source-file` if you need to generate or refresh effect definitions without hitting the network.

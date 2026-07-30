@@ -17,7 +17,7 @@ PROMO_URL = "https://optcgapi.com/api/allPromos/"
 
 def main() -> int:
     repo_root = detect_repo_root()
-    output_dir = repo_root / "packages/cards/catalog/PROMOS"
+    output_dir = repo_root / "packages/cards/catalog/P"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with urllib.request.urlopen(PROMO_URL) as resp:
@@ -32,7 +32,7 @@ def main() -> int:
             cards.append(n)
 
     snapshot = {
-        "editionId": "PROMOS",
+        "editionId": "P",
         "name": "One Piece Promotion Cards",
         "cards": [
             {
@@ -57,7 +57,7 @@ def main() -> int:
         ],
     }
 
-    path = output_dir / "PROMOS.json"
+    path = output_dir / "P.json"
     path.write_text(
         json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
