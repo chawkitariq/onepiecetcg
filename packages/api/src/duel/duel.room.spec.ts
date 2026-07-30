@@ -111,6 +111,68 @@ describe('DuelRoom', () => {
     await disposableRoom._dispose();
   });
 
+  it('rebuilds client StateViews without requiring iterable views', async () => {
+    configureDuelRoomServices({
+      decksService: {
+        getValidatedGameDeck: jest.fn((authUserId: string, deckId: string) =>
+          Promise.resolve({
+            id: deckId,
+            name: 'Valid deck',
+            ownerAuthUserId: authUserId,
+            leader,
+            cards: Array.from({ length: 50 }, (_, index) => ({
+              ...mainCard,
+              copyIndex: index + 1,
+            })),
+          }),
+        ),
+      } as never,
+    });
+
+    const room = new DuelRoom();
+    (
+      room as DuelRoom & { listing: { remove: jest.Mock; metadata: object } }
+    ).listing = {
+      remove: jest.fn(),
+      metadata: {},
+    };
+    room.onCreate();
+    jest.spyOn(room, 'lock').mockImplementation(() => undefined);
+
+    const aliceClient = { sessionId: 'session-a' } as never;
+    const bobClient = { sessionId: 'session-b' } as never;
+
+    await room.onJoin(
+      aliceClient,
+      { displayName: 'Alice', deckId: 'deck-a' },
+      { userId: 'user-a' },
+    );
+    await room.onJoin(
+      bobClient,
+      { displayName: 'Bob', deckId: 'deck-b' },
+      { userId: 'user-b' },
+    );
+
+    (room as DuelRoom & { clients: typeof room.clients }).clients = [
+      aliceClient,
+      bobClient,
+    ];
+
+    expect(() => {
+      (
+        room as DuelRoom & {
+          rebuildAllClientViews: () => void;
+        }
+      ).rebuildAllClientViews();
+    }).not.toThrow();
+
+    expect(aliceClient.view).toBeDefined();
+    expect(bobClient.view).toBeDefined();
+
+    const disposableRoom = room as unknown as { _dispose: () => Promise<void> };
+    await disposableRoom._dispose();
+  });
+
   it('rejects a join without a resolved session', async () => {
     configureDuelRoomServices({
       decksService: { getValidatedGameDeck: jest.fn() } as never,

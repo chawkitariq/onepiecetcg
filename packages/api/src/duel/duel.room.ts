@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
-import { ArraySchema } from '@colyseus/schema';
+import { ArraySchema, StateView } from '@colyseus/schema';
 import type { DeckService } from '../deck/deck.service';
 import type {
   DomainEventDraft,
@@ -2524,11 +2524,7 @@ export class DuelRoom extends Room<DuelState> {
 
   private rebuildAllClientViews(): void {
     for (const client of this.clients) {
-      if (!client.view) {
-        continue;
-      }
-
-      client.view.clear();
+      client.view = new StateView();
       const ownerSessionId = client.sessionId;
 
       for (const player of this.state.players.values()) {
