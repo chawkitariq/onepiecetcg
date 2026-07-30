@@ -9,6 +9,8 @@ import { EffectDecisionManager } from './runtime/effect-decision-manager';
 import { EffectModifierEngine } from './runtime/effect-modifier-engine';
 import { EffectSelectorResolver } from './runtime/effect-selector-resolver';
 import type {
+  EffectEngineCardStatPatch,
+  EffectEngineCardStatusPatch,
   EffectEngineState,
   EffectEngineHost,
   EffectEvent,
@@ -19,6 +21,8 @@ import type {
 import type { EffectRegistry } from './types/effect-registry';
 
 export type {
+  EffectEngineCardStatPatch,
+  EffectEngineCardStatusPatch,
   EffectEngineHost,
   EffectEvent,
   EffectEventType,
@@ -98,6 +102,175 @@ export class EffectEngine {
   /** Serializes the pending player choice, if the resolver is paused on one. */
   public getPendingDecision() {
     return this.decisions.getPendingDecision();
+  }
+
+  /** Exposes the authoritative gameplay state to special handlers. */
+  public get state() {
+    return this.host.state;
+  }
+
+  /** Returns one player from the authoritative gameplay state. */
+  public getPlayer(sessionId: string) {
+    return this.host.getPlayer(sessionId);
+  }
+
+  /** Returns the opposing player's session id when available. */
+  public getOpponentSessionId(sessionId: string) {
+    return this.host.getOpponentSessionId(sessionId);
+  }
+
+  /** Resolves one card instance from the authoritative gameplay state. */
+  public getCard(instanceId: string) {
+    return this.host.getCard(instanceId);
+  }
+
+  /** Resolves cards through the gameplay query port. */
+  public getCards(
+    selector: Parameters<EffectEngineHost['getCards']>[0],
+    controllerSessionId: string,
+  ) {
+    return this.host.getCards(selector, controllerSessionId);
+  }
+
+  /** Adds one gameplay/effect log line through the gameplay command port. */
+  public addLog(message: string): void {
+    this.host.addLog(message);
+  }
+
+  /** Applies one gameplay card-status patch through the gameplay command port. */
+  public patchCardStatus(
+    instanceId: string,
+    patch: EffectEngineCardStatusPatch,
+  ) {
+    return this.host.patchCardStatus?.(instanceId, patch);
+  }
+
+  /** Applies one gameplay card-stat patch through the gameplay command port. */
+  public patchCardStats(
+    instanceId: string,
+    patch: EffectEngineCardStatPatch,
+  ) {
+    return this.host.patchCardStats?.(instanceId, patch);
+  }
+
+  /** Applies one gameplay player-status patch through the gameplay command port. */
+  public patchPlayerStatus(
+    playerSessionId: string,
+    patch: { cannotPlayCharacters?: boolean },
+  ) {
+    return this.host.patchPlayerStatus?.(playerSessionId, patch);
+  }
+
+  /** Moves one card through the gameplay command port. */
+  public playCard(
+    card: DuelCard,
+    playerSessionId: string,
+    zone: 'characters' | 'stage',
+    options?: { rested?: boolean },
+  ) {
+    return this.host.playCard?.(card, playerSessionId, zone, options) ?? false;
+  }
+
+  /** Moves one card through the gameplay command port. */
+  public moveCard(
+    card: Parameters<EffectEngineHost['moveCard']>[0],
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: Parameters<EffectEngineHost['moveCard']>[3],
+  ): void {
+    this.host.moveCard(
+      card,
+      destinationPlayerSessionId,
+      destinationZone,
+      options,
+    );
+  }
+
+  /** Adds DON!! cards from the DON!! deck to cost through the gameplay port. */
+  public addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ) {
+    return this.host.addDonToCost(playerSessionId, amount, rested);
+  }
+
+  /** Returns DON!! cards from field/cost back to the DON!! deck. */
+  public returnDonToDonDeck(playerSessionId: string, amount: number) {
+    return this.host.returnDonToDonDeck(playerSessionId, amount);
+  }
+
+  /** K.O.s a character through the gameplay port. */
+  public koCharacter(
+    playerSessionId: string,
+    instanceId: string,
+    reason: 'battle' | 'effect',
+  ) {
+    return this.host.koCharacter(playerSessionId, instanceId, reason);
+  }
+
+  /** Syncs one player after a gameplay command mutated their public state. */
+  public syncPlayer(playerSessionId: string): void {
+    this.host.syncPlayer(playerSessionId);
+  }
+
+  /** Opens a card-selection prompt for a special handler. */
+  public chooseCards(
+    ...args: Parameters<EffectDecisionManager['chooseCards']>
+  ): void {
+    this.decisions.chooseCards(...args);
+  }
+
+  /** Opens a finite-choice prompt for a special handler. */
+  public chooseChoices(
+    ...args: Parameters<EffectDecisionManager['chooseChoices']>
+  ): void {
+    this.decisions.chooseChoices(...args);
+  }
+
+  /** Pauses one special handler until a player answers a pending decision. */
+  public pauseDecision(
+    ...args: Parameters<EffectDecisionManager['pause']>
+  ): void {
+    this.decisions.pause(...args);
+  }
+
+  /** Adds a temporary or persistent power modifier. */
+  public addPowerModifier(
+    ...args: Parameters<EffectModifierEngine['addPowerModifier']>
+  ): void {
+    this.modifiers.addPowerModifier(...args);
+  }
+
+  /** Adds a temporary or persistent keyword modifier. */
+  public addKeywordModifier(
+    ...args: Parameters<EffectModifierEngine['addKeywordModifier']>
+  ): void {
+    this.modifiers.addKeywordModifier(...args);
+  }
+
+  /** Adds a temporary or persistent cost modifier. */
+  public addCostModifier(
+    ...args: Parameters<EffectModifierEngine['addCostModifier']>
+  ): void {
+    this.modifiers.addCostModifier(...args);
+  }
+
+  /** Registers a one-shot next-play cost modifier. */
+  public registerNextPlayCostModifier(
+    ...args: Parameters<EffectModifierEngine['registerNextPlayCostModifier']>
+  ): void {
+    this.modifiers.registerNextPlayCostModifier(...args);
+  }
+
+  /** Tests whether a once-per-turn special handler key already resolved. */
+  public hasResolvedOncePerTurnKey(key: string): boolean {
+    return this.resolvedOncePerTurnKeys.has(key);
+  }
+
+  /** Marks a once-per-turn special handler key as resolved. */
+  public markResolvedOncePerTurnKey(key: string): void {
+    this.resolvedOncePerTurnKeys.add(key);
   }
 
   /** Returns whether the engine currently carries a non-serializable pause. */

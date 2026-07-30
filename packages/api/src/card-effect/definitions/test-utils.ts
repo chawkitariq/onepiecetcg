@@ -453,19 +453,170 @@ export class TestHost implements EffectEngineHost {
 
   public syncPlayer(_playerSessionId: string): void {}
 
-  public playCard(card: DuelCard, sessionId: string, zone: string): void {
+  public patchPlayerStatus(
+    playerSessionId: string,
+    patch: { cannotPlayCharacters?: boolean },
+  ): DuelPlayer | undefined {
+    const player = this.getPlayer(playerSessionId);
+
+    if (!player) {
+      return undefined;
+    }
+
+    if (patch.cannotPlayCharacters !== undefined) {
+      player.cannotPlayCharacters = patch.cannotPlayCharacters;
+    }
+
+    return player;
+  }
+
+  public patchCardStatus(
+    instanceId: string,
+    patch: {
+      rested?: boolean;
+      playedThisTurn?: boolean;
+      cannotAttack?: boolean;
+      cannotAttackLeaderOnTurnPlayed?: boolean;
+      cannotBlock?: boolean;
+      cannotBeKoedInBattle?: boolean;
+      cannotBeKoedByEffects?: boolean;
+      cannotBeKoedBySlashInBattle?: boolean;
+      cannotBeKoedByStrikeInBattle?: boolean;
+      hasRush?: boolean;
+      hasDoubleAttack?: boolean;
+      hasBanish?: boolean;
+      canAttackActiveCharacters?: boolean;
+      mustBeAttackTarget?: boolean;
+      winOnDeckOut?: boolean;
+      cannotBeRemovedByOpponentEffects?: boolean;
+      effectNegated?: boolean;
+      cannotAttackUntilTurn?: number;
+      skipNextRefreshPhases?: number;
+    },
+  ): DuelCard | null {
+    const card = this.getCard(instanceId);
+
+    if (!card) {
+      return null;
+    }
+
+    if (patch.rested !== undefined) {
+      card.rested = patch.rested;
+    }
+    if (patch.playedThisTurn !== undefined) {
+      card.playedThisTurn = patch.playedThisTurn;
+    }
+    if (patch.cannotAttack !== undefined) {
+      card.cannotAttack = patch.cannotAttack;
+    }
+    if (patch.cannotAttackLeaderOnTurnPlayed !== undefined) {
+      card.cannotAttackLeaderOnTurnPlayed =
+        patch.cannotAttackLeaderOnTurnPlayed;
+    }
+    if (patch.cannotBlock !== undefined) {
+      card.cannotBlock = patch.cannotBlock;
+    }
+    if (patch.cannotBeKoedInBattle !== undefined) {
+      card.cannotBeKoedInBattle = patch.cannotBeKoedInBattle;
+    }
+    if (patch.cannotBeKoedByEffects !== undefined) {
+      card.cannotBeKoedByEffects = patch.cannotBeKoedByEffects;
+    }
+    if (patch.cannotBeKoedBySlashInBattle !== undefined) {
+      card.cannotBeKoedBySlashInBattle = patch.cannotBeKoedBySlashInBattle;
+    }
+    if (patch.cannotBeKoedByStrikeInBattle !== undefined) {
+      card.cannotBeKoedByStrikeInBattle = patch.cannotBeKoedByStrikeInBattle;
+    }
+    if (patch.hasRush !== undefined) {
+      card.hasRush = patch.hasRush;
+    }
+    if (patch.hasDoubleAttack !== undefined) {
+      card.hasDoubleAttack = patch.hasDoubleAttack;
+    }
+    if (patch.hasBanish !== undefined) {
+      card.hasBanish = patch.hasBanish;
+    }
+    if (patch.canAttackActiveCharacters !== undefined) {
+      card.canAttackActiveCharacters = patch.canAttackActiveCharacters;
+    }
+    if (patch.mustBeAttackTarget !== undefined) {
+      card.mustBeAttackTarget = patch.mustBeAttackTarget;
+    }
+    if (patch.winOnDeckOut !== undefined) {
+      card.winOnDeckOut = patch.winOnDeckOut;
+    }
+    if (patch.cannotBeRemovedByOpponentEffects !== undefined) {
+      card.cannotBeRemovedByOpponentEffects =
+        patch.cannotBeRemovedByOpponentEffects;
+    }
+    if (patch.effectNegated !== undefined) {
+      card.effectNegated = patch.effectNegated;
+    }
+    if (patch.cannotAttackUntilTurn !== undefined) {
+      card.cannotAttackUntilTurn = patch.cannotAttackUntilTurn;
+    }
+    if (patch.skipNextRefreshPhases !== undefined) {
+      card.skipNextRefreshPhases = patch.skipNextRefreshPhases;
+    }
+
+    return card;
+  }
+
+  public patchCardStats(
+    instanceId: string,
+    patch: {
+      baseCost?: number;
+      basePower?: number;
+      power?: number;
+      cost?: number;
+      attachedDon?: number;
+    },
+  ): DuelCard | null {
+    const card = this.getCard(instanceId);
+
+    if (!card) {
+      return null;
+    }
+
+    if (patch.basePower !== undefined) {
+      card.basePower = patch.basePower;
+    }
+    if (patch.baseCost !== undefined) {
+      card.baseCost = patch.baseCost;
+    }
+    if (patch.power !== undefined) {
+      card.power = patch.power;
+    }
+    if (patch.cost !== undefined) {
+      card.cost = patch.cost;
+    }
+    if (patch.attachedDon !== undefined) {
+      card.attachedDon = patch.attachedDon;
+    }
+
+    return card;
+  }
+
+  public playCard(
+    card: DuelCard,
+    sessionId: string,
+    zone: 'characters' | 'stage',
+    options?: { rested?: boolean },
+  ): boolean {
     this.removeCard(card.instanceId);
     const player = this.getPlayer(sessionId);
-    if (!player) return;
+    if (!player) return false;
     card.ownerSessionId = sessionId;
     card.faceDown = false;
-    card.rested = false;
+    card.rested = options?.rested ?? false;
     card.playedThisTurn = true;
     if (zone === 'characters') {
       player.zones.characters.push(card);
     } else if (zone === 'stage') {
       player.zones.stage = card;
     }
+    return true;
   }
 
   public addCardToZone(

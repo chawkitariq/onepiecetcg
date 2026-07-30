@@ -58,6 +58,8 @@ export type ReplacementQuery = {
   type: 'wouldKoCharacter' | 'wouldMoveCard';
   playerSessionId: string;
   sourceInstanceId: string;
+  targetInstanceId?: string;
+  targetCardId?: string;
   destinationPlayerSessionId?: string;
   destinationZone?: string;
   reason?: 'battle' | 'effect';
@@ -154,14 +156,42 @@ export type EffectResolutionContext = {
   triggeringEvent?: EffectEvent;
 };
 
-/**
- * Host adapter used by the effect engine so the duel room remains the
- * Colyseus/network boundary while gameplay resolution stays testable.
- */
-export interface EffectEngineHost {
+export type EffectEngineCardStatusPatch = {
+  rested?: boolean;
+  playedThisTurn?: boolean;
+  cannotAttack?: boolean;
+  cannotAttackLeaderOnTurnPlayed?: boolean;
+  cannotBlock?: boolean;
+  cannotBeKoedInBattle?: boolean;
+  cannotBeKoedByEffects?: boolean;
+  cannotBeKoedBySlashInBattle?: boolean;
+  cannotBeKoedByStrikeInBattle?: boolean;
+  hasRush?: boolean;
+  hasDoubleAttack?: boolean;
+  hasBanish?: boolean;
+  canAttackActiveCharacters?: boolean;
+  mustBeAttackTarget?: boolean;
+  winOnDeckOut?: boolean;
+  cannotBeRemovedByOpponentEffects?: boolean;
+  effectNegated?: boolean;
+  cannotAttackUntilTurn?: number;
+  skipNextRefreshPhases?: number;
+};
+
+export type EffectEngineCardStatPatch = {
+  baseCost?: number;
+  basePower?: number;
+  power?: number;
+  cost?: number;
+  attachedDon?: number;
+};
+
+export type EffectEnginePlayerStatusPatch = {
+  cannotPlayCharacters?: boolean;
+};
+
+export interface EffectEngineQueryPort {
   state: DuelState;
-  addLog(message: string): void;
-  onPendingDecisionChange?(decision: PendingEffectDecision | null): void;
   getPlayer(sessionId: string): DuelPlayer | undefined;
   getOpponentSessionId(sessionId: string): string | null;
   getCard(instanceId: string): DuelCard | null;
@@ -169,6 +199,17 @@ export interface EffectEngineHost {
     selector: EffectTargetSelector,
     controllerSessionId: string,
   ): DuelCard[];
+}
+
+export interface EffectEngineCommandPort {
+  addLog(message: string): void;
+  onPendingDecisionChange?(decision: PendingEffectDecision | null): void;
+  playCard?(
+    card: DuelCard,
+    playerSessionId: string,
+    zone: 'characters' | 'stage',
+    options?: { rested?: boolean },
+  ): boolean;
   moveCard(
     card: DuelCard,
     destinationPlayerSessionId: string,
@@ -196,4 +237,24 @@ export interface EffectEngineHost {
     reason: 'battle' | 'effect',
   ): boolean;
   syncPlayer(playerSessionId: string): void;
+  patchPlayerStatus?(
+    playerSessionId: string,
+    patch: EffectEnginePlayerStatusPatch,
+  ): DuelPlayer | undefined;
+  patchCardStatus?(
+    instanceId: string,
+    patch: EffectEngineCardStatusPatch,
+  ): DuelCard | null;
+  patchCardStats?(
+    instanceId: string,
+    patch: EffectEngineCardStatPatch,
+  ): DuelCard | null;
 }
+
+/**
+ * Host adapter used by the effect engine so the duel room remains the
+ * Colyseus/network boundary while gameplay resolution stays testable.
+ */
+export interface EffectEngineHost
+  extends EffectEngineQueryPort,
+    EffectEngineCommandPort {}
