@@ -7,14 +7,21 @@ import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
 import { ArraySchema } from '@colyseus/schema';
 import type { DeckService } from '../deck/deck.service';
+import type {
+  DomainEventDraft,
+  PlayerId,
+} from '../duel-events/duel-domain-event.types';
+import { DuelDomainEventsService } from '../duel-events/duel-domain-events.service';
 import type { StatsService } from '../stats/stats.service';
 import {
   DuelCard,
   DuelLog,
   DuelPlayer,
   DuelState,
+  type DuelEndReason,
   type EffectDecisionResponse,
   type FirstOrSecondChoice,
+  type GamePhase,
 } from '@onepiecetcg/shared';
 import { DuelRoomEffectBoundary } from './effects/duel-room-effect-boundary';
 import { DuelCombatEngine } from './game-engine/duel-combat-engine';
@@ -23,6 +30,7 @@ import { DuelMainPhaseEngine } from './game-engine/duel-main-phase-engine';
 import { DuelTurnEngine } from './game-engine/duel-turn-engine';
 import { DuelZoneEngine } from './game-engine/duel-zone-engine';
 import { DuelRoomClientNotifier } from './room/duel-room-client-notifier';
+import { createDuelRoomGameplayRuntime } from './room/duel-room-gameplay-runtime';
 import { DuelRoomLifecycle } from './room/duel-room-lifecycle';
 import { DuelRoomRuntimeState } from './room/duel-room-runtime-state';
 import { DuelRoomSeatBootstrap } from './room/duel-room-seat-bootstrap';
@@ -53,6 +61,7 @@ const RECONNECTION_SECONDS = 120;
 type DuelRoomServices = {
   decksService: DeckService;
   statsService?: StatsService;
+  duelEventsService: DuelDomainEventsService;
 };
 
 type DuelJoinOptions = {
@@ -90,6 +99,30 @@ type DuelSessionResolver = (
   headers: IncomingHttpHeaders,
 ) => Promise<{ user: { id: string } } | null>;
 
+type DuelStateSnapshot = {
+  phase: GamePhase;
+  turn: number;
+  activePlayerSessionId: string;
+  startedAt: string;
+  winnerSessionId: string;
+  endReason: DuelEndReason | '';
+};
+
+type CardLocation = {
+  ownerSessionId: string;
+  zone:
+    | 'leader'
+    | 'stage'
+    | 'deck'
+    | 'donDeck'
+    | 'hand'
+    | 'life'
+    | 'characters'
+    | 'cost'
+    | 'trash';
+  cardId: string;
+};
+
 let services: DuelRoomServices | null = null;
 let resolveSession: DuelSessionResolver | null = null;
 
@@ -110,6 +143,8 @@ export function configureDuelRoomAuth(nextResolver: DuelSessionResolver) {
 
 export class DuelRoom extends Room<DuelState> {
   private readonly logger = new Logger(DuelRoom.name);
+
+  private eventStreamCreated = false;
 
   private effectBoundary!: DuelRoomEffectBoundary;
 
@@ -177,143 +212,38 @@ export class DuelRoom extends Room<DuelState> {
       syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
       broadcastCardView: (card) => this.notifier.broadcastCardView(card),
     });
-    this.effectBoundary = new DuelRoomEffectBoundary({
-      state: this.state,
-      addLog: (message) => this.addLog(message),
-      onPendingEffectDecisionChange: (decision) =>
-        this.notifier.syncPendingEffectDecision(decision),
-      getPlayer: (sessionId) => this.state.players.get(sessionId),
-      getOpponentSessionId: (sessionId) =>
-        this.runtimeState.getOpponentSessionId(sessionId),
-      getCard: (instanceId) =>
-        this.cardQueryEngine.getCardByInstanceId(instanceId),
-      getCards: (selector, controllerSessionId) =>
-        this.cardQueryEngine.getCardsForSelector(selector, controllerSessionId),
-      moveCard: (card, destinationPlayerSessionId, destinationZone, options) =>
-        this.zoneEngine.moveCardToZone(
-          card,
-          destinationPlayerSessionId,
-          destinationZone,
-          options,
-        ),
-      shuffleDeck: (playerSessionId) => {
-        const player = this.state.players.get(playerSessionId);
-
-        if (player) {
-          this.shuffle(player.zones.deck);
-        }
-      },
-      drawCard: (playerSessionId) =>
-        this.zoneEngine.drawCardForEffect(playerSessionId),
-      trashTopDeckCards: (playerSessionId, amount) =>
-        this.zoneEngine.trashTopDeckCards(playerSessionId, amount),
-      addDonToCost: (playerSessionId, amount, rested) =>
-        this.zoneEngine.addDonToCost(playerSessionId, amount, rested),
-      attachDon: (playerSessionId, targetInstanceId, amount, options) =>
-        this.zoneEngine.attachDonFromCost(
-          playerSessionId,
-          targetInstanceId,
-          amount,
-          options,
-        ),
-      returnDonToDonDeck: (playerSessionId, amount) => {
-        const returned = this.zoneEngine.returnEffectDonToDeck(
-          playerSessionId,
-          amount,
-        );
-        const player = this.state.players.get(playerSessionId);
-
-        if (returned > 0 && player) {
-          this.effectBoundary.emitDonReturned(
-            playerSessionId,
-            player.zones.leader,
-          );
-        }
-
-        return returned;
-      },
-      koCharacter: (playerSessionId, instanceId, reason) =>
-        this.knockOutCharacterById(playerSessionId, instanceId, reason),
-      syncPlayer: (playerSessionId) => {
-        const player = this.state.players.get(playerSessionId);
-
-        if (player) {
-          this.runtimeState.syncZoneCounts(player);
-        }
-      },
-      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-    });
-    this.turnEngine = new DuelTurnEngine({
+    const gameplayRuntime = createDuelRoomGameplayRuntime({
       state: this.state,
       maxClients: this.maxClients,
-      effectBoundary: this.effectBoundary,
       addLog: (message) => this.addLog(message),
-      shuffle: (cards) => this.shuffle(cards),
-      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
-      returnDonToCost: (player, sessionId, count) =>
-        this.runtimeState.returnDonToCost(player, sessionId, count),
-      getOpponentSessionId: (sessionId) =>
-        this.runtimeState.getOpponentSessionId(sessionId),
-      isCombatInProgress: () => this.runtimeState.isCombatInProgress(),
+      reportMainPhaseError: (message) =>
+        this.notifier.sendMainPhaseError(message),
+      reportCombatError: (message) => this.notifier.sendCombatError(message),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
+      onPendingEffectDecisionChange: (decision) =>
+        this.notifier.syncPendingEffectDecision(decision),
+      shuffleCards: (cards) => this.shuffle(cards),
       finalizeMatch: (endReason, winnerSessionId) =>
         this.lifecycle.finalizeMatch(endReason, winnerSessionId),
       recordMatchResult: () => this.lifecycle.recordMatchResult(),
-      onMatchStarted: (startedAt) => this.lifecycle.markMatchStarted(startedAt),
-    });
-    this.cardQueryEngine = new DuelCardQueryEngine({
-      state: this.state,
-      getOpponentSessionId: (sessionId) =>
-        this.runtimeState.getOpponentSessionId(sessionId),
-      cardPower: (card) => this.runtimeState.cardPower(card),
-    });
-    this.zoneEngine = new DuelZoneEngine({
-      state: this.state,
-      effectBoundary: this.effectBoundary,
-      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
-      findCardInZone: (player, zone, instanceId) =>
-        this.runtimeState.findCardInZone(player, zone, instanceId),
-      takeAttachableDonCards: (player, amount, rested) =>
-        this.runtimeState.takeAttachableDonCards(player, amount, rested),
-    });
-    this.mainPhaseEngine = new DuelMainPhaseEngine({
-      state: this.state,
-      effectBoundary: this.effectBoundary,
-      addLog: (message) => this.addLog(message),
-      sendError: (message) => this.notifier.sendMainPhaseError(message),
-      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
+      markMatchStarted: (startedAt) =>
+        this.lifecycle.markMatchStarted(startedAt),
       unshiftIntoTrash: (player, card) =>
         this.unshiftIntoZone(player.zones.trash, card),
-      returnDonToCost: (player, sessionId, count) =>
-        this.runtimeState.returnDonToCost(player, sessionId, count),
-      findCardInZone: (player, zone, instanceId) =>
-        this.runtimeState.findCardInZone(player, zone, instanceId),
-      takeUntappedDonCards: (player, amount) =>
-        this.runtimeState.takeUntappedDonCards(player, amount),
-    });
-    this.combatEngine = new DuelCombatEngine({
-      state: this.state,
-      effectBoundary: this.effectBoundary,
-      addLog: (message) => this.addLog(message),
-      sendError: (message) => this.notifier.sendCombatError(message),
-      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      syncZoneCounts: (player) => this.runtimeState.syncZoneCounts(player),
-      unshiftIntoTrash: (player, card) =>
-        this.unshiftIntoZone(player.zones.trash, card),
-      isCombatInProgress: () => this.runtimeState.isCombatInProgress(),
-      getOpponentSessionId: (sessionId) =>
-        this.runtimeState.getOpponentSessionId(sessionId),
-      findCardInZone: (player, zone, instanceId) =>
-        this.runtimeState.findCardInZone(player, zone, instanceId),
-      cardPower: (card) => this.runtimeState.cardPower(card),
-      knockOutCharacter: (owner, card) => this.knockOutCharacter(owner, card),
+      knockOutCharacter: (owner, card, reason, skipReplacement) =>
+        this.knockOutCharacter(owner, card, reason, skipReplacement),
+      knockOutCharacterById: (playerSessionId, instanceId, reason) =>
+        this.knockOutCharacterById(playerSessionId, instanceId, reason),
       isProtectedFromBattleKo: (defendingCard, attackerCard) =>
         this.isProtectedFromBattleKo(defendingCard, attackerCard),
-      finalizeMatch: (endReason, winnerSessionId) =>
-        this.lifecycle.finalizeMatch(endReason, winnerSessionId),
-      recordMatchResult: () => this.lifecycle.recordMatchResult(),
     });
+    this.effectBoundary = gameplayRuntime.effectBoundary;
+    this.turnEngine = gameplayRuntime.turnEngine;
+    this.cardQueryEngine = gameplayRuntime.cardQueryEngine;
+    this.zoneEngine = gameplayRuntime.zoneEngine;
+    this.mainPhaseEngine = gameplayRuntime.mainPhaseEngine;
+    this.combatEngine = gameplayRuntime.combatEngine;
+    this.runtimeState = gameplayRuntime.runtimeState;
 
     const description = options.description
       ?.trim()
@@ -326,62 +256,62 @@ export class DuelRoom extends Room<DuelState> {
     this.onMessage(
       'chooseFirstOrSecond',
       (client: Client, message: ChooseFirstOrSecondMessage) => {
-        this.handleChooseFirstOrSecond(client, message);
+        void this.handleChooseFirstOrSecond(client, message);
       },
     );
 
     this.onMessage('mulligan', (client: Client, message: MulliganMessage) => {
-      this.handleMulligan(client, message);
+      void this.handleMulligan(client, message);
     });
 
     this.onMessage('endPhase', (client: Client) => {
-      this.handleEndPhase(client);
+      void this.handleEndPhase(client);
     });
 
     this.onMessage('playCard', (client: Client, message: PlayCardMessage) => {
-      this.handlePlayCard(client, message);
+      void this.handlePlayCard(client, message);
     });
 
     this.onMessage('attachDon', (client: Client, message: AttachDonMessage) => {
-      this.handleAttachDon(client, message);
+      void this.handleAttachDon(client, message);
     });
 
     this.onMessage(
       'declareAttack',
       (client: Client, message: DeclareAttackMessage) => {
-        this.handleDeclareAttack(client, message);
+        void this.handleDeclareAttack(client, message);
       },
     );
 
     this.onMessage(
       'declareBlock',
       (client: Client, message: DeclareBlockMessage) => {
-        this.handleDeclareBlock(client, message);
+        void this.handleDeclareBlock(client, message);
       },
     );
 
     this.onMessage(
       'declareCounter',
       (client: Client, message: DeclareCounterMessage) => {
-        this.handleDeclareCounter(client, message);
+        void this.handleDeclareCounter(client, message);
       },
     );
 
     this.onMessage('finishCounterStep', (client: Client) => {
-      this.handleFinishCounterStep(client);
+      void this.handleFinishCounterStep(client);
     });
 
     this.onMessage(
       'resolveTrigger',
       (client: Client, message: ResolveTriggerMessage) => {
-        this.handleResolveTrigger(client, message);
+        void this.handleResolveTrigger(client, message);
       },
     );
 
     this.onMessage(
       'resolveEffectDecision',
       (client: Client, message: ResolveEffectDecisionMessage) => {
-        this.handleResolveEffectDecision(client, message);
+        void this.handleResolveEffectDecision(client, message);
       },
     );
   }
@@ -425,7 +355,7 @@ export class DuelRoom extends Room<DuelState> {
     this.notifier.sendPendingEffectDecisionToClient(client);
 
     if (this.state.players.size === this.maxClients) {
-      this.initializeGame();
+      await this.initializeGame();
     }
   }
 
@@ -440,7 +370,16 @@ export class DuelRoom extends Room<DuelState> {
     this.addLog(`${player.displayName} est deconnecte.`);
 
     if (consented) {
+      const snapshot = this.captureStateSnapshot();
       this.lifecycle.declareForfeitIfMatchInProgress(player);
+      await this.recordRoomEvents(client.sessionId, [
+        {
+          type: 'PlayerConceded',
+          version: 1,
+          payload: { playerId: this.getPlayerId(client.sessionId) },
+        },
+        ...this.buildTerminalEventDrafts(snapshot),
+      ]);
       this.lifecycle.removePlayer(client.sessionId);
       return;
     }
@@ -472,48 +411,312 @@ export class DuelRoom extends Room<DuelState> {
     });
   }
 
-  private initializeGame() {
+  private async initializeGame() {
     this.turnEngine.initializeGame();
+    await this.ensureEventStreamInitialized();
     void this.lock();
   }
 
-  private handleChooseFirstOrSecond(
+  private async handleChooseFirstOrSecond(
     client: Client,
     message: ChooseFirstOrSecondMessage,
   ) {
+    const beforeFirstPlayerSessionId = this.state.firstPlayerSessionId;
     this.turnEngine.handleChooseFirstOrSecond(client.sessionId, message.choice);
+
+    if (
+      !beforeFirstPlayerSessionId &&
+      this.state.firstPlayerSessionId &&
+      this.eventStreamCreated
+    ) {
+      await this.recordRoomEvents(client.sessionId, [
+        {
+          type: 'StartingPlayerDetermined',
+          version: 1,
+          payload: {
+            chooserPlayerId: this.getPlayerId(client.sessionId),
+            firstPlayerId: this.getPlayerId(this.state.firstPlayerSessionId),
+            choice: message.choice,
+          },
+        },
+      ]);
+    }
   }
 
-  private handleMulligan(client: Client, message: MulliganMessage) {
+  private async handleMulligan(client: Client, message: MulliganMessage) {
+    const before = this.captureStateSnapshot();
     this.turnEngine.handleMulligan(client.sessionId, message.mulligan);
+
+    const drafts: DomainEventDraft[] = [
+      {
+        type: 'MulliganResolved',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          tookMulligan: message.mulligan,
+        },
+      },
+    ];
+
+    if (!before.startedAt && this.state.startedAt) {
+      drafts.push(
+        {
+          type: 'MatchStarted',
+          version: 1,
+          payload: {
+            startedAt: this.state.startedAt,
+            firstPlayerId: this.getPlayerId(this.state.firstPlayerSessionId),
+          },
+        },
+        {
+          type: 'TurnStarted',
+          version: 1,
+          payload: {
+            turn: this.state.turn,
+            playerId: this.getPlayerId(this.state.activePlayerSessionId),
+          },
+        },
+        {
+          type: 'PhaseChanged',
+          version: 1,
+          payload: {
+            turn: this.state.turn,
+            playerId: this.getPlayerId(this.state.activePlayerSessionId),
+            fromPhase: before.phase,
+            toPhase: this.state.phase,
+          },
+        },
+      );
+    }
+
+    await this.recordRoomEvents(client.sessionId, drafts);
   }
 
-  private handleEndPhase(client: Client) {
+  private async handleEndPhase(client: Client) {
+    const before = this.captureStateSnapshot();
     const error = this.turnEngine.handleEndPhase(client.sessionId);
 
     if (error) {
       this.notifier.sendActionError(client, error);
+      return;
     }
+
+    await this.recordRoomEvents(client.sessionId, [
+      ...this.buildTurnTransitionDrafts(before),
+      ...this.buildTerminalEventDrafts(before),
+    ]);
   }
 
-  private handleDeclareAttack(client: Client, message: DeclareAttackMessage) {
+  private async handleDeclareAttack(
+    client: Client,
+    message: DeclareAttackMessage,
+  ) {
     this.notifier.bindCombatClient(client);
-    this.combatEngine.handleDeclareAttack(client.sessionId, message);
+    const before = this.captureStateSnapshot();
+    const handled = this.combatEngine.handleDeclareAttack(
+      client.sessionId,
+      message,
+    );
+
+    if (!handled) {
+      return;
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [
+        {
+          type: 'AttackDeclared',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(client.sessionId),
+            attackerInstanceId: message.attackerInstanceId,
+          },
+        },
+        {
+          type: 'AttackTargetSelected',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(client.sessionId),
+            targetType: message.targetType,
+            targetInstanceId: this.state.combat.targetInstanceId,
+          },
+        },
+        ...this.buildTerminalEventDrafts(before),
+      ],
+    );
   }
 
-  private handleDeclareBlock(client: Client, message: DeclareBlockMessage) {
+  private async handleDeclareBlock(
+    client: Client,
+    message: DeclareBlockMessage,
+  ) {
     this.notifier.bindCombatClient(client);
-    this.combatEngine.handleDeclareBlock(client.sessionId, message);
+    const before = this.captureStateSnapshot();
+    const handled = this.combatEngine.handleDeclareBlock(
+      client.sessionId,
+      message,
+    );
+
+    if (!handled) {
+      return;
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [
+        {
+          type: 'BlockerDeclared',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(client.sessionId),
+            blockerInstanceId: message.blockerInstanceId ?? null,
+          },
+        },
+        ...this.buildTerminalEventDrafts(before),
+      ],
+    );
   }
 
-  private handleDeclareCounter(client: Client, message: DeclareCounterMessage) {
+  private async handleDeclareCounter(
+    client: Client,
+    message: DeclareCounterMessage,
+  ) {
     this.notifier.bindCombatClient(client);
-    this.combatEngine.handleDeclareCounter(client.sessionId, message);
+    const before = this.captureStateSnapshot();
+    const handled = this.combatEngine.handleDeclareCounter(
+      client.sessionId,
+      message,
+    );
+
+    if (!handled) {
+      return;
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [
+        {
+          type: 'CounterUsed',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(client.sessionId),
+            discardInstanceId: message.discardInstanceId,
+            counterPowerBonus: Math.max(0, Math.trunc(message.counterPowerBonus)),
+          },
+        },
+        ...this.buildTerminalEventDrafts(before),
+      ],
+    );
   }
 
-  private handleFinishCounterStep(client: Client) {
+  private async handleFinishCounterStep(client: Client) {
     this.notifier.bindCombatClient(client);
-    this.combatEngine.handleFinishCounterStep(client.sessionId);
+    const before = this.captureStateSnapshot();
+    const beforeLocations = this.captureCardLocations();
+    const combatBefore = {
+      attackerSessionId: this.state.combat.attackerSessionId,
+      attackerInstanceId: this.state.combat.attackerInstanceId,
+      defenderSessionId: this.state.combat.defenderSessionId,
+      targetType: this.state.combat.targetType,
+      targetInstanceId: this.state.combat.targetInstanceId,
+      blockerInstanceId: this.state.combat.blockerInstanceId,
+      counterPowerBonus: this.state.combat.counterPowerBonus,
+    };
+    const attackerCard =
+      this.cardQueryEngine.getCardByInstanceId(combatBefore.attackerInstanceId);
+    const defendingInstanceId =
+      combatBefore.blockerInstanceId || combatBefore.targetInstanceId;
+    const defendingCard =
+      this.cardQueryEngine.getCardByInstanceId(defendingInstanceId);
+    const attackerPower = attackerCard
+      ? this.runtimeState.cardPower(attackerCard)
+      : null;
+    const defenderPower = defendingCard
+      ? this.runtimeState.cardPower(defendingCard) +
+        combatBefore.counterPowerBonus
+      : null;
+    const handled = this.combatEngine.handleFinishCounterStep(client.sessionId);
+
+    if (!handled) {
+      return;
+    }
+
+    const drafts: DomainEventDraft[] = [];
+
+    if (attackerPower !== null && defenderPower !== null) {
+      drafts.push({
+        type: 'BattleResolved',
+        version: 1,
+        payload: {
+          attackerPlayerId: this.getPlayerId(combatBefore.attackerSessionId),
+          attackerInstanceId: combatBefore.attackerInstanceId,
+          defenderPlayerId: this.getPlayerId(combatBefore.defenderSessionId),
+          defendingInstanceId,
+          targetType: combatBefore.targetType,
+          attackerPower,
+          defenderPower,
+          outcome: attackerPower >= defenderPower ? 'attackerWon' : 'attackerLost',
+        },
+      });
+    }
+
+    if (
+      attackerPower !== null &&
+      defenderPower !== null &&
+      attackerPower >= defenderPower &&
+      combatBefore.targetType === 'leader' &&
+      attackerCard
+    ) {
+      drafts.push({
+        type: 'DamageDealt',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(combatBefore.defenderSessionId),
+          amount: attackerCard.hasDoubleAttack ? 2 : 1,
+        },
+      });
+    }
+
+    for (const movedCard of this.findMovedCards(
+      beforeLocations,
+      this.captureCardLocations(),
+    )) {
+      if (movedCard.from.zone === 'characters' && movedCard.to.zone === 'trash') {
+        drafts.push({
+          type: 'CharacterKOD',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+            cardInstanceId: movedCard.instanceId,
+            cardDefinitionId: movedCard.to.cardId,
+          },
+        });
+      }
+
+      if (
+        movedCard.from.zone === 'life' &&
+        (movedCard.to.zone === 'hand' || movedCard.to.zone === 'trash')
+      ) {
+        drafts.push({
+          type: 'LifeCardTaken',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(movedCard.to.ownerSessionId),
+            count: 1,
+            cardInstanceId: movedCard.instanceId,
+            cardDefinitionId: movedCard.to.cardId,
+            destinationZone:
+              movedCard.to.zone === 'hand' ? 'HAND' : 'TRASH',
+          },
+        });
+      }
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [...drafts, ...this.buildTerminalEventDrafts(before)],
+    );
   }
 
   private knockOutCharacter(
@@ -576,7 +779,13 @@ export class DuelRoom extends Room<DuelState> {
     );
   }
 
-  private handleResolveTrigger(client: Client, message: ResolveTriggerMessage) {
+  private async handleResolveTrigger(
+    client: Client,
+    message: ResolveTriggerMessage,
+  ) {
+    const before = this.captureStateSnapshot();
+    const pendingManualTrigger =
+      this.effectBoundary.exportState().manualTrigger?.cardInstanceId ?? null;
     const result = this.effectBoundary.resolveManualTriggerDecision(
       client.sessionId,
       message.activate,
@@ -588,22 +797,178 @@ export class DuelRoom extends Room<DuelState> {
     }
 
     this.combatEngine.endCombat();
+    const drafts: DomainEventDraft[] = [
+      {
+        type: 'ChoiceSubmitted',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          decisionType: 'trigger',
+          activate: message.activate,
+        },
+      },
+    ];
+
+    if (pendingManualTrigger) {
+      const resolvedCard =
+        this.cardQueryEngine.getCardByInstanceId(pendingManualTrigger);
+
+      if (resolvedCard) {
+        drafts.push({
+          type: 'LifeCardTaken',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(client.sessionId),
+            count: 1,
+            cardInstanceId: resolvedCard.instanceId,
+            cardDefinitionId: resolvedCard.cardId,
+            destinationZone: message.activate ? 'TRASH' : 'HAND',
+          },
+        });
+      }
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [...drafts, ...this.buildTerminalEventDrafts(before)],
+    );
   }
 
-  private handlePlayCard(client: Client, message: PlayCardMessage) {
+  private async handlePlayCard(client: Client, message: PlayCardMessage) {
     this.notifier.bindMainPhaseClient(client);
-    this.mainPhaseEngine.handlePlayCard(client.sessionId, message);
+    const before = this.captureStateSnapshot();
+    const player = this.state.players.get(client.sessionId);
+    const playedCard =
+      player && message.instanceId
+        ? this.runtimeState.findCardInZone(player, 'hand', message.instanceId)
+            ?.card
+        : null;
+    const discardedCharacter =
+      player && message.discardCharacterInstanceId
+        ? this.runtimeState.findCardInZone(
+            player,
+            'characters',
+            message.discardCharacterInstanceId,
+          )?.card
+        : null;
+    const replacedStage =
+      player && playedCard?.type === 'Stage' && player.zones.stage.instanceId
+        ? player.zones.stage
+        : null;
+    const paidCost = playedCard
+      ? Math.max(
+          playedCard.cost + this.effectBoundary.getNextPlayCostModifier(playedCard),
+          0,
+        )
+      : 0;
+    const handled = this.mainPhaseEngine.handlePlayCard(
+      client.sessionId,
+      message,
+    );
+
+    if (!handled || !playedCard) {
+      return;
+    }
+
+    const drafts: DomainEventDraft[] = [
+      {
+        type: 'CostPaid',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          amount: paidCost,
+          sourceInstanceId: playedCard.instanceId,
+          sourceCardId: playedCard.cardId,
+        },
+      },
+      {
+        type: 'CardPlayed',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          cardInstanceId: playedCard.instanceId,
+          cardDefinitionId: playedCard.cardId,
+          fromZone: 'HAND',
+          toZone:
+            playedCard.type === 'Character'
+              ? 'CHARACTER_AREA'
+              : playedCard.type === 'Stage'
+                ? 'STAGE_AREA'
+                : 'TRASH',
+          paidCost,
+        },
+      },
+    ];
+
+    if (discardedCharacter) {
+      drafts.push({
+        type: 'CardDiscarded',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          cardInstanceId: discardedCharacter.instanceId,
+          cardDefinitionId: discardedCharacter.cardId,
+          fromZone: 'CHARACTER_AREA',
+          toZone: 'TRASH',
+        },
+      });
+    }
+
+    if (replacedStage) {
+      drafts.push({
+        type: 'CardDiscarded',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          cardInstanceId: replacedStage.instanceId,
+          cardDefinitionId: replacedStage.cardId,
+          fromZone: 'STAGE_AREA',
+          toZone: 'TRASH',
+        },
+      });
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [...drafts, ...this.buildTerminalEventDrafts(before)],
+    );
   }
 
-  private handleAttachDon(client: Client, message: AttachDonMessage) {
+  private async handleAttachDon(client: Client, message: AttachDonMessage) {
     this.notifier.bindMainPhaseClient(client);
-    this.mainPhaseEngine.handleAttachDon(client.sessionId, message);
+    const handled = this.mainPhaseEngine.handleAttachDon(
+      client.sessionId,
+      message,
+    );
+
+    if (!handled) {
+      return;
+    }
+
+    const count = Number.isInteger(message.count) ? (message.count ?? 1) : 1;
+    const targetInstanceId =
+      message.target === 'leader'
+        ? this.state.players.get(client.sessionId)?.zones.leader.instanceId
+        : message.targetInstanceId;
+
+    await this.recordRoomEvents(client.sessionId, [
+      {
+        type: 'DonAttached',
+        version: 1,
+        payload: {
+          playerId: this.getPlayerId(client.sessionId),
+          targetInstanceId: targetInstanceId ?? null,
+          count,
+        },
+      },
+    ]);
   }
 
-  private handleResolveEffectDecision(
+  private async handleResolveEffectDecision(
     client: Client,
     message: ResolveEffectDecisionMessage,
   ) {
+    const before = this.captureStateSnapshot();
     const decision = this.effectBoundary.getPendingEffectDecision();
 
     if (!decision) {
@@ -622,6 +987,10 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
+    const decisionSnapshot = {
+      decisionId: decision.id,
+      promptType: decision.prompt.type,
+    };
     this.effectBoundary.answerEffectDecision(message);
 
     if (
@@ -630,6 +999,254 @@ export class DuelRoom extends Room<DuelState> {
       !this.effectBoundary.hasPendingPlayerInteraction()
     ) {
       this.combatEngine.endCombat();
+    }
+
+    await this.recordRoomEvents(
+      client.sessionId,
+      [
+        {
+          type: 'ChoiceSubmitted',
+          version: 1,
+          payload: {
+            playerId: this.getPlayerId(client.sessionId),
+            decisionId: decisionSnapshot.decisionId,
+            promptType: decisionSnapshot.promptType,
+            selectedCardInstanceIds: message.selectedCardInstanceIds ?? [],
+            selectedChoiceIds: message.selectedChoiceIds ?? [],
+            confirmed: message.confirmed ?? null,
+          },
+        },
+        ...this.buildTerminalEventDrafts(before),
+      ],
+    );
+  }
+
+  private getPlayerId(sessionId: string): PlayerId | undefined {
+    return this.lifecycle.getPlayerId(sessionId);
+  }
+
+  private captureStateSnapshot(): DuelStateSnapshot {
+    return {
+      phase: this.state.phase,
+      turn: this.state.turn,
+      activePlayerSessionId: this.state.activePlayerSessionId,
+      startedAt: this.state.startedAt,
+      winnerSessionId: this.state.winnerSessionId,
+      endReason: this.state.endReason,
+    };
+  }
+
+  private captureCardLocations(): Map<string, CardLocation> {
+    const locations = new Map<string, CardLocation>();
+
+    for (const player of this.state.players.values()) {
+      locations.set(player.zones.leader.instanceId, {
+        ownerSessionId: player.sessionId,
+        zone: 'leader',
+        cardId: player.zones.leader.cardId,
+      });
+
+      if (player.zones.stage.instanceId) {
+        locations.set(player.zones.stage.instanceId, {
+          ownerSessionId: player.sessionId,
+          zone: 'stage',
+          cardId: player.zones.stage.cardId,
+        });
+      }
+
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        for (const card of player.zones[zone]) {
+          locations.set(card.instanceId, {
+            ownerSessionId: player.sessionId,
+            zone,
+            cardId: card.cardId,
+          });
+        }
+      }
+    }
+
+    return locations;
+  }
+
+  private findMovedCards(
+    before: Map<string, CardLocation>,
+    after: Map<string, CardLocation>,
+  ): Array<{
+    instanceId: string;
+    from: CardLocation;
+    to: CardLocation;
+  }> {
+    const moved: Array<{
+      instanceId: string;
+      from: CardLocation;
+      to: CardLocation;
+    }> = [];
+
+    for (const [instanceId, beforeLocation] of before.entries()) {
+      const afterLocation = after.get(instanceId);
+
+      if (
+        afterLocation &&
+        (afterLocation.zone !== beforeLocation.zone ||
+          afterLocation.ownerSessionId !== beforeLocation.ownerSessionId)
+      ) {
+        moved.push({
+          instanceId,
+          from: beforeLocation,
+          to: afterLocation,
+        });
+      }
+    }
+
+    return moved;
+  }
+
+  private buildTurnTransitionDrafts(
+    before: DuelStateSnapshot,
+  ): DomainEventDraft[] {
+    const drafts: DomainEventDraft[] = [];
+
+    if (before.phase === 'end' && this.state.turn > before.turn) {
+      drafts.push(
+        {
+          type: 'TurnEnded',
+          version: 1,
+          payload: {
+            turn: before.turn,
+            playerId: this.getPlayerId(before.activePlayerSessionId),
+          },
+        },
+        {
+          type: 'TurnStarted',
+          version: 1,
+          payload: {
+            turn: this.state.turn,
+            playerId: this.getPlayerId(this.state.activePlayerSessionId),
+          },
+        },
+      );
+    }
+
+    if (before.phase !== this.state.phase || before.turn !== this.state.turn) {
+      drafts.push({
+        type: 'PhaseChanged',
+        version: 1,
+        payload: {
+          turn: this.state.turn,
+          playerId: this.getPlayerId(this.state.activePlayerSessionId),
+          fromPhase: before.phase,
+          toPhase: this.state.phase,
+        },
+      });
+    }
+
+    return drafts;
+  }
+
+  private buildTerminalEventDrafts(
+    before: DuelStateSnapshot,
+  ): DomainEventDraft[] {
+    if (before.phase === 'finished' || this.state.phase !== 'finished') {
+      return [];
+    }
+
+    return [
+      {
+        type: 'MatchEnded',
+        version: 1,
+        payload: {
+          winnerPlayerId: this.getPlayerId(this.state.winnerSessionId),
+          endReason: this.state.endReason,
+          finishedAt: this.state.finishedAt,
+        },
+      },
+    ];
+  }
+
+  private async ensureEventStreamInitialized(): Promise<void> {
+    if (this.eventStreamCreated || !services) {
+      return;
+    }
+
+    await services.duelEventsService.createStream({
+      matchId: this.roomId,
+      actorPlayerId: undefined,
+      engineVersion: 'duel-room-v1',
+      rulesetVersion: '2026.07',
+      matchCreatedPayload: {
+        roomId: this.roomId,
+        createdAt: new Date().toISOString(),
+      },
+    });
+
+    this.eventStreamCreated = true;
+
+    const drafts: DomainEventDraft[] = [];
+
+    for (const player of this.state.players.values()) {
+      const playerId = this.getPlayerId(player.sessionId);
+      drafts.push(
+        {
+          type: 'PlayerJoined',
+          version: 1,
+          payload: {
+            playerId,
+            displayName: player.displayName,
+          },
+        },
+        {
+          type: 'DeckLocked',
+          version: 1,
+          payload: {
+            playerId,
+            deckId: player.deckId,
+            leaderCardId: player.zones.leader.cardId,
+          },
+        },
+        {
+          type: 'OpeningHandDrawn',
+          version: 1,
+          payload: {
+            playerId,
+            count: player.zones.hand.length,
+          },
+        },
+      );
+    }
+
+    await this.recordRoomEvents(undefined, drafts);
+  }
+
+  private async recordRoomEvents(
+    actorSessionId: string | undefined,
+    eventDrafts: DomainEventDraft[],
+  ): Promise<void> {
+    if (!services || eventDrafts.length === 0 || !this.eventStreamCreated) {
+      return;
+    }
+
+    try {
+      await services.duelEventsService.record({
+        matchId: this.roomId,
+        actorPlayerId: actorSessionId
+          ? this.getPlayerId(actorSessionId)
+          : undefined,
+        commandId: crypto.randomUUID(),
+        actionId: crypto.randomUUID(),
+        eventDrafts,
+        engineVersion: 'duel-room-v1',
+        rulesetVersion: '2026.07',
+      });
+    } catch (error) {
+      this.logger.error('Failed to persist duel domain events', error);
     }
   }
 
