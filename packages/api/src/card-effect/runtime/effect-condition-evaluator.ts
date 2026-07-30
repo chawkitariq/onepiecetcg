@@ -4,6 +4,12 @@ import type { EffectEvent, ReplacementQuery } from './effect-engine-types';
 import { EffectSelectorResolver } from './effect-selector-resolver';
 import type { EffectEngineHost } from './effect-engine-types';
 
+function isEffectEvent(
+  event: EffectEvent | ReplacementQuery | undefined,
+): event is EffectEvent {
+  return event !== undefined && 'sourceCardId' in event;
+}
+
 /**
  * Evaluates authored effect conditions against the current duel state.
  */
@@ -196,11 +202,13 @@ export class EffectConditionEvaluator {
           return playerId === event.playerSessionId;
         }
         case 'eventSourceZoneIs':
-          return event?.sourceZone === condition.value;
+          return isEffectEvent(event) && event.sourceZone === condition.value;
         case 'eventDestinationZoneIs':
-          return event?.destinationZone === condition.value;
+          return (
+            isEffectEvent(event) && event.destinationZone === condition.value
+          );
         case 'eventEffectControllerIs': {
-          if (!event?.effectControllerSessionId) {
+          if (!isEffectEvent(event) || !event.effectControllerSessionId) {
             return false;
           }
 
@@ -211,7 +219,7 @@ export class EffectConditionEvaluator {
           return playerId === event.effectControllerSessionId;
         }
         case 'eventPlayedByEffect':
-          return event?.playedByEffect === condition.value;
+          return isEffectEvent(event) && event.playedByEffect === condition.value;
         case 'eventReasonIs':
           return event !== undefined && 'reason' in event
             ? event.reason === condition.value
@@ -230,7 +238,7 @@ export class EffectConditionEvaluator {
           );
         }
         case 'eventTargetMatchesFilter': {
-          if (!event?.targetInstanceId) {
+          if (!isEffectEvent(event) || !event.targetInstanceId) {
             return false;
           }
 

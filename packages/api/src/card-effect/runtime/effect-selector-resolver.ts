@@ -3,7 +3,7 @@ import type {
   EffectOwnerSelector,
   EffectTargetSelector,
 } from '@onepiecetcg/shared';
-import type { DuelCard, DuelPlayer } from '@onepiecetcg/shared';
+import type { DuelCard, DuelPlayer, GameZone } from '@onepiecetcg/shared';
 import type {
   EffectEngineHost,
   EffectResolutionContext,
@@ -330,7 +330,7 @@ export class EffectSelectorResolver {
   /** Finds the zone that currently contains the given card instance. */
   public findZoneOfCard(
     card: DuelCard,
-  ): { player: DuelPlayer; zone: string } | null {
+  ): { player: DuelPlayer; zone: GameZone } | null {
     for (const player of this.host.state.players.values()) {
       if (player.zones.leader.instanceId === card.instanceId) {
         return { player, zone: 'leader' };

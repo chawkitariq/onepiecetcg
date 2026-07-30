@@ -182,14 +182,14 @@ export class TestHost implements EffectEngineHost {
       if (!player) continue;
 
       for (const zone of selector.zones) {
-        const cards =
+        const cards: DuelCard[] =
           zone === 'leader'
             ? [player.zones.leader]
             : zone === 'stage'
               ? player.zones.stage.instanceId
                 ? [player.zones.stage]
                 : []
-              : Array.from(player.zones[zone] ?? []);
+              : Array.from<DuelCard>(player.zones[zone] ?? []);
 
         for (const card of cards) {
           if (
@@ -219,9 +219,7 @@ export class TestHost implements EffectEngineHost {
             continue;
           if (
             selector.filter?.color &&
-            !selector.filter.color.some((color: string) =>
-              card.colors.includes(color),
-            )
+            !selector.filter.color.some((color) => card.colors.includes(color))
           )
             continue;
           if (

@@ -4,6 +4,7 @@ import type {
   DuelPlayer,
   DuelState,
 } from '@onepiecetcg/shared';
+import type { EffectEvent } from '../../card-effect/effect-engine';
 import type { EffectEventType } from '../../card-effect/runtime/effect-engine-types';
 
 type CombatEffectBoundary = {
@@ -11,6 +12,7 @@ type CombatEffectBoundary = {
     event: EffectEventType,
     playerSessionId: string,
     card: DuelCard,
+    context?: Pick<EffectEvent, 'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'>,
   ): void;
   emitBattleKo(playerSessionId: string, card: DuelCard): void;
   emitCounterUsage(playerSessionId: string, card: DuelCard): void;
