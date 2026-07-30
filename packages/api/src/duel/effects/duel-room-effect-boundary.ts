@@ -137,6 +137,7 @@ export class DuelRoomEffectBoundary {
       type: 'wouldKoCharacter',
       playerSessionId,
       sourceInstanceId,
+      targetInstanceId: sourceInstanceId,
       reason,
     });
   }

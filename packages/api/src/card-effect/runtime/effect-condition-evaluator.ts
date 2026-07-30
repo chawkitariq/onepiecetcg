@@ -241,7 +241,7 @@ export class EffectConditionEvaluator {
           );
         }
         case 'eventTargetMatchesFilter': {
-          if (!isEffectEvent(event) || !event.targetInstanceId) {
+          if (!event || !('targetInstanceId' in event) || !event.targetInstanceId) {
             return false;
           }
 
