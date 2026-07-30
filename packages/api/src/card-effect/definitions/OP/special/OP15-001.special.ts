@@ -4,6 +4,7 @@ import {
   hasResolvedOncePerTurn,
   markResolvedOncePerTurn,
 } from '../../special-handler-utils';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP15-001 "Krieg"
@@ -67,7 +68,7 @@ export const op15001SpecialHandler: SpecialHandlerDefinition = {
       (cards) => {
         const opponentId = host.getOpponentSessionId(event.playerSessionId);
         for (const card of cards) {
-          card.rested = true;
+          patchSpecialHandlerCardStatus(host, card, { rested: true });
         }
         host.syncPlayer(event.playerSessionId);
         if (opponentId) host.syncPlayer(opponentId);

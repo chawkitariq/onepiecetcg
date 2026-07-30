@@ -4,6 +4,7 @@ import {
   createOncePerTurnKey,
   hasResolvedOncePerTurn,
   markResolvedOncePerTurn,
+  patchSpecialHandlerCardStatus,
 } from '../../special-handler-utils';
 
 /**
@@ -42,7 +43,9 @@ export const op14119SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            card.skipNextRefreshPhases = (card.skipNextRefreshPhases || 0) + 1;
+            patchSpecialHandlerCardStatus(host, card, {
+              skipNextRefreshPhases: (card.skipNextRefreshPhases || 0) + 1,
+            });
           }
           host.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();

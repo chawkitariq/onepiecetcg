@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
-import { scheduleTurnEndEffect } from '../../special-handler-utils';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-021 Issho
@@ -62,16 +62,17 @@ export const op14021SpecialHandler: SpecialHandlerDefinition = {
             zones: ['characters', 'stage'],
             filter: { rested: true },
             count: { kind: 'upTo', value: 1 },
-          },
-          undefined,
-          (selected) => {
-            for (const card of selected) {
-              card.skipNextRefreshPhases =
-                (card.skipNextRefreshPhases || 0) + 1;
-            }
-            host.syncPlayer(event.playerSessionId);
-            engine.reapplyContinuousEffects();
-          },
+        },
+        undefined,
+        (selected) => {
+          for (const card of selected) {
+            patchSpecialHandlerCardStatus(host, card, {
+              skipNextRefreshPhases: (card.skipNextRefreshPhases || 0) + 1,
+            });
+          }
+          host.syncPlayer(event.playerSessionId);
+          engine.reapplyContinuousEffects();
+        },
         );
       },
     );

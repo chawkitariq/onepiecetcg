@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles Monkey.D.Luffy (118):
@@ -28,7 +28,7 @@ export const op13118SpecialHandler: SpecialHandlerDefinition = {
     const toSet = Math.min(restedDon.length, 4);
 
     for (let i = 0; i < toSet; i++) {
-      restedDon[i].rested = false;
+      patchSpecialHandlerCardStatus(host, restedDon[i], { rested: false });
     }
 
     if (toSet > 0) {

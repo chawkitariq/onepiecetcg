@@ -1,4 +1,5 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles Amazon because the opponent chooses whether to trash Life before
@@ -42,7 +43,7 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        source.rested = true;
+        patchSpecialHandlerCardStatus(host, source, { rested: true });
 
         if (opponent.zones.life.length > 0) {
           anyEngine.decisions.chooseChoices(

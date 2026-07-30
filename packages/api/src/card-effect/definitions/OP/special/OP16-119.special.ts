@@ -1,4 +1,5 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP16-119
@@ -30,7 +31,9 @@ export const op16119SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (negateTargets) => {
         for (const card of negateTargets) {
-          card.effectNegated = true;
+          patchSpecialHandlerCardStatus(host, card, {
+            effectNegated: true,
+          });
         }
 
         anyEngine.decisions.chooseCards(
@@ -48,7 +51,7 @@ export const op16119SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (koTargets) => {
             for (const card of koTargets) {
-              host.moveCard(card, card.ownerSessionId, 'trash');
+              host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
             }
             engine.reapplyContinuousEffects();
           },

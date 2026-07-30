@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-056 Wadatsumi
@@ -17,7 +18,9 @@ export const op14056SpecialHandler: SpecialHandlerDefinition = {
     if (!source) return;
 
     const syncCannotAttack = () => {
-      source.cannotAttack = source['op14-056:negatedTurn'] !== host.state.turn;
+      patchSpecialHandlerCardStatus(host, source, {
+        cannotAttack: source['op14-056:negatedTurn'] !== host.state.turn,
+      });
       host.syncPlayer(source.ownerSessionId);
     };
 

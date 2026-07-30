@@ -1,4 +1,5 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP15-059 "Amazon"
@@ -42,7 +43,7 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        source.rested = true;
+        patchSpecialHandlerCardStatus(host, source, { rested: true });
 
         const opponentId = host.getOpponentSessionId(event.playerSessionId);
         if (!opponentId) {

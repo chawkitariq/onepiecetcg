@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-096 Ground Death
@@ -42,7 +43,9 @@ export const op14096SpecialHandler: SpecialHandlerDefinition = {
         (resp: { confirmed?: boolean }) => {
           if (!resp.confirmed) return;
           for (let i = 0; i < 2 && i < activeDon.length; i++) {
-            activeDon[i].rested = true;
+            patchSpecialHandlerCardStatus(host, activeDon[i], {
+              rested: true,
+            });
           }
 
           decisions.chooseCards(
@@ -60,7 +63,9 @@ export const op14096SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (selected) => {
               for (const card of selected) {
-                card.effectNegated = true;
+                patchSpecialHandlerCardStatus(host, card, {
+                  effectNegated: true,
+                });
               }
               host.syncPlayer(event.playerSessionId);
               engine.reapplyContinuousEffects();

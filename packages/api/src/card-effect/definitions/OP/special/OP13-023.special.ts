@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles Uta:
@@ -27,7 +27,9 @@ export const op13023SpecialHandler: SpecialHandlerDefinition = {
       if (restedDon.length > 0) {
         const toSet = Math.min(restedDon.length, 2);
         for (let i = 0; i < toSet; i++) {
-          restedDon[i].rested = false;
+          patchSpecialHandlerCardStatus(host, restedDon[i], {
+            rested: false,
+          });
         }
         host.addLog(`[Uta] Set ${toSet} DON!! card(s) as active.`);
       }
@@ -73,7 +75,7 @@ export const op13023SpecialHandler: SpecialHandlerDefinition = {
         (selected) => {
           for (const card of selected) {
             host.playCard(card, event.playerSessionId, 'characters');
-            card.rested = true;
+            patchSpecialHandlerCardStatus(host, card, { rested: true });
           }
           engine.reapplyContinuousEffects();
         },

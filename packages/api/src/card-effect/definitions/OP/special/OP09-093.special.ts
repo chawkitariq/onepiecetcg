@@ -3,6 +3,7 @@ import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
 import {
   hasResolvedOncePerTurn,
   markResolvedOncePerTurn,
+  patchSpecialHandlerCardStatus,
 } from '../../special-handler-utils';
 
 /**
@@ -64,7 +65,9 @@ export const op09093SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (leaders) => {
         for (const l of leaders) {
-          l.effectNegated = true;
+          patchSpecialHandlerCardStatus(host, l, {
+            effectNegated: true,
+          });
         }
         decisions.chooseCards(
           `${event.sourceInstanceId}:op09-093:negate-character`,
@@ -81,8 +84,10 @@ export const op09093SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (characters) => {
             for (const c of characters) {
-              c.effectNegated = true;
-              c.cannotAttack = true;
+              patchSpecialHandlerCardStatus(host, c, {
+                effectNegated: true,
+                cannotAttack: true,
+              });
             }
             host.syncPlayer(event.playerSessionId);
             const opponentSessionId = host.getOpponentSessionId(

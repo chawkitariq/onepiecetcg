@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import {
+  patchSpecialHandlerCardStatus,
+  patchSpecialHandlerPlayerStatus,
+} from '../../special-handler-utils';
 
 /**
  * OP14-020 Dracule Mihawk (Leader)
@@ -46,7 +49,7 @@ export const op14020SpecialHandler: SpecialHandlerDefinition = {
       (cards) => {
         if (cards.length < 1) return;
         const card = cards[0];
-        card.rested = true;
+        patchSpecialHandlerCardStatus(host, card, { rested: true });
         host.syncPlayer(event.playerSessionId);
 
         const activeDon = host.getCards(
@@ -56,17 +59,13 @@ export const op14020SpecialHandler: SpecialHandlerDefinition = {
         const amount = Math.min(activeDon.length, 3);
         if (amount > 0) {
           for (const don of activeDon.slice(0, amount)) {
-            don.rested = false;
+            patchSpecialHandlerCardStatus(host, don, { rested: false });
           }
         }
 
-        const effect: StandardEffectDefinition = {
-          id: 'op14-020-no-character-play',
-          text: 'You cannot play character cards during this turn.',
-          trigger: { type: 'activateMain' },
-          actions: [],
-        };
-        player.cannotPlayCharacters = true;
+        patchSpecialHandlerPlayerStatus(host, player, {
+          cannotPlayCharacters: true,
+        });
 
         host.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();

@@ -1,16 +1,15 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 export const op06083SpecialHandler: SpecialHandlerDefinition = {
   id: 'op06-083-special',
   cardId: 'OP06-083',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op06-083:ko-thriller`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -28,11 +27,13 @@ export const op06083SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
-        source.effectNegated = false;
-        source.cannotAttack = false;
-        host.syncCard(source);
+        patchSpecialHandlerCardStatus(engine, source, {
+          effectNegated: false,
+          cannotAttack: false,
+        });
+        engine.syncPlayer(source.ownerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

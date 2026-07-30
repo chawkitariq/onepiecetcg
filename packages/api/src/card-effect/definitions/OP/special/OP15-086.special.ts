@@ -1,4 +1,5 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP15-086 "Nami (OP15-086)"
@@ -12,10 +13,7 @@ export const op15086SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     const leaderHasStrawHat = (player.zones.leader.families ?? []).includes(
@@ -23,7 +21,7 @@ export const op15086SpecialHandler: SpecialHandlerDefinition = {
     );
     if (!leaderHasStrawHat) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-086:play-from-trash`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -42,11 +40,12 @@ export const op15086SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.moveCard(card, event.playerSessionId, 'characters');
-          card.playedThisTurn = true;
-          card.hasRush = true;
+          engine.playCard(card, event.playerSessionId, 'characters');
+          patchSpecialHandlerCardStatus(engine, card, {
+            hasRush: true,
+          });
         }
-        host.syncPlayer(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles Shanks (028):
@@ -19,7 +19,7 @@ export const op13028SpecialHandler: SpecialHandlerDefinition = {
     if (!player) return;
 
     for (const don of player.zones.cost) {
-      don.rested = false;
+      patchSpecialHandlerCardStatus(host, don, { rested: false });
     }
     host.addLog('[Shanks 028] Set all DON!! cards as active.');
 

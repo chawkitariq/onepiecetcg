@@ -74,7 +74,13 @@ export const op14079SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (oppTargets) => {
             for (const card of oppTargets) {
-              card.cost = Math.max(0, card.cost - 10);
+              anyEngine.modifiers.addCostModifier(
+                event.sourceInstanceId,
+                event.playerSessionId,
+                card.instanceId,
+                -10,
+                'untilEndOfTurn',
+              );
             }
 
             decisions.pause(

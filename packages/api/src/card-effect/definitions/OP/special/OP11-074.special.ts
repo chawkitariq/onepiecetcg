@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Streusen handler.
@@ -17,13 +18,10 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
+    const oncePerTurnKey = `${event.sourceInstanceId}:op11-074:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-    const oncePerTurnKey = `${event.sourceInstanceId}:op11-074:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
-
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     let totalDonOnField =
@@ -34,10 +32,10 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
 
     if (totalDonOnField < 1) return;
 
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent || opponent.zones.deck.length === 0) return;
 
     const costChoices = Array.from({ length: 11 }, (_, i) => ({
@@ -45,7 +43,7 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
       label: `Cost ${i}`,
     }));
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-074:confirm`,
         effectId: 'op11-074-special',
@@ -62,14 +60,14 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
       (confirmResponse: { confirmed?: boolean }) => {
         if (!confirmResponse.confirmed) return;
 
-        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+        engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-        const source = host.getCard(event.sourceInstanceId);
+        const source = engine.getCard(event.sourceInstanceId);
         if (source) {
-          source.rested = true;
+          patchSpecialHandlerCardStatus(engine, source, { rested: true });
         }
 
-        anyEngine.decisions.pause(
+        engine.pauseDecision(
           {
             id: `${event.sourceInstanceId}:op11-074:choose-cost`,
             effectId: 'op11-074-special',
@@ -94,7 +92,7 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
 
             const chosenCost = parseInt(chosenCostStr.replace('cost-', ''), 10);
 
-            const topCards = host.getCards(
+            const topCards = engine.getCards(
               {
                 player: 'opponent',
                 zones: ['deck'],
@@ -111,12 +109,12 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
             const revealed = topCards[0];
             const revealedCost = revealed.baseCost ?? revealed.cost ?? -1;
 
-            host.addLog?.(
+            engine.addLog(
               `[Streusen] Revealed: ${revealed.name} (cost ${revealedCost}). Chosen: ${chosenCost}.`,
             );
 
             if (revealedCost === chosenCost) {
-              anyEngine.decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op11-074:rest-target`,
                 event.playerSessionId,
                 {
@@ -137,7 +135,9 @@ export const op11074SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (restTargets) => {
                   for (const card of restTargets) {
-                    card.rested = true;
+                    patchSpecialHandlerCardStatus(engine, card, {
+                      rested: true,
+                    });
                   }
                   engine.reapplyContinuousEffects();
                 },

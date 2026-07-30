@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles Five Elders:
@@ -66,7 +67,7 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        activeDon[0].rested = true;
+        patchSpecialHandlerCardStatus(host, activeDon[0], { rested: true });
 
         anyEngine.decisions.chooseCards(
           `${event.sourceInstanceId}:op13-082:trash-hand`,

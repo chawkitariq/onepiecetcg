@@ -1,4 +1,5 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP16-115
@@ -29,7 +30,9 @@ export const op16115SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selected) => {
         for (const card of selected) {
-          card.effectNegated = true;
+          patchSpecialHandlerCardStatus(host, card, {
+            effectNegated: true,
+          });
         }
         engine.reapplyContinuousEffects();
       },

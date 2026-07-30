@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-062 Gladius
@@ -80,7 +81,9 @@ export const op14062SpecialHandler: SpecialHandlerDefinition = {
                       'effect',
                     );
                   } else {
-                    card.rested = true;
+                    patchSpecialHandlerCardStatus(host, card, {
+                      rested: true,
+                    });
                   }
                 }
                 host.syncPlayer(event.playerSessionId);

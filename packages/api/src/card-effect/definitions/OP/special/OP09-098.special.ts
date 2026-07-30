@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP09-098 "Black Hole"
@@ -14,10 +15,7 @@ export const op09098SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-098',
   resolve(event, engine) {
     if (event.type === 'activateMain') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       const leader = player.zones.leader;
@@ -25,7 +23,7 @@ export const op09098SpecialHandler: SpecialHandlerDefinition = {
         return;
       }
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op09-098:main`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -40,27 +38,25 @@ export const op09098SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (cards) => {
           for (const card of cards) {
-            card.effectNegated = true;
+            patchSpecialHandlerCardStatus(engine, card, {
+              effectNegated: true,
+            });
             if ((card.baseCost ?? card.cost ?? 0) <= 4) {
-              host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+              engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
             }
           }
-          host.syncPlayer(event.playerSessionId);
-          const opponentSessionId = host.getOpponentSessionId(
+          engine.syncPlayer(event.playerSessionId);
+          const opponentSessionId = engine.getOpponentSessionId(
             event.playerSessionId,
           );
           if (opponentSessionId) {
-            host.syncPlayer(opponentSessionId);
+            engine.syncPlayer(opponentSessionId);
           }
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op09-098:trigger`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -74,14 +70,16 @@ export const op09098SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (cards) => {
           for (const card of cards) {
-            card.effectNegated = true;
+            patchSpecialHandlerCardStatus(engine, card, {
+              effectNegated: true,
+            });
           }
-          host.syncPlayer(event.playerSessionId);
-          const opponentSessionId = host.getOpponentSessionId(
+          engine.syncPlayer(event.playerSessionId);
+          const opponentSessionId = engine.getOpponentSessionId(
             event.playerSessionId,
           );
           if (opponentSessionId) {
-            host.syncPlayer(opponentSessionId);
+            engine.syncPlayer(opponentSessionId);
           }
           engine.reapplyContinuousEffects();
         },

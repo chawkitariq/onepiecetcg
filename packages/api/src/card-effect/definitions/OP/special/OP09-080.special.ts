@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP09-080 "Thousand Sunny"
@@ -50,7 +51,7 @@ export const op09080SpecialHandler: SpecialHandlerDefinition = {
       },
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
-        stage.rested = true;
+        patchSpecialHandlerCardStatus(host, stage, { rested: true });
         host.addDonToCost(event.playerSessionId, 1, true);
         host.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();

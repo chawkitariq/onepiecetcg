@@ -22,7 +22,11 @@ export const op06009SpecialHandler: SpecialHandlerDefinition = {
     if (!opponentLeader) return;
 
     const basePower = opponentLeader.basePower ?? opponentLeader.power ?? 0;
-    source.basePower = basePower;
-    host.syncCard(source);
+    if (host.patchCardStats) {
+      host.patchCardStats(source.instanceId, { basePower });
+    } else {
+      source.basePower = basePower;
+    }
+    host.syncPlayer(source.ownerSessionId);
   },
 };

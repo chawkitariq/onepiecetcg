@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-069 Donquixote Doflamingo
@@ -14,18 +15,16 @@ export const op14069SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-069',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const activeDon = host.getCards(
+    const activeDon = engine.getCards(
       { player: 'self', zones: ['cost'], filter: { rested: false } },
       event.playerSessionId,
     );
     if (activeDon.length < 3) return;
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op14-069:pay-don`,
         effectId: 'op14-069-special',
@@ -41,7 +40,7 @@ export const op14069SpecialHandler: SpecialHandlerDefinition = {
       },
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
-        host.returnDonToDonDeck(event.playerSessionId, 3);
+        engine.returnDonToDonDeck(event.playerSessionId, 3);
 
         const leader = player.zones.leader;
         const isDonqui = (leader.families || []).some((f: string) =>
@@ -61,7 +60,7 @@ export const op14069SpecialHandler: SpecialHandlerDefinition = {
             'Up to 3 opponent Characters (cost 7 or less) cannot be rested',
         });
 
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op14-069:mode`,
           event.playerSessionId,
           '[Doflamingo] Choose one:',
@@ -70,7 +69,7 @@ export const op14069SpecialHandler: SpecialHandlerDefinition = {
           1,
           (choiceIds) => {
             if (choiceIds.includes('ko')) {
-              decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op14-069:ko-target`,
                 event.playerSessionId,
                 {
@@ -88,18 +87,14 @@ export const op14069SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (cards) => {
                   for (const card of cards) {
-                    host.koCharacter(
-                      card.ownerSessionId,
-                      card.instanceId,
-                      'effect',
-                    );
+                    engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
                   }
-                  host.syncPlayer(event.playerSessionId);
+                  engine.syncPlayer(event.playerSessionId);
                   engine.reapplyContinuousEffects();
                 },
               );
             } else {
-              decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op14-069:prevent-rest`,
                 event.playerSessionId,
                 {
@@ -117,10 +112,12 @@ export const op14069SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (selected) => {
                   for (const card of selected) {
-                    card.skipNextRefreshPhases =
-                      (card.skipNextRefreshPhases || 0) + 1;
+                    patchSpecialHandlerCardStatus(engine, card, {
+                      skipNextRefreshPhases:
+                        (card.skipNextRefreshPhases || 0) + 1,
+                    });
                   }
-                  host.syncPlayer(event.playerSessionId);
+                  engine.syncPlayer(event.playerSessionId);
                   engine.reapplyContinuousEffects();
                 },
               );

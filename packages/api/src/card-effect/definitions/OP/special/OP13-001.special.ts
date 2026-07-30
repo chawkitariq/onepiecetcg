@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles Monkey.D.Luffy (001):
@@ -41,7 +42,7 @@ export const op13001SpecialHandler: SpecialHandlerDefinition = {
         if (restedCount === 0) return;
 
         for (const don of selectedDon) {
-          don.rested = true;
+          patchSpecialHandlerCardStatus(host, don, { rested: true });
         }
 
         anyEngine.decisions.chooseCards(

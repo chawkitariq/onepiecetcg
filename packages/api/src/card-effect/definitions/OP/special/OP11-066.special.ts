@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Charlotte Oven handler.
@@ -15,13 +16,10 @@ export const op11066SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent || opponent.zones.deck.length === 0) return;
 
     const costChoices = Array.from({ length: 11 }, (_, i) => ({
@@ -29,7 +27,7 @@ export const op11066SpecialHandler: SpecialHandlerDefinition = {
       label: `Cost ${i}`,
     }));
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-066:confirm`,
         effectId: 'op11-066-special',
@@ -46,12 +44,12 @@ export const op11066SpecialHandler: SpecialHandlerDefinition = {
       (confirmResponse: { confirmed?: boolean }) => {
         if (!confirmResponse.confirmed) return;
 
-        const source = host.getCard(event.sourceInstanceId);
+        const source = engine.getCard(event.sourceInstanceId);
         if (source) {
-          source.rested = true;
+          patchSpecialHandlerCardStatus(engine, source, { rested: true });
         }
 
-        anyEngine.decisions.pause(
+        engine.pauseDecision(
           {
             id: `${event.sourceInstanceId}:op11-066:choose-cost`,
             effectId: 'op11-066-special',
@@ -73,7 +71,7 @@ export const op11066SpecialHandler: SpecialHandlerDefinition = {
 
             const chosenCost = parseInt(chosenCostStr.replace('cost-', ''), 10);
 
-            const topCards = host.getCards(
+            const topCards = engine.getCards(
               {
                 player: 'opponent',
                 zones: ['deck'],
@@ -87,12 +85,12 @@ export const op11066SpecialHandler: SpecialHandlerDefinition = {
             const revealed = topCards[0];
             const revealedCost = revealed.baseCost ?? revealed.cost ?? -1;
 
-            host.addLog?.(
+            engine.addLog(
               `[Oven] Revealed: ${revealed.name} (cost ${revealedCost}). Chosen: ${chosenCost}.`,
             );
 
             if (revealedCost === chosenCost) {
-              anyEngine.decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op11-066:ko-target`,
                 event.playerSessionId,
                 {
@@ -113,14 +111,14 @@ export const op11066SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (koTargets) => {
                   for (const card of koTargets) {
-                    host.koCharacter(
-                      event.playerSessionId,
+                    engine.koCharacter(
+                      card.ownerSessionId,
                       card.instanceId,
                       'effect',
                     );
                   }
 
-                  host.addDonToCost(event.playerSessionId, 1, true);
+                  engine.addDonToCost(event.playerSessionId, 1, true);
                   engine.reapplyContinuousEffects();
                 },
               );

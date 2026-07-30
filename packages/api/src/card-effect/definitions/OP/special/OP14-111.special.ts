@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-111 Perona
@@ -32,7 +33,9 @@ export const op14111SpecialHandler: SpecialHandlerDefinition = {
         (selected) => {
           const turn = host.state.turn;
           for (const card of selected) {
-            card.cannotAttackUntilTurn = turn + 2;
+            patchSpecialHandlerCardStatus(host, card, {
+              cannotAttackUntilTurn: turn + 2,
+            });
           }
           host.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
@@ -62,7 +65,7 @@ export const op14111SpecialHandler: SpecialHandlerDefinition = {
         (selected) => {
           for (const card of selected) {
             host.playCard(card, event.playerSessionId, 'characters');
-            card.rested = true;
+            patchSpecialHandlerCardStatus(host, card, { rested: true });
           }
           host.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();

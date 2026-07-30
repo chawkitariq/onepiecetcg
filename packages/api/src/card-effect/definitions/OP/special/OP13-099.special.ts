@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles The Empty Throne:
@@ -114,10 +115,12 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        source.rested = true;
+        patchSpecialHandlerCardStatus(host, source, { rested: true });
         for (let i = 0; i < 3; i++) {
           if (activeDon[i]) {
-            activeDon[i].rested = true;
+            patchSpecialHandlerCardStatus(host, activeDon[i], {
+              rested: true,
+            });
           }
         }
 

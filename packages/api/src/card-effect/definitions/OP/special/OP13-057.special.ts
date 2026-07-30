@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Handles "If I Bowed Down to Power, What's the Point in Living?":
@@ -42,7 +43,9 @@ export const op13057SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          activeDon[0].rested = true;
+          patchSpecialHandlerCardStatus(host, activeDon[0], {
+            rested: true,
+          });
 
           if (player.zones.life.length <= 1) {
             const opponentId = host.getOpponentSessionId(event.playerSessionId);

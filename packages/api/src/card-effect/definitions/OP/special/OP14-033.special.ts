@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-033 Perona
@@ -13,10 +14,7 @@ export const op14033SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-033',
   resolve(event, engine) {
     if (event.type === 'onPlay') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-033:prevent-rest`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -31,17 +29,16 @@ export const op14033SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            card.skipNextRefreshPhases = (card.skipNextRefreshPhases || 0) + 1;
+            patchSpecialHandlerCardStatus(engine, card, {
+              skipNextRefreshPhases: (card.skipNextRefreshPhases || 0) + 1,
+            });
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'onKo') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-033:rest-for-play`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -59,10 +56,10 @@ export const op14033SpecialHandler: SpecialHandlerDefinition = {
             return;
           }
           for (const card of restedCards) {
-            card.rested = true;
+            patchSpecialHandlerCardStatus(engine, card, { rested: true });
           }
 
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op14-033:play-from-hand`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -81,9 +78,11 @@ export const op14033SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (playedCards) => {
               for (const card of playedCards) {
-                host.playCard(card, event.playerSessionId, 'characters');
+                engine.playCard(card, event.playerSessionId, 'characters', {
+                  rested: true,
+                });
               }
-              host.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(event.playerSessionId);
               engine.reapplyContinuousEffects();
             },
           );

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-070 Buffalo
@@ -13,12 +14,10 @@ export const op14070SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-070',
   resolve(event, engine) {
     if (event.type !== 'onDonAttached' && event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source || !source.rested) return;
 
-    const donOnField = host.getCards(
+    const donOnField = engine.getCards(
       { player: 'self', zones: ['cost'] },
       event.playerSessionId,
     );
@@ -27,7 +26,7 @@ export const op14070SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op14-070:return-don`,
         effectId: 'op14-070-special',
@@ -44,9 +43,9 @@ export const op14070SpecialHandler: SpecialHandlerDefinition = {
       },
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
-        host.returnDonToDonDeck(event.playerSessionId, 1);
-        source.rested = false;
-        host.syncPlayer(event.playerSessionId);
+        engine.returnDonToDonDeck(event.playerSessionId, 1);
+        patchSpecialHandlerCardStatus(engine, source, { rested: false });
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

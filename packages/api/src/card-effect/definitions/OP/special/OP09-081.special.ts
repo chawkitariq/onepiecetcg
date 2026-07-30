@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP09-081 "Marshall.D.Teach (Parallel)"
@@ -53,7 +54,9 @@ export const op09081SpecialHandler: SpecialHandlerDefinition = {
         const targets = [opponent.zones.leader, ...opponent.zones.characters];
         for (const target of targets) {
           if (target.instanceId) {
-            target.effectNegated = true;
+            patchSpecialHandlerCardStatus(host, target, {
+              effectNegated: true,
+            });
           }
         }
         host.syncPlayer(opponentSessionId);

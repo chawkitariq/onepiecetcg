@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * Shirahoshi Leader handler.
@@ -71,7 +72,8 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
         anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
 
         if (player.zones.cost.length > 0) {
-          player.zones.cost[0].rested = true;
+          const firstDon = player.zones.cost[0];
+          patchSpecialHandlerCardStatus(host, firstDon, { rested: true });
         }
 
         const topLife = host.getCards(

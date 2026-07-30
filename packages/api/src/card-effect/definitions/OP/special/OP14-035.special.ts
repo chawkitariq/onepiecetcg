@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 /**
  * OP14-035 Yosaku
@@ -12,14 +13,12 @@ export const op14035SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-035',
   resolve(event, engine) {
     if (event.type !== 'onDonAttached' && event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source || !source.rested) return;
-    const activePlayerSessionId = host.state.activePlayerSessionId;
+    const activePlayerSessionId = engine.state.activePlayerSessionId;
     if (activePlayerSessionId !== event.playerSessionId) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op14-035:skip-refresh`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -34,9 +33,11 @@ export const op14035SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selected) => {
         for (const card of selected) {
-          card.skipNextRefreshPhases = (card.skipNextRefreshPhases || 0) + 1;
+          patchSpecialHandlerCardStatus(engine, card, {
+            skipNextRefreshPhases: (card.skipNextRefreshPhases || 0) + 1,
+          });
         }
-        host.syncPlayer(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

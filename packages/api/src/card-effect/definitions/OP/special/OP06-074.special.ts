@@ -1,4 +1,5 @@
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
+import { patchSpecialHandlerCardStatus } from '../../special-handler-utils';
 
 export const op06074SpecialHandler: SpecialHandlerDefinition = {
   id: 'op06-074-special',
@@ -32,8 +33,10 @@ export const op06074SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          card.effectNegated = true;
-          host.syncCard(card);
+          patchSpecialHandlerCardStatus(host, card, {
+            effectNegated: true,
+          });
+          host.syncPlayer(card.ownerSessionId);
 
           if ((card.power ?? 0) <= 5000) {
             host.moveCard(card, event.playerSessionId, 'trash');
