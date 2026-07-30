@@ -51,7 +51,7 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
               return;
             }
 
-            const lifeCards = Array.from(opponent.zones.life);
+            const lifeCards = Array.from(opponent.zones.life) as DuelCard[];
 
             if (lifeCards.length === 0) {
               return;
@@ -61,7 +61,7 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
               card.faceDown = false;
             }
 
-            const remaining: DuelCard[] = [...lifeCards];
+            const remaining = lifeCards.slice();
             const topCards: DuelCard[] = [];
             const bottomCards: DuelCard[] = [];
 
