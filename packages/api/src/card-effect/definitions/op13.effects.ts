@@ -892,7 +892,7 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
           kind: 'standard',
           effect: {
             id: 'trafalgar-law-031-on-play-bounce-1-play-cost-5-or-less-rested',
-            text: '[On Play] You may return 1 of your Characters to the owner\'s hand: Play up to 1 Character card with a cost of 5 or less from your hand rested.',
+            text: "[On Play] You may return 1 of your Characters to the owner's hand: Play up to 1 Character card with a cost of 5 or less from your hand rested.",
             trigger: { type: 'onPlay', optional: true },
             costs: [
               {
@@ -2914,7 +2914,7 @@ export const op13EffectDefinitions: EditionEffectDefinitions = {
           kind: 'continuous',
           effect: {
             id: 'saint-topman-warcury-089-trash-7-plus-immunity-and-blocker',
-            text: 'If you have 7 or more cards in your trash, this Character cannot be removed from the field by your opponent\'s effects and gains [Blocker].',
+            text: "If you have 7 or more cards in your trash, this Character cannot be removed from the field by your opponent's effects and gains [Blocker].",
             conditions: [
               {
                 type: 'targetCountAtLeast',

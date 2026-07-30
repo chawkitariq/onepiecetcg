@@ -971,7 +971,7 @@ export class EffectActionExecutor {
                   playerSessionId: controllerSessionId,
                   sourceInstanceId: card.instanceId,
                   sourceCardId: card.cardId,
-                  sourceZone: originZone as import('@onepiecetcg/shared').GameZone | undefined,
+                  sourceZone: originZone,
                   playedByEffect: true,
                 });
                 this.emitEffectEvent({
@@ -979,7 +979,7 @@ export class EffectActionExecutor {
                   playerSessionId: controllerSessionId,
                   sourceInstanceId: card.instanceId,
                   sourceCardId: card.cardId,
-                  sourceZone: originZone as import('@onepiecetcg/shared').GameZone | undefined,
+                  sourceZone: originZone,
                   playedByEffect: true,
                 });
               } else if (card.type === 'Stage') {
@@ -988,7 +988,7 @@ export class EffectActionExecutor {
                   playerSessionId: controllerSessionId,
                   sourceInstanceId: card.instanceId,
                   sourceCardId: card.cardId,
-                  sourceZone: originZone as import('@onepiecetcg/shared').GameZone | undefined,
+                  sourceZone: originZone,
                   playedByEffect: true,
                 });
               }

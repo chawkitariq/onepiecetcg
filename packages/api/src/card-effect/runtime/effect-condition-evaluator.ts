@@ -163,7 +163,8 @@ export class EffectConditionEvaluator {
           const player = playerId ? this.host.getPlayer(playerId) : undefined;
 
           return (
-            (player?.zones.life.length ?? 0) + (player?.zones.hand.length ?? 0) <=
+            (player?.zones.life.length ?? 0) +
+              (player?.zones.hand.length ?? 0) <=
             condition.value
           );
         }
@@ -219,7 +220,9 @@ export class EffectConditionEvaluator {
           return playerId === event.effectControllerSessionId;
         }
         case 'eventPlayedByEffect':
-          return isEffectEvent(event) && event.playedByEffect === condition.value;
+          return (
+            isEffectEvent(event) && event.playedByEffect === condition.value
+          );
         case 'eventReasonIs':
           return event !== undefined && 'reason' in event
             ? event.reason === condition.value

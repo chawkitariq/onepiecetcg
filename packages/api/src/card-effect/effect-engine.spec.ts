@@ -1547,7 +1547,10 @@ describe('EffectEngine', () => {
       ],
     };
     const engine = new EffectEngine(
-      createRegistry([op01EffectDefinitions, conditionalStoredSelectionDefinition]),
+      createRegistry([
+        op01EffectDefinitions,
+        conditionalStoredSelectionDefinition,
+      ]),
       host,
     );
     const source = host.addCardToZone(
@@ -1574,7 +1577,9 @@ describe('EffectEngine', () => {
       'target',
     );
 
-    host.getPlayer('p2')!.zones.life = host.getPlayer('p2')!.zones.life.slice(0, 2);
+    host.getPlayer('p2')!.zones.life = host
+      .getPlayer('p2')!
+      .zones.life.slice(0, 2);
 
     engine.handleEvent({
       type: 'activateCounter',
@@ -1617,7 +1622,9 @@ describe('EffectEngine', () => {
                     value: 4,
                   },
                 ],
-                actions: [{ type: 'draw' as const, player: 'self' as const, amount: 1 }],
+                actions: [
+                  { type: 'draw' as const, player: 'self' as const, amount: 1 },
+                ],
               },
             },
           ],
@@ -1640,7 +1647,9 @@ describe('EffectEngine', () => {
       'combined-source',
     );
 
-    host.getPlayer('p1')!.zones.life = host.getPlayer('p1')!.zones.life.slice(0, 2);
+    host.getPlayer('p1')!.zones.life = host
+      .getPlayer('p1')!
+      .zones.life.slice(0, 2);
     host.addCardToZone(
       'p1',
       'hand',
@@ -1701,7 +1710,9 @@ describe('EffectEngine', () => {
                     },
                   },
                 ],
-                actions: [{ type: 'draw' as const, player: 'self' as const, amount: 1 }],
+                actions: [
+                  { type: 'draw' as const, player: 'self' as const, amount: 1 },
+                ],
               },
             },
           ],
@@ -1778,7 +1789,10 @@ describe('EffectEngine', () => {
                 trigger: { type: 'onCardRemovedByEffect' as const },
                 conditions: [
                   { type: 'eventPlayerIs' as const, player: 'self' as const },
-                  { type: 'eventSourceZoneIs' as const, value: 'hand' as const },
+                  {
+                    type: 'eventSourceZoneIs' as const,
+                    value: 'hand' as const,
+                  },
                   {
                     type: 'eventDestinationZoneIs' as const,
                     value: 'trash' as const,
@@ -1900,7 +1914,10 @@ describe('EffectEngine', () => {
                     type: 'eventEffectControllerIs' as const,
                     player: 'opponent' as const,
                   },
-                  { type: 'eventSourceZoneIs' as const, value: 'characters' as const },
+                  {
+                    type: 'eventSourceZoneIs' as const,
+                    value: 'characters' as const,
+                  },
                   {
                     type: 'eventTargetMatchesFilter' as const,
                     filter: {

@@ -1608,7 +1608,10 @@ describe('OP14 behavioral tests', () => {
     host.addPlayer('p1');
     host.addPlayer('p2');
     const engine = new EffectEngine(
-      createRegistry([op14EffectDefinitions, helperDefinition], specialHandlerDefinitions),
+      createRegistry(
+        [op14EffectDefinitions, helperDefinition],
+        specialHandlerDefinitions,
+      ),
       host,
     );
 
@@ -1877,7 +1880,10 @@ describe('OP14 behavioral tests', () => {
     host.addPlayer('p1');
     host.addPlayer('p2');
     const engine = new EffectEngine(
-      createRegistry([op14EffectDefinitions, helperDefinition], specialHandlerDefinitions),
+      createRegistry(
+        [op14EffectDefinitions, helperDefinition],
+        specialHandlerDefinitions,
+      ),
       host,
     );
 
@@ -1958,7 +1964,10 @@ describe('OP14 behavioral tests', () => {
     host.addPlayer('p1');
     host.addPlayer('p2');
     const engine = new EffectEngine(
-      createRegistry([op14EffectDefinitions, helperDefinition], specialHandlerDefinitions),
+      createRegistry(
+        [op14EffectDefinitions, helperDefinition],
+        specialHandlerDefinitions,
+      ),
       host,
     );
 
@@ -2029,7 +2038,10 @@ describe('OP14 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(createRegistry([op14EffectDefinitions]), host);
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions]),
+      host,
+    );
 
     const vergo = host.addCardToZone(
       'p1',

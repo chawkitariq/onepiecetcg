@@ -852,9 +852,9 @@ describe('OP13 effect definitions', () => {
       });
 
       expect(p1.zones.characters.some((c) => c.cardId === 'P')).toBe(true);
-      expect(
-        p1.zones.characters.find((c) => c.cardId === 'P')?.rested,
-      ).toBe(true);
+      expect(p1.zones.characters.find((c) => c.cardId === 'P')?.rested).toBe(
+        true,
+      );
     });
 
     it('OP13-003 Gol.D.Roger (special leader) gives leader +2000 on play when DON field ≤ 9', () => {

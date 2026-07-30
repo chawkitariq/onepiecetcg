@@ -401,7 +401,9 @@ describe('OP12 effect definitions', () => {
       );
       expect(card).toBeDefined();
       const activateMainEntry = card!.effects!.find(
-        (e) => e.kind === 'standard' && e.effect.id === 'to-never-doubt-activate-main-ko-cost-4-or-less',
+        (e) =>
+          e.kind === 'standard' &&
+          e.effect.id === 'to-never-doubt-activate-main-ko-cost-4-or-less',
       );
       expect(activateMainEntry).toBeDefined();
       if (activateMainEntry?.kind === 'standard') {
@@ -427,8 +429,12 @@ describe('OP12 effect definitions', () => {
       expect(card!.effects).toHaveLength(2);
       const triggerTypes = card!.effects
         ?.filter((entry) => entry.kind === 'standard')
-        .map((entry) => (entry.kind === 'standard' ? entry.effect.trigger.type : null));
-      expect(triggerTypes).toEqual(expect.arrayContaining(['activateMain', 'trigger']));
+        .map((entry) =>
+          entry.kind === 'standard' ? entry.effect.trigger.type : null,
+        );
+      expect(triggerTypes).toEqual(
+        expect.arrayContaining(['activateMain', 'trigger']),
+      );
     });
 
     it('OP12-020 Roronoa Zoro Leader is special-ref', () => {
@@ -663,9 +669,9 @@ describe('OP12 effect definitions', () => {
         expect(card!.effects?.some((entry) => entry.kind === 'standard')).toBe(
           true,
         );
-        expect(card!.effects?.some((entry) => entry.kind === 'special-ref')).toBe(
-          false,
-        );
+        expect(
+          card!.effects?.some((entry) => entry.kind === 'special-ref'),
+        ).toBe(false);
       }
     });
 
@@ -987,7 +993,9 @@ describe('OP12 effect definitions', () => {
       );
       expect(card).toBeDefined();
       const activateMainEntry = card!.effects!.find(
-        (e) => e.kind === 'standard' && e.effect.id === 'ursa-shock-activate-main-set-up-to-2-don-active',
+        (e) =>
+          e.kind === 'standard' &&
+          e.effect.id === 'ursa-shock-activate-main-set-up-to-2-don-active',
       );
       expect(activateMainEntry).toBeDefined();
       if (activateMainEntry?.kind === 'standard') {
@@ -1052,9 +1060,7 @@ describe('OP12 effect definitions', () => {
         (c) => c.cardId === 'OP12-102',
       );
       expect(card).toBeDefined();
-      const onPlayEntry = card!.effects!.find(
-        (e) => e.kind === 'standard',
-      );
+      const onPlayEntry = card!.effects!.find((e) => e.kind === 'standard');
       expect(onPlayEntry).toBeDefined();
       if (onPlayEntry?.kind === 'standard') {
         expect(onPlayEntry.effect.id).toBe(

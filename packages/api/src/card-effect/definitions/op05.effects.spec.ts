@@ -2948,7 +2948,10 @@ describe('op05EffectDefinitions', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new EffectEngine(createRegistry([op05EffectDefinitions]), host);
+    const engine = new EffectEngine(
+      createRegistry([op05EffectDefinitions]),
+      host,
+    );
 
     const elThor = host.addCardToZone(
       'p1',

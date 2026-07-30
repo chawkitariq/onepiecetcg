@@ -88,8 +88,9 @@ export const op10058SpecialHandler: SpecialHandlerDefinition = {
           1,
           (selectedChoiceIds: string[]) => {
             const first =
-              selected.find((card) => card.instanceId === selectedChoiceIds[0]) ??
-              selected[0];
+              selected.find(
+                (card) => card.instanceId === selectedChoiceIds[0],
+              ) ?? selected[0];
             const second = selected.find(
               (card) => card.instanceId !== first.instanceId,
             );
