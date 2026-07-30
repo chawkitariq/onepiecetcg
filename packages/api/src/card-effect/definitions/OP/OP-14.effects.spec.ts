@@ -592,6 +592,95 @@ describe('OP14 behavioral tests', () => {
     }
   }
 
+  it('OP14-060 redirects the current combat target without leaving mustBeAttackTarget behind', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+
+    host.state.turn = 2;
+    host.state.combat.attackerSessionId = 'p2';
+    host.state.combat.defenderSessionId = 'p1';
+    host.state.combat.targetType = 'leader';
+    host.state.combat.targetInstanceId =
+      host.getPlayer('p1')!.zones.leader.instanceId;
+
+    host.addCardToZone(
+      'p1',
+      'cost',
+      makeCard({
+        id: 'DON-1',
+        number: 'DON-1',
+        name: 'DON!!',
+        type: 'DON!!',
+        cost: null,
+        power: null,
+        counter: null,
+      }),
+      'don-1',
+    );
+
+    const doflamingo = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP14-060',
+        number: 'OP14-060',
+        name: 'Donquixote Doflamingo',
+        type: 'Character',
+        cost: 4,
+        power: 5000,
+        families: ['Donquixote Pirates'],
+      }),
+      'doflamingo',
+    );
+
+    const redirectTarget = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'ALLY-1',
+        number: 'ALLY-1',
+        name: 'Redirect Target',
+        type: 'Character',
+        cost: 3,
+        power: 4000,
+        families: ['Donquixote Pirates'],
+      }),
+      'redirect-target',
+    );
+
+    const engine = new EffectEngine(createRegistry(), host);
+
+    engine.handleEvent({
+      type: 'onAttacked',
+      playerSessionId: 'p1',
+      sourceInstanceId: doflamingo.instanceId,
+      sourceCardId: 'OP14-060',
+    });
+
+    const confirmDecision = engine.getPendingDecision();
+    expect(confirmDecision?.prompt.type).toBe('confirm');
+
+    engine.answerDecision({
+      decisionId: confirmDecision!.id,
+      confirmed: true,
+    });
+
+    const selectDecision = engine.getPendingDecision();
+    expect(selectDecision?.prompt.type).toBe('selectCards');
+
+    engine.answerDecision({
+      decisionId: selectDecision!.id,
+      selectedCardInstanceIds: [redirectTarget.instanceId],
+    });
+
+    expect(host.state.combat.targetType).toBe('character');
+    expect(host.state.combat.targetInstanceId).toBe(
+      redirectTarget.instanceId,
+    );
+    expect(redirectTarget.mustBeAttackTarget).toBe(false);
+  });
+
   it('OP14-002 Urouge draws 1 and KOs 3000-power opponent when attacking with 5000+ power', () => {
     const host = new TestHost();
     host.addPlayer('p1');

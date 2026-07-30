@@ -86,7 +86,9 @@ export const op14060SpecialHandler: SpecialHandlerDefinition = {
           (selected) => {
             if (!selected.length) return;
             const target = selected[0];
-            target.mustBeAttackTarget = true;
+            host.state.combat.targetInstanceId = target.instanceId;
+            host.state.combat.targetType =
+              target.type === 'Leader' ? 'leader' : 'character';
             host.syncPlayer(event.playerSessionId);
             engine.reapplyContinuousEffects();
           },
