@@ -259,6 +259,29 @@ Correctif notable : un test manuel à deux onglets navigateur (deux comptes rée
 - Afficher les logs d'action pour synchroniser les joueurs.
 - Garder les cartes révélées privées quand la règle l'exige.
 
+## Étape 10 — Système d'événements métier fiable
+
+Objectif : produire des faits métier durables autour des duels, stockés avant publication et relayés de manière asynchrone, sans transformer le backend en event-sourced system.
+
+État : fondation implémentée et intégrée au backend. `packages/api` expose désormais un module `duel-events` basé sur TypeORM avec deux tables transactionnelles (`duel_event_streams`, `duel_event_outbox`), un `DuelEventStreamService` qui crée explicitement le stream d'un match avec `MatchCreated` en séquence 1, un `DuelEventRecorderService` qui séquence et persiste des `DomainEventDraft` dans l'outbox, un `DuelEventRelayService` qui republie les lignes `PENDING` de façon asynchrone vers un bus canonique remplaçable, et un `DuelEventJournalService` pour le rattrapage ordonné des événements déjà publiés. La room Colyseus `duel` maintient maintenant un `playerId` métier stable par siège (`player-1`, `player-2`) distinct du `sessionId`, crée le stream au démarrage effectif du match, puis enregistre un premier catalogue d'événements métier couvrant le cycle de match et le cycle de tour déjà structurés côté serveur : `MatchCreated`, `PlayerJoined`, `DeckLocked`, `OpeningHandDrawn`, `StartingPlayerDetermined`, `MulliganResolved`, `MatchStarted`, `TurnStarted`, `PhaseChanged`, `TurnEnded`, `PlayerConceded` et `MatchEnded`.
+
+Limite actuelle explicitement assumée : cette première version n'a pas encore refactoré les moteurs de duel pour travailler sur une copie isolée de `DuelState` adoptée uniquement après commit de l'outbox, ni étendu le catalogue aux événements fins de cartes/combat/effets (`CardPlayed`, `AttackDeclared`, `DamageDealt`, etc.). La garantie déjà en place est donc la durabilité + publication asynchrone des événements enregistrés, mais pas encore la barrière complète "nouvel état vivant visible seulement après commit outbox" décrite comme cible dans `docs/event-system.md`.
+
+### Backend
+
+- Créer le stream explicite d'un match et empêcher tout append silencieux sans stream.
+- Séquencer les événements par `matchId` dans une transaction unique avec l'outbox.
+- Publier l'outbox en arrière-plan avec retries et statut `PENDING`/`PROCESSING`/`PUBLISHED`/`FAILED`.
+- Utiliser un `playerId` métier stable dans les événements au lieu du `sessionId` Colyseus.
+- Exposer un journal interne pour relire les événements publiés dans l'ordre.
+- Étendre progressivement le catalogue d'événements depuis les faits de room/tour vers les faits de gameplay fins.
+
+### Validation
+
+- Chaque match possède son propre stream ordonné à partir de `MatchCreated`.
+- Un événement enregistré reste publiable même si le bus est temporairement indisponible.
+- La room enregistre des faits métier de cycle de match/tour sans exposer de `sessionId` dans les payloads canoniques.
+
 ## Étape 8 bis — Moteur d'effets automatiques
 
 Objectif : résoudre automatiquement les effets de cartes côté serveur sans parser le texte libre au runtime.
