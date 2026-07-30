@@ -123,6 +123,11 @@ export class DuelRoomEffectBoundary {
     this.manualTriggers.importState(state.manualTrigger);
   }
 
+  /** Returns the serializable pending manual Trigger fallback state, if any. */
+  public getPendingManualTriggerState() {
+    return this.manualTriggers.exportState();
+  }
+
   public applyKoReplacement(
     playerSessionId: string,
     sourceInstanceId: string,

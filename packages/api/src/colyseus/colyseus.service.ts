@@ -28,10 +28,11 @@ export class ColyseusService implements OnModuleDestroy {
       return this.gameServer;
     }
 
-    // A 50-card deck's encoded state comfortably exceeds the 8KB default;
-    // grow it once so real duels don't hit the (auto-recovered but noisy)
-    // buffer overflow warning on every patch.
-    Encoder.BUFFER_SIZE = 32 * 1024;
+    // Real duel state can exceed the default 8KB encoder buffer once both
+    // players, hidden-zone counts, logs, and patch views are populated.
+    // Set the startup buffer to the size currently recommended by runtime
+    // overflow warnings so normal matches avoid repeated reallocation noise.
+    Encoder.BUFFER_SIZE = 64 * 1024;
 
     const auth = createAuth();
 

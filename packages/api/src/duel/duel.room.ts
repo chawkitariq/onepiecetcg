@@ -31,7 +31,10 @@ import { DuelMainPhaseEngine } from './game-engine/duel-main-phase-engine';
 import { DuelTurnEngine } from './game-engine/duel-turn-engine';
 import { DuelZoneEngine } from './game-engine/duel-zone-engine';
 import { DuelRoomClientNotifier } from './room/duel-room-client-notifier';
-import { createDuelRoomGameplayRuntime } from './room/duel-room-gameplay-runtime';
+import {
+  createDuelRoomGameplayRuntime,
+  type DuelRoomGameplayRuntime,
+} from './room/duel-room-gameplay-runtime';
 import { DuelRoomLifecycle } from './room/duel-room-lifecycle';
 import { DuelRoomRuntimeState } from './room/duel-room-runtime-state';
 import {
@@ -282,13 +285,7 @@ export class DuelRoom extends Room<DuelState> {
       isProtectedFromBattleKo: (defendingCard, attackerCard) =>
         this.isProtectedFromBattleKo(defendingCard, attackerCard),
     });
-    this.effectBoundary = gameplayRuntime.effectBoundary;
-    this.turnEngine = gameplayRuntime.turnEngine;
-    this.cardQueryEngine = gameplayRuntime.cardQueryEngine;
-    this.zoneEngine = gameplayRuntime.zoneEngine;
-    this.mainPhaseEngine = gameplayRuntime.mainPhaseEngine;
-    this.combatEngine = gameplayRuntime.combatEngine;
-    this.runtimeState = gameplayRuntime.runtimeState;
+    this.installGameplayRuntime(gameplayRuntime);
 
     const description = options.description
       ?.trim()
@@ -428,19 +425,25 @@ export class DuelRoom extends Room<DuelState> {
       );
       const snapshot = this.captureStateSnapshotFrom(state);
       lifecycle.declareForfeitIfMatchInProgress(player);
+      const shouldPersistConcession =
+        snapshot.phase !== 'finished' &&
+        state.phase === 'finished' &&
+        state.endReason === 'forfeit';
 
-      try {
-        await this.persistRoomEventsOrThrow(client.sessionId, [
-          {
-            type: 'PlayerConceded',
-            version: 1,
-            payload: { playerId: this.getPlayerId(client.sessionId) },
-          },
-          ...this.buildTerminalEventDraftsFor(snapshot, state),
-        ]);
-      } catch (error) {
-        this.logger.error('Failed to persist duel domain events', error);
-        return;
+      if (shouldPersistConcession) {
+        try {
+          await this.persistRoomEventsOrThrow(client.sessionId, [
+            {
+              type: 'PlayerConceded',
+              version: 1,
+              payload: { playerId: this.getPlayerId(client.sessionId) },
+            },
+            ...this.buildTerminalEventDraftsFor(snapshot, state),
+          ]);
+        } catch (error) {
+          this.logger.error('Failed to persist duel domain events', error);
+          return;
+        }
       }
 
       adoptRoomDuelState(this.state, state);
@@ -814,8 +817,7 @@ export class DuelRoom extends Room<DuelState> {
 
         const drafts: DomainEventDraft[] = [];
         const pendingManualTrigger =
-          runtime.gameplayRuntime.effectBoundary.exportState().manualTrigger ??
-          null;
+          runtime.gameplayRuntime.effectBoundary.getPendingManualTriggerState();
         const attackWasCancelled =
           attackerPower === null || defenderPower === null;
 
@@ -1050,8 +1052,7 @@ export class DuelRoom extends Room<DuelState> {
       (runtime) => {
         const before = this.captureStateSnapshotFrom(runtime.state);
         const pendingManualTrigger =
-          runtime.gameplayRuntime.effectBoundary.exportState().manualTrigger ??
-          null;
+          runtime.gameplayRuntime.effectBoundary.getPendingManualTriggerState();
         const result =
           runtime.gameplayRuntime.effectBoundary.resolveManualTriggerDecision(
             client.sessionId,
@@ -2252,6 +2253,16 @@ export class DuelRoom extends Room<DuelState> {
     });
   }
 
+  private installGameplayRuntime(gameplayRuntime: DuelRoomGameplayRuntime): void {
+    this.effectBoundary = gameplayRuntime.effectBoundary;
+    this.turnEngine = gameplayRuntime.turnEngine;
+    this.cardQueryEngine = gameplayRuntime.cardQueryEngine;
+    this.zoneEngine = gameplayRuntime.zoneEngine;
+    this.mainPhaseEngine = gameplayRuntime.mainPhaseEngine;
+    this.combatEngine = gameplayRuntime.combatEngine;
+    this.runtimeState = gameplayRuntime.runtimeState;
+  }
+
   private createIsolatedGameplayRuntime() {
     const state = cloneRoomDuelState(this.state);
     const keywordSnapshot = this.captureCardKeywordSnapshot(state);
@@ -2447,6 +2458,11 @@ export class DuelRoom extends Room<DuelState> {
       | { handled: true; eventDrafts: DomainEventDraft[] },
     outboxFailureMessage: string,
   ): Promise<void> {
+    if (this.effectBoundary.hasPendingPlayerInteraction()) {
+      this.notifier.sendActionError(client, "Une decision d'effet est en attente.");
+      return;
+    }
+
     const runtime = this.createIsolatedGameplayRuntime();
     const result = executor(runtime);
 
@@ -2478,6 +2494,11 @@ export class DuelRoom extends Room<DuelState> {
       | { handled: true; eventDrafts: DomainEventDraft[] },
     outboxFailureMessage: string,
   ): Promise<void> {
+    if (this.effectBoundary.hasPendingPlayerInteraction()) {
+      this.notifier.sendActionError(client, "Une decision d'effet est en attente.");
+      return;
+    }
+
     const runtime = this.createIsolatedGameplayRuntime();
     const result = executor(runtime);
 
@@ -2508,14 +2529,12 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private adoptIsolatedRuntime(runtime: IsolatedGameplayRuntime): void {
-    adoptRoomDuelState(this.state, runtime.state);
-    this.lifecycle.importState(runtime.lifecycle.exportState());
+    const lifecycleState = runtime.lifecycle.exportState();
+    this.setState(runtime.state);
+    this.installGameplayRuntime(runtime.gameplayRuntime);
+    this.lifecycle = this.createLifecycleForState(this.state);
+    this.lifecycle.importState(lifecycleState);
     this.lifecycle.recordMatchResult();
-    const keywordSnapshot = this.captureCardKeywordSnapshot(this.state);
-    this.effectBoundary.importState(
-      runtime.gameplayRuntime.effectBoundary.exportState(),
-    );
-    this.restoreCardKeywordSnapshot(this.state, keywordSnapshot);
     this.rebuildAllClientViews();
     this.notifier.syncPendingEffectDecision(
       this.effectBoundary.getPendingEffectDecision(),

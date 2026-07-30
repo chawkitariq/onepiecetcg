@@ -173,6 +173,35 @@ function putCharacterInPlay(
   return instanceId;
 }
 
+function retuneAsPicaEndTurnEffectCard(
+  player: DuelPlayer | undefined,
+  instanceId: string,
+): void {
+  if (!player) {
+    throw new Error('player missing');
+  }
+
+  const card = Array.from(player.zones.characters).find(
+    (candidate) => candidate.instanceId === instanceId,
+  );
+
+  if (!card) {
+    throw new Error(`character ${instanceId} missing`);
+  }
+
+  card.cardId = 'OP05-032';
+  card.number = 'OP05-032';
+  card.name = 'Pica';
+  card.type = 'Character';
+  card.cost = 1;
+  card.baseCost = 1;
+  card.basePower = 5000;
+  card.power = 5000;
+  card.counter = 1000;
+  card.text =
+    '[End of Your Turn] (1): Set this Character as active.';
+}
+
 async function createRoomFixture(options?: {
   createStream?: jest.Mock;
   record?: jest.Mock;
@@ -1172,6 +1201,88 @@ describe('DuelRoom event integration', () => {
     await disposeRoom(room);
   });
 
+  it('adopts an isolated end-phase runtime that pauses on an effect decision', async () => {
+    const { room } = await createRoomFixture();
+    const access = asPrivateRoom(room);
+    const firstSessionId = room.state.startingPlayerSessionId;
+    const secondSessionId =
+      firstSessionId === 'session-a' ? 'session-b' : 'session-a';
+
+    await access.handleChooseFirstOrSecond(
+      { sessionId: firstSessionId },
+      { choice: 'first' },
+    );
+    await access.handleMulligan(
+      { sessionId: firstSessionId },
+      { mulligan: false },
+    );
+    await access.handleMulligan(
+      { sessionId: secondSessionId },
+      { mulligan: false },
+    );
+    await advanceToMain(room, firstSessionId);
+
+    const player = room.state.players.get(firstSessionId);
+    const characterInstanceId = putCharacterInPlay(player, 'C-001', true);
+    retuneAsPicaEndTurnEffectCard(player, characterInstanceId);
+
+    await access.handleEndPhase(fakeClient(firstSessionId));
+    await access.handleEndPhase(fakeClient(firstSessionId));
+
+    const pendingDecision = (
+      room as unknown as {
+        effectBoundary: {
+          getPendingEffectDecision: () => {
+            id: string;
+            playerSessionId: string;
+            prompt: { type: string };
+          } | null;
+        };
+      }
+    ).effectBoundary.getPendingEffectDecision();
+
+    expect(room.state.activePlayerSessionId).toBe(secondSessionId);
+    expect(room.state.phase).toBe('refresh');
+    expect(pendingDecision).toEqual(
+      expect.objectContaining({
+        playerSessionId: firstSessionId,
+        prompt: expect.objectContaining({ type: 'confirm' }),
+      }),
+    );
+
+    await disposeRoom(room);
+  });
+
+  it('rejects isolated end-phase commands while an effect decision is pending on the live room', async () => {
+    const { room, record } = await createRoomFixture();
+    const access = asPrivateRoom(room);
+    const requester = fakeClient('session-a');
+    const boundary = (
+      room as unknown as {
+        effectBoundary: {
+          hasPendingPlayerInteraction: () => boolean;
+        };
+      }
+    ).effectBoundary;
+    const phaseBefore = room.state.phase;
+    const turnBefore = room.state.turn;
+
+    jest
+      .spyOn(boundary, 'hasPendingPlayerInteraction')
+      .mockReturnValue(true);
+
+    await access.handleEndPhase(requester);
+
+    expect(requester.send).toHaveBeenCalledWith('actionError', {
+      message: "Une decision d'effet est en attente.",
+    });
+    expect(room.state.phase).toBe(phaseBefore);
+    expect(room.state.turn).toBe(turnBefore);
+    expect(record).toHaveBeenCalledTimes(1);
+
+    await disposeRoom(room);
+  });
+
   it('records specialized card movement events when an effect decision mutates zones', async () => {
     const { room, record } = await createRoomFixture();
     const access = asPrivateRoom(room);
@@ -1849,6 +1960,25 @@ describe('DuelRoom event integration', () => {
     expect(room.state.endReason).toBe(endReasonBefore);
     expect(room.state.winnerSessionId).toBe(winnerBefore);
     expect(room.state.logs).toHaveLength(logsBefore);
+
+    await disposeRoom(room);
+  });
+
+  it('does not append concession events when a player leaves after the match is already finished', async () => {
+    const { room, record } = await createRoomFixture();
+    const firstSessionId = room.state.startingPlayerSessionId;
+    const playerCountBefore = room.state.players.size;
+    const recordCallsBefore = record.mock.calls.length;
+
+    room.state.phase = 'finished';
+    room.state.endReason = 'life';
+    room.state.winnerSessionId =
+      firstSessionId === 'session-a' ? 'session-b' : 'session-a';
+
+    await room.onLeave(fakeClient(firstSessionId) as never, true);
+
+    expect(room.state.players.size).toBe(playerCountBefore - 1);
+    expect(record).toHaveBeenCalledTimes(recordCallsBefore);
 
     await disposeRoom(room);
   });
