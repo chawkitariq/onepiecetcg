@@ -75,7 +75,7 @@ describe('ST15 effect definitions', () => {
   });
 
   it('has correct edition ID', () => {
-    expect(st15EffectDefinitions.editionId).toBe('ST15');
+    expect(st15EffectDefinitions.editionId).toBe('ST-15');
   });
 
   it('counts all defined cards', () => {

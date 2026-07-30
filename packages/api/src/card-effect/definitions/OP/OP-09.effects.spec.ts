@@ -12,7 +12,7 @@ import { specialHandlerDefinitions } from '..';
 
 describe('OP09 effect definitions', () => {
   it('exports the edition definitions', () => {
-    expect(op09EffectDefinitions.editionId).toBe('OP09');
+    expect(op09EffectDefinitions.editionId).toBe('OP-09');
   });
 
   it('has card entries for all OP09 cards', () => {

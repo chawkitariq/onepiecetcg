@@ -225,8 +225,8 @@ describe('ST11 effect definitions', () => {
       expect(decision?.prompt.type).toBe('selectChoice');
       if (decision?.prompt.type === 'selectChoice') {
         expect(decision.prompt.choices).toHaveLength(2);
-        expect(decision.prompt.choices[0].id).toBe('rest');
-        expect(decision.prompt.choices[1].id).toBe('ko');
+        expect(decision.prompt.choices[0].id).toBe('st11-003-rest');
+        expect(decision.prompt.choices[1].id).toBe('st11-003-ko');
       }
     });
   });
@@ -440,8 +440,8 @@ describe('ST11 effect definitions', () => {
         expect(branchAction.type).toBe('chooseActionBranch');
         if (branchAction.type === 'chooseActionBranch') {
           expect(branchAction.choices).toHaveLength(2);
-          expect(branchAction.choices[0].id).toBe('rest');
-          expect(branchAction.choices[1].id).toBe('ko');
+          expect(branchAction.choices[0].id).toBe('st11-003-rest');
+          expect(branchAction.choices[1].id).toBe('st11-003-ko');
         }
       }
     });

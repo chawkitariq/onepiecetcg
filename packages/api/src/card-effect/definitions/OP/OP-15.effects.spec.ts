@@ -75,7 +75,7 @@ describe('OP15 effect definitions', () => {
   });
 
   it('has correct edition ID', () => {
-    expect(op15EffectDefinitions.editionId).toBe('OP15');
+    expect(op15EffectDefinitions.editionId).toBe('OP-15');
   });
 
   it('counts all defined cards', () => {

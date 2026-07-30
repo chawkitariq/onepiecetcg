@@ -7,7 +7,7 @@ import {
   type Card,
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
-import { op01EffectDefinitions } from './definitions/OP-01.effects';
+import { op01EffectDefinitions } from './definitions/OP/OP-01.effects';
 import { EffectEngine, type EffectEngineHost } from './effect-engine';
 import { buildEffectIndexes } from './effect-indexes';
 import type {

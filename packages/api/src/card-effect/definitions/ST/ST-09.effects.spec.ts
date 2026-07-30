@@ -27,7 +27,7 @@ describe('ST09 effect definitions', () => {
     );
 
   it('exports ST09 edition definitions', () => {
-    expect(st09EffectDefinitions.editionId).toBe('ST09');
+    expect(st09EffectDefinitions.editionId).toBe('ST-09');
   });
 
   it('each card has valid effect entries', () => {

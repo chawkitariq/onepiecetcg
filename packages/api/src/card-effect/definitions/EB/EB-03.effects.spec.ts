@@ -9,7 +9,7 @@ describe('EB03 effect definitions', () => {
   });
 
   it('has correct edition ID', () => {
-    expect(eb03EffectDefinitions.editionId).toBe('EB03');
+    expect(eb03EffectDefinitions.editionId).toBe('EB-03');
   });
 
   it('counts all defined cards', () => {

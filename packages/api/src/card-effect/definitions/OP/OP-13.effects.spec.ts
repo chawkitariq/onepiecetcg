@@ -17,7 +17,7 @@ import { createRegistry, makeCard, TestHost } from '../test-utils';
 describe('OP13 effect definitions', () => {
   describe('edition structure', () => {
     it('has the correct edition ID', () => {
-      expect(op13EffectDefinitions.editionId).toBe('OP13');
+      expect(op13EffectDefinitions.editionId).toBe('OP-13');
     });
 
     it('has 104 card definitions', () => {

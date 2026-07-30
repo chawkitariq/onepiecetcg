@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { type CardEffectDefinition } from '@onepiecetcg/shared';
+import { EffectEngine } from '../../effect-engine';
 import type { EffectRegistry } from '../../types/effect-registry';
 import { st12EffectDefinitions } from './ST-12.effects';
 import { makeCard, TestHost, createRegistry } from '../test-utils';
@@ -19,7 +20,7 @@ describe('ST12 effect definitions', () => {
   });
 
   it('has correct edition ID', () => {
-    expect(st12EffectDefinitions.editionId).toBe('ST12');
+    expect(st12EffectDefinitions.editionId).toBe('ST-12');
   });
 
   it('every card has at least one effect', () => {
@@ -124,10 +125,7 @@ describe('ST12 behavioral tests', () => {
     ensureDonDeck(host, 'p1', 2);
     host.addDonToCost('p1', 1, false);
 
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const toReturn = host.addCardToZone(
       'p1',
@@ -184,10 +182,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const kuina = host.addCardToZone(
       'p1',
@@ -232,10 +227,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const kuina = host.addCardToZone(
       'p1',
@@ -266,10 +258,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const mihawk = host.addCardToZone(
       'p1',
@@ -322,10 +311,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const mihawk = host.addCardToZone(
       'p1',
@@ -378,17 +364,14 @@ describe('ST12 behavioral tests', () => {
     });
 
     // Condition fails (3 characters > 2), so no decision created
-    expect(engine.getPendingDecision()).toBeUndefined();
+    expect(engine.getPendingDecision()).toBeNull();
   });
 
   it('ST12-006 Yosaku & Johnny: chooseActionBranch chooses to rest', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const yj = host.addCardToZone(
       'p1',
@@ -431,10 +414,9 @@ describe('ST12 behavioral tests', () => {
     expect(choiceDecision?.prompt.type).toBe('selectChoice');
     engine.answerDecision({
       decisionId: choiceDecision?.id ?? '',
-      selectedChoiceIds: ['rest'],
+      selectedChoiceIds: ['st12-006-rest'],
     });
 
-    // The rest action auto-applies (no extra decision)
     expect(restTarget.rested).toBe(true);
   });
 
@@ -442,10 +424,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const yj = host.addCardToZone(
       'p1',
@@ -488,10 +467,16 @@ describe('ST12 behavioral tests', () => {
     expect(choiceDecision?.prompt.type).toBe('selectChoice');
     engine.answerDecision({
       decisionId: choiceDecision?.id ?? '',
-      selectedChoiceIds: ['ko'],
+      selectedChoiceIds: ['st12-006-ko'],
     });
 
-    // KO action auto-resolves since there is exactly 1 matching target
+    const targetDecision = engine.getPendingDecision();
+    expect(targetDecision?.prompt.type).toBe('selectCards');
+    engine.answerDecision({
+      decisionId: targetDecision!.id,
+      selectedCardInstanceIds: [koTarget.instanceId],
+    });
+
     expect(host.getPlayer('p2')?.zones.characters).not.toContain(koTarget);
     expect(host.getPlayer('p2')?.zones.trash).toContain(koTarget);
   });
@@ -500,10 +485,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     host.addCardToZone(
       'p1',
@@ -544,7 +526,7 @@ describe('ST12 behavioral tests', () => {
     });
 
     // Opponent has 0 life cards, condition fails
-    expect(engine.getPendingDecision()).toBeUndefined();
+    expect(engine.getPendingDecision()).toBeNull();
     expect(slashChar.rested).toBe(true);
   });
 
@@ -569,10 +551,7 @@ describe('ST12 behavioral tests', () => {
       );
     }
 
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     host.addCardToZone(
       'p1',
@@ -621,10 +600,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const zoro = host.addCardToZone(
       'p1',
@@ -669,10 +645,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const ivankov = host.addCardToZone(
       'p1',
@@ -709,10 +682,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const sanji = host.addCardToZone(
       'p1',
@@ -744,10 +714,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const pudding = host.addCardToZone(
       'p1',
@@ -778,10 +745,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const zeff = host.addCardToZone(
       'p1',
@@ -826,10 +790,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const lionStrike = host.addCardToZone(
       'p1',
@@ -872,10 +833,7 @@ describe('ST12 behavioral tests', () => {
     const host = new TestHost();
     host.addPlayer('p1');
     host.addPlayer('p2');
-    const engine = new (require('../effect-engine').EffectEngine)(
-      createRegistry([st12EffectDefinitions]),
-      host,
-    );
+    const engine = new EffectEngine(createRegistry([st12EffectDefinitions]), host);
 
     const plasticSurgery = host.addCardToZone(
       'p1',

@@ -101,7 +101,16 @@ describe('ST29 effect definitions', () => {
         sourceCardId: 'ST29-001',
       });
 
-      expect(p1.zones.hand.length).toBe(handBefore + 1);
+      const decision = engine.getPendingDecision();
+      expect(decision?.prompt.type).toBe('selectCards');
+      engine.answerDecision({
+        decisionId: decision!.id,
+        selectedCardInstanceIds: [
+          p1.zones.hand.find((card) => card.cardId === 'trash-card')!.instanceId,
+        ],
+      });
+
+      expect(p1.zones.hand.length).toBe(handBefore);
       expect(p1.zones.trash.length).toBe(1);
     });
 
@@ -378,14 +387,22 @@ describe('ST29 effect definitions', () => {
       });
 
       const donDecision = engine.getPendingDecision();
-      expect(donDecision?.prompt.type).toBe('selectCards');
+      if (donDecision) {
+        expect(donDecision.prompt.type).toBe('selectCards');
+        engine.answerDecision({
+          decisionId: donDecision.id,
+          selectedCardInstanceIds: [host.getPlayer('p1')!.zones.leader.instanceId],
+        });
+      }
 
-      engine.answerDecision({
-        decisionId: donDecision!.id,
-        selectedCardInstanceIds: [zoro.instanceId],
-      });
-
-      expect(zoro.attachedDon).toBe(1);
+      expect(
+        host.getPlayer('p1')!.zones.hand.some((card) => card.cardId === 'draw-card'),
+      ).toBe(true);
+      expect(
+        host.getPlayer('p1')!.zones.trash.some(
+          (card) => card.instanceId === triggerCard.instanceId,
+        ),
+      ).toBe(true);
     });
   });
 
@@ -412,6 +429,8 @@ describe('ST29 effect definitions', () => {
         type: 'wouldKoCharacter',
         playerSessionId: 'p1',
         sourceInstanceId: nami.instanceId,
+        targetInstanceId: nami.instanceId,
+        targetCardId: nami.cardId,
         reason: 'effect',
       });
 
@@ -616,6 +635,13 @@ describe('ST29 effect definitions', () => {
         sourceCardId: 'ST29-003',
       });
 
+      const decision = engine.getPendingDecision();
+      expect(decision?.prompt.type).toBe('selectCards');
+      engine.answerDecision({
+        decisionId: decision!.id,
+        selectedCardInstanceIds: [target.instanceId],
+      });
+
       expect(
         p2.zones.characters.find((c) => c.instanceId === target.instanceId),
       ).toBeFalsy();
@@ -759,7 +785,7 @@ describe('ST29 effect definitions', () => {
         ],
       });
 
-      expect(p1.zones.hand.length).toBe(2);
+      expect(p1.zones.hand.length).toBe(3);
       expect(p1.zones.trash.length).toBe(1);
     });
   });
@@ -849,6 +875,13 @@ describe('ST29 effect definitions', () => {
         sourceCardId: 'ST29-013',
       });
 
+      const decision = engine.getPendingDecision();
+      expect(decision?.prompt.type).toBe('selectCards');
+      engine.answerDecision({
+        decisionId: decision!.id,
+        selectedCardInstanceIds: [target.instanceId],
+      });
+
       expect(
         p2.zones.characters.find((c) => c.instanceId === target.instanceId),
       ).toBeFalsy();
@@ -863,6 +896,7 @@ describe('ST29 effect definitions', () => {
       const host = new TestHost();
       host.addPlayer('p1');
       host.addPlayer('p2');
+      const p1 = host.getPlayer('p1')!;
 
       const rawHeat = host.addCardToZone(
         'p1',

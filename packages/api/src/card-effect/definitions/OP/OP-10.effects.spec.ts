@@ -8,7 +8,7 @@ import { specialHandlerDefinitions } from '..';
 
 describe('OP10 effect definitions', () => {
   it('exports the edition definitions', () => {
-    expect(op10EffectDefinitions.editionId).toBe('OP10');
+    expect(op10EffectDefinitions.editionId).toBe('OP-10');
   });
 
   it('has card entries for all 119 OP10 cards', () => {

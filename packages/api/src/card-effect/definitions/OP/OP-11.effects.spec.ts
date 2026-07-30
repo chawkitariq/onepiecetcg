@@ -507,7 +507,7 @@ class TestHost implements EffectEngineHost {
 
 describe('OP11 effect definitions', () => {
   it('registers all 98 cards without errors', () => {
-    expect(op11EffectDefinitions.editionId).toBe('OP11');
+    expect(op11EffectDefinitions.editionId).toBe('OP-11');
     expect(op11EffectDefinitions.cards.length).toBeGreaterThan(0);
   });
 

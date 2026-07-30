@@ -11,7 +11,7 @@ import { makeCard, createRegistry, TestHost } from '../test-utils';
 
 describe('OP12 effect definitions', () => {
   it('exports the edition definitions', () => {
-    expect(op12EffectDefinitions.editionId).toBe('OP12');
+    expect(op12EffectDefinitions.editionId).toBe('OP-12');
   });
 
   it('has card entries for all OP12 cards', () => {

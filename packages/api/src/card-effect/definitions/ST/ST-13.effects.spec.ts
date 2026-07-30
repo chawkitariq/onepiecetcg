@@ -9,7 +9,7 @@ import { st13EffectDefinitions } from './ST-13.effects';
 import { specialHandlerDefinitions } from '..';
 import { EffectEngine } from '../../effect-engine';
 import {
-  type TestHost,
+  TestHost,
   createRegistry as testUtilsCreateRegistry,
   makeCard,
 } from '../test-utils';
@@ -75,7 +75,7 @@ describe('ST13 effect definitions', () => {
   });
 
   it('has correct edition ID', () => {
-    expect(st13EffectDefinitions.editionId).toBe('ST13');
+    expect(st13EffectDefinitions.editionId).toBe('ST-13');
   });
 
   it('counts all 19 ST13 cards', () => {

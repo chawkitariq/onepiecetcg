@@ -5,7 +5,7 @@ import { op08118SpecialHandler } from './special/OP08-118.special';
 
 describe('OP08 Effect Definitions', () => {
   it('should export the edition definitions with editionId OP08', () => {
-    expect(op08EffectDefinitions.editionId).toBe('OP08');
+    expect(op08EffectDefinitions.editionId).toBe('OP-08');
   });
 
   it('should have cards array with entries', () => {

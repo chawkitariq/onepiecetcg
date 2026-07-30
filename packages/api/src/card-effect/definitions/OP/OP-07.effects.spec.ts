@@ -6,7 +6,7 @@ import { op07091SpecialHandler } from './special/OP07-091.special';
 
 describe('OP07 effect definitions', () => {
   it('exports cards with the correct edition id', () => {
-    expect(op07EffectDefinitions.editionId).toBe('OP07');
+    expect(op07EffectDefinitions.editionId).toBe('OP-07');
     expect(op07EffectDefinitions.cards.length).toBeGreaterThan(0);
   });
 

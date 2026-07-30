@@ -13,6 +13,7 @@ import type {
   EffectRegistry,
   SpecialHandlerDefinition,
 } from '../../types/effect-registry';
+import { specialHandlerDefinitions } from '..';
 import { op06EffectDefinitions } from './OP-06.effects';
 
 const makeCard = (
@@ -1510,5 +1511,48 @@ describe('op06EffectDefinitions', () => {
     engine.reapplyContinuousEffects();
 
     expect(shiki.mustBeAttackTarget).toBe(true);
+  });
+
+  it('updates OP06-009 Shuraiya base power on block without requiring host.syncCard', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2', {
+      id: 'opp-leader',
+      number: 'opp-leader',
+      name: 'Opponent Leader',
+      type: 'Leader',
+      power: 7000,
+      life: 5,
+    });
+
+    const engine = new EffectEngine(
+      createRegistry([op06EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+
+    const shuraiya = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-009',
+        number: 'OP06-009',
+        name: 'Shuraiya',
+        type: 'Character',
+        cost: 3,
+        power: 4000,
+      }),
+      'shuraiya',
+    );
+
+    expect(() =>
+      engine.handleEvent({
+        type: 'onBlock',
+        playerSessionId: 'p1',
+        sourceInstanceId: shuraiya.instanceId,
+        sourceCardId: 'OP06-009',
+      }),
+    ).not.toThrow();
+
+    expect(shuraiya.basePower).toBe(7000);
   });
 });

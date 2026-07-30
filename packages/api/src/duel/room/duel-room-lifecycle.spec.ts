@@ -76,7 +76,10 @@ describe('DuelRoomLifecycle', () => {
     expect(state.phase).toBe('finished');
     expect(state.endReason).toBe('forfeit');
     expect(state.winnerSessionId).toBe('session-b');
-    expect(addLog).toHaveBeenCalledWith('Alice abandonne la partie.');
+    expect(addLog).toHaveBeenCalledWith(
+      'Alice abandonne la partie.',
+      'session-a',
+    );
     expect(recordMatchResult).toHaveBeenCalledTimes(1);
     expect(recordMatchResult).toHaveBeenCalledWith(
       expect.objectContaining({

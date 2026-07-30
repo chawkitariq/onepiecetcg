@@ -198,7 +198,7 @@ describe('ST25 effect definitions', () => {
       expect(cabaji.continuous).toHaveLength(2);
 
       const blockerEffect = cabaji.continuous![0];
-      expect(blockerEffect.modifier.keywords).toContain('blocker');
+      expect(blockerEffect.modifier.keywords).toContain('mustBeAttackTarget');
       expect(blockerEffect.modifier.cost).toBe(1);
 
       const powerEffect = cabaji.continuous![1];
@@ -457,7 +457,7 @@ describe('ST25 effect definitions', () => {
       const mohji = registry.effectsByCardId['ST25-005'];
       expect(mohji).toBeDefined();
       expect(mohji.continuous).toHaveLength(1);
-      expect(mohji.continuous![0].modifier.keywords).toContain('blocker');
+      expect(mohji.continuous![0].modifier.keywords).toContain('mustBeAttackTarget');
       expect(mohji.continuous![0].modifier.cost).toBe(1);
     });
 
@@ -698,7 +698,7 @@ describe('ST25 effect definitions', () => {
       const contEntry = card!.effects?.find((e) => e.kind === 'continuous');
       expect(contEntry).toBeDefined();
       if (contEntry?.kind === 'continuous') {
-        expect(contEntry.effect.modifier.keywords).toContain('blocker');
+        expect(contEntry.effect.modifier.keywords).toContain('mustBeAttackTarget');
         expect(contEntry.effect.modifier.cost).toBe(1);
       }
       const stdEntry = card!.effects?.find((e) => e.kind === 'standard');
