@@ -3,7 +3,7 @@
 ## Repository scope
 
 This skill is tailored to `/home/verbq/Documents/dev/onepiecetcg`.
-The reusable engine lives in `packages/effect-engine/`. Authored effect-definition source files now live in `packages/cards/effects/`, and the backend in `packages/api/` consumes them through `@onepiecetcg/cards/effects` at runtime.
+The reusable engine lives in `packages/effect-engine/`. Authored effect-definition source files now live in `packages/cards/effects/`, and the backend in `apps/api/` consumes them through `@onepiecetcg/cards/effects` at runtime.
 
 Before changing effect behavior, read:
 
@@ -26,7 +26,7 @@ The execution layer for this skill lives in the skill folder itself:
 - `scripts/run-validate-effects.sh`
   Thin shell wrapper around the Python validator.
 
-These scripts intentionally avoid importing or invoking application-local CLI implementation under `packages/api/src/` or `packages/effect-engine/src/`.
+These scripts intentionally avoid importing or invoking application-local CLI implementation under `apps/api/src/` or `packages/effect-engine/src/`.
 
 ## Project files this skill reads or writes
 

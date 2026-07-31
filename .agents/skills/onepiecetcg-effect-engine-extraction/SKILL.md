@@ -1,6 +1,6 @@
 ---
 name: onepiecetcg-effect-engine-extraction
-description: Extract this repository's card effect runtime out of `packages/api` into a standalone `packages/effect-engine` package. Use when moving `packages/api/src/card-effect/**` into a reusable engine package, defining public effect-engine contracts, retargeting API adapters to `@onepiecetcg/effect-engine`, moving engine-owned tests out of API, deleting compatibility leftovers, or deciding whether effect runtime code belongs in the reusable package, the API room adapters, or shared types.
+description: Extract this repository's card effect runtime out of `apps/api` into a standalone `packages/effect-engine` package. Use when moving `apps/api/src/card-effect/**` into a reusable engine package, defining public effect-engine contracts, retargeting API adapters to `@onepiecetcg/effect-engine`, moving engine-owned tests out of API, deleting compatibility leftovers, or deciding whether effect runtime code belongs in the reusable package, the API room adapters, or shared types.
 ---
 
 # OPTCG Effect Engine Extraction
@@ -23,17 +23,17 @@ Extract the effect engine into its own reusable package without leaving API-spec
    - engine-owned tests
 5. Keep authored effect definitions, special handlers, effect-source indexes, and their dedicated card-level tests in `packages/cards/effects/`.
 6. Expose the package through explicit public exports and public host interfaces. The package must depend on `@onepiecetcg/shared`, not on NestJS, Colyseus, or local API paths.
-7. Reduce `packages/api/src/card-effect/` to API-facing assembly only:
+7. Reduce `apps/api/src/card-effect/` to API-facing assembly only:
    - Nest module
    - Nest service or factory that instantiates the engine
-8. Keep room-specific adapters in `packages/api/src/duel/effects/`:
+8. Keep room-specific adapters in `apps/api/src/duel/effects/`:
    - `createDuelEffectEngineHost`
    - `DuelEffectEventDispatcher`
    - `DuelRoomEffectBoundary`
    - manual trigger fallback and other room orchestration concerns
-9. Retarget API imports to `@onepiecetcg/effect-engine` for runtime code and `@onepiecetcg/cards/effects` for authored effect sources. Do not keep `packages/api/src/card-effect/**` runtime re-export facades unless they are still true API composition roots.
+9. Retarget API imports to `@onepiecetcg/effect-engine` for runtime code and `@onepiecetcg/cards/effects` for authored effect sources. Do not keep `apps/api/src/card-effect/**` runtime re-export facades unless they are still true API composition roots.
 10. Delete compatibility leftovers once imports are updated:
-   - old runtime folders under `packages/api/src/card-effect/`
+   - old runtime folders under `apps/api/src/card-effect/`
    - moved definitions left behind in API or effect-engine
    - stale Jest aliasing added only for the transition
 11. Run the validation loop from `references/project-context.md` until the package and API adapters both pass.

@@ -23,7 +23,7 @@ Use this skill when you need an offline catalog snapshot for effect generation, 
 10. Keep the output deterministic: stable ordering, stable ids, and no duplicate cards inside the same edition file.
 11. Preserve the standalone package contract: each snapshot file must remain a top-level object shaped as `{ editionId, name, cards }`, and the package loaders in `packages/cards/src/index.ts` must still be able to discover and parse it.
 12. When the snapshot is ready, pass it to `onepiecetcg-effect-generation` with `--source-file` if you need to generate or refresh effect definitions without hitting the network.
-13. If you touch the package API or snapshot structure, rerun `packages/web/node_modules/.bin/vitest run --config packages/cards/vitest.config.ts` and `packages/web/node_modules/.bin/tsc -p packages/cards/tsconfig.json --noEmit`.
+13. If you touch the package API or snapshot structure, rerun `pnpm --dir packages/cards test:run` and `pnpm --dir packages/cards exec tsc -p tsconfig.json --noEmit`.
 
 ## Working Rules
 

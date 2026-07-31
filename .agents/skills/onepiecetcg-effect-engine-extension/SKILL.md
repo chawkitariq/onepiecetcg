@@ -32,7 +32,7 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 - Preserve the repository split:
   - `packages/shared/` owns the effect DSL contracts.
   - `packages/effect-engine/src/` owns loading, indexing, runtime resolution, and card-specific handlers.
-  - `packages/api/src/duel/effects/` owns room and duel integration with the reusable engine.
+  - `apps/api/src/duel/effects/` owns room and duel integration with the reusable engine.
 - Always add or update the right test layer for every new engine capability:
   - `packages/effect-engine/src/effect-engine.spec.ts` for reusable runtime or rules behavior
   - `packages/effect-engine/src/effect-loader.spec.ts` when loader or registry wiring changes

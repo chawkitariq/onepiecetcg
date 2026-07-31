@@ -62,7 +62,7 @@ The normalized edition JSON files should be suitable for:
 - `packages/cards/src/index.ts` is the public API surface.
 - The package exports helpers such as `listCatalogEditions`, `loadCatalogEdition`, `loadCatalogCards`, `getCatalogCard`, and `searchCatalogCards`.
 - The package tests live in `packages/cards/src/index.spec.ts`.
-- The package test command currently runs through `packages/web/node_modules/.bin/vitest` with `packages/cards/vitest.config.ts`.
-- The package typecheck currently runs with `packages/web/node_modules/.bin/tsc -p packages/cards/tsconfig.json --noEmit`.
+- The package test command is `pnpm --dir packages/cards test:run`.
+- The package typecheck command is `pnpm --dir packages/cards exec tsc -p tsconfig.json --noEmit`.
 
 If a catalog change affects file discovery, top-level snapshot shape, or card normalization guarantees, validate those package-level contracts too.
