@@ -47,6 +47,7 @@ const reducedMotion = usePreferredReducedMotion()
 const appConfig = useAppConfig()
 const handStackSize = useMeasuredStackSize('handStack')
 const handCardElements = new Map<string, HTMLElement>()
+const hoveredHandCardInstanceId = ref<string | null>(null)
 const visibleHand = computed(() => props.hand ?? [])
 const renderedHandCount = computed(() => {
   if (!props.hidden) {
@@ -102,7 +103,7 @@ function useMeasuredStackSize(templateRefName: string) {
   return size
 }
 
-function stackedCardStyle(index: number, cardCount: number, size: StackContainerSize) {
+function stackedCardStyle(index: number, cardCount: number, size: StackContainerSize, instanceId?: string) {
   const { startPercent, offsetPercent } = getStackedCardLayout(cardCount, size.width, size.height, {
     centered: props.align !== 'start',
     sideSpaceCards: props.align === 'start' ? 0 : undefined
@@ -110,7 +111,7 @@ function stackedCardStyle(index: number, cardCount: number, size: StackContainer
 
   return {
     left: `${startPercent + index * offsetPercent}%`,
-    zIndex: index + 1
+    zIndex: hoveredHandCardInstanceId.value === instanceId ? cardCount + 100 : index + 1
   }
 }
 
@@ -199,10 +200,12 @@ function runHandRevealAnimation(instanceId: string) {
 
 function onCardHover(card: PrivateCard | null) {
   if (!card) {
+    hoveredHandCardInstanceId.value = null
     emit('cardHover', null)
     return
   }
 
+  hoveredHandCardInstanceId.value = card.instanceId
   emit('cardHover', createHoveredDuelCard(card))
 }
 
@@ -256,7 +259,7 @@ watch(
       ref="handStack"
       :data-duel-hand="hidden ? undefined : 'true'"
       :data-opponent-hand="hidden ? 'true' : undefined"
-      class="relative h-28 w-full shrink-0 overflow-visible sm:h-32"
+      class="relative h-24 w-full shrink-0 overflow-visible sm:h-28 xl:h-44"
     >
       <template v-if="hidden">
         <DuelCard
@@ -281,7 +284,7 @@ watch(
           draggable="true"
           :data-instance-id="card.instanceId"
         :data-layout-id="card.instanceId"
-        class="group absolute top-0 z-20 h-full hover:z-50 focus-visible:z-50"
+        class="group absolute top-0 z-20 h-full hover:z-[120] focus-visible:z-[120]"
         :class="[
           'duel-hand-card',
           ...duelHighlightClasses(handCardHighlightState(card.instanceId)),
@@ -290,7 +293,7 @@ watch(
           handRevealAnimation(card.instanceId) ? 'duel-hand-card--revealed' : '',
           'rounded-lg'
           ]"
-          :style="stackedCardStyle(index, visibleHand.length, handStackSize)"
+          :style="stackedCardStyle(index, visibleHand.length, handStackSize, card.instanceId)"
           @click="onCardClick(card.instanceId, $event)"
           @dragstart="onCardDragStart(card.instanceId, $event)"
           @dragend="emit('cardDragEnd', card.instanceId)"

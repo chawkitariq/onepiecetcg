@@ -3172,6 +3172,7 @@ defineShortcuts({
             size="sm"
             color="neutral"
             variant="ghost"
+            class="xl:hidden"
             aria-label="Journal"
             @click="isJournalOpen = true"
           >
@@ -3325,6 +3326,7 @@ defineShortcuts({
 
     <USlideover
       v-model:open="isJournalOpen"
+      class="xl:hidden"
       title="Journal"
       description="Vue en lecture seule de la partie : zones publiques et compteurs des zones cachées adverses."
       :modal="false"
@@ -3396,50 +3398,121 @@ defineShortcuts({
       </template>
     </USlideover>
 
-    <div class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,0.25fr)] gap-4 overflow-hidden p-4">
-      <div class="min-h-0 min-w-0">
-        <div class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(220px,0.42fr)_minmax(0,1fr)] gap-4">
-          <div class="flex min-h-0 flex-col justify-between items-end overflow-hidden py-2">
-            <div class="w-full max-w-[26rem] shrink-0">
-              <DuelHand
-                v-if="shouldShowOpponentHandLane && opponent"
-                hidden
-                :hand-count="opponent.handCount"
-                :deferred-hidden-count="opponentDeferredHandTravelIds.length"
-                align="start"
-              />
-            </div>
+    <div class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 gap-4 overflow-hidden p-4 xl:grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)_minmax(260px,0.25fr)]">
+      <div class="hidden min-h-0 xl:grid xl:grid-rows-[auto_minmax(0,1fr)_auto] xl:gap-4 xl:overflow-hidden xl:py-2">
+        <div class="w-full max-w-[26rem] justify-self-end">
+          <DuelHand
+            v-if="shouldShowOpponentHandLane && opponent"
+            hidden
+            :hand-count="opponent.handCount"
+            :deferred-hidden-count="opponentDeferredHandTravelIds.length"
+            align="start"
+          />
+        </div>
 
-            <div class="w-full max-w-[26rem] shrink-0">
-              <DuelHand
-                v-if="shouldShowSelfHandLane && self"
-                :hand="self.hand"
-                align="start"
-                :draggable-hand-card-ids="draggableHandCardIds"
-                :selected-hand-card-ids="selectedHandCardIds"
-                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
-                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
-                :dragged-hand-card-count="draggedHandCardCount"
-                :invalid-hand-card-ids="invalidHandCardIds"
-                :revealed-hand-card-ids="selfRevealedHandCardIds"
-                :deferred-hand-card-ids="selfDeferredHandCardIds"
-                @card-hover="hoveredCard = $event"
-                @card-click="onSelfHandCardOrCounterClick"
-                @card-drag-start="onSelfHandCardDragStart"
-                @card-drag-end="onSelfHandCardDragEnd"
-                @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
-              />
+        <UCard
+          class="min-h-0 min-w-0"
+          :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+        >
+          <template #header>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-sm font-semibold text-highlighted">
+                  Journal
+                </h2>
+                <p class="text-xs text-muted">
+                  Vue en lecture seule de la partie.
+                </p>
+              </div>
+              <UBadge
+                v-if="unseenLogCount > 0"
+                color="primary"
+                variant="solid"
+                size="sm"
+              >
+                {{ unseenLogCount }}
+              </UBadge>
             </div>
-          </div>
+          </template>
 
-          <div
-            class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden"
+          <UScrollArea
+            class="h-full min-h-0"
+            :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
           >
-            <div
-              ref="board-container"
-              class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
-              @pointermove="onBoardPointerMove"
-            >
+            <div class="mt-auto flex flex-col">
+              <ul class="flex flex-col text-xs">
+                <li
+                  v-if="logs.length === 0"
+                  class="text-muted"
+                >
+                  Aucun événement.
+                </li>
+                <template
+                  v-for="(entry, index) in logs"
+                  :key="entry.id"
+                >
+                  <li class="py-2">
+                    <div class="flex items-start gap-3">
+                      <time
+                        :datetime="entry.createdAt"
+                        class="shrink-0 tabular-nums text-[11px]"
+                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
+                      >
+                        {{ formatLogTime(entry.createdAt) }}
+                      </time>
+                      <p
+                        class="min-w-0 flex-1 leading-relaxed"
+                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
+                      >
+                        <span
+                          v-if="getLogActor(entry)"
+                          class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
+                          :class="getLogActor(entry)?.classes"
+                        >
+                          {{ getLogActor(entry)?.displayName }}
+                        </span>
+                        <span>{{ getLogMessageText(entry) }}</span>
+                      </p>
+                    </div>
+                  </li>
+                  <USeparator
+                    v-if="index < logs.length - 1"
+                    class="opacity-60"
+                  />
+                </template>
+              </ul>
+            </div>
+          </UScrollArea>
+        </UCard>
+
+        <div class="w-full max-w-[26rem] justify-self-end">
+          <DuelHand
+            v-if="shouldShowSelfHandLane && self"
+            :hand="self.hand"
+            align="start"
+            :draggable-hand-card-ids="draggableHandCardIds"
+            :selected-hand-card-ids="selectedHandCardIds"
+            :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+            :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
+            :dragged-hand-card-count="draggedHandCardCount"
+            :invalid-hand-card-ids="invalidHandCardIds"
+            :revealed-hand-card-ids="selfRevealedHandCardIds"
+            :deferred-hand-card-ids="selfDeferredHandCardIds"
+            @card-hover="hoveredCard = $event"
+            @card-click="onSelfHandCardOrCounterClick"
+            @card-drag-start="onSelfHandCardDragStart"
+            @card-drag-end="onSelfHandCardDragEnd"
+            @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
+          />
+        </div>
+      </div>
+
+      <div class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden xl:col-start-2">
+        <div
+          ref="board-container"
+          class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
+          @pointermove="onBoardPointerMove"
+        >
               <div class="pointer-events-none fixed inset-0 z-[130]">
                 <div
                   v-for="overlay in boardTravelOverlays"
@@ -3644,17 +3717,49 @@ defineShortcuts({
                 @leader-click="onSelfLeaderClick"
                 @character-click="onSelfCharacterClick"
               />
-            </div>
-          </div>
         </div>
       </div>
 
       <CardDetailsPanel
+        class="xl:col-start-3"
         :card="resolvedHoveredCard"
         :rows="hoveredCardRows"
         :loading-description="isHoveredCardDetailPending"
         empty-message="Survolez une carte du plateau."
       />
+    </div>
+
+    <div class="mx-auto flex w-full max-w-[2000px] shrink-0 flex-col gap-4 px-4 pb-4 xl:hidden">
+      <div class="w-full">
+        <DuelHand
+          v-if="shouldShowOpponentHandLane && opponent"
+          hidden
+          :hand-count="opponent.handCount"
+          :deferred-hidden-count="opponentDeferredHandTravelIds.length"
+          align="start"
+        />
+      </div>
+
+      <div class="w-full">
+        <DuelHand
+          v-if="shouldShowSelfHandLane && self"
+          :hand="self.hand"
+          align="start"
+          :draggable-hand-card-ids="draggableHandCardIds"
+          :selected-hand-card-ids="selectedHandCardIds"
+          :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+          :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
+          :dragged-hand-card-count="draggedHandCardCount"
+          :invalid-hand-card-ids="invalidHandCardIds"
+          :revealed-hand-card-ids="selfRevealedHandCardIds"
+          :deferred-hand-card-ids="selfDeferredHandCardIds"
+          @card-hover="hoveredCard = $event"
+          @card-click="onSelfHandCardOrCounterClick"
+          @card-drag-start="onSelfHandCardDragStart"
+          @card-drag-end="onSelfHandCardDragEnd"
+          @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
+        />
+      </div>
     </div>
   </div>
 </template>
