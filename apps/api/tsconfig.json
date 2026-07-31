@@ -14,13 +14,11 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
+    "declarationDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": "./",
-    "paths": {
-      "@onepiecetcg/cards": ["../../packages/cards/src/index.ts"],
-      "@onepiecetcg/cards/effects": ["../../packages/cards/effects/index.ts"],
-      "@onepiecetcg/cards/effects/*": ["../../packages/cards/effects/*"]
-    },
     "incremental": true,
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,

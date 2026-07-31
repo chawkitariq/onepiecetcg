@@ -1,6 +1,9 @@
 # Node dependencies
 node_modules
 
+# compiled output
+dist
+
 # Test output
 coverage
 

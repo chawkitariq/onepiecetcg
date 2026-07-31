@@ -5,19 +5,19 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
     },
     "./effects": {
-      "types": "./effects/index.ts",
-      "import": "./effects/index.ts",
-      "default": "./effects/index.ts"
+      "types": "./dist/effects/index.d.ts",
+      "import": "./dist/effects/index.js",
+      "default": "./dist/effects/index.js"
     },
     "./effects/*": {
-      "types": "./effects/*.ts",
-      "import": "./effects/*.ts",
-      "default": "./effects/*.ts"
+      "types": "./dist/effects/*.d.ts",
+      "import": "./dist/effects/*.js",
+      "default": "./dist/effects/*.js"
     }
   },
   "scripts": {
@@ -28,5 +28,8 @@
   },
   "dependencies": {
     "@onepiecetcg/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

@@ -8,6 +8,7 @@
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "outDir": "dist",
+    "declarationDir": "dist",
     "rootDir": "src",
     "skipLibCheck": true,
     "strictNullChecks": true,

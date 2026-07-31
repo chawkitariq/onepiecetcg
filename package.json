@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm --dir packages/shared build && concurrently -n shared,api,web -c blue,green,magenta \"pnpm --dir packages/shared dev\" \"pnpm --dir apps/api start:dev\" \"wait-on tcp:3000 && pnpm --dir apps/web dev\"",
+    "build": "pnpm --dir packages/shared build && pnpm --dir packages/cards build && pnpm --dir packages/duel-engine build && pnpm --dir packages/effect-engine build && pnpm --dir apps/api build && pnpm --dir apps/web build",
+    "dev": "concurrently -n packages,apps -c blue,green \"pnpm --filter \\\"./packages/*\\\" --parallel run dev\" \"wait-on packages/shared/dist/index.d.ts packages/cards/dist/src/index.d.ts packages/cards/dist/effects/index.d.ts packages/duel-engine/dist/index.d.ts packages/effect-engine/dist/index.d.ts && pnpm --dir apps/api dev && wait-on tcp:3000 && pnpm --dir apps/web dev\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
