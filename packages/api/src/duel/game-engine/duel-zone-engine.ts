@@ -157,6 +157,55 @@ export class DuelZoneEngine {
   }
 
   /**
+   * Reorders an ordered hidden zone from an explicit list of existing card ids.
+   */
+  public setZoneOrder(
+    playerSessionId: string,
+    zoneName: 'deck' | 'life',
+    orderedInstanceIds: string[],
+    options?: { faceDown?: boolean },
+  ): boolean {
+    const player = this.deps.state.players.get(playerSessionId);
+    const zone = player?.zones[zoneName];
+
+    if (!player || !zone) {
+      return false;
+    }
+
+    if (orderedInstanceIds.length !== zone.length) {
+      return false;
+    }
+
+    const cardsById = new Map(
+      Array.from(zone, (card) => [card.instanceId, card] as const),
+    );
+    const orderedCards: DuelCard[] = [];
+
+    for (const instanceId of orderedInstanceIds) {
+      const card = cardsById.get(instanceId);
+
+      if (!card || orderedCards.includes(card)) {
+        return false;
+      }
+
+      orderedCards.push(card);
+    }
+
+    zone.splice(0, zone.length, ...orderedCards);
+
+    if (options?.faceDown !== undefined) {
+      for (const card of zone) {
+        card.faceDown = options.faceDown;
+        this.deps.broadcastCardView(card);
+      }
+    }
+
+    this.deps.syncZoneCounts(player);
+    this.deps.effectBoundary.reapplyContinuousEffects();
+    return true;
+  }
+
+  /**
    * Moves DON!! cards from the DON!! deck into the cost area.
    */
   public addDonToCost(

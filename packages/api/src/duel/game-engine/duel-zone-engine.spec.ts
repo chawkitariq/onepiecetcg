@@ -44,6 +44,36 @@ function createPlayer(sessionId: string): DuelPlayer {
 }
 
 describe('DuelZoneEngine', () => {
+  function createZoneEngineFixture() {
+    const state = new DuelState();
+    const player = createPlayer('p1');
+    const effectBoundary = {
+      reapplyContinuousEffects: jest.fn(),
+      applyMoveReplacement: jest.fn(() => false),
+    };
+    const broadcastCardView = jest.fn();
+    const syncZoneCounts = jest.fn();
+    const zoneEngine = new DuelZoneEngine({
+      state,
+      effectBoundary,
+      broadcastCardView,
+      syncZoneCounts,
+      findCardInZone: jest.fn(() => null),
+      takeAttachableDonCards: jest.fn(() => []),
+    });
+
+    state.players.set(player.sessionId, player);
+
+    return {
+      state,
+      player,
+      effectBoundary,
+      broadcastCardView,
+      syncZoneCounts,
+      zoneEngine,
+    };
+  }
+
   it('skips a move when a replacement effect handles it first', () => {
     const state = new DuelState();
     const sourcePlayer = createPlayer('p1');
@@ -78,5 +108,48 @@ describe('DuelZoneEngine', () => {
     );
     expect(sourcePlayer.zones.characters).toContain(source);
     expect(sourcePlayer.zones.trash).toHaveLength(0);
+  });
+
+  it('reorders a hidden zone through an explicit duel command', () => {
+    const { player, effectBoundary, broadcastCardView, syncZoneCounts, zoneEngine } =
+      createZoneEngineFixture();
+    const first = createDuelCard(card, 'p1:life:1', 'p1');
+    const second = createDuelCard(card, 'p1:life:2', 'p1');
+    first.faceDown = false;
+    second.faceDown = false;
+    player.zones.life.push(first, second);
+
+    const reordered = zoneEngine.setZoneOrder(
+      player.sessionId,
+      'life',
+      [second.instanceId, first.instanceId],
+      { faceDown: true },
+    );
+
+    expect(reordered).toBe(true);
+    expect(Array.from(player.zones.life, (lifeCard) => lifeCard.instanceId)).toEqual(
+      [second.instanceId, first.instanceId],
+    );
+    expect(first.faceDown).toBe(true);
+    expect(second.faceDown).toBe(true);
+    expect(broadcastCardView).toHaveBeenCalledTimes(2);
+    expect(syncZoneCounts).toHaveBeenCalledWith(player);
+    expect(effectBoundary.reapplyContinuousEffects).toHaveBeenCalled();
+  });
+
+  it('rejects zone reorder requests that do not describe the full zone', () => {
+    const { player, zoneEngine } = createZoneEngineFixture();
+    const first = createDuelCard(card, 'p1:life:1', 'p1');
+    const second = createDuelCard(card, 'p1:life:2', 'p1');
+    player.zones.life.push(first, second);
+
+    const reordered = zoneEngine.setZoneOrder(player.sessionId, 'life', [
+      second.instanceId,
+    ]);
+
+    expect(reordered).toBe(false);
+    expect(Array.from(player.zones.life, (lifeCard) => lifeCard.instanceId)).toEqual(
+      [first.instanceId, second.instanceId],
+    );
   });
 });

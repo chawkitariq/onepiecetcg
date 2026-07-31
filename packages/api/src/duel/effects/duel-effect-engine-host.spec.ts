@@ -4,6 +4,7 @@ describe('createDuelEffectEngineHost', () => {
   it('exposes explicit card patch commands from the duel runtime', () => {
     const patchCardStatus = jest.fn();
     const patchCardStats = jest.fn();
+    const setZoneOrder = jest.fn().mockReturnValue(true);
 
     const host = createDuelEffectEngineHost({
       state: {} as never,
@@ -14,6 +15,7 @@ describe('createDuelEffectEngineHost', () => {
       getCards: jest.fn().mockReturnValue([]),
       playCard: jest.fn().mockReturnValue(true),
       moveCard: jest.fn(),
+      setZoneOrder,
       shuffleDeck: jest.fn(),
       drawCard: jest.fn().mockReturnValue(null),
       trashTopDeckCards: jest.fn().mockReturnValue([]),
@@ -26,10 +28,18 @@ describe('createDuelEffectEngineHost', () => {
       patchCardStats,
     });
 
-    host.patchCardStatus?.('card-1', { rested: true, effectNegated: true });
+    host.patchCardStatus?.('card-1', {
+      faceDown: true,
+      rested: true,
+      effectNegated: true,
+    });
     host.patchCardStats?.('card-1', { basePower: 7000, attachedDon: 2 });
+    host.setZoneOrder('player-1', 'life', ['life-2', 'life-1'], {
+      faceDown: true,
+    });
 
     expect(patchCardStatus).toHaveBeenCalledWith('card-1', {
+      faceDown: true,
       rested: true,
       effectNegated: true,
     });
@@ -37,5 +47,11 @@ describe('createDuelEffectEngineHost', () => {
       basePower: 7000,
       attachedDon: 2,
     });
+    expect(setZoneOrder).toHaveBeenCalledWith(
+      'player-1',
+      'life',
+      ['life-2', 'life-1'],
+      { faceDown: true },
+    );
   });
 });

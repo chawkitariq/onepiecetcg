@@ -30,6 +30,7 @@ export type DuelEffectEngineHostDeps = {
   ) => DuelCard[];
   playCard: EffectEngineHost['playCard'];
   moveCard: EffectEngineHost['moveCard'];
+  setZoneOrder: EffectEngineHost['setZoneOrder'];
   shuffleDeck: (playerSessionId: string) => void;
   drawCard: (playerSessionId: string) => DuelCard | null;
   trashTopDeckCards: (playerSessionId: string, amount: number) => DuelCard[];
@@ -74,6 +75,7 @@ export function createDuelEffectEngineHost(
     getCards: deps.getCards,
     playCard: deps.playCard,
     moveCard: deps.moveCard,
+    setZoneOrder: deps.setZoneOrder,
     shuffleDeck: deps.shuffleDeck,
     drawCard: deps.drawCard,
     trashTopDeckCards: deps.trashTopDeckCards,

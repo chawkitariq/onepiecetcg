@@ -1,4 +1,3 @@
-import { ArraySchema } from '@colyseus/schema';
 import type { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
 
 type ManualTriggerFallbackState = {
@@ -19,7 +18,12 @@ export type DuelManualTriggerManagerDeps = {
   addLog: (message: string) => void;
   getPlayer: (sessionId: string) => DuelPlayer | undefined;
   syncPlayer: (playerSessionId: string) => void;
-  broadcastCardView: (card: DuelCard) => void;
+  moveCard: (
+    card: DuelCard,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ) => void;
 };
 
 /**
@@ -30,18 +34,6 @@ export class DuelManualTriggerManager {
   private pendingManualTrigger: ManualTriggerFallbackState | null = null;
 
   public constructor(private readonly deps: DuelManualTriggerManagerDeps) {}
-
-  /**
-   * Prepends a moved card without detaching its Colyseus change tree.
-   */
-  private unshiftIntoZone(zone: ArraySchema<DuelCard>, card: DuelCard): void {
-    zone.push(card);
-    zone.move(() => {
-      for (let index = zone.length - 1; index > 0; index -= 1) {
-        [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
-      }
-    });
-  }
 
   /**
    * Returns whether a manual trigger fallback decision is currently pending.
@@ -107,19 +99,17 @@ export class DuelManualTriggerManager {
     }
 
     if (activate) {
-      this.unshiftIntoZone(defender.zones.trash, card);
-      this.deps.broadcastCardView(card);
+      this.deps.moveCard(card, defender.sessionId, 'trash');
       this.deps.addLog(
         `${defender.displayName} active le Declenchement de ${card.name} et l'ecarte (effet a appliquer manuellement).`,
       );
     } else {
-      defender.zones.hand.push(card);
+      this.deps.moveCard(card, defender.sessionId, 'hand');
       this.deps.addLog(
         `${defender.displayName} ajoute ${card.name} a sa main sans activer le Declenchement.`,
       );
     }
 
-    this.deps.syncPlayer(defender.sessionId);
     this.clear();
     return { ok: true };
   }

@@ -79,6 +79,50 @@ function createBoundaryFixture() {
   state.players.set(alice.sessionId, alice);
   state.players.set(bob.sessionId, bob);
 
+  const moveCard = (
+    card: import('@onepiecetcg/shared').DuelCard,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+  ) => {
+    for (const player of state.players.values()) {
+      for (const zone of [
+        'deck',
+        'donDeck',
+        'hand',
+        'life',
+        'characters',
+        'cost',
+        'trash',
+      ] as const) {
+        const index = player.zones[zone].findIndex(
+          (candidate) => candidate.instanceId === card.instanceId,
+        );
+
+        if (index >= 0) {
+          player.zones[zone].splice(index, 1);
+          break;
+        }
+      }
+    }
+
+    const destinationPlayer = state.players.get(destinationPlayerSessionId);
+
+    if (!destinationPlayer) {
+      return;
+    }
+
+    card.ownerSessionId = destinationPlayerSessionId;
+
+    if (destinationZone === 'trash') {
+      destinationPlayer.zones.trash.unshift(card);
+    } else if (destinationZone === 'hand') {
+      destinationPlayer.zones.hand.push(card);
+    }
+
+    broadcasted.push(card.instanceId);
+    synced.push(destinationPlayerSessionId);
+  };
+
   const boundary = new DuelRoomEffectBoundary({
     state,
     addLog: (message) => {
@@ -89,7 +133,9 @@ function createBoundaryFixture() {
       sessionId === alice.sessionId ? bob.sessionId : alice.sessionId,
     getCard: () => null,
     getCards: () => [],
-    moveCard: () => undefined,
+    playCard: () => false,
+    moveCard,
+    setZoneOrder: () => false,
     shuffleDeck: () => undefined,
     drawCard: () => null,
     trashTopDeckCards: () => [],
@@ -100,9 +146,7 @@ function createBoundaryFixture() {
     syncPlayer: (sessionId) => {
       synced.push(sessionId);
     },
-    broadcastCardView: (card) => {
-      broadcasted.push(card.instanceId);
-    },
+    broadcastCardView: () => undefined,
   });
 
   return { state, logs, synced, broadcasted, alice, bob, boundary };
@@ -172,7 +216,7 @@ describe('DuelRoomEffectBoundary', () => {
     expect(result).toBe('engineTrigger');
     expect(alice.zones.trash).toContain(revealedCard);
     expect(broadcasted).toEqual([revealedCard.instanceId]);
-    expect(synced).toEqual([]);
+    expect(synced).toEqual([alice.sessionId]);
     expect(boundary.hasPendingPlayerInteraction()).toBe(false);
   });
 

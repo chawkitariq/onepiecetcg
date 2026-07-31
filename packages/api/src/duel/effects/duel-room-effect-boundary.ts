@@ -58,12 +58,12 @@ export class DuelRoomEffectBoundary {
       addLog: deps.addLog,
       getPlayer: deps.getPlayer,
       syncPlayer: deps.syncPlayer,
-      broadcastCardView: deps.broadcastCardView,
+      moveCard: deps.moveCard,
     });
     this.lifeCards = new DuelLifeCardResolutionEngine({
       addLog: deps.addLog,
       syncPlayer: deps.syncPlayer,
-      broadcastCardView: deps.broadcastCardView,
+      moveCard: deps.moveCard,
       hasLocalTriggerDefinition: (cardId) =>
         this.dispatcher.hasLocalTriggerDefinition(cardId),
       emitTriggerEvent: (playerSessionId, card) =>

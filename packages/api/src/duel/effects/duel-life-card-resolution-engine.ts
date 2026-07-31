@@ -1,4 +1,3 @@
-import { ArraySchema } from '@colyseus/schema';
 import type { DuelCard, DuelPlayer } from '@onepiecetcg/shared';
 
 /**
@@ -7,7 +6,12 @@ import type { DuelCard, DuelPlayer } from '@onepiecetcg/shared';
 export type DuelLifeCardResolutionEngineDeps = {
   addLog: (message: string) => void;
   syncPlayer: (playerSessionId: string) => void;
-  broadcastCardView: (card: DuelCard) => void;
+  moveCard: (
+    card: DuelCard,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ) => void;
   hasLocalTriggerDefinition: (cardId: string) => boolean;
   emitTriggerEvent: (playerSessionId: string, card: DuelCard) => void;
   queueManualTriggerFallback: (
@@ -25,18 +29,6 @@ export class DuelLifeCardResolutionEngine {
   public constructor(private readonly deps: DuelLifeCardResolutionEngineDeps) {}
 
   /**
-   * Prepends a moved card without detaching its Colyseus change tree.
-   */
-  private unshiftIntoZone(zone: ArraySchema<DuelCard>, card: DuelCard): void {
-    zone.push(card);
-    zone.move(() => {
-      for (let index = zone.length - 1; index > 0; index -= 1) {
-        [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
-      }
-    });
-  }
-
-  /**
    * Resolves a revealed life card into hand, trigger pipeline, or manual
    * fallback depending on authored support.
    */
@@ -45,8 +37,7 @@ export class DuelLifeCardResolutionEngine {
     revealedCard: DuelCard,
   ): 'addedToHand' | 'engineTrigger' | 'manualFallback' {
     if (this.deps.hasLocalTriggerDefinition(revealedCard.cardId)) {
-      this.unshiftIntoZone(defender.zones.trash, revealedCard);
-      this.deps.broadcastCardView(revealedCard);
+      this.deps.moveCard(revealedCard, defender.sessionId, 'trash');
       this.deps.emitTriggerEvent(defender.sessionId, revealedCard);
       return 'engineTrigger';
     }
@@ -60,8 +51,7 @@ export class DuelLifeCardResolutionEngine {
       return 'manualFallback';
     }
 
-    defender.zones.hand.push(revealedCard);
-    this.deps.syncPlayer(defender.sessionId);
+    this.deps.moveCard(revealedCard, defender.sessionId, 'hand');
     this.deps.addLog(
       `${defender.displayName} subit 1 degat et ajoute la carte de Vie a sa main.`,
     );

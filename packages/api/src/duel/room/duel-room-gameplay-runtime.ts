@@ -190,6 +190,13 @@ export function createDuelRoomGameplayRuntime(
         destinationZone,
         options,
       ),
+    setZoneOrder: (playerSessionId, zone, orderedInstanceIds, options) =>
+      zoneEngineRef.current?.setZoneOrder(
+        playerSessionId,
+        zone,
+        orderedInstanceIds,
+        options,
+      ) ?? false,
     shuffleDeck: (playerSessionId) => {
       const player = input.state.players.get(playerSessionId);
 
@@ -251,6 +258,9 @@ export function createDuelRoomGameplayRuntime(
         return null;
       }
 
+      if (patch.faceDown !== undefined) {
+        card.faceDown = patch.faceDown;
+      }
       if (patch.rested !== undefined) {
         card.rested = patch.rested;
       }
