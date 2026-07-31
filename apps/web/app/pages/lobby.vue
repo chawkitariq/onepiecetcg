@@ -101,6 +101,9 @@ const logs = computed(() => {
   return colyseusArrayValues<DuelLogEntry>(room.value?.state.logs)
 })
 
+const visibleLobbyLogs = computed(() => logs.value.filter(log => !isRedundantSelfJoinLog(log)))
+const isWaitingForOpponent = computed(() => Boolean(room.value) && players.value.length < 2)
+
 const accentToken = computed(() => colorTokens[selectedDeckSummary.value?.leader?.colors[0] ?? ''] ?? fallbackColorToken)
 const accentStyle = computed(() => ({ '--accent': accentToken.value.hex }))
 
@@ -125,6 +128,12 @@ function resolveLogActor(sessionId: string) {
 
 function getLogMessageText(log: DuelLogEntry) {
   return getDuelLogMessageText(log, resolveLogActor(log.actorSessionId))
+}
+
+function isRedundantSelfJoinLog(log: DuelLogEntry) {
+  return Boolean(room.value?.sessionId)
+    && log.actorSessionId === room.value?.sessionId
+    && log.message.endsWith('a rejoint la room avec un deck valide.')
 }
 
 function selectDeck(deckId: string) {
@@ -751,9 +760,25 @@ onBeforeUnmount(() => {
 
         <USeparator class="my-4" />
 
-        <ul class="space-y-1 text-sm text-default">
+        <div
+          v-if="isWaitingForOpponent && visibleLobbyLogs.length === 0"
+          class="flex items-center gap-3 rounded-lg border border-default bg-elevated/60 px-4 py-3"
+        >
+          <span class="relative flex size-2.5 shrink-0">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-(--accent) opacity-75 motion-reduce:animate-none" />
+            <span class="relative inline-flex size-2.5 rounded-full bg-(--accent)" />
+          </span>
+          <p class="min-w-0 text-sm text-muted">
+            Recherche d'un adversaire...
+          </p>
+        </div>
+
+        <ul
+          v-else
+          class="space-y-1 text-sm text-default"
+        >
           <li
-            v-for="log in logs"
+            v-for="log in visibleLobbyLogs"
             :key="log.id"
             class="flex items-start gap-2"
           >
@@ -767,7 +792,7 @@ onBeforeUnmount(() => {
             <span :class="getDuelLogLevelPresentation(log.level).toneClass">{{ getLogMessageText(log) }}</span>
           </li>
           <li
-            v-if="logs.length === 0"
+            v-if="visibleLobbyLogs.length === 0"
             class="text-muted"
           >
             Aucun événement.

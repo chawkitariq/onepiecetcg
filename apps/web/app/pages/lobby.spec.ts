@@ -272,6 +272,81 @@ describe('lobby page', () => {
     expect(forms[0]?.props('validateOn')).toEqual(['input', 'change'])
     expect(forms[1]?.props('validateOn')).toEqual(['input', 'change'])
   })
+
+  it('hides the redundant self-join log while keeping opponent join activity', async () => {
+    const deck = createDeck()
+    apiMock
+      .mockResolvedValueOnce({ decks: [deck] })
+      .mockResolvedValueOnce({ cards: [createLeaderCard()] })
+      .mockResolvedValueOnce({ rooms: [] })
+
+    room.value = {
+      roomId: 'room-123',
+      sessionId: 'self-session',
+      state: {
+        players: new Map([
+          ['self-session', { sessionId: 'self-session', displayName: 'Anonymous', ready: true, connected: true }],
+          ['opponent-session', { sessionId: 'opponent-session', displayName: 'Marshall', ready: true, connected: true }]
+        ]),
+        logs: [
+          {
+            id: 'log-self',
+            actorSessionId: 'self-session',
+            level: 'system',
+            message: 'Anonymous a rejoint la room avec un deck valide.',
+            createdAt: '2026-07-31T12:00:00.000Z'
+          },
+          {
+            id: 'log-opponent',
+            actorSessionId: 'opponent-session',
+            level: 'system',
+            message: 'Marshall a rejoint la room avec un deck valide.',
+            createdAt: '2026-07-31T12:01:00.000Z'
+          }
+        ]
+      }
+    } as any
+
+    const wrapper = mountLobby()
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Anonymous a rejoint la room avec un deck valide.')
+    expect(wrapper.text()).toContain('Marshall')
+    expect(wrapper.text()).toContain('a rejoint la room avec un deck valide.')
+  })
+
+  it('shows a waiting indicator while searching for an opponent', async () => {
+    const deck = createDeck()
+    apiMock
+      .mockResolvedValueOnce({ decks: [deck] })
+      .mockResolvedValueOnce({ cards: [createLeaderCard()] })
+      .mockResolvedValueOnce({ rooms: [] })
+
+    room.value = {
+      roomId: 'room-123',
+      sessionId: 'self-session',
+      state: {
+        players: new Map([
+          ['self-session', { sessionId: 'self-session', displayName: 'Anonymous', ready: true, connected: true }]
+        ]),
+        logs: [
+          {
+            id: 'log-self',
+            actorSessionId: 'self-session',
+            level: 'system',
+            message: 'Anonymous a rejoint la room avec un deck valide.',
+            createdAt: '2026-07-31T12:00:00.000Z'
+          }
+        ]
+      }
+    } as any
+
+    const wrapper = mountLobby()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Recherche d\'un adversaire...')
+    expect(wrapper.text()).not.toContain('Aucun événement.')
+  })
 })
 
 async function flushPromises() {
