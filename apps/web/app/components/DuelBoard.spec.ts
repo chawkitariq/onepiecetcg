@@ -465,8 +465,15 @@ const duelHandStub = defineComponent({
 
 const defaultStub = defineComponent({
   name: 'DefaultStub',
-  setup(_, { slots }) {
-    return () => h('div', slots.default?.())
+  setup(_, { slots, attrs }) {
+    return () => h('div', attrs, slots.default?.())
+  }
+})
+
+const scrollAreaStub = defineComponent({
+  name: 'UScrollArea',
+  setup(_, { slots, attrs }) {
+    return () => h('div', attrs, slots.default?.())
   }
 })
 
@@ -637,7 +644,7 @@ describe('DuelBoard drag and drop', () => {
           UContainer: defaultStub,
           UCard: defaultStub,
           USeparator: defaultStub,
-          UScrollArea: defaultStub,
+          UScrollArea: scrollAreaStub,
           UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
           DuelAttackArrow: duelAttackArrowStub,
@@ -1807,6 +1814,54 @@ describe('DuelBoard drag and drop', () => {
       top: expect.any(Number),
       behavior: 'smooth'
     })
+  })
+
+  it('supports dragging the journal to scroll through entries', async () => {
+    logs.value = Array.from({ length: 3 }, (_, index) =>
+      createLogEntry(`log-${index + 1}`, `self log ${index + 1}`, {
+        actorSessionId: 'self',
+        createdAt: `2026-07-24T10:0${index}:00.000Z`
+      })
+    )
+
+    const wrapper = mountBoard()
+    const journalDragArea = wrapper.get('[data-test="journal-scroll-drag-area"]')
+    const journalScrollArea = wrapper.get('[data-test="journal-scroll-area"]').element as HTMLElement
+
+    Object.defineProperty(journalScrollArea, 'scrollHeight', {
+      configurable: true,
+      value: 600
+    })
+    Object.defineProperty(journalScrollArea, 'clientHeight', {
+      configurable: true,
+      value: 200
+    })
+    journalScrollArea.scrollTop = 180
+
+    await journalDragArea.trigger('pointerdown', {
+      button: 0,
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientY: 180
+    })
+    await vi.advanceTimersByTimeAsync(16)
+    await journalDragArea.trigger('pointermove', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientY: 140
+    })
+
+    expect(journalScrollArea.scrollTop).toBe(220)
+
+    await vi.advanceTimersByTimeAsync(16)
+    await journalDragArea.trigger('pointerup', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientY: 140
+    })
+    await vi.advanceTimersByTimeAsync(48)
+
+    expect(journalScrollArea.scrollTop).toBeGreaterThan(220)
   })
 
   it('shows a global animated feedback line for attack logs', async () => {

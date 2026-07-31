@@ -150,6 +150,19 @@ type ScrollAreaInstance = {
 }
 
 type ScrollAreaRef = HTMLElement | ScrollAreaInstance | null
+type JournalDragSession = {
+  pointerId: number
+  anchorY: number
+  anchorScrollTop: number
+  previousY: number
+  previousTimestamp: number
+  velocityPxPerMs: number
+}
+
+const JOURNAL_RELEASE_MIN_VELOCITY = 0.05
+const JOURNAL_RELEASE_STOP_VELOCITY = 0.01
+const JOURNAL_RELEASE_FRICTION = 0.92
+const JOURNAL_RELEASE_FALLBACK_FRAME_MS = 16
 
 const api = useApi()
 const hoveredCard = ref<HoveredDuelCard | null>(null)
@@ -165,6 +178,8 @@ const journalEnd = useTemplateRef<HTMLElement>('journal-end')
 const isJournalOpen = ref(false)
 const seenLogCount = ref(0)
 const unseenLogCount = computed(() => Math.max(logs.value.length - seenLogCount.value, 0))
+const journalDragSession = ref<JournalDragSession | null>(null)
+let journalReleaseAnimationFrame: number | null = null
 const pendingCharacterInstanceId = ref<string | null>(null)
 const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
@@ -1390,6 +1405,7 @@ function getLogMessageText(entry: DuelLogEntry) {
 }
 
 async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
+  stopJournalReleaseMomentum()
   await nextTick()
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
@@ -1425,6 +1441,128 @@ function resolveJournalScrollElement(target: ScrollAreaRef | undefined) {
   return null
 }
 
+function resolveJournalEventTimestamp(event: PointerEvent) {
+  return event.timeStamp > 0 ? event.timeStamp : performance.now()
+}
+
+function stopJournalReleaseMomentum() {
+  if (journalReleaseAnimationFrame === null) {
+    return
+  }
+
+  cancelAnimationFrame(journalReleaseAnimationFrame)
+  journalReleaseAnimationFrame = null
+}
+
+function startJournalReleaseMomentum(initialVelocity: number) {
+  if (reducedMotion.value === 'reduce' || Math.abs(initialVelocity) < JOURNAL_RELEASE_MIN_VELOCITY) {
+    return
+  }
+
+  stopJournalReleaseMomentum()
+
+  let velocityPxPerMs = initialVelocity
+  let previousFrameTimestamp: number | null = null
+
+  // Keep the journal coasting briefly after release so mouse dragging feels less abrupt.
+  const step = (timestamp: number) => {
+    const element = resolveJournalScrollElement(journalScrollArea.value)
+
+    if (!element) {
+      journalReleaseAnimationFrame = null
+      return
+    }
+
+    const deltaMs = previousFrameTimestamp === null
+      ? JOURNAL_RELEASE_FALLBACK_FRAME_MS
+      : Math.max(timestamp - previousFrameTimestamp, 1)
+    previousFrameTimestamp = timestamp
+
+    element.scrollTop += velocityPxPerMs * deltaMs
+    velocityPxPerMs *= JOURNAL_RELEASE_FRICTION
+
+    if (Math.abs(velocityPxPerMs) < JOURNAL_RELEASE_STOP_VELOCITY) {
+      journalReleaseAnimationFrame = null
+      return
+    }
+
+    journalReleaseAnimationFrame = requestAnimationFrame(step)
+  }
+
+  journalReleaseAnimationFrame = requestAnimationFrame(step)
+}
+
+function onJournalPointerDown(event: PointerEvent) {
+  if (event.button !== 0 || event.pointerType === 'touch') {
+    return
+  }
+
+  const element = resolveJournalScrollElement(journalScrollArea.value)
+  const surface = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+
+  if (!element || !surface || element.scrollHeight <= element.clientHeight) {
+    return
+  }
+
+  stopJournalReleaseMomentum()
+
+  const timestamp = resolveJournalEventTimestamp(event)
+
+  journalDragSession.value = {
+    pointerId: event.pointerId,
+    anchorY: event.clientY,
+    anchorScrollTop: element.scrollTop,
+    previousY: event.clientY,
+    previousTimestamp: timestamp,
+    velocityPxPerMs: 0
+  }
+
+  if (typeof surface.setPointerCapture === 'function') {
+    surface.setPointerCapture(event.pointerId)
+  }
+
+  event.preventDefault()
+}
+
+function onJournalPointerMove(event: PointerEvent) {
+  if (!journalDragSession.value || journalDragSession.value.pointerId !== event.pointerId) {
+    return
+  }
+
+  const element = resolveJournalScrollElement(journalScrollArea.value)
+
+  if (!element) {
+    journalDragSession.value = null
+    return
+  }
+
+  const deltaY = event.clientY - journalDragSession.value.anchorY
+  const timestamp = resolveJournalEventTimestamp(event)
+  const deltaSinceLastMove = event.clientY - journalDragSession.value.previousY
+  const deltaTime = Math.max(timestamp - journalDragSession.value.previousTimestamp, 1)
+
+  element.scrollTop = journalDragSession.value.anchorScrollTop - deltaY
+  journalDragSession.value.velocityPxPerMs = -(deltaSinceLastMove / deltaTime)
+  journalDragSession.value.previousY = event.clientY
+  journalDragSession.value.previousTimestamp = timestamp
+  event.preventDefault()
+}
+
+function endJournalDrag(event: PointerEvent) {
+  if (!journalDragSession.value || journalDragSession.value.pointerId !== event.pointerId) {
+    return
+  }
+
+  const surface = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+
+  if (surface && typeof surface.releasePointerCapture === 'function') {
+    surface.releasePointerCapture(event.pointerId)
+  }
+
+  startJournalReleaseMomentum(journalDragSession.value.velocityPxPerMs)
+  journalDragSession.value = null
+}
+
 watch(() => logs.value.length, async (newLength, previousLength) => {
   if (newLength <= previousLength) {
     return
@@ -1451,6 +1589,10 @@ watch(isJournalOpen, async (open) => {
 
 onMounted(() => {
   seenLogCount.value = logs.value.length
+})
+
+onBeforeUnmount(() => {
+  stopJournalReleaseMomentum()
 })
 
 watch(errorMessage, (message) => {
@@ -3367,64 +3509,74 @@ defineShortcuts({
     >
       <template #body>
         <div class="flex h-full min-h-0 flex-col gap-2">
-          <UScrollArea
-            ref="journal-scroll-area"
-            class="journal-scroll-root flex-1 min-h-0"
-            :ui="{ root: 'min-h-0 flex-1 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }"
+          <div
+            class="flex min-h-0 flex-1 cursor-grab touch-none active:cursor-grabbing"
+            data-test="journal-scroll-drag-area"
+            @pointerdown="onJournalPointerDown"
+            @pointermove="onJournalPointerMove"
+            @pointerup="endJournalDrag"
+            @pointercancel="endJournalDrag"
           >
-            <div class="mt-auto flex flex-col">
-              <ul class="flex flex-col text-xs">
-                <li
-                  v-if="logs.length === 0"
-                  class="text-muted"
-                >
-                  Aucun événement.
-                </li>
-                <template
-                  v-for="(entry, index) in logs"
-                  :key="entry.id"
-                >
+            <UScrollArea
+              ref="journal-scroll-area"
+              class="journal-scroll-root flex-1 min-h-0"
+              data-test="journal-scroll-area"
+              :ui="{ root: 'min-h-0 flex-1 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }"
+            >
+              <div class="mt-auto flex flex-col">
+                <ul class="flex flex-col text-xs">
                   <li
-                    class="py-2"
-                    data-test="journal-entry"
+                    v-if="logs.length === 0"
+                    class="text-muted"
                   >
-                    <div class="flex items-start gap-3">
-                      <time
-                        :datetime="entry.createdAt"
-                        class="shrink-0 tabular-nums text-[11px]"
-                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
-                      >
-                        {{ formatLogTime(entry.createdAt) }}
-                      </time>
-                      <p
-                        class="min-w-0 flex-1 leading-relaxed"
-                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
-                      >
-                        <span
-                          v-if="getLogActor(entry)"
-                          class="mr-2 text-[10px] font-medium tracking-[0.04em]"
-                          :class="getLogActor(entry)?.classes"
-                          data-test="journal-actor"
-                        >
-                          [{{ getLogActor(entry)?.displayName }}]
-                        </span>
-                        <span>{{ getLogMessageText(entry) }}</span>
-                      </p>
-                    </div>
+                    Aucun événement.
                   </li>
-                  <USeparator
-                    v-if="index < logs.length - 1"
-                    class="opacity-60"
-                  />
-                </template>
-              </ul>
-              <div
-                ref="journal-end"
-                aria-hidden="true"
-                class="h-px w-full"
-              />
-            </div>
-          </UScrollArea>
+                  <template
+                    v-for="(entry, index) in logs"
+                    :key="entry.id"
+                  >
+                    <li
+                      class="py-2"
+                      data-test="journal-entry"
+                    >
+                      <div class="flex items-start gap-3">
+                        <time
+                          :datetime="entry.createdAt"
+                          class="shrink-0 tabular-nums text-[11px]"
+                          :class="getDuelLogLevelPresentation(entry.level).toneClass"
+                        >
+                          {{ formatLogTime(entry.createdAt) }}
+                        </time>
+                        <p
+                          class="min-w-0 flex-1 leading-relaxed"
+                          :class="getDuelLogLevelPresentation(entry.level).toneClass"
+                        >
+                          <span
+                            v-if="getLogActor(entry)"
+                            class="mr-2 text-[10px] font-medium tracking-[0.04em]"
+                            :class="getLogActor(entry)?.classes"
+                            data-test="journal-actor"
+                          >
+                            [{{ getLogActor(entry)?.displayName }}]
+                          </span>
+                          <span>{{ getLogMessageText(entry) }}</span>
+                        </p>
+                      </div>
+                    </li>
+                    <USeparator
+                      v-if="index < logs.length - 1"
+                      class="opacity-60"
+                    />
+                  </template>
+                </ul>
+                <div
+                  ref="journal-end"
+                  aria-hidden="true"
+                  class="h-px w-full"
+                />
+              </div>
+            </UScrollArea>
+          </div>
 
           <div
             v-if="status === 'connecting'"
