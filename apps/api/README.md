@@ -39,6 +39,7 @@ Copy `.env.example` to `.env` and adjust as needed. Defaults match the root `doc
 | `DATABASE_URL` | Optional: a single connection string that overrides the `DATABASE_*` fields above. |
 | `BETTER_AUTH_SECRET` | Better Auth signing secret. Change this for anything beyond local development. |
 | `BETTER_AUTH_URL` | Base URL Better Auth uses for callbacks. |
+| `AUTH_ANONYMOUS_ENABLED` | Enables Better Auth's anonymous sign-in endpoint. Defaults to `true` only when `NODE_ENV=development`, otherwise `false`. |
 | `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAME_SITE` | Session cookie behavior; matters most for cross-domain cookies between `api` and `web` in production. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | OAuth provider credentials. Optional in local development if you only use anonymous auth; required for the provider(s) you want to test. |
 
@@ -46,7 +47,7 @@ Copy `.env.example` to `.env` and adjust as needed. Defaults match the root `doc
 
 Production sign-in is OAuth-only (Google and Discord), handled by [Better Auth](https://better-auth.com) mounted inside NestJS via the community package `@thallesp/nestjs-better-auth`.
 
-Local development also enables Better Auth's anonymous plugin when `NODE_ENV=development`, so contributors can sign in without configuring OAuth. This path is fail-closed: any other `NODE_ENV` value disables anonymous auth, including production.
+Anonymous sign-in is controlled by `AUTH_ANONYMOUS_ENABLED`. If you leave that variable unset, the API preserves the old fail-closed default: `true` only when `NODE_ENV=development`, `false` otherwise.
 
 ## Commands
 

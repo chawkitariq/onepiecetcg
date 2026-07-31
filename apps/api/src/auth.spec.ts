@@ -20,6 +20,7 @@ jest.mock('./runtime-config', () => ({
     databaseUrl: 'postgres://test:test@localhost:5432/onepiecetcg',
     webOrigin: 'http://localhost:3001',
     isDevelopment: false,
+    anonymousAuthEnabled: false,
     auth: {
       secret: 'secret',
       baseURL: 'http://localhost:3000',
@@ -43,7 +44,7 @@ describe('createAuth', () => {
     jest.clearAllMocks();
   });
 
-  it('enables no dev-only plugins outside development', () => {
+  it('disables the anonymous plugin when the flag is off', () => {
     const auth = createAuth() as {
       plugins?: unknown[];
     };
@@ -115,11 +116,12 @@ describe('createAuth', () => {
     });
   });
 
-  it('enables the anonymous plugin in development only', () => {
+  it('enables the anonymous plugin when the flag is on', () => {
     (getApiConfig as jest.Mock).mockReturnValueOnce({
       databaseUrl: 'postgres://test:test@localhost:5432/onepiecetcg',
       webOrigin: 'http://localhost:3001',
       isDevelopment: true,
+      anonymousAuthEnabled: true,
       auth: {
         secret: 'secret',
         baseURL: 'http://localhost:3000',

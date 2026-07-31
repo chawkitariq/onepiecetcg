@@ -101,7 +101,7 @@ export function createAuth() {
       connectionString: config.databaseUrl,
     }),
     trustedOrigins: [config.webOrigin],
-    plugins: config.isDevelopment
+    plugins: config.anonymousAuthEnabled
       ? [
           anonymous({
             emailDomainName: 'local.dev',

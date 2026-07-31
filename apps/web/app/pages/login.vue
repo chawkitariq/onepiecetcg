@@ -3,7 +3,8 @@ import type { ButtonProps } from '@nuxt/ui'
 
 const { loading, profile, refresh, signIn, signInAnonymously } = useSession()
 const route = useRoute()
-const anonymousEnabled = import.meta.dev
+const runtimeConfig = useRuntimeConfig()
+const anonymousEnabled = runtimeConfig.public.anonymousAuthEnabled
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect

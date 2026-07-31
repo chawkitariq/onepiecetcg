@@ -19,7 +19,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser — Nuxt's dev server binds here by default; if the API is already using port 3000, Nuxt falls back to the next free port (typically 3001).
 
-You should see the home page. In local `development`, sign in from `/login` with the anonymous shortcut, or configure Google/Discord credentials in the API `.env` if you want to test those OAuth flows too (see [apps/api/README.md](../api/README.md#authentication)).
+You should see the home page. If `AUTH_ANONYMOUS_ENABLED=true`, `/login` shows the anonymous shortcut; otherwise configure Google/Discord credentials in the API `.env` if you want to test those OAuth flows too (see [apps/api/README.md](../api/README.md#authentication)).
 
 ## Environment variables
 
@@ -27,6 +27,7 @@ Copy `.env.example` to `.env` if you need to override the defaults:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
+| `AUTH_ANONYMOUS_ENABLED` | `true` in local example | Exposes the anonymous sign-in shortcut in the login UI. Keep this aligned with the API setting of the same name. |
 | `NUXT_PUBLIC_API_BASE` | `http://localhost:3000` | Base URL of the NestJS API. |
 | `NUXT_PUBLIC_COLYSEUS_ENDPOINT` | `ws://localhost:3000` | WebSocket endpoint for the realtime duel room. |
 

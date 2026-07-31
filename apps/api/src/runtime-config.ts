@@ -16,6 +16,17 @@ function readNumber(name: string, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function readAnonymousAuthEnabled(): boolean {
+  const explicit = process.env.AUTH_ANONYMOUS_ENABLED;
+
+  if (explicit !== undefined) {
+    return explicit === 'true';
+  }
+
+  // Preserve the existing local-dev default when the dedicated flag is absent.
+  return process.env.NODE_ENV === 'development';
+}
+
 function readSameSite(): SameSite {
   const value = process.env.SESSION_COOKIE_SAME_SITE;
 
@@ -26,6 +37,7 @@ function readSameSite(): SameSite {
   return 'lax';
 }
 
+/** Returns the API runtime configuration derived from environment variables. */
 export function getApiConfig() {
   const database = {
     host: process.env.DATABASE_HOST ?? 'localhost',
@@ -38,10 +50,8 @@ export function getApiConfig() {
   return {
     port: readNumber('API_PORT', 3000),
     webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:3001',
-    // Fail-closed: only an explicit 'development' enables anonymous dev auth,
-    // so a missing/misconfigured NODE_ENV in a future prod deployment never
-    // accidentally enables the local-testing shortcut.
     isDevelopment: process.env.NODE_ENV === 'development',
+    anonymousAuthEnabled: readAnonymousAuthEnabled(),
     database,
     databaseUrl:
       process.env.DATABASE_URL ??
