@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pnpm build:packages && pnpm -r --filter \"./apps/*\" build",
     "build:packages": "pnpm -r --filter \"./packages/*\" build",
-    "dev": "concurrently -n packages,apps -c blue,green \"pnpm --filter \\\"./packages/*\\\" --parallel run dev\" \"wait-on packages/shared/dist/index.d.ts packages/cards/dist/src/index.d.ts packages/cards/dist/effects/index.d.ts packages/duel-engine/dist/index.d.ts packages/effect-engine/dist/index.d.ts && pnpm --dir apps/api dev && wait-on tcp:3000 && pnpm --dir apps/web dev\"",
+    "dev": "concurrently -n packages,api,web -c blue,green,magenta \"pnpm --filter \\\"./packages/*\\\" run build && pnpm --filter \\\"./packages/*\\\" --parallel run dev\" \"wait-on packages/shared/dist/index.js packages/cards/dist/src/index.js packages/cards/dist/effects/index.js packages/duel-engine/dist/index.js packages/effect-engine/dist/index.js && pnpm --dir apps/api dev\" \"wait-on packages/shared/dist/index.js tcp:3000 && pnpm --dir apps/web dev\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
