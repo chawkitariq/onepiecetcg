@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
-import type { EffectEngine, EffectEvent } from '../../../effect-engine';
+import type {
+  EffectEvent,
+  SpecialEffectHandlerEngine,
+} from '../../../effect-engine';
 
 /**
  * Sanjuan.Wolf (ST27-004) special handler.
@@ -11,7 +14,7 @@ import type { EffectEngine, EffectEvent } from '../../../effect-engine';
 export const st27004SpecialHandler: SpecialHandlerDefinition = {
   id: 'st27-004-special',
   cardId: 'ST27-004',
-  resolve(event: EffectEvent, engine: EffectEngine): void {
+  resolve(event: EffectEvent, engine: SpecialEffectHandlerEngine): void {
     const anyEngine = engine as any;
     const host = anyEngine.host;
     const modifiers = anyEngine.modifiers;

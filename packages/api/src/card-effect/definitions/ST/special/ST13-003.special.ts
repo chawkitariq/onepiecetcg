@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
 import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
+  createOncePerTurnKey,
 } from '../../special-handler-utils';
 
 /**
@@ -20,13 +18,11 @@ export const st13003SpecialHandler: SpecialHandlerDefinition = {
   id: 'st13-003-special',
   cardId: 'ST13-003',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'onTurnStart') {
-      anyEngine.modifiers.addPlayerRestriction(
+      engine.addPlayerRestriction(
         event.playerSessionId,
         'preventOwnEffectLifeToHand',
         'untilStartOfYourNextTurn',
@@ -36,20 +32,20 @@ export const st13003SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type === 'activateMain') {
       if (source.attachedDon < 2) return;
+      const oncePerTurnKey = createOncePerTurnKey(
+        event.sourceInstanceId,
+        'st13-003-main',
+        engine.state.turn,
+      );
       if (
-        hasResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'st13-003-main',
-          host.state.turn,
-        )
+        engine.hasResolvedOncePerTurnKey(oncePerTurnKey)
       )
         return;
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.hand.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:st13-003:confirm`,
           effectId: 'st13-003-special',
@@ -67,14 +63,9 @@ export const st13003SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          markResolvedOncePerTurn(
-            anyEngine,
-            event.sourceInstanceId,
-            'st13-003-main',
-            host.state.turn,
-          );
+          engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:st13-003:trash`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -88,12 +79,12 @@ export const st13003SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (trashed: DuelCard[]) => {
               for (const card of trashed) {
-                host.moveCard(card, event.playerSessionId, 'trash');
+                engine.moveCard(card, event.playerSessionId, 'trash');
               }
 
               if (player.zones.life.length > 0) return;
 
-              const candidates = host.getCards(
+              const candidates = engine.getCards(
                 {
                   player: 'self',
                   zones: ['hand', 'trash'],
@@ -108,7 +99,7 @@ export const st13003SpecialHandler: SpecialHandlerDefinition = {
               );
               if (candidates.length === 0) return;
 
-              anyEngine.decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:st13-003:pick`,
                 event.playerSessionId,
                 {
@@ -130,14 +121,14 @@ export const st13003SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (selected: DuelCard[]) => {
                   for (const card of selected) {
-                    host.moveCard(card, event.playerSessionId, 'life', {
+                    engine.moveCard(card, event.playerSessionId, 'life', {
                       faceDown: false,
                     });
                   }
-                  host.addLog(
+                  engine.addLog(
                     `[Monkey.D.Luffy Leader] Added ${selected.length} card(s) to Life face-up.`,
                   );
-                  host.syncPlayer(event.playerSessionId);
+                  engine.syncPlayer(event.playerSessionId);
                 },
               );
             },

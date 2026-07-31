@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
 
@@ -15,19 +14,17 @@ export const st13004SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player || player.zones.deck.length < 1) return;
 
     const topDeck = player.zones.deck[0];
-    host.moveCard(topDeck, event.playerSessionId, 'life', { faceDown: true });
-    host.addLog(`[Edward.Newgate] Added top deck card to Life.`);
+    engine.moveCard(topDeck, event.playerSessionId, 'life', { faceDown: true });
+    engine.addLog(`[Edward.Newgate] Added top deck card to Life.`);
 
     const lifeCards = Array.from(player.zones.life);
     if (lifeCards.length === 0) return;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:st13-004:pick`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -47,27 +44,27 @@ export const st13004SpecialHandler: SpecialHandlerDefinition = {
           (c: DuelCard) => c.instanceId !== toDeck.instanceId,
         );
 
-        host.moveCard(toDeck, event.playerSessionId, 'deck');
-        host.addLog(
+        engine.moveCard(toDeck, event.playerSessionId, 'deck');
+        engine.addLog(
           `[Edward.Newgate] Moved ${toDeck.name} from Life to top of deck.`,
         );
 
         if (remaining.length <= 1) {
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           return;
         }
 
         const reorderNext = (cards: DuelCard[], ordered: DuelCard[]) => {
           if (cards.length <= 1) {
-            player.zones.life.splice(0, player.zones.life.length);
-            for (const card of [...ordered, ...cards]) {
-              player.zones.life.push(card);
-            }
-            host.syncPlayer(event.playerSessionId);
+            engine.setZoneOrder(
+              event.playerSessionId,
+              'life',
+              [...ordered, ...cards].map((card) => card.instanceId),
+            );
             return;
           }
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:st13-004:reorder:${ordered.length}`,
             event.playerSessionId,
             {
@@ -82,7 +79,7 @@ export const st13004SpecialHandler: SpecialHandlerDefinition = {
               count: { kind: 'exact', value: 1 },
             },
             undefined,
-            (picked: any[]) => {
+            (picked: DuelCard[]) => {
               const next = picked[0] as DuelCard | undefined;
               if (!next) {
                 reorderNext(cards, ordered);

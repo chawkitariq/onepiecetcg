@@ -157,6 +157,7 @@ export type EffectResolutionContext = {
 };
 
 export type EffectEngineCardStatusPatch = {
+  faceDown?: boolean;
   rested?: boolean;
   playedThisTurn?: boolean;
   cannotAttack?: boolean;
@@ -216,6 +217,12 @@ export interface EffectEngineCommandPort {
     destinationZone: string,
     options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
   ): void;
+  setZoneOrder?(
+    playerSessionId: string,
+    zone: Extract<GameZone, 'deck' | 'life'>,
+    orderedInstanceIds: string[],
+    options?: { faceDown?: boolean },
+  ): boolean;
   shuffleDeck(playerSessionId: string): void;
   drawCard(playerSessionId: string): DuelCard | null;
   trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[];

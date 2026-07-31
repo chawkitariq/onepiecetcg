@@ -29,6 +29,40 @@ export type {
   ReplacementQuery,
 } from './runtime/effect-engine-types';
 
+export type SpecialEffectHandlerEngine = Pick<
+  EffectEngine,
+  | 'state'
+  | 'getPlayer'
+  | 'getOpponentSessionId'
+  | 'getCard'
+  | 'getCards'
+  | 'addLog'
+  | 'patchCardStatus'
+  | 'patchCardStats'
+  | 'patchPlayerStatus'
+  | 'playCard'
+  | 'moveCard'
+  | 'setZoneOrder'
+  | 'addDonToCost'
+  | 'returnDonToDonDeck'
+  | 'koCharacter'
+  | 'syncPlayer'
+  | 'chooseCards'
+  | 'chooseChoices'
+  | 'pauseDecision'
+  | 'addPowerModifier'
+  | 'addKeywordModifier'
+  | 'addCostModifier'
+  | 'addPlayerRestriction'
+  | 'registerNextPlayCostModifier'
+  | 'hasResolvedOncePerTurnKey'
+  | 'markResolvedOncePerTurnKey'
+  | 'arrangeDeckWindow'
+  | 'queueEffect'
+  | 'scheduleTurnEndActions'
+  | 'reapplyContinuousEffects'
+>;
+
 /**
  * Pure server-side automatic effect resolver for the authoritative duel room.
  */
@@ -186,6 +220,23 @@ export class EffectEngine {
     );
   }
 
+  /** Reorders one ordered gameplay zone through the gameplay command port. */
+  public setZoneOrder(
+    playerSessionId: string,
+    zone: Parameters<NonNullable<EffectEngineHost['setZoneOrder']>>[1],
+    orderedInstanceIds: string[],
+    options?: Parameters<NonNullable<EffectEngineHost['setZoneOrder']>>[3],
+  ): boolean {
+    return (
+      this.host.setZoneOrder?.(
+        playerSessionId,
+        zone,
+        orderedInstanceIds,
+        options,
+      ) ?? false
+    );
+  }
+
   /** Adds DON!! cards from the DON!! deck to cost through the gameplay port. */
   public addDonToCost(
     playerSessionId: string,
@@ -256,11 +307,44 @@ export class EffectEngine {
     this.modifiers.addCostModifier(...args);
   }
 
+  /** Adds a temporary player-level restriction. */
+  public addPlayerRestriction(
+    ...args: Parameters<EffectModifierEngine['addPlayerRestriction']>
+  ): void {
+    this.modifiers.addPlayerRestriction(...args);
+  }
+
   /** Registers a one-shot next-play cost modifier. */
   public registerNextPlayCostModifier(
     ...args: Parameters<EffectModifierEngine['registerNextPlayCostModifier']>
   ): void {
     this.modifiers.registerNextPlayCostModifier(...args);
+  }
+
+  /** Opens the standard deck-window arrangement flow for a special handler. */
+  public arrangeDeckWindow(
+    controllerSessionId: string,
+    source: DuelCard,
+    amount: number,
+    onComplete?: () => void,
+  ): void {
+    this.actions.resolveActions(
+      [
+        {
+          type: 'arrangeDeckWindow',
+          player: 'self',
+          amount,
+        },
+      ],
+      controllerSessionId,
+      source,
+      {
+        sourceInstanceId: source.instanceId,
+        storedSelections: {},
+      },
+      0,
+      onComplete,
+    );
   }
 
   /** Tests whether a once-per-turn special handler key already resolved. */

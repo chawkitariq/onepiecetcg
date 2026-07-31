@@ -341,6 +341,39 @@ class TestHost implements EffectEngineHost {
     }
   }
 
+  public setZoneOrder(
+    playerSessionId: string,
+    zoneName: 'deck' | 'life',
+    orderedInstanceIds: string[],
+    options?: { faceDown?: boolean },
+  ): boolean {
+    const player = this.getPlayer(playerSessionId);
+    const zone = player?.zones[zoneName];
+
+    if (!player || !zone || orderedInstanceIds.length !== zone.length) {
+      return false;
+    }
+
+    const cardsById = new Map(zone.map((card) => [card.instanceId, card]));
+    const ordered = orderedInstanceIds.map((instanceId) =>
+      cardsById.get(instanceId),
+    );
+
+    if (ordered.some((card) => !card)) {
+      return false;
+    }
+
+    zone.splice(0, zone.length, ...(ordered as DuelCard[]));
+
+    if (options?.faceDown !== undefined) {
+      for (const card of zone) {
+        card.faceDown = options.faceDown;
+      }
+    }
+
+    return true;
+  }
+
   public drawCard(playerSessionId: string): DuelCard | null {
     const player = this.getPlayer(playerSessionId);
     const card = player?.zones.deck.shift();

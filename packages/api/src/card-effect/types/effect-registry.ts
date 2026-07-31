@@ -5,7 +5,7 @@ import type {
   ReplacementEffectDefinition,
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
-import type { EffectEngine, EffectEvent } from '../effect-engine';
+import type { EffectEvent, SpecialEffectHandlerEngine } from '../effect-engine';
 import type { EditionEffectDefinitions } from './effect-definition-source';
 
 export type CardId = string;
@@ -25,7 +25,7 @@ export type ContinuousEffect = ContinuousEffectDefinition;
 export interface SpecialHandlerDefinition {
   id: string;
   cardId: CardId;
-  resolve(event: EffectEvent, engine: EffectEngine): void;
+  resolve(event: EffectEvent, engine: SpecialEffectHandlerEngine): void;
 }
 
 export interface EffectSourceBundle {

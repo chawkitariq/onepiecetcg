@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
 
 /**
@@ -15,15 +14,13 @@ export const st13014SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player || player.zones.life.length < 1) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:st13-014:confirm`,
         effectId: 'st13-014-special',
@@ -41,19 +38,19 @@ export const st13014SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        if (host.getCard(event.sourceInstanceId)) {
-          host.moveCard(source, event.playerSessionId, 'trash');
+        if (engine.getCard(event.sourceInstanceId)) {
+          engine.moveCard(source, event.playerSessionId, 'trash');
         }
 
         const topLife = player.zones.life[0];
         if (!topLife) return;
 
-        host.addLog(
+        engine.addLog(
           `[Monkey.D.Luffy 014] Revealed top Life card: ${topLife.name} (cost ${topLife.cost}).`,
         );
 
         if (topLife.name === 'Monkey.D.Luffy' && topLife.cost === 5) {
-          anyEngine.decisions.pause(
+          engine.pauseDecision(
             {
               id: `${event.sourceInstanceId}:st13-014:play`,
               effectId: 'st13-014-special',
@@ -70,14 +67,14 @@ export const st13014SpecialHandler: SpecialHandlerDefinition = {
             (playResponse: { confirmed?: boolean }) => {
               if (!playResponse.confirmed) return;
 
-              host.moveCard(topLife, event.playerSessionId, 'characters');
-              host.addLog(
+              engine.moveCard(topLife, event.playerSessionId, 'characters');
+              engine.addLog(
                 `[Monkey.D.Luffy 014] Played ${topLife.name} from Life.`,
               );
 
               const leader = player.zones.leader;
               if (leader && leader.instanceId) {
-                anyEngine.modifiers.addPowerModifier(
+                engine.addPowerModifier(
                   event.sourceInstanceId,
                   event.playerSessionId,
                   leader.instanceId,

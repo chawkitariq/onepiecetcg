@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
 
@@ -13,9 +12,7 @@ export const op13105SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -24,7 +21,7 @@ export const op13105SpecialHandler: SpecialHandlerDefinition = {
 
     const lifeIds = new Set(lifeCards.map((c) => c.instanceId));
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op13-105:reorder-life`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -48,19 +45,13 @@ export const op13105SpecialHandler: SpecialHandlerDefinition = {
           ),
         ];
 
-        for (let i = 0; i < reorderedLife.length; i++) {
-          const idx = player.zones.life.findIndex(
-            (l: DuelCard) => l.instanceId === reorderedLife[i].instanceId,
-          );
-          if (idx >= 0 && idx !== i) {
-            const temp = player.zones.life[i];
-            player.zones.life[i] = player.zones.life[idx];
-            player.zones.life[idx] = temp;
-          }
-        }
-
-        host.syncPlayer(event.playerSessionId);
-        host.addLog('[Kouzuki Momonosuke] Life cards reordered.');
+        engine.setZoneOrder(
+          event.playerSessionId,
+          'life',
+          reorderedLife.map((card) => card.instanceId),
+        );
+        engine.syncPlayer(event.playerSessionId);
+        engine.addLog('[Kouzuki Momonosuke] Life cards reordered.');
       },
     );
   },

@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../types/effect-registry';
 import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
+  createOncePerTurnKey,
 } from '../../special-handler-utils';
 
 /**
@@ -20,27 +18,25 @@ export const st13002SpecialHandler: SpecialHandlerDefinition = {
   id: 'st13-002-special',
   cardId: 'ST13-002',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'activateMain') {
       if (source.attachedDon < 2) return;
+      const oncePerTurnKey = createOncePerTurnKey(
+        event.sourceInstanceId,
+        'st13-002-main',
+        engine.state.turn,
+      );
       if (
-        hasResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'st13-002-main',
-          host.state.turn,
-        )
+        engine.hasResolvedOncePerTurnKey(oncePerTurnKey)
       )
         return;
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.deck.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:st13-002:confirm`,
           effectId: 'st13-002-special',
@@ -55,15 +51,10 @@ export const st13002SpecialHandler: SpecialHandlerDefinition = {
             optional: true,
           },
         },
-        (response: { confirmed?: boolean }) => {
-          if (!response.confirmed) return;
+      (response: { confirmed?: boolean }) => {
+        if (!response.confirmed) return;
 
-          markResolvedOncePerTurn(
-            anyEngine,
-            event.sourceInstanceId,
-            'st13-002-main',
-            host.state.turn,
-          );
+          engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
           const topCards = Array.from(player.zones.deck).slice(0, 5);
           const topCardNames = topCards.map((c: DuelCard) => c.name);
@@ -71,7 +62,7 @@ export const st13002SpecialHandler: SpecialHandlerDefinition = {
             topCards.map((c: DuelCard) => c.instanceId),
           );
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:st13-002:pick`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -93,37 +84,26 @@ export const st13002SpecialHandler: SpecialHandlerDefinition = {
                 topCardIds.has(c.instanceId),
               );
               if (chosen) {
-                host.moveCard(chosen, event.playerSessionId, 'life', {
+                engine.moveCard(chosen, event.playerSessionId, 'life', {
                   faceDown: false,
                 });
-                host.addLog(
+                engine.addLog(
                   `[Portgas.D.Ace Leader] Added ${chosen.name} to Life face-up.`,
                 );
               }
 
               const remainingCount = topCards.length - (chosen ? 1 : 0);
               if (remainingCount > 0) {
-                anyEngine.actions.resolveActions(
-                  [
-                    {
-                      type: 'arrangeDeckWindow',
-                      player: 'self',
-                      amount: remainingCount,
-                    },
-                  ],
+                engine.arrangeDeckWindow(
                   event.playerSessionId,
                   source,
-                  {
-                    sourceInstanceId: event.sourceInstanceId,
-                    storedSelections: {},
-                  },
-                  0,
+                  remainingCount,
                   () => {
-                    host.syncPlayer(event.playerSessionId);
+                    engine.syncPlayer(event.playerSessionId);
                   },
                 );
               } else {
-                host.syncPlayer(event.playerSessionId);
+                engine.syncPlayer(event.playerSessionId);
               }
             },
           );
@@ -133,7 +113,7 @@ export const st13002SpecialHandler: SpecialHandlerDefinition = {
     }
 
     if (event.type === 'onTurnEnd') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       const faceUpLife = Array.from(player.zones.life).filter(
@@ -142,12 +122,12 @@ export const st13002SpecialHandler: SpecialHandlerDefinition = {
       if (faceUpLife.length === 0) return;
 
       for (const card of faceUpLife) {
-        host.moveCard(card, event.playerSessionId, 'trash');
+        engine.moveCard(card, event.playerSessionId, 'trash');
       }
-      host.addLog(
+      engine.addLog(
         '[Portgas.D.Ace Leader] Trashed all face-up Life cards at end of turn.',
       );
-      host.syncPlayer(event.playerSessionId);
+      engine.syncPlayer(event.playerSessionId);
     }
   },
 };

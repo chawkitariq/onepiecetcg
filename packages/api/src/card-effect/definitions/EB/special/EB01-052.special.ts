@@ -10,16 +10,13 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
         return;
       }
 
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
 
       if (!player) {
         return;
       }
 
-      const opponentSessionId = host.getOpponentSessionId(
+      const opponentSessionId = engine.getOpponentSessionId(
         event.playerSessionId,
       );
 
@@ -27,7 +24,7 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
         return;
       }
 
-      decisions.chooseChoices(
+      engine.chooseChoices(
         `${event.sourceInstanceId}:eb01-052:choose`,
         event.playerSessionId,
         '[Viola] Choose one:',
@@ -45,7 +42,7 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
         1,
         (choiceIds) => {
           if (choiceIds[0] === 'look-opponent-life') {
-            const opponent = host.getPlayer(opponentSessionId);
+            const opponent = engine.getPlayer(opponentSessionId);
 
             if (!opponent) {
               return;
@@ -58,7 +55,7 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
             }
 
             for (const card of lifeCards) {
-              card.faceDown = false;
+              engine.patchCardStatus(card.instanceId, { faceDown: false });
             }
 
             const remaining = lifeCards.slice();
@@ -67,24 +64,20 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
 
             const pickNextCard = () => {
               if (remaining.length === 0) {
-                opponent.zones.life.splice(
-                  0,
-                  opponent.zones.life.length,
-                  ...topCards,
-                  ...bottomCards,
+                engine.setZoneOrder(
+                  opponentSessionId,
+                  'life',
+                  [...topCards, ...bottomCards].map((card) => card.instanceId),
+                  { faceDown: true },
                 );
 
-                for (const card of opponent.zones.life) {
-                  card.faceDown = true;
-                }
-
-                host.syncPlayer(event.playerSessionId);
+                engine.syncPlayer(event.playerSessionId);
                 return;
               }
 
               const card: DuelCard = remaining[0];
               remaining.shift();
-              decisions.chooseChoices(
+              engine.chooseChoices(
                 `${event.sourceInstanceId}:eb01-052:reorder:${card.instanceId}`,
                 event.playerSessionId,
                 `[Viola] Place ${card.name} at top or bottom of opponent Life?`,
@@ -108,11 +101,12 @@ export const eb01052ChooseLifeManipulationSpecialHandler: SpecialHandlerDefiniti
 
             pickNextCard();
           } else if (choiceIds[0] === 'face-down-own-life') {
-            for (const card of player.zones.life) {
-              card.faceDown = true;
-            }
-
-            host.syncPlayer(event.playerSessionId);
+            engine.setZoneOrder(
+              event.playerSessionId,
+              'life',
+              Array.from(player.zones.life, (card) => card.instanceId),
+              { faceDown: true },
+            );
           }
         },
       );
