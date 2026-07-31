@@ -177,7 +177,7 @@
   color: var(--duel-feedback-narration-text);
 }
 
-.duel-zone-count-badge {
+.duel-board-badge {
   border: 1px solid color-mix(in oklab, var(--ui-border) 76%, white 24%);
   background: color-mix(in oklab, var(--ui-bg-elevated) 86%, white 14%);
   box-shadow:
@@ -185,7 +185,18 @@
     0 0 0 1px rgb(255 255 255 / 0.05) inset;
   backdrop-filter: blur(8px);
   color: var(--ui-text-highlighted);
+}
+
+.duel-zone-count-badge {
   transform: translateY(-2px);
+}
+
+.duel-power-badge {
+  letter-spacing: 0.02em;
+  min-width: 3.9rem;
+  justify-content: center;
+  padding-inline: 0.6rem;
+  padding-block: 0.22rem;
 }
 
 .duel-connection-waiting,

@@ -38,7 +38,7 @@ const { label, flipped, hugCard = false, count, allowOverflow = false } = define
       color="neutral"
       variant="soft"
       size="sm"
-      class="duel-zone-count-badge pointer-events-none absolute right-1.5 top-1.5 z-70 opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+      class="duel-board-badge duel-zone-count-badge pointer-events-none absolute right-1.5 top-1.5 z-70 opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
       :ui="{ leadingIcon: 'size-3', label: 'font-semibold tabular-nums' }"
       :class="flipped ? '-scale-x-100 -scale-y-100' : ''"
       icon="i-lucide-layers-2"

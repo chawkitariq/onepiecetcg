@@ -23,6 +23,8 @@ describe('AnimatedPowerBadge', () => {
 
     expect(wrapper.text()).toContain('8')
     expect(wrapper.text()).toContain('124')
+    expect(wrapper.classes()).toContain('duel-board-badge')
+    expect(wrapper.classes()).toContain('duel-power-badge')
   })
 
   it('falls back to the raw value when reduced motion is enabled', () => {

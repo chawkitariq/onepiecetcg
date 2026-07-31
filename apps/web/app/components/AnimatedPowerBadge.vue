@@ -34,9 +34,10 @@ const formattedValue = computed(() => {
   <UBadge
     v-if="displayedValue !== null"
     color="neutral"
-    variant="solid"
+    variant="soft"
     size="sm"
-    class="absolute bottom-0 left-1/2 z-30 -translate-x-1/2 tabular-nums"
+    class="duel-board-badge duel-power-badge absolute bottom-1 left-1/2 z-30 -translate-x-1/2 tabular-nums"
+    :ui="{ label: 'font-semibold tabular-nums' }"
     :class="mirrored ? '-scale-x-100 -scale-y-100' : ''"
   >
     {{ formattedValue }}
