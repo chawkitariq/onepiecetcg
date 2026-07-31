@@ -2018,6 +2018,7 @@ describe('DuelBoard drag and drop', () => {
     expect(document.body.textContent).toContain('Défaite')
     expect(document.body.textContent).toContain('7 tours')
     expect(document.body.textContent).toContain('8 min 34 s')
+    expect(document.body.textContent).not.toContain('Rejouer')
     expect(document.body.textContent).not.toContain('Barbe Noire Midrange')
     expect(document.body.textContent).not.toContain('Vie à zéro')
 

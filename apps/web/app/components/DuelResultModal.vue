@@ -7,7 +7,6 @@ defineProps<{
 }>()
 
 defineEmits<{
-  replay: []
   leave: []
 }>()
 </script>
@@ -71,13 +70,6 @@ defineEmits<{
               </div>
 
               <div class="flex flex-wrap justify-end gap-2">
-                <UButton
-                  :color="victory ? 'success' : 'primary'"
-                  variant="subtle"
-                  @click="$emit('replay')"
-                >
-                  Rejouer
-                </UButton>
                 <UButton
                   color="neutral"
                   @click="$emit('leave')"

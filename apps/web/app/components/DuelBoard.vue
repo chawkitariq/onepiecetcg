@@ -134,16 +134,6 @@ async function confirmLeaveToLobby() {
   await navigateTo('/lobby')
 }
 
-async function replayMatch() {
-  const confirmed = await leaveWithConfirmation()
-
-  if (!confirmed) {
-    return
-  }
-
-  await navigateTo('/lobby')
-}
-
 const phaseLabels: Record<string, string> = {
   setup: 'Préparation',
   mulligan: 'Mulligan',
@@ -3366,7 +3356,6 @@ defineShortcuts({
       :victory="isSelfWinner"
       :turn-label="resultTurnLabel"
       :duration-label="resultDurationLabel"
-      @replay="replayMatch"
       @leave="confirmLeaveToLobby"
     />
 
