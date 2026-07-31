@@ -80,8 +80,8 @@
     "testRegex": ".*\\.spec\\.ts$",
     "moduleNameMapper": {
       "^@onepiecetcg/cards$": "<rootDir>/../../../packages/cards/src/index.ts",
-      "^@onepiecetcg/cards/effects$": "<rootDir>/../../../packages/cards/effects/index.ts",
-      "^@onepiecetcg/cards/effects/(.*)$": "<rootDir>/../../../packages/cards/effects/$1",
+      "^@onepiecetcg/cards/effects$": "<rootDir>/../../../packages/cards/src/effects/index.ts",
+      "^@onepiecetcg/cards/effects/(.*)$": "<rootDir>/../../../packages/cards/src/effects/$1",
       "^@onepiecetcg/duel-engine$": "<rootDir>/../../../packages/duel-engine/src/index.ts",
       "^@onepiecetcg/effect-engine$": "<rootDir>/../../../packages/effect-engine/src/index.ts",
       "^(\\.\\.?/.*)\\.js$": "$1"

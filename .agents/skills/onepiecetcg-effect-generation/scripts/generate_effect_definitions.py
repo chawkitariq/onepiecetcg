@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser."""
 
     parser = argparse.ArgumentParser(
-        description="Generate deterministic One Piece TCG effect-definition skeletons into packages/cards/effects from a catalog snapshot or live catalog.",
+        description="Generate deterministic One Piece TCG effect-definition skeletons into packages/cards/src/effects from a catalog snapshot or live catalog.",
     )
     parser.add_argument(
         "--repo-root",
@@ -56,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--definitions-dir",
         type=Path,
-        help="Definitions directory to read authored files from. Defaults to packages/cards/effects.",
+        help="Definitions directory to read authored files from. Defaults to packages/cards/src/effects.",
     )
     parser.add_argument(
         "--special-dir",

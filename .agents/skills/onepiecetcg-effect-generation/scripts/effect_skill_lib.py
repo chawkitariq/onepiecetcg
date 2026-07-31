@@ -128,7 +128,7 @@ def detect_repo_root(start: Path | None = None) -> Path:
         pass
 
     for parent in [candidate, *candidate.parents]:
-        if (parent / "packages/cards/effects").is_dir():
+        if (parent / "packages/cards/src/effects").is_dir():
             return parent
 
     raise RuntimeError(
@@ -139,7 +139,7 @@ def detect_repo_root(start: Path | None = None) -> Path:
 def resolve_default_definitions_dir(repo_root: Path) -> Path:
     """Return the default definitions directory inside the repository."""
 
-    return repo_root / "packages/cards/effects"
+    return repo_root / "packages/cards/src/effects"
 
 
 def resolve_default_special_dir(repo_root: Path) -> Path:

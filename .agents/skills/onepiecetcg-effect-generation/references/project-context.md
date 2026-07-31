@@ -3,7 +3,7 @@
 ## Repository scope
 
 This skill is tailored to `/home/verbq/Documents/dev/onepiecetcg`.
-The reusable engine lives in `packages/effect-engine/`. Authored effect-definition source files now live in `packages/cards/effects/`, and the backend in `apps/api/` consumes them through `@onepiecetcg/cards/effects` at runtime.
+The reusable engine lives in `packages/effect-engine/`. Authored effect-definition source files now live in `packages/cards/src/effects/`, and the backend in `apps/api/` consumes them through `@onepiecetcg/cards/effects` at runtime.
 
 Before changing effect behavior, read:
 
@@ -30,13 +30,13 @@ These scripts intentionally avoid importing or invoking application-local CLI im
 
 ## Project files this skill reads or writes
 
-- `packages/cards/effects/`
+- `packages/cards/src/effects/`
   Root effect-definition folder.
-- `packages/cards/effects/<FAMILY>/`
+- `packages/cards/src/effects/<FAMILY>/`
   One family folder per product line prefix such as `OP`, `ST`, or `EB`, containing edition files and a family index.
-- `packages/cards/effects/<FAMILY>/special/`
+- `packages/cards/src/effects/<FAMILY>/special/`
   Imperative special handlers for outlier cards in that family.
-- `packages/cards/effects/index.ts`
+- `packages/cards/src/effects/index.ts`
   Aggregate family export list and aggregated `specialHandlerDefinitions`.
 
 ## What this skill is responsible for

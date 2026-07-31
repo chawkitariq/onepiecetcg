@@ -22,8 +22,8 @@ Or:
 
 By default, the validator reads:
 
-- `packages/cards/effects/*/*.effects.ts`
-- `packages/cards/effects/*/special/*.special.ts`
+- `packages/cards/src/effects/*/*.effects.ts`
+- `packages/cards/src/effects/*/special/*.special.ts`
 
 It does not validate aggregate index files directly.
 
@@ -88,7 +88,7 @@ Use this sequence:
 2. implement the full DSL for every generated placeholder card in scope
 3. choose the right test layer for the touched behavior:
    - `packages/effect-engine/src/effect-engine.spec.ts` for reusable runtime or rules behavior
-   - edition-specific specs such as `packages/cards/effects/OP/OP-01.effects.spec.ts` for card-level effect behavior
+   - edition-specific specs such as `packages/cards/src/effects/OP/OP-01.effects.spec.ts` for card-level effect behavior
    - `packages/effect-engine/src/effect-loader.spec.ts` when loader or registry wiring changes
 4. add or update tests at that layer so the important touched behavior is covered
 5. when you add card-level coverage, cover the complete effect path: trigger, optional decisions, costs, target selection, modifiers, moves, and final state

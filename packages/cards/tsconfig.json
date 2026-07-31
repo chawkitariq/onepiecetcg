@@ -13,12 +13,10 @@
     "skipLibCheck": true,
     "noImplicitAny": false
   },
-  "include": ["src/**/*.ts", "effects/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
-    "effects/**/*.spec.ts",
-    "effects/**/*.test.ts",
-    "effects/test-utils.ts"
+    "src/effects/test-utils.ts"
   ]
 }

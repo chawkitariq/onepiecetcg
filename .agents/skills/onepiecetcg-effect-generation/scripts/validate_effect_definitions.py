@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--definitions-dir",
         type=Path,
-        help="Definitions directory. Defaults to packages/cards/effects.",
+        help="Definitions directory. Defaults to packages/cards/src/effects.",
     )
     parser.add_argument(
         "--special-dir",

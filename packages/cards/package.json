@@ -10,14 +10,14 @@
       "default": "./dist/src/index.js"
     },
     "./effects": {
-      "types": "./dist/effects/index.d.ts",
-      "import": "./dist/effects/index.js",
-      "default": "./dist/effects/index.js"
+      "types": "./dist/src/effects/index.d.ts",
+      "import": "./dist/src/effects/index.js",
+      "default": "./dist/src/effects/index.js"
     },
     "./effects/*": {
-      "types": "./dist/effects/*.d.ts",
-      "import": "./dist/effects/*.js",
-      "default": "./dist/effects/*.js"
+      "types": "./dist/src/effects/*.d.ts",
+      "import": "./dist/src/effects/*.js",
+      "default": "./dist/src/effects/*.js"
     }
   },
   "scripts": {

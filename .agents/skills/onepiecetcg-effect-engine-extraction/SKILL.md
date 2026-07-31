@@ -21,7 +21,7 @@ Extract the effect engine into its own reusable package without leaving API-spec
    - runtime helper classes
    - effect registry and indexes
    - engine-owned tests
-5. Keep authored effect definitions, special handlers, effect-source indexes, and their dedicated card-level tests in `packages/cards/effects/`.
+5. Keep authored effect definitions, special handlers, effect-source indexes, and their dedicated card-level tests in `packages/cards/src/effects/`.
 6. Expose the package through explicit public exports and public host interfaces. The package must depend on `@onepiecetcg/shared`, not on NestJS, Colyseus, or local API paths.
 7. Reduce `apps/api/src/card-effect/` to API-facing assembly only:
    - Nest module
@@ -43,7 +43,7 @@ Extract the effect engine into its own reusable package without leaving API-spec
 - Treat `packages/effect-engine` as framework-agnostic. Do not leave NestJS services, Colyseus room classes, room persistence, auth, or networking logic inside it.
 - Prefer public host contracts and exported types from `packages/effect-engine/src/index.ts`.
 - Keep `packages/shared` for shared effect DSL and state types only. Do not move runtime orchestration there.
-- Keep authored definitions, special handlers, and their dedicated card-level tests in `packages/cards/effects`.
+- Keep authored definitions, special handlers, and their dedicated card-level tests in `packages/cards/src/effects`.
 - Move or rewrite engine-owned runtime tests so `packages/effect-engine` proves its own behavior locally without owning the authored sources.
 - If you run `vitest` inside `packages/effect-engine`, scope it to that package's config so it does not sweep unrelated repo suites.
 - Never run package build commands for validation in this repo. Use typecheck and focused tests only.

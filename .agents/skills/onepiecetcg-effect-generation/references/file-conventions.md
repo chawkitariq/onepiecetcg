@@ -4,9 +4,9 @@
 
 Write effect-definition files only in:
 
-- edition definitions: `packages/cards/effects/<FAMILY>/`
-- special handlers: `packages/cards/effects/<FAMILY>/special/` (e.g. `OP/special/`, `ST/special/`)
-- shared handler utilities: `packages/cards/effects/` (`special-handler-utils.ts`)
+- edition definitions: `packages/cards/src/effects/<FAMILY>/`
+- special handlers: `packages/cards/src/effects/<FAMILY>/special/` (e.g. `OP/special/`, `ST/special/`)
+- shared handler utilities: `packages/cards/src/effects/` (`special-handler-utils.ts`)
 
 ## Edition file naming
 
@@ -69,7 +69,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
 
 The root aggregate index lives here:
 
-- `packages/cards/effects/index.ts`
+- `packages/cards/src/effects/index.ts`
 
 It must:
 
@@ -82,7 +82,7 @@ It must:
 
 Each family folder must have an index here:
 
-- `packages/cards/effects/<FAMILY>/index.ts`
+- `packages/cards/src/effects/<FAMILY>/index.ts`
 
 It must:
 
@@ -115,7 +115,7 @@ Example from the repo:
 
 Each edition must have a per-edition special index at:
 
-- `packages/cards/effects/<FAMILY>/special/index.ts`
+- `packages/cards/src/effects/<FAMILY>/special/index.ts`
 
 It must:
 

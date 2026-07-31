@@ -37,15 +37,15 @@ These files define how card effects are authored, loaded, and resolved:
 
 ## Authored Definition Map
 
-- `packages/cards/effects/<FAMILY>/*.effects.ts`
+- `packages/cards/src/effects/<FAMILY>/*.effects.ts`
   - Edition-level authored effect-definition files, grouped by family such as `OP`, `ST`, or `EB`.
   - Add reusable DSL-based card support here after the engine can represent it.
-- `packages/cards/effects/<FAMILY>/special/*.special.ts`
+- `packages/cards/src/effects/<FAMILY>/special/*.special.ts`
   - Card-specific imperative handlers.
   - Use only when the behavior is too card-specific or too sequential for the current DSL.
-- `packages/cards/effects/<FAMILY>/index.ts`
+- `packages/cards/src/effects/<FAMILY>/index.ts`
   - Registers one family of edition definitions plus that family's special handlers.
-- `packages/cards/effects/index.ts`
+- `packages/cards/src/effects/index.ts`
   - Registers all family definition groups and the aggregated `specialHandlerDefinitions`.
 
 ## Test Map
@@ -57,9 +57,9 @@ These files define how card effects are authored, loaded, and resolved:
 
 ## Existing Examples
 
-- `packages/cards/effects/OP/OP-01.effects.ts`
+- `packages/cards/src/effects/OP/OP-01.effects.ts`
   - Canonical examples of `standard`, `continuous`, and `special-ref` authored entries.
-- `packages/cards/effects/OP/special/OP04-047.special.ts`
+- `packages/cards/src/effects/OP/special/OP04-047.special.ts`
   - Canonical example of a card-specific special handler.
 
 ## Relationship With Effect Generation

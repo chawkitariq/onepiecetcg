@@ -6,7 +6,7 @@
   - Own pure effect runtime code.
   - Own public package exports, runtime contracts, registry assembly, and package-local runtime tests.
   - Stay reusable by API adapters and any future non-Colyseus integration.
-- `packages/cards/effects/`
+- `packages/cards/src/effects/`
   - Own authored effect definitions, special handlers, effect-source indexes, and their dedicated card-level tests.
   - Stay reusable by both `apps/api/` and `packages/effect-engine/`.
 - `apps/api/src/card-effect/`
@@ -40,7 +40,7 @@ Move a file to `packages/effect-engine` when it:
 - depends only on `@onepiecetcg/shared` plus public engine contracts
 - should be reusable outside the current NestJS and Colyseus runtime
 
-Keep a file in `packages/cards/effects` when it:
+Keep a file in `packages/cards/src/effects` when it:
 - defines authored effect cards or special handlers
 - aggregates edition definitions or special-handler bundles
 - tests card-specific authored behavior or special handlers
