@@ -159,6 +159,8 @@ type ScrollAreaInstance = {
   $el?: HTMLElement
 }
 
+type ScrollAreaRef = HTMLElement | ScrollAreaInstance | null
+
 const api = useApi()
 const hoveredCard = ref<HoveredDuelCard | null>(null)
 const hoveredEffectPromptCard = ref<HoveredDuelCard | null>(null)
@@ -168,10 +170,14 @@ const pendingHoveredCardDetailIds = ref<string[]>([])
 const hoveredCardDetailRetryTimestamps = reactive<Record<string, number | undefined>>({})
 const hoveredCardDetailRetryDelayMs = 5_000
 const reducedMotion = usePreferredReducedMotion()
-const journalScrollArea = useTemplateRef<ScrollAreaInstance>('journal-scroll-area')
+const isDesktopJournalLayout = useMediaQuery('(min-width: 1280px)')
+const journalScrollArea = useTemplateRef<ScrollAreaRef>('journal-scroll-area')
+const desktopJournalScrollArea = useTemplateRef<ScrollAreaRef>('desktop-journal-scroll-area')
+const journalEnd = useTemplateRef<HTMLElement>('journal-end')
+const desktopJournalEnd = useTemplateRef<HTMLElement>('desktop-journal-end')
 const isJournalOpen = ref(false)
 const seenLogCount = ref(0)
-const unseenLogCount = computed(() => Math.max(logs.value.length - seenLogCount.value, 0))
+const unseenLogCount = computed(() => isDesktopJournalLayout.value ? 0 : Math.max(logs.value.length - seenLogCount.value, 0))
 const pendingCharacterInstanceId = ref<string | null>(null)
 const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
@@ -1390,7 +1396,17 @@ async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
   await nextTick()
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
-  const element = journalScrollArea.value?.$el
+  const target = isDesktopJournalLayout.value ? desktopJournalEnd.value : journalEnd.value
+  const desktopElement = resolveJournalScrollElement(desktopJournalScrollArea.value)
+  const mobileElement = resolveJournalScrollElement(journalScrollArea.value)
+  const element = isDesktopJournalLayout.value ? desktopElement : mobileElement
+
+  if (target) {
+    target.scrollIntoView({
+      behavior,
+      block: 'end'
+    })
+  }
 
   if (!element) {
     return
@@ -1400,6 +1416,26 @@ async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
     top: element.scrollHeight,
     behavior
   })
+}
+
+function isJournalScrollAreaVisible(element?: HTMLElement) {
+  return Boolean(element && element.getClientRects().length > 0)
+}
+
+function isDesktopJournalVisible() {
+  return isDesktopJournalLayout.value
+}
+
+function resolveJournalScrollElement(target: ScrollAreaRef | undefined) {
+  if (target instanceof HTMLElement) {
+    return target
+  }
+
+  if (target?.$el instanceof HTMLElement) {
+    return target.$el
+  }
+
+  return null
 }
 
 watch(() => logs.value.length, async (newLength, previousLength) => {
@@ -1413,7 +1449,7 @@ watch(() => logs.value.length, async (newLength, previousLength) => {
     handleNewLogFeedback(entry.message)
   }
 
-  if (isJournalOpen.value) {
+  if (isJournalOpen.value || isDesktopJournalVisible()) {
     seenLogCount.value = newLength
     await scrollJournalToLatest('smooth')
   }
@@ -1425,6 +1461,24 @@ watch(isJournalOpen, async (open) => {
     await scrollJournalToLatest('auto')
   }
 })
+
+onMounted(async () => {
+  if (!isDesktopJournalVisible()) {
+    return
+  }
+
+  seenLogCount.value = logs.value.length
+  await scrollJournalToLatest('auto')
+})
+
+watch(isDesktopJournalLayout, async (isDesktop) => {
+  if (!isDesktop) {
+    return
+  }
+
+  seenLogCount.value = logs.value.length
+  await scrollJournalToLatest('auto')
+}, { immediate: true })
 
 watch(errorMessage, (message) => {
   if (!message) {
@@ -3336,8 +3390,8 @@ defineShortcuts({
         <div class="flex h-full min-h-0 flex-col gap-2">
           <UScrollArea
             ref="journal-scroll-area"
-            class="flex-1 min-h-0"
-            :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
+            class="journal-scroll-root flex-1 min-h-0"
+            :ui="{ root: 'min-h-0 flex-1 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }"
           >
             <div class="mt-auto flex flex-col">
               <ul class="flex flex-col text-xs">
@@ -3369,11 +3423,11 @@ defineShortcuts({
                       >
                         <span
                           v-if="getLogActor(entry)"
-                          class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
+                          class="mr-2 text-[10px] font-medium tracking-[0.04em]"
                           :class="getLogActor(entry)?.classes"
                           data-test="journal-actor"
                         >
-                          {{ getLogActor(entry)?.displayName }}
+                          [{{ getLogActor(entry)?.displayName }}]
                         </span>
                         <span>{{ getLogMessageText(entry) }}</span>
                       </p>
@@ -3385,6 +3439,11 @@ defineShortcuts({
                   />
                 </template>
               </ul>
+              <div
+                ref="journal-end"
+                aria-hidden="true"
+                class="h-px w-full"
+              />
             </div>
           </UScrollArea>
 
@@ -3412,7 +3471,7 @@ defineShortcuts({
 
         <UCard
           class="min-h-0 min-w-0"
-          :ui="{ root: 'h-full flex-col', body: 'min-h-0 flex-1 overflow-hidden' }"
+          :ui="{ root: 'flex h-full flex-col overflow-hidden', body: 'min-h-0 flex-1 overflow-hidden' }"
         >
           <template #header>
             <div class="flex items-center justify-between gap-3">
@@ -3436,8 +3495,9 @@ defineShortcuts({
           </template>
 
           <UScrollArea
-            class="h-full min-h-0"
-            :ui="{ viewport: 'flex min-h-full flex-col pr-1' }"
+            ref="desktop-journal-scroll-area"
+            class="journal-scroll-root h-full min-h-0"
+            :ui="{ root: 'h-full min-h-0 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }"
           >
             <div class="mt-auto flex flex-col">
               <ul class="flex flex-col text-xs">
@@ -3466,10 +3526,10 @@ defineShortcuts({
                       >
                         <span
                           v-if="getLogActor(entry)"
-                          class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
+                          class="mr-2 text-[10px] font-medium tracking-[0.04em]"
                           :class="getLogActor(entry)?.classes"
                         >
-                          {{ getLogActor(entry)?.displayName }}
+                          [{{ getLogActor(entry)?.displayName }}]
                         </span>
                         <span>{{ getLogMessageText(entry) }}</span>
                       </p>
@@ -3481,6 +3541,11 @@ defineShortcuts({
                   />
                 </template>
               </ul>
+              <div
+                ref="desktop-journal-end"
+                aria-hidden="true"
+                class="h-px w-full"
+              />
             </div>
           </UScrollArea>
         </UCard>
@@ -3800,6 +3865,30 @@ defineShortcuts({
   animation: duel-trash-modal-card-appear 220ms ease-out both;
   animation-delay: calc(var(--trash-card-index, 0) * 35ms);
   will-change: transform, opacity;
+}
+
+:deep(.journal-scroll-root) {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(71 85 105 / 0.9) transparent;
+}
+
+:deep(.journal-scroll-root::-webkit-scrollbar) {
+  width: 10px;
+}
+
+:deep(.journal-scroll-root::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+:deep(.journal-scroll-root::-webkit-scrollbar-thumb) {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+  background-color: rgb(71 85 105 / 0.9);
+}
+
+:deep(.journal-scroll-root::-webkit-scrollbar-thumb:hover) {
+  background-color: rgb(100 116 139 / 1);
 }
 
 @keyframes duel-trash-modal-card-appear {
