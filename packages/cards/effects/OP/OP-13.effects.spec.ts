@@ -1,4 +1,4 @@
-import { describe, expect, it } from '../../../web/node_modules/vitest/dist/index.js';
+import { describe, expect, it } from 'vitest';
 import type {
   CardEffectDefinition,
   StandardEffectDefinition,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from '../../../web/node_modules/vitest/dist/index.js';
+import { describe, expect, it } from 'vitest';
 import type { Card, CardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '../../../effect-engine/src/types/effect-registry.js';
 import { op10EffectDefinitions } from './OP-10.effects';

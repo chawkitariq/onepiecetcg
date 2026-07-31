@@ -1,4 +1,4 @@
-import { describe, expect, it } from '../../../web/node_modules/vitest/dist/index.js';
+import { describe, expect, it } from 'vitest';
 import { EffectEngine } from '../../../effect-engine/src/effect-engine.js';
 import { createRegistry, makeCard, TestHost } from '../test-utils.js';
 import { eb04EffectDefinitions } from './EB-04.effects';

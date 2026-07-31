@@ -23,13 +23,15 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
-    "test": "../web/node_modules/.bin/vitest",
-    "test:run": "../web/node_modules/.bin/vitest run --config ./vitest.config.ts"
+    "test": "vitest",
+    "test:run": "vitest run --config ./vitest.config.ts"
   },
   "dependencies": {
     "@onepiecetcg/shared": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }

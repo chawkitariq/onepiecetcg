@@ -1,4 +1,4 @@
-import { describe, expect, it } from '../../../web/node_modules/vitest/dist/index.js';
+import { describe, expect, it } from 'vitest';
 import { DuelCard, type Card } from '@onepiecetcg/shared';
 import { EffectEngine } from '../../../effect-engine/src/effect-engine.js';
 import { st19EffectDefinitions } from './ST-19.effects';

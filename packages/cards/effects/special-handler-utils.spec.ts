@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import { describe, expect, it } from '../../web/node_modules/vitest/dist/index.js';
+import { describe, expect, it } from 'vitest';
 import {
   createOncePerTurnKey,
   hasResolvedOncePerTurn,

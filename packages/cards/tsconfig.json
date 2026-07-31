@@ -6,11 +6,6 @@
     "declaration": true,
     "strict": true,
     "types": ["node"],
-    "typeRoots": [
-      "../../apps/web/node_modules/@types",
-      "../../apps/api/node_modules/@types",
-      "../../node_modules/@types"
-    ],
     "useDefineForClassFields": false,
     "outDir": "dist",
     "declarationDir": "dist",

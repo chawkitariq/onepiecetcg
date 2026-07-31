@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-import { describe, expect, it } from '../../../web/node_modules/vitest/dist/index.js';
+import { describe, expect, it } from 'vitest';
 import type { EffectRegistry } from '../../../effect-engine/src/types/effect-registry.js';
 import { st03EffectDefinitions } from './ST-03.effects';
 
