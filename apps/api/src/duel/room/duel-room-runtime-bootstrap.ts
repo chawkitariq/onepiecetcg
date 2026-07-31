@@ -38,7 +38,9 @@ export type CreateDuelRoomRuntimeBootstrapInput = {
   getClients: () => readonly Client[];
   broadcast: (type: string, message: object) => void;
   getPendingRuntime: () => DuelRoomPendingInteractionRuntime | null;
-  setPendingRuntime: (runtime: DuelRoomPendingInteractionRuntime | null) => void;
+  setPendingRuntime: (
+    runtime: DuelRoomPendingInteractionRuntime | null,
+  ) => void;
   getActiveEffectDecision: () => ReturnType<
     DuelRoomGameplayRuntime['effectBoundary']['getPendingEffectDecision']
   >;
@@ -85,7 +87,8 @@ export function createDuelRoomRuntimeBootstrap(
     createRuntime: () => input.createIsolatedGameplayRuntime(),
     adoptRuntime: (runtime) => input.adoptRuntime(runtime),
     hasPendingPlayerInteraction: () => input.hasPendingPlayerInteraction(),
-    sendActionError: (client, message) => input.sendActionError(client, message),
+    sendActionError: (client, message) =>
+      input.sendActionError(client, message),
   });
   const interactionRuntimeCoordinator =
     new DuelRoomInteractionRuntimeCoordinator({
@@ -93,9 +96,12 @@ export function createDuelRoomRuntimeBootstrap(
       getPendingRuntime: () => input.getPendingRuntime(),
       setPendingRuntime: (runtime) => input.setPendingRuntime(runtime),
       createLifecycleForState: (state) => input.createLifecycleForState(state),
-      installLifecycle: (nextLifecycle) => input.installLifecycle(nextLifecycle),
-      createLiveGameplayRuntime: (state) => input.createLiveGameplayRuntime(state),
-      installGameplayRuntime: (runtime) => input.installGameplayRuntime(runtime),
+      installLifecycle: (nextLifecycle) =>
+        input.installLifecycle(nextLifecycle),
+      createLiveGameplayRuntime: (state) =>
+        input.createLiveGameplayRuntime(state),
+      installGameplayRuntime: (runtime) =>
+        input.installGameplayRuntime(runtime),
       rebuildAllClientViews: () => input.rebuildAllClientViews(),
       syncPendingEffectDecision: (decision) =>
         notifier.syncPendingEffectDecision(decision),

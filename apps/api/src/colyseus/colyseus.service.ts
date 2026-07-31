@@ -28,9 +28,9 @@ export class ColyseusService implements OnModuleDestroy {
 
     // Real duel state can exceed the default 8KB encoder buffer once both
     // players, hidden-zone counts, logs, and patch views are populated.
-    // Set the startup buffer to the size currently recommended by runtime
-    // overflow warnings so normal matches avoid repeated reallocation noise.
-    Encoder.BUFFER_SIZE = 64 * 1024;
+    // Align startup with the runtime overflow guidance so reconnect/full-state
+    // syncs avoid repeated buffer growth and warning spam.
+    Encoder.BUFFER_SIZE = 128 * 1024;
 
     const auth = createAuth();
 

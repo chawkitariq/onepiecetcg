@@ -4,7 +4,7 @@ import { DuelRoomRuntimeController } from './duel-room-runtime-controller';
 describe('DuelRoomRuntimeController', () => {
   it('returns the installed live runtime when no interaction is pending', () => {
     const liveState = new DuelState();
-    let pendingRuntime: any = null;
+    const pendingRuntime: any = null;
     const controller = new DuelRoomRuntimeController({
       liveState,
       getPendingRuntime: () => pendingRuntime,
@@ -21,7 +21,9 @@ describe('DuelRoomRuntimeController', () => {
 
     expect(controller.getGameplayRuntime()).toBe(liveRuntime);
     expect(controller.getRuntimeState()).toBe(liveRuntime.runtimeState);
-    expect(controller.getActiveEffectBoundary()).toBe(liveRuntime.effectBoundary);
+    expect(controller.getActiveEffectBoundary()).toBe(
+      liveRuntime.effectBoundary,
+    );
     expect(controller.hasPendingPlayerInteraction()).toBe(false);
     expect(controller.getActiveRuntimeContext()).toEqual({
       state: liveState,

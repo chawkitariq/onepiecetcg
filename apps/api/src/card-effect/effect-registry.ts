@@ -8,4 +8,3 @@ export const effectRegistry = buildEffectRegistry(loadEffectSources());
 export function createEffectRegistrySnapshot() {
   return buildEffectRegistry(loadEffectSources());
 }
-

@@ -19,12 +19,10 @@ export function unshiftIntoArraySchema<T>(
 /**
  * Shuffles an array-like card collection in place using Fisher-Yates.
  */
-export function shuffleArrayLike<T>(
-  values: {
-    length: number;
-    [index: number]: T | undefined;
-  },
-): void {
+export function shuffleArrayLike<T>(values: {
+  length: number;
+  [index: number]: T | undefined;
+}): void {
   for (let index = values.length - 1; index > 0; index -= 1) {
     const otherIndex = Math.floor(Math.random() * (index + 1));
     const current = values[index];

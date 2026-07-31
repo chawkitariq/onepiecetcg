@@ -13,8 +13,7 @@ export type DuelRoomIsolatedCommandFailure = {
 };
 
 export type DuelRoomIsolatedCommandResult =
-  | DuelRoomIsolatedCommandSuccess
-  | DuelRoomIsolatedCommandFailure;
+  DuelRoomIsolatedCommandSuccess | DuelRoomIsolatedCommandFailure;
 
 export type DuelRoomIsolatedCommandRunnerDeps = {
   createRuntime: () => DuelRoomIsolatedGameplayRuntime;

@@ -61,8 +61,9 @@ export class DuelRoomInteractionRuntimeCoordinator {
   public hasPendingPlayerInteraction(
     liveEffectBoundary: DuelRoomEffectBoundary,
   ): boolean {
-    return this.getActiveEffectBoundary(liveEffectBoundary)
-      .hasPendingPlayerInteraction();
+    return this.getActiveEffectBoundary(
+      liveEffectBoundary,
+    ).hasPendingPlayerInteraction();
   }
 
   /**
@@ -146,10 +147,7 @@ export class DuelRoomInteractionRuntimeCoordinator {
     lifecycle.importState(lifecycleState);
     this.deps.installLifecycle(lifecycle);
     liveGameplayRuntime.effectBoundary.importState(exportEffectBoundaryState());
-    this.deps.restoreCardKeywordSnapshot(
-      this.deps.liveState,
-      keywordSnapshot,
-    );
+    this.deps.restoreCardKeywordSnapshot(this.deps.liveState, keywordSnapshot);
     this.deps.installGameplayRuntime(liveGameplayRuntime);
     lifecycle.recordMatchResult();
     this.deps.rebuildAllClientViews();

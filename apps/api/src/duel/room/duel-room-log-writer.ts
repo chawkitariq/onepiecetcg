@@ -1,4 +1,8 @@
-import { DuelLog, type DuelLogLevel, type DuelState } from '@onepiecetcg/shared';
+import {
+  DuelLog,
+  type DuelLogLevel,
+  type DuelState,
+} from '@onepiecetcg/shared';
 
 /**
  * Appends one replicated duel-room log entry onto the provided duel state.

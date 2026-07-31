@@ -28,7 +28,6 @@ export function createDuelRoomGameplayRuntime(
 ): DuelRoomGameplayRuntime {
   return createDuelGameplayRuntime({
     ...input,
-    createEffectBoundary: (deps) =>
-      new DuelRoomEffectBoundary(deps as DuelRoomEffectBoundaryDeps),
+    createEffectBoundary: (deps) => new DuelRoomEffectBoundary(deps),
   }) as DuelRoomGameplayRuntime;
 }

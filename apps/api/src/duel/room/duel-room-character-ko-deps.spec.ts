@@ -34,7 +34,10 @@ describe('duel-room-character-ko-deps', () => {
       getTopCards: () => [],
       findZone: () => null,
     });
-    const addLog = jest.fn<void, [string, 'action' | 'effect' | 'system', string]>();
+    const addLog = jest.fn<
+      void,
+      [string, 'action' | 'effect' | 'system', string]
+    >();
     const unshiftIntoTrash = jest.fn<void, [DuelPlayer, DuelCard]>();
     const player = new DuelPlayer();
     const card = new DuelCard();

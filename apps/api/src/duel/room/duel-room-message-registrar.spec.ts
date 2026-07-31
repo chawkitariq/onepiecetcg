@@ -2,10 +2,16 @@ import { registerDuelRoomMessages } from './duel-room-message-registrar';
 
 describe('duel-room-message-registrar', () => {
   it('registers every duel room message and forwards callbacks', () => {
-    const handlers = new Map<string, (client: unknown, message: unknown) => void>();
+    const handlers = new Map<
+      string,
+      (client: unknown, message: unknown) => void
+    >();
     const room = {
       onMessage: jest.fn(
-        (type: string, callback: (client: unknown, message: unknown) => void) => {
+        (
+          type: string,
+          callback: (client: unknown, message: unknown) => void,
+        ) => {
           handlers.set(type, callback);
         },
       ),

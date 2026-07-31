@@ -81,12 +81,7 @@ export class DuelRoomStateServices {
     level: DuelLogLevel = 'info',
     actorSessionId = '',
   ): void {
-    appendDuelRoomLog(
-      this.deps.liveState,
-      message,
-      level,
-      actorSessionId,
-    );
+    appendDuelRoomLog(this.deps.liveState, message, level, actorSessionId);
     this.deps.logLiveMessage(message);
   }
 

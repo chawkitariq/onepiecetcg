@@ -1,5 +1,8 @@
 import { ArraySchema } from '@colyseus/schema';
-import { shuffleArrayLike, unshiftIntoArraySchema } from './duel-room-array-utils';
+import {
+  shuffleArrayLike,
+  unshiftIntoArraySchema,
+} from './duel-room-array-utils';
 
 describe('duel-room-array-utils', () => {
   it('prepends into an ArraySchema while keeping order intact', () => {

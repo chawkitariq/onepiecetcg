@@ -1,8 +1,8 @@
-import type {
-  DuelLogLevel,
-  DuelState,
-} from '@onepiecetcg/shared';
-import { adoptRoomDuelState, cloneRoomDuelState } from '@onepiecetcg/duel-engine';
+import type { DuelLogLevel, DuelState } from '@onepiecetcg/shared';
+import {
+  adoptRoomDuelState,
+  cloneRoomDuelState,
+} from '@onepiecetcg/duel-engine';
 import type { Client } from 'colyseus';
 import type { DuelRoomLifecycle } from './duel-room-lifecycle';
 
@@ -15,10 +15,7 @@ export type DuelRoomLeaveClient = Pick<Client, 'sessionId'>;
 export type DuelRoomLeaveHandlerDeps = {
   state: DuelState;
   getLifecycle: () => DuelRoomLifecycle;
-  allowReconnection: (
-    client: Client,
-    seconds: number,
-  ) => PromiseLike<unknown>;
+  allowReconnection: (client: Client, seconds: number) => PromiseLike<unknown>;
   createLifecycleForState: (
     state: DuelState,
     options?: { isolated?: boolean },

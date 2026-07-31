@@ -58,7 +58,11 @@ function addPrivateCardsToView(
   client: DuelRoomViewClient,
   player: DuelPlayer,
 ): void {
-  for (const zone of [player.zones.deck, player.zones.hand, player.zones.life]) {
+  for (const zone of [
+    player.zones.deck,
+    player.zones.hand,
+    player.zones.life,
+  ]) {
     for (const card of zone) {
       client.view?.add(card);
     }

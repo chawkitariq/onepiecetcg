@@ -18,7 +18,7 @@ function createFixture() {
   let hasPendingPlayerInteraction = false;
 
   const runner = new DuelRoomIsolatedCommandRunner({
-    createRuntime: () => createRuntime() as never,
+    createRuntime: () => createRuntime(),
     adoptRuntime: (runtime) => {
       adopted.push(runtime);
     },

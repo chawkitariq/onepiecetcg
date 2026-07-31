@@ -1,4 +1,7 @@
-import type { EffectDecisionResponse, FirstOrSecondChoice } from '@onepiecetcg/shared';
+import type {
+  EffectDecisionResponse,
+  FirstOrSecondChoice,
+} from '@onepiecetcg/shared';
 import type { Client } from 'colyseus';
 
 export type ChooseFirstOrSecondMessage = {

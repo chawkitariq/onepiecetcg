@@ -33,8 +33,9 @@ function createFixture() {
   const installedLifecycles: unknown[] = [];
   const installedRuntimes: unknown[] = [];
   const rebuiltViews: number[] = [];
-  const syncedDecisions: Array<ReturnType<typeof createPendingDecision> | null> =
-    [];
+  const syncedDecisions: Array<ReturnType<
+    typeof createPendingDecision
+  > | null> = [];
   const importedLifecycleStates: unknown[] = [];
   const recordCalls: number[] = [];
   const importedEffectStates: unknown[] = [];
@@ -78,9 +79,9 @@ function createFixture() {
       rebuiltViews.push(1);
     },
     syncPendingEffectDecision: (decision) => {
-      syncedDecisions.push(decision as ReturnType<
-        typeof createPendingDecision
-      > | null);
+      syncedDecisions.push(
+        decision as ReturnType<typeof createPendingDecision> | null,
+      );
     },
     captureCardKeywordSnapshot: () => {
       const snapshot = { id: 'keywords' };

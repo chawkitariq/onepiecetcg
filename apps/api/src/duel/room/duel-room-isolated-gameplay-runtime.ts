@@ -25,7 +25,9 @@ export type CreateDuelRoomIsolatedGameplayRuntimeInput = Omit<
   'liveLifecycleState' | 'createLifecycleForState' | 'createEffectBoundary'
 > & {
   liveLifecycleState: DuelRoomLifecycleState;
-  createLifecycleForState: (state: import('@onepiecetcg/shared').DuelState) => DuelRoomLifecycle;
+  createLifecycleForState: (
+    state: import('@onepiecetcg/shared').DuelState,
+  ) => DuelRoomLifecycle;
 };
 
 /**
@@ -37,7 +39,6 @@ export function createDuelRoomIsolatedGameplayRuntime(
 ): DuelRoomIsolatedGameplayRuntime {
   return createBaseDuelRoomIsolatedGameplayRuntime({
     ...input,
-    createEffectBoundary: (deps) =>
-      new LocalDuelRoomEffectBoundary(deps as DuelRoomEffectBoundaryDeps),
+    createEffectBoundary: (deps) => new LocalDuelRoomEffectBoundary(deps),
   }) as DuelRoomIsolatedGameplayRuntime;
 }

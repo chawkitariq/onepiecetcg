@@ -9,16 +9,13 @@ import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gamep
 type IsolatedRuntime = DuelRoomIsolatedGameplayRuntime;
 
 type TurnOrCombatResult =
-  | DuelRoomIsolatedCommandFailure
-  | DuelRoomIsolatedCommandSuccess;
+  DuelRoomIsolatedCommandFailure | DuelRoomIsolatedCommandSuccess;
 
 /**
  * Shared dispatcher for main-phase, turn, and combat isolated commands.
  */
 export class DuelRoomIsolatedCommandDispatcher {
-  public constructor(
-    private readonly runner: DuelRoomIsolatedCommandRunner,
-  ) {}
+  public constructor(private readonly runner: DuelRoomIsolatedCommandRunner) {}
 
   /**
    * Runs a main-phase command with the standard runtime-error fallback.

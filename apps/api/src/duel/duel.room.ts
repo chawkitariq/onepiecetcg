@@ -739,9 +739,7 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     executor: (
       runtime: IsolatedGameplayRuntime,
-    ) =>
-      | { handled: false; errorMessage?: string }
-      | { handled: true },
+    ) => { handled: false; errorMessage?: string } | { handled: true },
     _failureMessage: string,
   ): Promise<void> {
     await this.isolatedCommandDispatcher.runTurnCommand(client, executor);
@@ -751,9 +749,7 @@ export class DuelRoom extends Room<DuelState> {
     client: Client,
     executor: (
       runtime: IsolatedGameplayRuntime,
-    ) =>
-      | { handled: false; errorMessage?: string }
-      | { handled: true },
+    ) => { handled: false; errorMessage?: string } | { handled: true },
     _failureMessage: string,
     options?: { allowPendingInteraction?: boolean },
   ): Promise<void> {
