@@ -15,9 +15,11 @@ The generator must:
 3. keep only cards that need an effect-definition entry
 4. preserve already-authored card blocks exactly
 5. create placeholder blocks for uncovered cards
-6. rewrite the edition file and `definitions/index.ts`
-7. refresh `definitions/special/index.ts`
-8. validate the result
+6. rewrite the edition file in the correct family folder
+7. refresh the touched family `index.ts`
+8. refresh the touched family `special/index.ts`
+9. refresh the root `definitions/index.ts`
+10. validate the result
 
 ## Edition selection
 
@@ -82,7 +84,7 @@ When replacing a placeholder with a real definition, add `effects` using only th
 - `replacement`
 - `special-ref`
 
-Use `special-ref` only when the card truly needs a special handler in `definitions/special/`.
+Use `special-ref` only when the card truly needs a special handler in `definitions/<FAMILY>/special/`.
 
 ## Required completion step after generation
 

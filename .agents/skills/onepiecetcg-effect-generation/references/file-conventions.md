@@ -4,15 +4,15 @@
 
 Write effect-definition files only in:
 
-- edition definitions: `packages/api/src/card-effect/definitions/`
-- special handlers: `packages/api/src/card-effect/definitions/<EDITION>/special/` (e.g. `OP/special/`, `ST/special/`)
-- shared handler utilities: `packages/api/src/card-effect/definitions/` (`special-handler-utils.ts`)
+- edition definitions: `packages/effect-engine/src/definitions/<FAMILY>/`
+- special handlers: `packages/effect-engine/src/definitions/<FAMILY>/special/` (e.g. `OP/special/`, `ST/special/`)
+- shared handler utilities: `packages/effect-engine/src/definitions/` (`special-handler-utils.ts`)
 
 ## Edition file naming
 
 Edition files must use:
 
-- the hyphenated catalog-style edition id (e.g. `OP-01` → `op-01`)
+- the hyphenated catalog-style edition id (e.g. `OP-01`)
 - `.effects.ts` suffix
 
 Examples:
@@ -48,7 +48,7 @@ Examples:
 Each edition file must follow this structure:
 
 ```ts
-import type { EditionEffectDefinitions } from '../types/effect-definition-source';
+import type { EditionEffectDefinitions } from '../../types/effect-definition-source';
 
 export const op01EffectDefinitions: EditionEffectDefinitions = {
   editionId: 'OP-01',
@@ -67,15 +67,29 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
 
 ## Definitions index file
 
-The aggregate edition index lives here:
+The root aggregate index lives here:
 
-- `packages/api/src/card-effect/definitions/index.ts`
+- `packages/effect-engine/src/definitions/index.ts`
 
 It must:
 
-1. import every edition export
+1. import every family index
 2. export `effectDefinitionEditions`
-3. match the set of existing `*.effects.ts` files
+3. export `specialHandlerDefinitions`
+4. match the set of existing family folders
+
+## Family index file
+
+Each family folder must have an index here:
+
+- `packages/effect-engine/src/definitions/<FAMILY>/index.ts`
+
+It must:
+
+1. import every edition export inside that family
+2. import `<family>SpecialHandlers` from `./special`
+3. export `<familyLower>EditionEffectDefinitions`
+4. export `<familyLower>EditionSpecialHandlers`
 
 ## Special handler naming
 
@@ -101,20 +115,9 @@ Example from the repo:
 
 Each edition must have a per-edition special index at:
 
-- `packages/api/src/card-effect/definitions/<EDITION>/special/index.ts`
+- `packages/effect-engine/src/definitions/<FAMILY>/special/index.ts`
 
 It must:
 
 1. import every `*.special.ts` export within that edition's `special/` directory
 2. export an aggregated array named `<edition>SpecialHandlers` (e.g. `opSpecialHandlers`, `stSpecialHandlers`, `ebSpecialHandlers`)
-
-## Root special handler aggregator
-
-The global aggregate file lives here:
-
-- `packages/api/src/card-effect/definitions/special/index.ts`
-
-It must:
-
-1. import every per-edition `special/index.ts`
-2. spread them into a single `specialHandlerDefinitions` array

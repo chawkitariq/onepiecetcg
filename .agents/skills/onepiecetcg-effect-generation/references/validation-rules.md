@@ -2,7 +2,7 @@
 
 ## Goal
 
-Validate the effect-definition file set before it is consumed by the backend runtime.
+Validate the effect-definition file set before it is consumed by the reusable effect runtime.
 
 ## Validation entrypoint
 
@@ -22,13 +22,10 @@ Or:
 
 By default, the validator reads:
 
-- `packages/api/src/card-effect/definitions/*.effects.ts`
-- `packages/api/src/card-effect/definitions/special/*.special.ts`
+- `packages/effect-engine/src/definitions/*/*.effects.ts`
+- `packages/effect-engine/src/definitions/*/special/*.special.ts`
 
-It does not validate aggregate files directly:
-
-- `definitions/index.ts`
-- `definitions/special/index.ts`
+It does not validate aggregate index files directly.
 
 ## Validation invariants
 
@@ -73,7 +70,7 @@ Two special handlers share the same id, or two cards reference the same special 
 
 ### `MISSING_SPECIAL_HANDLER`
 
-A card uses `kind: 'special-ref'` but the referenced handler does not exist in `definitions/special/`.
+A card uses `kind: 'special-ref'` but the referenced handler does not exist in that family's `special/` directory.
 
 ### `ORPHAN_SPECIAL_HANDLER`
 
@@ -90,9 +87,9 @@ Use this sequence:
 1. generate or edit edition files
 2. implement the full DSL for every generated placeholder card in scope
 3. choose the right test layer for the touched behavior:
-   - `packages/api/src/card-effect/effect-engine.spec.ts` for reusable runtime or rules behavior
-   - edition-specific specs such as `packages/api/src/card-effect/definitions/OP-01.effects.spec.ts` for card-level effect behavior
-   - `packages/api/src/card-effect/effect-loader.spec.ts` when loader or registry wiring changes
+   - `packages/effect-engine/src/effect-engine.spec.ts` for reusable runtime or rules behavior
+   - edition-specific specs such as `packages/effect-engine/src/definitions/OP/OP-01.effects.spec.ts` for card-level effect behavior
+   - `packages/effect-engine/src/effect-loader.spec.ts` when loader or registry wiring changes
 4. add or update tests at that layer so the important touched behavior is covered
 5. when you add card-level coverage, cover the complete effect path: trigger, optional decisions, costs, target selection, modifiers, moves, and final state
 6. use the card text as a verification checklist: assert the gameplay meaning of each important clause the description expresses, including ownership words, optional wording, quantity bounds, and ordered "then" sequencing when present

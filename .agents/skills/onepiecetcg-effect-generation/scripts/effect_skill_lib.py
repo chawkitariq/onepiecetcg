@@ -128,7 +128,7 @@ def detect_repo_root(start: Path | None = None) -> Path:
         pass
 
     for parent in [candidate, *candidate.parents]:
-        if (parent / "packages/api/src/card-effect/definitions").is_dir():
+        if (parent / "packages/effect-engine/src/definitions").is_dir():
             return parent
 
     raise RuntimeError(
@@ -139,13 +139,20 @@ def detect_repo_root(start: Path | None = None) -> Path:
 def resolve_default_definitions_dir(repo_root: Path) -> Path:
     """Return the default definitions directory inside the repository."""
 
-    return repo_root / "packages/api/src/card-effect/definitions"
+    return repo_root / "packages/effect-engine/src/definitions"
 
 
 def resolve_default_special_dir(repo_root: Path) -> Path:
-    """Return the default special-handler directory inside the repository."""
+    """Return the default special-handler search root inside the repository."""
 
-    return resolve_default_definitions_dir(repo_root) / "special"
+    return resolve_default_definitions_dir(repo_root)
+
+
+def get_edition_family(edition_id: str) -> str:
+    """Return the family folder name for an edition id."""
+
+    normalized = normalize_edition_id(edition_id)
+    return normalized.split("-", 1)[0]
 
 
 def read_text(path: Path) -> str:
@@ -525,19 +532,19 @@ def load_parsed_editions(definitions_dir: Path) -> list[ParsedEditionFile]:
 
     files = sorted(
         path
-        for path in definitions_dir.glob("*.effects.ts")
-        if path.is_file() and path.name != "index.ts"
+        for path in definitions_dir.glob("*/*.effects.ts")
+        if path.is_file() and not path.name.endswith(".spec.ts")
     )
     return [parse_edition_file(path) for path in files]
 
 
 def load_parsed_special_handlers(special_dir: Path) -> list[ParsedSpecialHandler]:
-    """Load every authored special handler from the target directory."""
+    """Load every authored special handler from the target directory tree."""
 
     files = sorted(
         path
-        for path in special_dir.glob("*.special.ts")
-        if path.is_file() and path.name != "index.ts"
+        for path in special_dir.glob("*/special/*.special.ts")
+        if path.is_file()
     )
     return [parse_special_handler(path) for path in files]
 
@@ -668,6 +675,24 @@ def to_effect_file_name(edition_id: str) -> str:
     return f"{edition_id}.effects.ts"
 
 
+def to_family_special_handlers_name(family: str) -> str:
+    """Build the exported TS variable name for a family's special handlers."""
+
+    return f"{family.lower()}SpecialHandlers"
+
+
+def to_family_edition_definitions_name(family: str) -> str:
+    """Build the exported TS variable name for a family's edition definitions."""
+
+    return f"{family.lower()}EditionEffectDefinitions"
+
+
+def to_family_edition_special_handlers_name(family: str) -> str:
+    """Build the exported TS variable name for a family's exported special handlers."""
+
+    return f"{family.lower()}EditionSpecialHandlers"
+
+
 def quote_ts_string(value: str) -> str:
     """Render a TS single-quoted string literal."""
 
@@ -795,7 +820,7 @@ def render_edition_file(
         rendered_cards = "\n" + ",\n".join(indented_blocks) + ",\n  "
 
     return (
-        "import type { EditionEffectDefinitions } from '../types/effect-definition-source';\n\n"
+        "import type { EditionEffectDefinitions } from '../../types/effect-definition-source';\n\n"
         f"export const {variable_name}: EditionEffectDefinitions = {{\n"
         f"  editionId: {quote_ts_string(edition_id)},\n"
         f"  cards: [{rendered_cards}],\n"
@@ -803,25 +828,61 @@ def render_edition_file(
     )
 
 
-def render_definitions_index(edition_ids: list[str]) -> str:
-    """Render `definitions/index.ts` for the selected edition files."""
+def render_family_index(family: str, edition_ids: list[str]) -> str:
+    """Render `definitions/<FAMILY>/index.ts` for one family."""
 
     imports = "\n".join(
         f"import {{ {to_variable_name(edition_id)} }} from './{to_effect_file_name(edition_id).removesuffix('.ts')}';"
         for edition_id in edition_ids
     )
     entries = "\n".join(f"  {to_variable_name(edition_id)}," for edition_id in edition_ids)
+    special_handlers_name = to_family_special_handlers_name(family)
+    edition_definitions_name = to_family_edition_definitions_name(family)
+    edition_special_handlers_name = to_family_edition_special_handlers_name(family)
     return (
-        "import type { EditionEffectDefinitions } from '../types/effect-definition-source';\n"
-        f"{imports}\n\n"
-        "export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [\n"
+        "import type { EditionEffectDefinitions } from '../../types/effect-definition-source';\n"
+        "import type { SpecialHandlerDefinition } from '../../types/effect-registry';\n"
+        f"{imports}\n"
+        f"import {{ {special_handlers_name} }} from './special';\n\n"
+        f"export const {edition_definitions_name}: readonly EditionEffectDefinitions[] = [\n"
         f"{entries}\n"
-        "];\n"
+        "] as const;\n\n"
+        f"export const {edition_special_handlers_name}: readonly SpecialHandlerDefinition[] =\n"
+        f"  {special_handlers_name};\n"
     )
 
 
-def render_special_index(handlers: list[ParsedSpecialHandler]) -> str:
-    """Render `definitions/special/index.ts` from the discovered special files."""
+def render_root_definitions_index(families: list[str]) -> str:
+    """Render `definitions/index.ts` from the discovered family folders."""
+
+    imports = "\n".join(
+        (
+            f"import {{ {to_family_edition_definitions_name(family)}, "
+            f"{to_family_edition_special_handlers_name(family)} }} from './{family}';"
+        )
+        for family in families
+    )
+    edition_entries = "\n".join(
+        f"  ...{to_family_edition_definitions_name(family)}," for family in families
+    )
+    special_entries = "\n".join(
+        f"  ...{to_family_edition_special_handlers_name(family)}," for family in families
+    )
+    return (
+        "import type { EditionEffectDefinitions } from '../types/effect-definition-source';\n"
+        "import type { SpecialHandlerDefinition } from '../types/effect-registry';\n"
+        f"{imports}\n\n"
+        "export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [\n"
+        f"{edition_entries}\n"
+        "] as const;\n\n"
+        "export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [\n"
+        f"{special_entries}\n"
+        "] as const;\n"
+    )
+
+
+def render_special_index(family: str, handlers: list[ParsedSpecialHandler]) -> str:
+    """Render `definitions/<FAMILY>/special/index.ts` from the discovered special files."""
 
     imports = "\n".join(
         f"import {{ {handler.export_name} }} from './{handler.path.stem}';"
@@ -829,9 +890,9 @@ def render_special_index(handlers: list[ParsedSpecialHandler]) -> str:
     )
     entries = "\n".join(f"  {handler.export_name}," for handler in handlers)
     return (
-        "import type { SpecialHandlerDefinition } from '../../types/effect-registry';\n"
+        "import type { SpecialHandlerDefinition } from '../../../types/effect-registry';\n"
         f"{imports}\n\n"
-        "export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [\n"
+        f"export const {to_family_special_handlers_name(family)}: readonly SpecialHandlerDefinition[] = [\n"
         f"{entries}\n"
         "] as const;\n"
     )

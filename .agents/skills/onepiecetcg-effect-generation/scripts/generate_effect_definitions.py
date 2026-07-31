@@ -12,13 +12,15 @@ from effect_skill_lib import (
     detect_repo_root,
     fetch_live_catalog,
     get_card_edition_id,
+    get_edition_family,
     load_cards_from_snapshot,
     load_parsed_editions,
     load_parsed_special_handlers,
     normalize_edition_id,
-    render_definitions_index,
+    render_family_index,
     render_edition_file,
     render_generated_card_block,
+    render_root_definitions_index,
     render_special_index,
     resolve_default_definitions_dir,
     resolve_default_special_dir,
@@ -54,12 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--definitions-dir",
         type=Path,
-        help="Definitions directory to read authored files from. Defaults to packages/api/src/card-effect/definitions.",
+        help="Definitions directory to read authored files from. Defaults to packages/effect-engine/src/definitions.",
     )
     parser.add_argument(
         "--special-dir",
         type=Path,
-        help="Special-handler directory. Defaults to <definitions-dir>/special.",
+        help="Special-handler search root. Defaults to the definitions dir and scans <FAMILY>/special/ beneath it.",
     )
     parser.add_argument(
         "--output-dir",
@@ -211,6 +213,7 @@ def main() -> int:
     generated_drafts = build_placeholder_drafts(missing_cards)
 
     written_paths: list[Path] = []
+    touched_families: set[str] = set()
     for edition_id in requested_edition_ids:
         merged_blocks = merge_generated_blocks(
             ordered_card_ids=ordered_card_ids_by_edition[edition_id],
@@ -218,33 +221,61 @@ def main() -> int:
             existing_blocks=existing_blocks.get(edition_id, {}),
             generated_drafts=generated_drafts,
         )
-        edition_path = output_dir / to_effect_file_name(edition_id)
+        family = get_edition_family(edition_id)
+        family_dir = output_dir / family
+        family_dir.mkdir(parents=True, exist_ok=True)
+        edition_path = family_dir / to_effect_file_name(edition_id)
         edition_path.write_text(
             render_edition_file(edition_id, merged_blocks),
             encoding="utf-8",
         )
         written_paths.append(edition_path)
-
-    final_edition_ids = sorted(set(
-        normalize_edition_id(path.stem.split(".")[0])
-        for path in output_dir.glob("*.effects.ts")
-        if path.name != "index.ts"
-    ))
-    (output_dir / "index.ts").write_text(
-        render_definitions_index(final_edition_ids),
-        encoding="utf-8",
-    )
+        touched_families.add(family)
 
     special_handlers = load_parsed_special_handlers(special_dir)
-    special_index_path = special_dir / "index.ts"
-    special_index_path.write_text(
-        render_special_index(special_handlers),
+    special_handlers_by_family: dict[str, list] = {}
+    for handler in special_handlers:
+        family = handler.path.parent.parent.name
+        special_handlers_by_family.setdefault(family, []).append(handler)
+
+    refreshed_paths: list[Path] = []
+    discovered_families: set[str] = set()
+    for family_dir in sorted(path for path in output_dir.iterdir() if path.is_dir()):
+        family = family_dir.name
+        edition_ids = sorted(
+            normalize_edition_id(path.name.removesuffix(".effects.ts"))
+            for path in family_dir.glob("*.effects.ts")
+            if path.is_file() and not path.name.endswith(".spec.ts")
+        )
+        if not edition_ids:
+            continue
+        discovered_families.add(family)
+        family_index_path = family_dir / "index.ts"
+        family_index_path.write_text(
+            render_family_index(family, edition_ids),
+            encoding="utf-8",
+        )
+        refreshed_paths.append(family_index_path)
+
+        family_special_dir = family_dir / "special"
+        family_special_dir.mkdir(parents=True, exist_ok=True)
+        family_special_index_path = family_special_dir / "index.ts"
+        family_special_index_path.write_text(
+            render_special_index(family, special_handlers_by_family.get(family, [])),
+            encoding="utf-8",
+        )
+        refreshed_paths.append(family_special_index_path)
+
+    root_index_path = output_dir / "index.ts"
+    root_index_path.write_text(
+        render_root_definitions_index(sorted(discovered_families)),
         encoding="utf-8",
     )
+    refreshed_paths.append(root_index_path)
 
     validation_report = validate_sources(
         load_parsed_editions(output_dir),
-        special_handlers,
+        load_parsed_special_handlers(special_dir),
     )
     if not validation_report.valid:
         issues = "\n".join(
@@ -256,7 +287,7 @@ def main() -> int:
 
     print(
         f"Generated {len(written_paths)} edition file(s) in {output_dir} "
-        f"and refreshed {special_index_path}."
+        f"and refreshed {len(refreshed_paths)} index file(s)."
     )
     for path in written_paths:
         print(f"- {path}")

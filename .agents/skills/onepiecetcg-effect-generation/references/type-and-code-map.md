@@ -11,21 +11,21 @@ Use this reference when you need the exact source files for the effect-definitio
 - Need the effect DSL types:
   Read `packages/shared/src/effects.ts`
 - Need the authoring source shape used by `*.effects.ts` files:
-  Read `packages/api/src/card-effect/types/effect-definition-source.ts`
+  Read `packages/effect-engine/src/types/effect-definition-source.ts`
 - Need the runtime registry contracts:
-  Read `packages/api/src/card-effect/types/effect-registry.ts`
+  Read `packages/effect-engine/src/types/effect-registry.ts`
 - Need to understand how authored source becomes runtime buckets:
-  Read `packages/api/src/card-effect/effect-loader.ts`
+  Read `packages/effect-engine/src/effect-loader.ts`
 - Need to understand the precomputed indexes:
-  Read `packages/api/src/card-effect/effect-indexes.ts`
+  Read `packages/effect-engine/src/effect-indexes.ts`
 - Need to inspect example authored edition files:
-  Read `packages/api/src/card-effect/definitions/OP-01.effects.ts`
+  Read `packages/effect-engine/src/definitions/OP/OP-01.effects.ts`
 - Need to inspect a real special handler:
-  Read `packages/api/src/card-effect/definitions/special/OP01-047.special.ts`
+  Read `packages/effect-engine/src/definitions/OP/special/OP04-047.special.ts`
 - Need to inspect helper accessors over resolved definitions:
-  Read `packages/api/src/card-effect/effect-definition-dispatch.ts`
+  Read `packages/effect-engine/src/effect-definition-dispatch.ts`
 - Need to inspect runtime event and special-handler host types:
-  Read `packages/api/src/card-effect/effect-engine.ts`
+  Read `packages/effect-engine/src/effect-engine.ts`
 
 ## Shared card metadata types
 
@@ -78,7 +78,7 @@ This file tells you which fields are legal inside authored `effects` entries.
 
 ## Authoring source types
 
-### `packages/api/src/card-effect/types/effect-definition-source.ts`
+### `packages/effect-engine/src/types/effect-definition-source.ts`
 
 This file defines the source shape used inside edition files:
 
@@ -89,13 +89,13 @@ This file defines the source shape used inside edition files:
 
 This is the direct contract for:
 
-- `packages/api/src/card-effect/definitions/*.effects.ts`
+- `packages/effect-engine/src/definitions/<FAMILY>/*.effects.ts`
 
 If you are unsure how a card block should be structured, start here.
 
 ## Runtime registry contracts
 
-### `packages/api/src/card-effect/types/effect-registry.ts`
+### `packages/effect-engine/src/types/effect-registry.ts`
 
 This file defines the runtime-side contracts that the loader builds:
 
@@ -119,7 +119,7 @@ Read this file when deciding:
 
 ## Loader behavior
 
-### `packages/api/src/card-effect/effect-loader.ts`
+### `packages/effect-engine/src/effect-loader.ts`
 
 This file explains how authored source is resolved at runtime:
 
@@ -133,7 +133,7 @@ Read this file when deciding how a declarative source entry will be interpreted 
 
 ## Index-building behavior
 
-### `packages/api/src/card-effect/effect-indexes.ts`
+### `packages/effect-engine/src/effect-indexes.ts`
 
 This file shows how runtime indexes are built for:
 
@@ -144,7 +144,7 @@ Read it when a new authored definition should be discoverable through a trigger 
 
 ## Example authored definition files
 
-### `packages/api/src/card-effect/definitions/OP-01.effects.ts`
+### `packages/effect-engine/src/definitions/OP/OP-01.effects.ts`
 
 Use as the primary example for:
 
@@ -153,16 +153,17 @@ Use as the primary example for:
 - `special-ref` entries
 - comment banner format
 
-### `packages/api/src/card-effect/definitions/index.ts`
+### `packages/effect-engine/src/definitions/OP/index.ts`
 
 Use as the example for:
 
-- aggregate edition imports
-- `effectDefinitionEditions`
+- family edition imports
+- `opEditionEffectDefinitions`
+- `opEditionSpecialHandlers`
 
 ## Example special-handler files
 
-### `packages/api/src/card-effect/definitions/special/OP01-047.special.ts`
+### `packages/effect-engine/src/definitions/OP/special/OP04-047.special.ts`
 
 Use as the primary example for:
 
@@ -172,16 +173,24 @@ Use as the primary example for:
 - `resolve(event, engine)` shape
 - queueing a synthetic `StandardEffectDefinition`
 
-### `packages/api/src/card-effect/definitions/special/index.ts`
+### `packages/effect-engine/src/definitions/OP/special/index.ts`
 
 Use as the example for:
 
 - aggregate special-handler imports
-- `specialHandlerDefinitions`
+- `opSpecialHandlers`
 
 ## Helper accessors and runtime engine context
 
-### `packages/api/src/card-effect/effect-definition-dispatch.ts`
+### `packages/effect-engine/src/definitions/index.ts`
+
+Use as the example for:
+
+- root family imports
+- `effectDefinitionEditions`
+- `specialHandlerDefinitions`
+
+### `packages/effect-engine/src/effect-definition-dispatch.ts`
 
 Read this file for small helpers that expose the resolved runtime arrays:
 
@@ -189,7 +198,7 @@ Read this file for small helpers that expose the resolved runtime arrays:
 - continuous effects
 - replacement effects
 
-### `packages/api/src/card-effect/effect-engine.ts`
+### `packages/effect-engine/src/effect-engine.ts`
 
 Read this file when a special handler needs runtime context details such as:
 
