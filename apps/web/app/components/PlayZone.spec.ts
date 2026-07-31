@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { defineComponent, h, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import AnimatedPowerBadge from './AnimatedPowerBadge.vue'
 import PlayZone from './PlayZone.vue'
 
 const reducedMotion = ref<'reduce' | 'no-preference'>('no-preference')
@@ -460,6 +461,29 @@ describe('PlayZone transitions', () => {
 
     expect(characterAnchor.findAll('img[alt="DON!! attache"]')).toHaveLength(2)
     expect(leaderAnchor.findAll('img[alt="DON!! attache"]')).toHaveLength(1)
+  })
+
+  it('keeps the power badge above the attached DON!! stack', () => {
+    const wrapper = mount(PlayZone, {
+      props: {
+        player: createPlayer({
+          leader: createPublicCard('leader-a', { type: 'Leader', power: 5000, attachedDon: 1 }),
+          characters: [
+            createPublicCard('character-a', { power: 10000, attachedDon: 2 })
+          ]
+        }),
+        side: 0
+      },
+      global: {
+        stubs: zoneTestStubs()
+      }
+    })
+
+    const badge = wrapper.findComponent(AnimatedPowerBadge)
+    const badgeElement = badge.getComponent({ name: 'UBadge' })
+
+    expect(wrapper.get('[data-attached-don-anchor="character-a"]').classes()).toContain('z-20')
+    expect(badgeElement.classes()).toContain('z-30')
   })
 
   it('widens the attached DON!! anchor as the stack grows so later cards keep the same size', () => {

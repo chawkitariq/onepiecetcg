@@ -28,7 +28,7 @@ const displayedValue = computed(() => {
     color="neutral"
     variant="solid"
     size="sm"
-    class="absolute bottom-0 left-1/2 -translate-x-1/2 tabular-nums"
+    class="absolute bottom-0 left-1/2 z-30 -translate-x-1/2 tabular-nums"
     :class="mirrored ? '-scale-x-100 -scale-y-100' : ''"
   >
     {{ displayedValue }}
