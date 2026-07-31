@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { createRegistry, makeCard, TestHost } from '../test-utils.js';
 import { eb01EffectDefinitions } from './EB-01.effects';
 

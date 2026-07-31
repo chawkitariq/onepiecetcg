@@ -4,9 +4,9 @@ import {
   type CardEffectDefinition,
   createDuelCard,
 } from '@onepiecetcg/shared';
-import type { SpecialHandlerDefinition } from '../../../../effect-engine/src/types/effect-registry.js';
+import type { SpecialHandlerDefinition } from '@onepiecetcg/effect-engine';
 import { op12EffectDefinitions } from './OP-12.effects';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { makeCard, createRegistry, TestHost } from '../test-utils.js';
 
 describe('OP12 effect definitions', () => {

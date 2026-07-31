@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Card, CardEffectDefinition } from '@onepiecetcg/shared';
-import type { SpecialHandlerDefinition } from '../../../../effect-engine/src/types/effect-registry.js';
+import type { SpecialHandlerDefinition } from '@onepiecetcg/effect-engine';
 import { op10EffectDefinitions } from './OP-10.effects';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { TestHost, makeCard, createRegistry } from '../test-utils.js';
 import { specialHandlerDefinitions } from '../index.js';
 

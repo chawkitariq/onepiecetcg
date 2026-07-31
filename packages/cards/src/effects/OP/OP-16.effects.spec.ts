@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CardEffectDefinition } from '@onepiecetcg/shared';
-import type { EffectRegistry } from '../../../../effect-engine/src/types/effect-registry.js';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import type { EffectRegistry } from '@onepiecetcg/effect-engine';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { op16EffectDefinitions } from './OP-16.effects';
 import { specialHandlerDefinitions } from '../index.js';
 import {

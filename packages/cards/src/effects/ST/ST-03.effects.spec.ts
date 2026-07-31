@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { describe, expect, it } from 'vitest';
-import type { EffectRegistry } from '../../../../effect-engine/src/types/effect-registry.js';
+import type { EffectRegistry } from '@onepiecetcg/effect-engine';
 import { st03EffectDefinitions } from './ST-03.effects';
 
 const createRegistry = (): EffectRegistry => {

@@ -1,4 +1,4 @@
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { TestHost, makeCard, createRegistry } from '../test-utils.js';
 import { op08EffectDefinitions } from './OP-08.effects';
 import { op08118SpecialHandler } from './special/OP08-118.special';

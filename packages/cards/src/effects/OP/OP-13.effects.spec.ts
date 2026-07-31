@@ -8,10 +8,10 @@ import type {
 import type {
   EffectRegistry,
   SpecialHandlerDefinition,
-} from '../../../../effect-engine/src/types/effect-registry.js';
+} from '@onepiecetcg/effect-engine';
 import { op13EffectDefinitions } from './OP-13.effects';
 import { specialHandlerDefinitions } from '../index.js';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { createRegistry, makeCard, TestHost } from '../test-utils.js';
 
 describe('OP13 effect definitions', () => {

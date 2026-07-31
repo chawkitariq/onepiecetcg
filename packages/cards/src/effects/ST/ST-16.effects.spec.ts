@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { describe, expect, it } from 'vitest';
 import { DuelCard, type Card } from '@onepiecetcg/shared';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { st16EffectDefinitions } from './ST-16.effects';
 import { createRegistry, makeCard, TestHost } from '../test-utils.js';
 

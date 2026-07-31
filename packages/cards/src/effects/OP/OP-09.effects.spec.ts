@@ -4,8 +4,8 @@ import {
   type Card,
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
-import type { SpecialHandlerDefinition } from '../../../../effect-engine/src/types/effect-registry.js';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import type { SpecialHandlerDefinition } from '@onepiecetcg/effect-engine';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { TestHost, makeCard, createRegistry } from '../test-utils.js';
 import { op09EffectDefinitions } from './OP-09.effects';
 import { specialHandlerDefinitions } from '../index.js';

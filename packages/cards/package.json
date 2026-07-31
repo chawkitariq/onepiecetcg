@@ -30,6 +30,7 @@
     "@onepiecetcg/shared": "workspace:*"
   },
   "devDependencies": {
+    "@onepiecetcg/effect-engine": "workspace:*",
     "@types/node": "^24.5.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"

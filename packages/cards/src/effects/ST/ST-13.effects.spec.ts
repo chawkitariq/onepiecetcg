@@ -3,11 +3,11 @@ import type { CardEffectDefinition } from '@onepiecetcg/shared';
 import type {
   EffectRegistry,
   SpecialHandlerDefinition,
-} from '../../../../effect-engine/src/types/effect-registry.js';
-import { buildEffectIndexes } from '../../../../effect-engine/src/effect-indexes.js';
+} from '@onepiecetcg/effect-engine';
+import { buildEffectIndexes } from '@onepiecetcg/effect-engine';
 import { st13EffectDefinitions } from './ST-13.effects';
 import { specialHandlerDefinitions } from '../index.js';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import {
   TestHost,
   createRegistry as testUtilsCreateRegistry,

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Card } from '@onepiecetcg/shared';
 import { DuelCard } from '@onepiecetcg/shared';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { st25EffectDefinitions } from './ST-25.effects';
 import { createRegistry, makeCard, TestHost } from '../test-utils.js';
 

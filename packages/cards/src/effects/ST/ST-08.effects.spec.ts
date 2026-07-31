@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DuelCard, type Card } from '@onepiecetcg/shared';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
-import type { SpecialHandlerDefinition } from '../../../../effect-engine/src/types/effect-registry.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
+import type { SpecialHandlerDefinition } from '@onepiecetcg/effect-engine';
 import { st08EffectDefinitions } from './ST-08.effects';
 import { st08013SpecialHandler } from './special/ST08-013.special';
 import { createRegistry, makeCard, TestHost } from '../test-utils.js';

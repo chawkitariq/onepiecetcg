@@ -11,13 +11,13 @@ export default defineConfig({
         ),
       },
       {
-        find: '@onepiecetcg/cards/effects',
+        find: /^@onepiecetcg\/cards\/effects$/,
         replacement: fileURLToPath(
           new URL('../cards/src/effects/index.ts', import.meta.url),
         ),
       },
       {
-        find: '@onepiecetcg/cards/effects/',
+        find: /^@onepiecetcg\/cards\/effects\//,
         replacement: fileURLToPath(new URL('../cards/src/effects/', import.meta.url)),
       },
     ],

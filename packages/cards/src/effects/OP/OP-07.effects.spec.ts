@@ -1,6 +1,6 @@
 import type { CardEffectSource } from '@onepiecetcg/shared';
 import { op07EffectDefinitions } from './OP-07.effects';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { TestHost, makeCard, createRegistry } from '../test-utils.js';
 import { op07091SpecialHandler } from './special/OP07-091.special';
 

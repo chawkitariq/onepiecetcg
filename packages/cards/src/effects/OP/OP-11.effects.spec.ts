@@ -7,12 +7,12 @@ import {
   type Card,
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
-import { EffectEngine, type EffectEngineHost } from '../../../../effect-engine/src/effect-engine.js';
-import { buildEffectIndexes } from '../../../../effect-engine/src/effect-indexes.js';
+import { EffectEngine, type EffectEngineHost } from '@onepiecetcg/effect-engine';
+import { buildEffectIndexes } from '@onepiecetcg/effect-engine';
 import type {
   EffectRegistry,
   SpecialHandlerDefinition,
-} from '../../../../effect-engine/src/types/effect-registry.js';
+} from '@onepiecetcg/effect-engine';
 import { op11EffectDefinitions } from './OP-11.effects';
 
 const makeCard = (

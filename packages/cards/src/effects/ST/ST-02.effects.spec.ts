@@ -8,12 +8,12 @@ import {
   type Card,
   type CardEffectDefinition,
 } from '@onepiecetcg/shared';
-import { EffectEngine, type EffectEngineHost } from '../../../../effect-engine/src/effect-engine.js';
-import { buildEffectIndexes } from '../../../../effect-engine/src/effect-indexes.js';
+import { EffectEngine, type EffectEngineHost } from '@onepiecetcg/effect-engine';
+import { buildEffectIndexes } from '@onepiecetcg/effect-engine';
 import type {
   EffectRegistry,
   SpecialHandlerDefinition,
-} from '../../../../effect-engine/src/types/effect-registry.js';
+} from '@onepiecetcg/effect-engine';
 import { st02EffectDefinitions } from './ST-02.effects';
 import { specialHandlerDefinitions } from '../index.js';
 

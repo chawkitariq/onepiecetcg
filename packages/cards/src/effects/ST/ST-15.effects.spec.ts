@@ -3,9 +3,9 @@ import { type Card, type CardEffectDefinition } from '@onepiecetcg/shared';
 import type {
   EffectRegistry,
   SpecialHandlerDefinition,
-} from '../../../../effect-engine/src/types/effect-registry.js';
-import { buildEffectIndexes } from '../../../../effect-engine/src/effect-indexes.js';
-import { EffectEngine } from '../../../../effect-engine/src/effect-engine.js';
+} from '@onepiecetcg/effect-engine';
+import { buildEffectIndexes } from '@onepiecetcg/effect-engine';
+import { EffectEngine } from '@onepiecetcg/effect-engine';
 import { st15EffectDefinitions } from './ST-15.effects';
 import { specialHandlerDefinitions } from '../index.js';
 import {
