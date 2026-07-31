@@ -1,4 +1,4 @@
 interface:
   display_name: "OPTCG Catalog Sync"
   short_description: "Download, validate, and normalize OPTCG catalog snapshots"
-  default_prompt: "Use $onepiecetcg-catalog-sync to download one or more OPTCG editions in the same request, validate the resulting snapshots, normalize them to the shared Card schema, and write edition JSON snapshots grouped by family folder like OP or EB, plus complete promo and DON!! snapshots in PROMOS/PROMOS.json and DON/DON.json."
+  default_prompt: "Use $onepiecetcg-catalog-sync to download one or more OPTCG editions in the same request, validate the resulting snapshots, normalize them to the shared Card schema, and write edition JSON snapshots grouped by family folder like OP or EB as `{ editionId, name, cards }`, plus complete promo and DON!! snapshots in P/P.json and DON/DON.json for the standalone `@onepiecetcg/cards` package."

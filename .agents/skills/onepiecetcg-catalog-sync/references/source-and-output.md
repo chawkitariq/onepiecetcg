@@ -43,10 +43,10 @@ Prefer these source fields when present:
 
 - Use a stable ordering inside each edition file.
 - Keep the same edition grouping on every run.
-- Write valid JSON only, with no wrapper object unless the downstream consumer explicitly expects one.
+- Write valid JSON only, using the wrapper object expected by the package and tooling: `{ editionId, name, cards }`.
 - Support filtering to one edition or several editions in the same run when the caller passes explicit edition ids such as `OP-01,EB-01`.
 - Store each edition file in a folder named after its family prefix, such as `OP`, `EB`, or `ST`.
-- Store promo cards in `packages/cards/catalog/PROMOS/PROMOS.json`.
+- Store promo cards in `packages/cards/catalog/P/P.json`.
 - Store DON!! cards in `packages/cards/catalog/DON/DON.json`.
 
 ## Validation
@@ -56,6 +56,7 @@ Prefer these source fields when present:
 - Ensure the parent folder matches the edition family prefix.
 - Ensure each card keeps the shared schema shape and stays inside the edition file that owns it.
 - Reject duplicate card ids, invalid card types, invalid colors, and malformed nested `set` objects.
+- If `packages/cards/src/index.ts` or the snapshot structure changed, rerun the package tests and typecheck to confirm the standalone package still loads and searches the snapshots correctly.
 
 ## Handoff to effect generation
 
