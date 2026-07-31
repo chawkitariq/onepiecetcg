@@ -25,6 +25,8 @@ const joinCodeSchema = z.object({
 
 type JoinCodeSchema = z.output<typeof joinCodeSchema>
 
+const lobbyFormValidateOn = ['input', 'change'] as const
+
 const colorTokens: Record<string, { dot: string, hex: string }> = {
   Red: { dot: 'bg-red-500', hex: '#ef4444' },
   Green: { dot: 'bg-green-500', hex: '#22c55e' },
@@ -580,6 +582,7 @@ onBeforeUnmount(() => {
             <UForm
               :schema="joinCodeSchema"
               :state="joinCodeState"
+              :validate-on="lobbyFormValidateOn"
               data-test="join-code-form"
               class="flex items-start gap-2"
               @submit="joinRoomByCode"
@@ -640,6 +643,7 @@ onBeforeUnmount(() => {
           <UForm
             :schema="createLobbySchema"
             :state="createLobbyState"
+            :validate-on="lobbyFormValidateOn"
             data-test="create-lobby-form"
             class="flex items-start gap-2 border-b border-default p-4"
             @submit="createDescribedRoom"

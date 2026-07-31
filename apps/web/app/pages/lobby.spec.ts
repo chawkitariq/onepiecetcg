@@ -87,7 +87,7 @@ const popoverStub = defineComponent({
 })
 
 const formStub = defineComponent({
-  props: ['state'],
+  props: ['state', 'validateOn'],
   emits: ['submit'],
   setup(props, { slots, emit }) {
     return () => h('form', {
@@ -254,6 +254,23 @@ describe('lobby page', () => {
 
     expect(joinPrivateRoom).toHaveBeenCalledWith('ABC123', { displayName: 'Test 1', deckId: 'deck-1' })
     expect(toastAdd).toHaveBeenCalledWith(expect.objectContaining({ color: 'error' }))
+  })
+
+  it('does not validate lobby inputs on blur', async () => {
+    const deck = createDeck()
+    apiMock
+      .mockResolvedValueOnce({ decks: [deck] })
+      .mockResolvedValueOnce({ cards: [createLeaderCard()] })
+      .mockResolvedValueOnce({ rooms: [] })
+
+    const wrapper = mountLobby()
+    await flushPromises()
+
+    const forms = wrapper.findAllComponents(formStub)
+
+    expect(forms).toHaveLength(2)
+    expect(forms[0]?.props('validateOn')).toEqual(['input', 'change'])
+    expect(forms[1]?.props('validateOn')).toEqual(['input', 'change'])
   })
 })
 
