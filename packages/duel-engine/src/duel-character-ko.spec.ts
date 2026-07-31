@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest';
 import { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
 import {
   isProtectedFromBattleKo,
   knockOutCharacterByIdInState,
   knockOutCharacterInState,
-} from './duel-room-character-ko';
+} from './duel-character-ko.js';
 
 function createCard(instanceId: string, name = instanceId): DuelCard {
   const card = new DuelCard();
@@ -43,7 +44,7 @@ function createEffectBoundary() {
   };
 }
 
-describe('duel-room-character-ko', () => {
+describe('duel-character-ko', () => {
   it('detects battle KO protection by intrinsic and attribute rules', () => {
     const defender = createCard('defender');
     const attacker = createCard('attacker');

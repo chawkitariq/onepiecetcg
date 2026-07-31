@@ -1,19 +1,7 @@
 import type { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
+import type { DuelEngineEffectBoundary } from './contracts.js';
 
 const MAX_CHARACTERS = 5;
-
-type MainPhaseEffectBoundary = {
-  hasPendingPlayerInteraction(): boolean;
-  reapplyContinuousEffects(): void;
-  emitPlayedCard(
-    playerSessionId: string,
-    card: DuelCard,
-    sourceZone?: 'hand' | 'deck' | 'trash',
-  ): void;
-  emitDonAttached(playerSessionId: string, card: DuelCard): void;
-  getNextPlayCostModifier(card: DuelCard): number;
-  consumeNextPlayCostModifier(card: DuelCard): void;
-};
 
 type PlayCardMessage = {
   instanceId: string;
@@ -29,13 +17,19 @@ type AttachDonMessage = {
 type FindCardResult = { card: DuelCard; index: number } | null;
 
 /**
- * Dependencies needed by the main-phase structural engine. `DuelRoom` stays
- * the Colyseus boundary while this engine owns card play and DON!! attachment
- * rules during the main phase.
+ * Dependencies needed by the main-phase structural engine.
  */
 export type DuelMainPhaseEngineDeps = {
   state: DuelState;
-  effectBoundary: MainPhaseEffectBoundary;
+  effectBoundary: Pick<
+    DuelEngineEffectBoundary,
+    | 'hasPendingPlayerInteraction'
+    | 'reapplyContinuousEffects'
+    | 'emitPlayedCard'
+    | 'emitDonAttached'
+    | 'getNextPlayCostModifier'
+    | 'consumeNextPlayCostModifier'
+  >;
   addLog: (message: string, actorSessionId?: string) => void;
   sendError: (message: string) => void;
   broadcastCardView: (card: DuelCard) => void;

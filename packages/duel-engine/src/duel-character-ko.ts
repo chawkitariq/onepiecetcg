@@ -1,13 +1,21 @@
-import type { DuelCard, DuelLogLevel, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
-import { DuelRoomRuntimeState } from './duel-room-runtime-state';
+import type {
+  DuelCard,
+  DuelLogLevel,
+  DuelPlayer,
+  DuelState,
+} from '@onepiecetcg/shared';
+import type { DuelEngineEffectBoundary } from './contracts.js';
+import { DuelRoomRuntimeState } from './duel-runtime-state.js';
 
 /**
  * Dependencies required to resolve a character KO against one duel state.
  */
 export type DuelRoomCharacterKoDeps = {
   state: DuelState;
-  effectBoundary: DuelRoomEffectBoundary;
+  effectBoundary: Pick<
+    DuelEngineEffectBoundary,
+    'reapplyContinuousEffects' | 'applyKoReplacement' | 'emitCardEvent'
+  >;
   addLog: (
     message: string,
     level?: DuelLogLevel,

@@ -1,11 +1,11 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 import {
   DuelPlayer,
   DuelState,
   createDuelCard,
   type Card,
 } from '@onepiecetcg/shared';
-import { DuelZoneEngine } from './duel-zone-engine';
+import { DuelZoneEngine } from './duel-zone-engine.js';
 
 const card: Card = {
   id: 'C-001',
@@ -48,24 +48,23 @@ describe('DuelZoneEngine', () => {
     const state = new DuelState();
     const player = createPlayer('p1');
     const effectBoundary = {
-      reapplyContinuousEffects: jest.fn(),
-      applyMoveReplacement: jest.fn(() => false),
+      reapplyContinuousEffects: vi.fn(),
+      applyMoveReplacement: vi.fn(() => false),
     };
-    const broadcastCardView = jest.fn();
-    const syncZoneCounts = jest.fn();
+    const broadcastCardView = vi.fn();
+    const syncZoneCounts = vi.fn();
     const zoneEngine = new DuelZoneEngine({
       state,
       effectBoundary,
       broadcastCardView,
       syncZoneCounts,
-      findCardInZone: jest.fn(() => null),
-      takeAttachableDonCards: jest.fn(() => []),
+      findCardInZone: vi.fn(() => null),
+      takeAttachableDonCards: vi.fn(() => []),
     });
 
     state.players.set(player.sessionId, player);
 
     return {
-      state,
       player,
       effectBoundary,
       broadcastCardView,
@@ -82,17 +81,17 @@ describe('DuelZoneEngine', () => {
     state.players.set(targetPlayer.sessionId, targetPlayer);
 
     const effectBoundary = {
-      reapplyContinuousEffects: jest.fn(),
-      applyMoveReplacement: jest.fn(() => true),
+      reapplyContinuousEffects: vi.fn(),
+      applyMoveReplacement: vi.fn(() => true),
     };
 
     const zoneEngine = new DuelZoneEngine({
       state,
       effectBoundary,
-      broadcastCardView: jest.fn(),
-      syncZoneCounts: jest.fn(),
-      findCardInZone: jest.fn(() => null),
-      takeAttachableDonCards: jest.fn(() => []),
+      broadcastCardView: vi.fn(),
+      syncZoneCounts: vi.fn(),
+      findCardInZone: vi.fn(() => null),
+      takeAttachableDonCards: vi.fn(() => []),
     });
 
     const source = createDuelCard(card, 'p1:card', 'p1');

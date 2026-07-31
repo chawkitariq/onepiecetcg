@@ -1,11 +1,11 @@
 import type { DuelState, PendingEffectDecision } from '@onepiecetcg/shared';
+import { adoptRoomDuelState } from '@onepiecetcg/duel-engine';
 import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import type { DuelRoomGameplayRuntime } from './duel-room-gameplay-runtime';
 import type {
   DuelRoomLifecycle,
   DuelRoomLifecycleState,
 } from './duel-room-lifecycle';
-import { adoptRoomDuelState } from './duel-room-state-copy';
 
 export type DuelRoomPendingInteractionRuntime = {
   state: DuelState;

@@ -1,9 +1,10 @@
 import type { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import {
   knockOutCharacterByIdInState,
   knockOutCharacterInState,
-} from './duel-room-character-ko';
+  type DuelEngineEffectBoundary,
+} from '@onepiecetcg/duel-engine';
+import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import type { DuelRoomStateServices } from './duel-room-state-services';
 
 /**
@@ -72,7 +73,7 @@ export function createIsolatedDuelRoomKoRuntime(
 ): {
   knockOutCharacter: (
     state: DuelState,
-    effectBoundary: DuelRoomEffectBoundary,
+    effectBoundary: DuelEngineEffectBoundary,
     owner: DuelPlayer,
     card: DuelCard,
     reason?: 'battle' | 'effect',
@@ -80,7 +81,7 @@ export function createIsolatedDuelRoomKoRuntime(
   ) => void;
   knockOutCharacterById: (
     state: DuelState,
-    effectBoundary: DuelRoomEffectBoundary,
+    effectBoundary: DuelEngineEffectBoundary,
     playerSessionId: string,
     instanceId: string,
     reason: 'battle' | 'effect',
@@ -89,7 +90,7 @@ export function createIsolatedDuelRoomKoRuntime(
   return {
     knockOutCharacter: (
       state,
-      effectBoundary,
+      effectBoundary: DuelEngineEffectBoundary,
       owner,
       card,
       reason,
@@ -106,7 +107,7 @@ export function createIsolatedDuelRoomKoRuntime(
       ),
     knockOutCharacterById: (
       state,
-      effectBoundary,
+      effectBoundary: DuelEngineEffectBoundary,
       playerSessionId,
       instanceId,
       reason,

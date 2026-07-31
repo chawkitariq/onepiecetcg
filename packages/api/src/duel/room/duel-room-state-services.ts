@@ -4,6 +4,10 @@ import type {
   DuelPlayer,
   DuelState,
 } from '@onepiecetcg/shared';
+import type {
+  DuelEngineEffectBoundary,
+  DuelRoomCharacterKoDeps,
+} from '@onepiecetcg/duel-engine';
 import type { StatsService } from '../../stats/stats.service';
 import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import { createDuelRoomCharacterKoDeps } from './duel-room-character-ko-deps';
@@ -92,9 +96,9 @@ export class DuelRoomStateServices {
    */
   public createCharacterKoDeps(
     state: DuelState,
-    effectBoundary: DuelRoomEffectBoundary,
+    effectBoundary: DuelEngineEffectBoundary | DuelRoomEffectBoundary,
     options?: { isolated?: boolean },
-  ) {
+  ): DuelRoomCharacterKoDeps {
     return createDuelRoomCharacterKoDeps({
       state,
       effectBoundary,

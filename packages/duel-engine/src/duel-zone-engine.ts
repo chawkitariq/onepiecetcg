@@ -1,17 +1,17 @@
-import { ArraySchema } from '@colyseus/schema';
 import { DuelCard } from '@onepiecetcg/shared';
 import type { DuelPlayer, DuelState } from '@onepiecetcg/shared';
+import type { DuelEngineEffectBoundary } from './contracts.js';
 
 type FindCardResult = { card: DuelCard; index: number } | null;
+type DuelZoneCollection<T> = {
+  length: number;
+  push(...items: T[]): number;
+  splice(start: number, deleteCount?: number, ...items: T[]): T[];
+  [index: number]: T | undefined;
+};
 
-type ZoneEngineEffectBoundary = {
-  reapplyContinuousEffects(): void;
-  applyMoveReplacement(
-    playerSessionId: string,
-    sourceInstanceId: string,
-    destinationPlayerSessionId: string,
-    destinationZone: string,
-  ): boolean;
+type ReorderableDuelZoneCollection<T> = DuelZoneCollection<T> & {
+  move(reorder: () => void): void;
 };
 
 /**
@@ -19,7 +19,10 @@ type ZoneEngineEffectBoundary = {
  */
 export type DuelZoneEngineDeps = {
   state: DuelState;
-  effectBoundary: ZoneEngineEffectBoundary;
+  effectBoundary: Pick<
+    DuelEngineEffectBoundary,
+    'reapplyContinuousEffects' | 'applyMoveReplacement'
+  >;
   broadcastCardView: (card: DuelCard) => void;
   syncZoneCounts: (player: DuelPlayer) => void;
   findCardInZone: (
@@ -35,7 +38,7 @@ export type DuelZoneEngineDeps = {
 };
 
 /**
- * Owns low-level duel state mutations shared by the realtime room and the
+ * Owns low-level duel state mutations shared by room adapters and the
  * effect boundary: moving cards, drawing, trashing, and DON!! transfers.
  */
 export class DuelZoneEngine {
@@ -86,7 +89,7 @@ export class DuelZoneEngine {
           destinationZone as keyof typeof destinationPlayer.zones
         ];
 
-      if (zone instanceof ArraySchema) {
+      if (Array.isArray(zone) || this.isZoneCollection(zone)) {
         if (destinationZone === 'trash') {
           this.unshiftIntoZone(zone, card);
         } else if (destinationZone === 'life' && options?.toBottom) {
@@ -320,13 +323,39 @@ export class DuelZoneEngine {
    * Inserts a card at the front of a Colyseus ArraySchema without detaching its
    * change tree, which can happen with `ArraySchema#unshift()` on moved cards.
    */
-  private unshiftIntoZone(zone: ArraySchema<DuelCard>, card: DuelCard): void {
+  private unshiftIntoZone(zone: DuelZoneCollection<DuelCard>, card: DuelCard): void {
     zone.push(card);
-    zone.move(() => {
-      for (let index = zone.length - 1; index > 0; index -= 1) {
-        [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
-      }
-    });
+
+    if (this.isReorderableZoneCollection(zone)) {
+      zone.move(() => {
+        for (let index = zone.length - 1; index > 0; index -= 1) {
+          [zone[index], zone[index - 1]] = [zone[index - 1], zone[index]];
+        }
+      });
+      return;
+    }
+
+    const inserted = zone.splice(zone.length - 1, 1)[0];
+
+    if (inserted) {
+      zone.splice(0, 0, inserted);
+    }
+  }
+
+  private isZoneCollection(value: unknown): value is DuelZoneCollection<DuelCard> {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'push' in value &&
+      'splice' in value &&
+      'length' in value
+    );
+  }
+
+  private isReorderableZoneCollection(
+    value: DuelZoneCollection<DuelCard>,
+  ): value is ReorderableDuelZoneCollection<DuelCard> {
+    return 'move' in value && typeof value.move === 'function';
   }
 
   private removeCardFromCurrentZone(instanceId: string): DuelCard | null {

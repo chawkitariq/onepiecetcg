@@ -6,31 +6,28 @@ import {
   type FirstOrSecondChoice,
   type GamePhase,
 } from '@onepiecetcg/shared';
+import type { DuelEngineEffectBoundary } from './contracts.js';
 
 const DON_PER_TURN = 2;
 const FIRST_TURN_DON_COUNT = 1;
 const PHASE_ORDER: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'end'];
 
-type DuelTurnEngineEffectBoundary = {
-  emitWindowEffects(
-    type: 'onTurnStart' | 'onTurnEnd',
-    playerSessionId: string,
-  ): void;
-  clearTurnModifiers(): void;
-  clearTurnStartModifiers(playerSessionId: string): void;
-  reapplyContinuousEffects(): void;
-  hasPendingPlayerInteraction(): boolean;
-};
-
 /**
  * Dependency contract for the structural setup/turn engine extracted from
- * `DuelRoom`. The realtime room remains the network boundary while this
- * engine owns deterministic phase progression and setup sequencing.
+ * room orchestration. This engine owns deterministic phase progression and
+ * setup sequencing.
  */
 export type DuelTurnEngineDeps = {
   state: DuelState;
   maxClients: number;
-  effectBoundary: DuelTurnEngineEffectBoundary;
+  effectBoundary: Pick<
+    DuelEngineEffectBoundary,
+    | 'emitWindowEffects'
+    | 'clearTurnModifiers'
+    | 'clearTurnStartModifiers'
+    | 'reapplyContinuousEffects'
+    | 'hasPendingPlayerInteraction'
+  >;
   addLog: (message: string, actorSessionId?: string) => void;
   shuffle: (cards: {
     length: number;

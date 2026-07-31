@@ -1,5 +1,6 @@
 packages:
   - 'packages/api'
+  - 'packages/duel-engine'
   - 'packages/web'
   - 'packages/shared'
 packageExtensions:

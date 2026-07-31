@@ -2,11 +2,11 @@ import type {
   DuelLogLevel,
   DuelState,
 } from '@onepiecetcg/shared';
+import { adoptRoomDuelState, cloneRoomDuelState } from '@onepiecetcg/duel-engine';
 import type { Client } from 'colyseus';
 import type { DomainEventDraft } from '../../duel-events/duel-domain-event.types';
 import type { DuelRoomLifecycle } from './duel-room-lifecycle';
 import type { DuelStateSnapshot } from './duel-room-state-snapshot';
-import { adoptRoomDuelState, cloneRoomDuelState } from './duel-room-state-copy';
 
 export type DuelRoomLeaveClient = Pick<Client, 'sessionId'>;
 

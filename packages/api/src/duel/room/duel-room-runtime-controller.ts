@@ -1,9 +1,11 @@
 import type { DuelState } from '@onepiecetcg/shared';
-import type { DuelCombatEngine } from '../game-engine/duel-combat-engine';
+import type {
+  DuelCombatEngine,
+  DuelRoomRuntimeState,
+} from '@onepiecetcg/duel-engine';
 import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import type { DuelRoomGameplayRuntime } from './duel-room-gameplay-runtime';
 import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gameplay-runtime';
-import type { DuelRoomRuntimeState } from './duel-room-runtime-state';
 
 /**
  * Dependencies required to track the currently installed live gameplay runtime

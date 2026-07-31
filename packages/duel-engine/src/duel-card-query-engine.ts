@@ -6,7 +6,7 @@ import type {
 
 /**
  * Dependencies required to resolve cards and selectors against the replicated
- * duel state without coupling that traversal logic to the Colyseus room.
+ * duel state without coupling that traversal logic to a transport layer.
  */
 export type DuelCardQueryEngineDeps = {
   state: DuelState;

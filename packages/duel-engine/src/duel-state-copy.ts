@@ -6,12 +6,17 @@ import {
   DuelState,
   DuelZones,
 } from '@onepiecetcg/shared';
-import { ArraySchema } from '@colyseus/schema';
+
+type MutableCardCollection<T> = {
+  length: number;
+  splice(start: number, deleteCount?: number, ...items: T[]): T[];
+  push(...items: T[]): number;
+};
 
 function replaceArraySchema<T>(
-  target: ArraySchema<T>,
+  target: MutableCardCollection<T>,
   values: Iterable<T>,
-): ArraySchema<T> {
+): MutableCardCollection<T> {
   target.splice(0, target.length);
   target.push(...values);
 
@@ -69,13 +74,6 @@ function assignDuelCard(target: DuelCard, source: DuelCard): DuelCard {
   target.skipNextRefreshPhases = source.skipNextRefreshPhases;
 
   return target;
-}
-
-function cloneDuelZones(source: DuelZones): DuelZones {
-  const cloned = new DuelZones();
-  assignDuelZones(cloned, source);
-
-  return cloned;
 }
 
 function assignDuelZones(target: DuelZones, source: DuelZones): DuelZones {
@@ -144,13 +142,6 @@ function cloneDuelLog(source: DuelLog): DuelLog {
   cloned.level = source.level;
   cloned.actorSessionId = source.actorSessionId;
   cloned.createdAt = source.createdAt;
-
-  return cloned;
-}
-
-function cloneDuelCombat(source: DuelCombat): DuelCombat {
-  const cloned = new DuelCombat();
-  assignDuelCombat(cloned, source);
 
   return cloned;
 }

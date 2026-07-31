@@ -25,19 +25,19 @@ import {
 import { DuelRoomEffectBoundary } from './effects/duel-room-effect-boundary';
 import { DuelRoomClientNotifier } from './room/duel-room-client-notifier';
 import {
+  adoptRoomDuelState,
   captureDuelRoomCardKeywordSnapshot,
+  cloneRoomDuelState,
+  isProtectedFromBattleKo,
+  knockOutCharacterByIdInState,
+  knockOutCharacterInState,
   restoreDuelRoomCardKeywordSnapshot,
   type DuelRoomCardKeywordSnapshot,
-} from './room/duel-room-card-keyword-snapshot';
+} from '@onepiecetcg/duel-engine';
 import {
   shuffleArrayLike,
   unshiftIntoArraySchema,
 } from './room/duel-room-array-utils';
-import {
-  isProtectedFromBattleKo,
-  knockOutCharacterByIdInState,
-  knockOutCharacterInState,
-} from './room/duel-room-character-ko';
 import {
   createIsolatedDuelRoomKoRuntime,
   createLiveDuelRoomKoRuntime,
@@ -97,10 +97,6 @@ import {
   type OrderedZoneSnapshot,
   type RefreshStepSnapshot,
 } from './room/duel-room-state-snapshot';
-import {
-  adoptRoomDuelState,
-  cloneRoomDuelState,
-} from './room/duel-room-state-copy';
 import { DuelRoomSeatBootstrap } from './room/duel-room-seat-bootstrap';
 import { DuelRoomStateServices } from './room/duel-room-state-services';
 

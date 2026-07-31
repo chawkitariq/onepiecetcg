@@ -1,6 +1,7 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Card } from '@onepiecetcg/shared';
 import { DuelPlayer, DuelState, createDuelCard } from '@onepiecetcg/shared';
-import { DuelTurnEngine, type DuelTurnEngineDeps } from './duel-turn-engine';
+import { DuelTurnEngine, type DuelTurnEngineDeps } from './duel-turn-engine.js';
 
 const leader: Card = {
   id: 'L-001',
@@ -64,24 +65,24 @@ function createPlayer(sessionId: string, displayName: string): DuelPlayer {
 function createDeps(): {
   deps: DuelTurnEngineDeps;
   state: DuelState;
-  addLog: jest.Mock;
+  addLog: ReturnType<typeof vi.fn>;
   effectBoundary: DuelTurnEngineDeps['effectBoundary'];
-  emitWindowEffects: jest.Mock;
-  onMatchStarted: jest.Mock;
+  emitWindowEffects: ReturnType<typeof vi.fn>;
+  onMatchStarted: ReturnType<typeof vi.fn>;
 } {
   const state = new DuelState();
   state.players.set('session-a', createPlayer('session-a', 'Alice'));
   state.players.set('session-b', createPlayer('session-b', 'Bob'));
-  const addLog = jest.fn();
-  const emitWindowEffects = jest.fn();
+  const addLog = vi.fn();
+  const emitWindowEffects = vi.fn();
   const effectBoundary = {
     emitWindowEffects,
-    clearTurnModifiers: jest.fn(),
-    clearTurnStartModifiers: jest.fn(),
-    reapplyContinuousEffects: jest.fn(),
-    hasPendingPlayerInteraction: jest.fn(() => false),
+    clearTurnModifiers: vi.fn(),
+    clearTurnStartModifiers: vi.fn(),
+    reapplyContinuousEffects: vi.fn(),
+    hasPendingPlayerInteraction: vi.fn(() => false),
   };
-  const onMatchStarted = jest.fn();
+  const onMatchStarted = vi.fn();
 
   return {
     deps: {
@@ -89,14 +90,14 @@ function createDeps(): {
       maxClients: 2,
       effectBoundary,
       addLog,
-      shuffle: jest.fn(),
-      syncZoneCounts: jest.fn(),
-      returnDonToCost: jest.fn(),
+      shuffle: vi.fn(),
+      syncZoneCounts: vi.fn(),
+      returnDonToCost: vi.fn(),
       getOpponentSessionId: (sessionId) =>
         sessionId === 'session-a' ? 'session-b' : 'session-a',
-      isCombatInProgress: jest.fn(() => false),
-      finalizeMatch: jest.fn(),
-      recordMatchResult: jest.fn(),
+      isCombatInProgress: vi.fn(() => false),
+      finalizeMatch: vi.fn(),
+      recordMatchResult: vi.fn(),
       onMatchStarted,
     },
     state,
@@ -109,13 +110,13 @@ function createDeps(): {
 
 describe('DuelTurnEngine', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('initializes the game by dealing hands and entering mulligan setup', () => {
     const { deps, state, addLog } = createDeps();
     const engine = new DuelTurnEngine(deps);
-    jest.spyOn(Math, 'random').mockReturnValue(0);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
 
     engine.initializeGame();
 
@@ -133,7 +134,7 @@ describe('DuelTurnEngine', () => {
   it('starts the first turn once both mulligans are decided', () => {
     const { deps, state, emitWindowEffects, onMatchStarted } = createDeps();
     const engine = new DuelTurnEngine(deps);
-    jest.spyOn(Math, 'random').mockReturnValue(0);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
     engine.initializeGame();
 
     engine.handleChooseFirstOrSecond('session-a', 'first');
@@ -156,7 +157,7 @@ describe('DuelTurnEngine', () => {
   it('awards the win to the drawing player when their Leader has winOnDeckOut', () => {
     const { deps, state } = createDeps();
     const engine = new DuelTurnEngine(deps);
-    jest.spyOn(Math, 'random').mockReturnValue(0);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
     engine.initializeGame();
 
     engine.handleChooseFirstOrSecond('session-a', 'first');

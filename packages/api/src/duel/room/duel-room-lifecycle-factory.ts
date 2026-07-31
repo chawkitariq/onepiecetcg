@@ -1,7 +1,7 @@
 import type { DuelState } from '@onepiecetcg/shared';
+import { DuelRoomRuntimeState } from '@onepiecetcg/duel-engine';
 import type { StatsService } from '../../stats/stats.service';
 import { DuelRoomLifecycle } from './duel-room-lifecycle';
-import { DuelRoomRuntimeState } from './duel-room-runtime-state';
 
 /**
  * Input required to create a room lifecycle bound to one duel-state scope.

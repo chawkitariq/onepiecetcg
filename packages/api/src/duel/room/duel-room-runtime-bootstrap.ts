@@ -1,4 +1,10 @@
 import type { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
+import {
+  DuelRoomRuntimeState,
+  captureDuelRoomCardKeywordSnapshot,
+  restoreDuelRoomCardKeywordSnapshot,
+  type DuelRoomCardKeywordSnapshot,
+} from '@onepiecetcg/duel-engine';
 import type { Client } from 'colyseus';
 import type {
   DomainEventDraft,
@@ -15,13 +21,7 @@ import { DuelRoomInteractionRuntimeCoordinator } from './duel-room-interaction-r
 import type { DuelRoomPendingInteractionRuntime } from './duel-room-interaction-runtime';
 import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gameplay-runtime';
 import { DuelRoomIsolatedCommandRunner } from './duel-room-isolated-command-runner';
-import { DuelRoomRuntimeState } from './duel-room-runtime-state';
 import { DuelRoomSeatBootstrap } from './duel-room-seat-bootstrap';
-import {
-  captureDuelRoomCardKeywordSnapshot,
-  restoreDuelRoomCardKeywordSnapshot,
-  type DuelRoomCardKeywordSnapshot,
-} from './duel-room-card-keyword-snapshot';
 
 /**
  * Concrete services instantiated when a duel room boots.

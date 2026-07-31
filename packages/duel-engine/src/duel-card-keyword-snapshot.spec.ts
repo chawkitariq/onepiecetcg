@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest';
 import { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
 import {
   captureDuelRoomCardKeywordSnapshot,
   iterateDuelPlayerCards,
   restoreDuelRoomCardKeywordSnapshot,
-} from './duel-room-card-keyword-snapshot';
+} from './duel-card-keyword-snapshot.js';
 
 function createCard(instanceId: string): DuelCard {
   const card = new DuelCard();
@@ -24,7 +25,7 @@ function createPlayer(): DuelPlayer {
   return player;
 }
 
-describe('duel-room-card-keyword-snapshot', () => {
+describe('duel-card-keyword-snapshot', () => {
   it('iterates leader, occupied stage, and all zone cards', () => {
     const player = createPlayer();
     player.zones.stage = createCard('stage-1');

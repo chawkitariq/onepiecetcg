@@ -4,29 +4,7 @@ import type {
   DuelPlayer,
   DuelState,
 } from '@onepiecetcg/shared';
-import type { EffectEvent } from '../../card-effect/effect-engine';
-import type { EffectEventType } from '../../card-effect/runtime/effect-engine-types';
-
-type CombatEffectBoundary = {
-  emitCardEvent(
-    event: EffectEventType,
-    playerSessionId: string,
-    card: DuelCard,
-    context?: Pick<
-      EffectEvent,
-      'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'
-    >,
-  ): void;
-  emitBattleKo(playerSessionId: string, card: DuelCard): void;
-  emitCounterUsage(playerSessionId: string, card: DuelCard): void;
-  hasCounterEffect(cardId: string): boolean;
-  hasPendingPlayerInteraction(): boolean;
-  clearCombatModifiers(): void;
-  resolveRevealedLifeCard(
-    defender: DuelPlayer,
-    revealedCard: DuelCard,
-  ): 'addedToHand' | 'engineTrigger' | 'manualFallback';
-};
+import type { DuelEngineEffectBoundary } from './contracts.js';
 
 type DeclareAttackMessage = {
   attackerInstanceId: string;
@@ -46,12 +24,20 @@ type DeclareCounterMessage = {
 type FindCardResult = { card: DuelCard; index: number } | null;
 
 /**
- * Dependencies needed by the combat structural engine. `DuelRoom` keeps the
- * realtime boundary while this engine owns attack/block/counter/damage flow.
+ * Dependencies needed by the combat structural engine.
  */
 export type DuelCombatEngineDeps = {
   state: DuelState;
-  effectBoundary: CombatEffectBoundary;
+  effectBoundary: Pick<
+    DuelEngineEffectBoundary,
+    | 'emitCardEvent'
+    | 'emitBattleKo'
+    | 'emitCounterUsage'
+    | 'hasCounterEffect'
+    | 'hasPendingPlayerInteraction'
+    | 'clearCombatModifiers'
+    | 'resolveRevealedLifeCard'
+  >;
   addLog: (message: string, actorSessionId?: string) => void;
   sendError: (message: string) => void;
   broadcastCardView: (card: DuelCard) => void;

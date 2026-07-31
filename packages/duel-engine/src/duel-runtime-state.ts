@@ -12,7 +12,7 @@ export type DuelRoomRuntimeStateDeps = {
 
 /**
  * Owns low-level state traversal and DON!! utility operations that are shared
- * across the realtime room and the extracted duel engines.
+ * across room adapters and the extracted duel engines.
  */
 export class DuelRoomRuntimeState {
   public constructor(private readonly deps: DuelRoomRuntimeStateDeps) {}

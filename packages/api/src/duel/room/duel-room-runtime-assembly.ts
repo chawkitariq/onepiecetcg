@@ -6,6 +6,7 @@ import type {
   DuelState,
   PendingEffectDecision,
 } from '@onepiecetcg/shared';
+import type { DuelEngineEffectBoundary } from '@onepiecetcg/duel-engine';
 import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import {
   createDuelRoomGameplayRuntime,
@@ -88,7 +89,7 @@ export type CreateIsolatedDuelRoomGameplayRuntimeInput = {
   unshiftIntoTrash: (player: DuelPlayer, card: DuelCard) => void;
   knockOutCharacter: (
     state: DuelState,
-    effectBoundary: DuelRoomEffectBoundary,
+    effectBoundary: DuelEngineEffectBoundary,
     owner: DuelPlayer,
     card: DuelCard,
     reason?: 'battle' | 'effect',
@@ -96,7 +97,7 @@ export type CreateIsolatedDuelRoomGameplayRuntimeInput = {
   ) => void;
   knockOutCharacterById: (
     state: DuelState,
-    effectBoundary: DuelRoomEffectBoundary,
+    effectBoundary: DuelEngineEffectBoundary,
     playerSessionId: string,
     instanceId: string,
     reason: 'battle' | 'effect',
