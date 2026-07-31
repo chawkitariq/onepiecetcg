@@ -10,7 +10,7 @@ RUN corepack prepare pnpm@11.13.1 --activate
 COPY . .
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm -r --filter "./packages/*" build
+RUN pnpm build:packages
 RUN pnpm --dir apps/web build
 
 EXPOSE 3001
