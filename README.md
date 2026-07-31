@@ -13,20 +13,24 @@ Two players can create accounts, build and save decks from the full card catalog
 
 ## Project structure
 
-This is a pnpm workspace with three packages:
+This is a pnpm workspace with app and package workspaces:
 
 ```text
-packages/
+apps/
   api/     # NestJS backend — sole source of authority (auth, REST API, realtime duel room)
   web/     # Nuxt 4 frontend — pure client, no authority logic
+packages/
   shared/  # Types and validation shared between api and web
+  cards/   # Catalog snapshots and loaders
+  duel-engine/
+  effect-engine/
 docs/      # Product spec, OPTCG gameplay rules, delivery plan
 ```
 
 Each package has its own README with commands and architecture notes:
 
-- [packages/api/README.md](packages/api/README.md) — NestJS backend
-- [packages/web/README.md](packages/web/README.md) — Nuxt frontend
+- [apps/api/README.md](apps/api/README.md) — NestJS backend
+- [apps/web/README.md](apps/web/README.md) — Nuxt frontend
 - [packages/shared/README.md](packages/shared/README.md) — shared types package
 
 ## Requirements
@@ -58,10 +62,10 @@ pnpm install
 Copy the environment file and fill in local values:
 
 ```bash
-cp packages/api/.env.example packages/api/.env
+cp apps/api/.env.example apps/api/.env
 ```
 
-The defaults match `docker-compose.yml` for Postgres. In local `development`, you can use anonymous auth for testing without OAuth credentials; add Google and/or Discord OAuth credentials only if you want to test those flows too (see [packages/api/README.md](packages/api/README.md)).
+The defaults match `docker-compose.yml` for Postgres. In local `development`, you can use anonymous auth for testing without OAuth credentials; add Google and/or Discord OAuth credentials only if you want to test those flows too (see [apps/api/README.md](apps/api/README.md)).
 
 Start every package at once — `shared` (build, then watch), `api`, and `web`, in the right order:
 
@@ -74,21 +78,21 @@ Once running:
 - Web app: [http://localhost:3001](http://localhost:3001)
 - API: [http://localhost:3000](http://localhost:3000)
 
-Sign in locally from `/login` with the anonymous development shortcut, or configure Google/Discord OAuth credentials in `packages/api/.env` if you want to test those flows too (see [packages/api/README.md](packages/api/README.md#authentication)).
+Sign in locally from `/login` with the anonymous development shortcut, or configure Google/Discord OAuth credentials in `apps/api/.env` if you want to test those flows too (see [apps/api/README.md](apps/api/README.md#authentication)).
 
 ## Common workflows
 
 ### Run a single package
 
-Each package can also run on its own, e.g. `pnpm --dir packages/api start:dev`. See the package READMEs for the full command list.
+Each workspace can also run on its own, e.g. `pnpm --dir apps/api start:dev`. See the package READMEs for the full command list.
 
 ### Lint and typecheck
 
 ```bash
-pnpm --dir packages/api lint
-pnpm --dir packages/api typecheck
-pnpm --dir packages/web lint
-pnpm --dir packages/web typecheck
+pnpm --dir apps/api lint
+pnpm --dir apps/api typecheck
+pnpm --dir apps/web lint
+pnpm --dir apps/web typecheck
 ```
 
 These are the checks CI runs — there's no repo-wide `pnpm build`; the packages document why in their own READMEs.
@@ -96,9 +100,9 @@ These are the checks CI runs — there's no repo-wide `pnpm build`; the packages
 ### Run tests
 
 ```bash
-pnpm --dir packages/api test        # unit tests
-pnpm --dir packages/api test:e2e    # end-to-end tests
-pnpm --dir packages/web test:run    # unit tests
+pnpm --dir apps/api test        # unit tests
+pnpm --dir apps/api test:e2e    # end-to-end tests
+pnpm --dir apps/web test:run    # unit tests
 ```
 
 ## Contributing

@@ -16,7 +16,7 @@ Objectif : installer les frontières de code avant les fonctionnalités.
 
 ### Workspace
 
-- Confirmer la structure `packages/api`, `packages/web` et `packages/shared`.
+- Confirmer la structure `apps/api`, `apps/web` et `packages/shared`.
 - Configurer les scripts de build, lint et typecheck par package.
 - Configurer les imports de `packages/shared` depuis le backend et le frontend.
 
@@ -65,7 +65,7 @@ Objectif : permettre aux joueurs de posséder une session et des données persis
 
 Objectif : rendre les cartes disponibles au deck builder et aux parties.
 
-État : réalisé et audité. Le catalogue expose des types partagés dans `packages/shared`, un module NestJS `/catalog` qui consomme l'API OPTCG officielle (`https://optcgapi.com/api`) avec normalisation et cache local, des endpoints de recherche/filtres/fiche carte, et une tolérance aux familles source partiellement indisponibles. Côté produit, il n'existe pas de page `/catalogue` séparée : la consultation des cartes se fait dans le deck builder `/decks`.
+État : réalisé et audité. Le catalogue expose des types partagés dans `packages/shared`, un module NestJS `/catalog` qui consomme l'API OPTCG officielle (`https://optcgapi.com/api`) avec normalisation et cache local, des endpoints de recherche/filtres/fiche carte, et une tolérance aux familles source partiellement indisponibles. Les snapshots normalisés sont aussi regroupés dans `packages/cards` avec des helpers de chargement/recherche réutilisables hors NestJS. Côté produit, il n'existe pas de page `/catalogue` séparée : la consultation des cartes se fait dans le deck builder `/decks`.
 
 ### Backend
 
@@ -259,11 +259,34 @@ Correctif notable : un test manuel à deux onglets navigateur (deux comptes rée
 - Afficher les logs d'action pour synchroniser les joueurs.
 - Garder les cartes révélées privées quand la règle l'exige.
 
+## Étape 10 — Système d'événements métier fiable
+
+Objectif : produire des faits métier durables autour des duels, stockés avant publication et relayés de manière asynchrone, sans transformer le backend en event-sourced system.
+
+État : fondation implémentée et intégrée au backend. `apps/api` expose désormais un module `duel-events` basé sur TypeORM avec deux tables transactionnelles (`duel_event_streams`, `duel_event_outbox`), un `DuelEventStreamService` qui crée explicitement le stream d'un match avec `MatchCreated` en séquence 1, un `DuelEventRecorderService` qui séquence et persiste des `DomainEventDraft` dans l'outbox, un `DuelEventRelayService` qui republie les lignes `PENDING` de façon asynchrone vers un bus canonique remplaçable, et un `DuelEventJournalService` pour le rattrapage ordonné des événements déjà publiés. La room Colyseus `duel` maintient maintenant un `playerId` métier stable par siège (`player-1`, `player-2`) distinct du `sessionId`, crée le stream au démarrage effectif du match, puis enregistre un premier catalogue d'événements métier couvrant le cycle de match et le cycle de tour déjà structurés côté serveur : `MatchCreated`, `PlayerJoined`, `DeckLocked`, `OpeningHandDrawn`, `StartingPlayerDetermined`, `MulliganResolved`, `MatchStarted`, `TurnStarted`, `PhaseChanged`, `TurnEnded`, `PlayerConceded` et `MatchEnded`.
+
+Limite actuelle explicitement assumée : cette première version n'a pas encore refactoré les moteurs de duel pour travailler sur une copie isolée de `DuelState` adoptée uniquement après commit de l'outbox, ni étendu le catalogue aux événements fins de cartes/combat/effets (`CardPlayed`, `AttackDeclared`, `DamageDealt`, etc.). La garantie déjà en place est donc la durabilité + publication asynchrone des événements enregistrés, mais pas encore la barrière complète "nouvel état vivant visible seulement après commit outbox" décrite comme cible dans `docs/event-system.md`.
+
+### Backend
+
+- Créer le stream explicite d'un match et empêcher tout append silencieux sans stream.
+- Séquencer les événements par `matchId` dans une transaction unique avec l'outbox.
+- Publier l'outbox en arrière-plan avec retries et statut `PENDING`/`PROCESSING`/`PUBLISHED`/`FAILED`.
+- Utiliser un `playerId` métier stable dans les événements au lieu du `sessionId` Colyseus.
+- Exposer un journal interne pour relire les événements publiés dans l'ordre.
+- Étendre progressivement le catalogue d'événements depuis les faits de room/tour vers les faits de gameplay fins.
+
+### Validation
+
+- Chaque match possède son propre stream ordonné à partir de `MatchCreated`.
+- Un événement enregistré reste publiable même si le bus est temporairement indisponible.
+- La room enregistre des faits métier de cycle de match/tour sans exposer de `sessionId` dans les payloads canoniques.
+
 ## Étape 8 bis — Moteur d'effets automatiques
 
 Objectif : résoudre automatiquement les effets de cartes côté serveur sans parser le texte libre au runtime.
 
-État : réalisé comme fondation extensible. Le backend expose désormais un moteur d'effets serveur avec DSL structurée, registre local par `cardId`, résolveur déterministe, décisions joueur sérialisables, résolution multi-étapes reprenable, effets continus, effets de remplacement et handlers spéciaux isolés (`packages/api/src/card-effect/`). Les schémas partagés embarquent les champs nécessaires au calcul dérivé (`basePower`, `attributes`, `families`) et les types de DSL/décision (`packages/shared/src/effects.ts`). La room Colyseus intègre le moteur pour `onPlay`, `activateMain`, `whenAttacking`, `onBlock`, `onKo`, `trigger`, `onTurnStart` et `onTurnEnd`, avec recalcul continu de puissance et blocage des autres actions quand une décision d'effet est en attente. La couverture locale reste incrémentale par carte, mais l'architecture et les primitives sont en place et testées.
+État : réalisé comme fondation extensible. Le backend expose désormais un moteur d'effets serveur avec DSL structurée, registre local par `cardId`, résolveur déterministe, décisions joueur sérialisables, résolution multi-étapes reprenable, effets continus, effets de remplacement et handlers spéciaux isolés (`apps/api/src/card-effect/`). Les schémas partagés embarquent les champs nécessaires au calcul dérivé (`basePower`, `attributes`, `families`) et les types de DSL/décision (`packages/shared/src/effects.ts`). La room Colyseus intègre le moteur pour `onPlay`, `activateMain`, `whenAttacking`, `onBlock`, `onKo`, `trigger`, `onTurnStart` et `onTurnEnd`, avec recalcul continu de puissance et blocage des autres actions quand une décision d'effet est en attente. La couverture locale reste incrémentale par carte, mais l'architecture et les primitives sont en place et testées.
 
 ### Backend
 
@@ -294,7 +317,7 @@ Objectif : résoudre automatiquement les effets de cartes côté serveur sans pa
 
 Objectif : permettre aux joueurs de démarrer des parties via file publique ou code privé.
 
-État : réalisé et audité. La file aléatoire (`joinOrCreate`) et les rooms par code (`create`/`joinById`) existaient déjà côté room `duel` (étape 5) ; l'ajout de cette étape 10 est la lobby décrite. `DuelRoom.onCreate` accepte une `description` optionnelle dans les options de création et appelle `this.setMetadata({ description })` (`packages/api/src/realtime/duel.room.ts`) sans jamais l'interpréter ; les rooms sans description restent des rooms privées/rapides ordinaires, invisibles de la liste. `packages/api/src/realtime/lobby.ts` expose `listDescribedDuelRooms()` (interrogeant `matchMaker.query({ name: 'duel' })`, filtré sur non verrouillée, non complète, et `metadata.description` non vide) consommé par `GET /lobby/rooms` (`LobbyController`, protégé par `AuthGuard`). Le cycle de vie natif de Colyseus (verrouillage à 2 joueurs via `initializeGame()`, suppression du listing à la déconnexion/dispose) suffit à faire disparaître une room décrite dès qu'elle est complète ou abandonnée, sans nettoyage manuel supplémentaire. Côté frontend, `packages/web/app/pages/room.vue` ajoute un champ de description optionnel à la création de room privée et un bloc dédié "Lobbies décrites" (description, occupation, bouton rejoindre, rafraîchissement manuel via `GET /lobby/rooms`). Couvert par 3 tests d'intégration deux-sockets sur le vrai transport Colyseus dans `duel-room-serialization.spec.ts` (apparition uniquement si décrite, disparition une fois complète, disparition une fois abandonnée), et vérifié manuellement en navigateur avec trois comptes de test isolés : hébergement décrit, apparition après rafraîchissement manuel chez un autre utilisateur, jonction depuis la liste, puis disparition de la liste une fois la room complète — la file aléatoire (`joinOrCreate`) reste elle non listée comme attendu.
+État : réalisé et audité. La file aléatoire (`joinOrCreate`) et les rooms par code (`create`/`joinById`) existaient déjà côté room `duel` (étape 5) ; l'ajout de cette étape 10 est la lobby décrite. `DuelRoom.onCreate` accepte une `description` optionnelle dans les options de création et appelle `this.setMetadata({ description })` (`apps/api/src/duel/duel.room.ts`) sans jamais l'interpréter ; les rooms sans description restent des rooms privées/rapides ordinaires, invisibles de la liste. `apps/api/src/lobby/lobby.ts` expose `listDescribedDuelRooms()` (interrogeant `matchMaker.query({ name: 'duel' })`, filtré sur non verrouillée, non complète, et `metadata.description` non vide) consommé par `GET /lobby/rooms` (`LobbyController`, protégé par `AuthGuard`). Le cycle de vie natif de Colyseus (verrouillage à 2 joueurs via `initializeGame()`, suppression du listing à la déconnexion/dispose) suffit à faire disparaître une room décrite dès qu'elle est complète ou abandonnée, sans nettoyage manuel supplémentaire. Côté frontend, `apps/web/app/pages/lobby.vue` ajoute un champ de description optionnel à la création de room privée et un bloc dédié "Lobbies décrites" (description, occupation, bouton rejoindre, rafraîchissement manuel via `GET /lobby/rooms`). Couvert par 3 tests d'intégration deux-sockets sur le vrai transport Colyseus dans `duel-room-serialization.spec.ts` (apparition uniquement si décrite, disparition une fois complète, disparition une fois abandonnée), et vérifié manuellement en navigateur avec trois comptes de test isolés : hébergement décrit, apparition après rafraîchissement manuel chez un autre utilisateur, jonction depuis la liste, puis disparition de la liste une fois la room complète — la file aléatoire (`joinOrCreate`) reste elle non listée comme attendu.
 
 ### Backend
 
@@ -311,7 +334,7 @@ Objectif : permettre aux joueurs de démarrer des parties via file publique ou c
 - Ajouter les actions rejoindre la file, quitter la file, créer une room privée, rejoindre par code.
 - Afficher les états d'attente et d'erreur.
 - 🆕 Ajouter un champ de description libre à la création d'une room, pour l'hébergement en lobby décrite.
-- 🆕 Ajouter dans `packages/web/app/pages/room.vue` un bloc dédié listant les lobbies décrites disponibles (description, occupation 1/2, action rejoindre), avec un bouton de rafraîchissement manuel (pas de synchronisation live obligatoire).
+- 🆕 Ajouter dans `apps/web/app/pages/lobby.vue` un bloc dédié listant les lobbies décrites disponibles (description, occupation 1/2, action rejoindre), avec un bouton de rafraîchissement manuel (pas de synchronisation live obligatoire).
 
 ### Validation
 

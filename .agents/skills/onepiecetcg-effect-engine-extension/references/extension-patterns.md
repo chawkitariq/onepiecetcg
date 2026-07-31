@@ -23,7 +23,7 @@ Keep new shapes narrow and composable. Avoid embedding card IDs or one-off card 
 
 ## 2. Mirror The DSL In The Runtime
 
-After changing shared types, update the runtime interpreter in `packages/api/src/card-effect/effect-engine.ts`.
+After changing shared types, update the runtime interpreter in `packages/effect-engine/src/effect-engine.ts`.
 
 Main runtime touchpoints:
 
@@ -40,13 +40,13 @@ Main runtime touchpoints:
 - modifier lifecycle helpers
   - support for new durations or cleanup semantics
 
-If a new action needs host capabilities that do not exist yet, extend `EffectEngineHost` too and add matching host test doubles in `effect-engine.spec.ts`.
+If a new action needs host capabilities that do not exist yet, extend `EffectEngineHost` too and add matching host test doubles in `packages/effect-engine/src/effect-engine.spec.ts`.
 
 ## 3. Keep Definitions Declarative
 
 Once the engine supports the missing primitive:
 
-1. Return to the relevant `packages/api/src/card-effect/definitions/*.effects.ts` file.
+1. Return to the relevant `packages/cards/effects/<FAMILY>/*.effects.ts` file.
 2. Replace placeholder entries or missing cards with real `effects` data.
 3. Prefer `kind: 'standard'`, `kind: 'continuous'`, or `kind: 'replacement'`.
 4. Use `kind: 'special-ref'` only when the card still cannot be expressed safely.
@@ -55,14 +55,14 @@ Once the engine supports the missing primitive:
 
 When a special handler is still justified:
 
-- add a card-specific file in `packages/api/src/card-effect/definitions/special/`
+- add a card-specific file in `packages/cards/effects/<FAMILY>/special/`
 - export a `SpecialHandlerDefinition`
 - keep logic small and deterministic
 - prefer queueing standard effects through `engine.queueEffect()` instead of mutating gameplay state directly
-- register the handler in `definitions/special/index.ts`
+- register the handler in the family's `special/index.ts`, then ensure the family `index.ts` and root `definitions/index.ts` still aggregate it
 - reference it from the card definition via `kind: 'special-ref'`
 
-The handler in `packages/api/src/card-effect/definitions/special/op01-047.special.ts` is the baseline example.
+The handler in `packages/cards/effects/OP/special/OP04-047.special.ts` is a baseline example.
 
 ## 5. Loader And Index Maintenance
 

@@ -4,21 +4,22 @@
 
 Write effect-definition files only in:
 
-- edition definitions: `packages/api/src/card-effect/definitions/`
-- special handlers: `packages/api/src/card-effect/definitions/special/`
+- edition definitions: `packages/cards/effects/<FAMILY>/`
+- special handlers: `packages/cards/effects/<FAMILY>/special/` (e.g. `OP/special/`, `ST/special/`)
+- shared handler utilities: `packages/cards/effects/` (`special-handler-utils.ts`)
 
 ## Edition file naming
 
 Edition files must use:
 
-- lowercase edition id
+- the hyphenated catalog-style edition id (e.g. `OP-01`)
 - `.effects.ts` suffix
 
 Examples:
 
-- `op01.effects.ts`
-- `op02.effects.ts`
-- `st10.effects.ts`
+- `OP-01.effects.ts`
+- `OP-02.effects.ts`
+- `ST-10.effects.ts`
 
 ## Edition test file naming
 
@@ -26,15 +27,15 @@ Edition-specific effect test files must use the same base name as the edition de
 
 Examples:
 
-- `op01.effects.ts` -> `op01.effects.spec.ts`
-- `op02.effects.ts` -> `op02.effects.spec.ts`
-- `st10.effects.ts` -> `st10.effects.spec.ts`
+- `OP-01.effects.ts` -> `OP-01.effects.spec.ts`
+- `OP-02.effects.ts` -> `OP-02.effects.spec.ts`
+- `ST-10.effects.ts` -> `ST-10.effects.spec.ts`
 
 ## Edition export naming
 
 Each edition file must export one `EditionEffectDefinitions` constant named:
 
-- lowercase edition id
+- lowercase edition id with any dashes removed
 - `EffectDefinitions` suffix
 
 Examples:
@@ -47,10 +48,10 @@ Examples:
 Each edition file must follow this structure:
 
 ```ts
-import type { EditionEffectDefinitions } from '../types/effect-definition-source';
+import type { EditionEffectDefinitions } from '@onepiecetcg/shared';
 
 export const op01EffectDefinitions: EditionEffectDefinitions = {
-  editionId: 'OP01',
+  editionId: 'OP-01',
   cards: [
     // card blocks
   ],
@@ -66,26 +67,40 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
 
 ## Definitions index file
 
-The aggregate edition index lives here:
+The root aggregate index lives here:
 
-- `packages/api/src/card-effect/definitions/index.ts`
+- `packages/cards/effects/index.ts`
 
 It must:
 
-1. import every edition export
+1. import every family index
 2. export `effectDefinitionEditions`
-3. match the set of existing `*.effects.ts` files
+3. export `specialHandlerDefinitions`
+4. match the set of existing family folders
+
+## Family index file
+
+Each family folder must have an index here:
+
+- `packages/cards/effects/<FAMILY>/index.ts`
+
+It must:
+
+1. import every edition export inside that family
+2. import `<family>SpecialHandlers` from `./special`
+3. export `<familyLower>EditionEffectDefinitions`
+4. export `<familyLower>EditionSpecialHandlers`
 
 ## Special handler naming
 
 Special-handler files must use:
 
-- normalized lowercase card id
+- uppercase card id
 - `.special.ts` suffix
 
 Example:
 
-- card id `OP01-047` -> file `op01-047.special.ts`
+- card id `OP01-047` -> file `OP01-047.special.ts`
 
 ## Special handler export naming
 
@@ -93,16 +108,16 @@ Keep exports stable and card-specific.
 
 Example from the repo:
 
-- file `op01-047.special.ts`
+- file `OP01-047.special.ts`
 - export `op01047SpecialHandler`
 
-## Special handler index
+## Per-edition special handler index
 
-The special-handler aggregate file lives here:
+Each edition must have a per-edition special index at:
 
-- `packages/api/src/card-effect/definitions/special/index.ts`
+- `packages/cards/effects/<FAMILY>/special/index.ts`
 
 It must:
 
-1. import every `*.special.ts` export
-2. export `specialHandlerDefinitions`
+1. import every `*.special.ts` export within that edition's `special/` directory
+2. export an aggregated array named `<edition>SpecialHandlers` (e.g. `opSpecialHandlers`, `stSpecialHandlers`, `ebSpecialHandlers`)

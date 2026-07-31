@@ -235,6 +235,13 @@ export type CombatStep =
   | 'resolving'
   | 'resolved';
 
+export type DuelLogLevel =
+  | 'info'
+  | 'action'
+  | 'effect'
+  | 'system'
+  | 'error';
+
 export type CombatStatus = {
   attackerSessionId: string;
   attackerInstanceId: string;
@@ -277,6 +284,8 @@ export type DuelPlayerView = {
 export type DuelLogEntry = {
   id: string;
   message: string;
+  level: DuelLogLevel;
+  actorSessionId: string;
   createdAt: string;
 };
 

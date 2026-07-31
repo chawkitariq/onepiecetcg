@@ -1,4 +1,11 @@
-import type { CardColor, CardType, GameZone } from './index.js';
+import type {
+  CardColor,
+  CardType,
+  DuelCard,
+  DuelPlayer,
+  DuelState,
+  GameZone,
+} from './index.js';
 
 export type EffectTriggerType =
   | 'onPlay'
@@ -471,3 +478,158 @@ export type CardEffectDefinition = {
   replacements?: ReplacementEffectDefinition[];
   specialHandlerId?: string;
 };
+
+export type SpecialHandlerId = string;
+
+export type CardEffectEntry =
+  | {
+      kind: 'standard';
+      effect: StandardEffectDefinition;
+    }
+  | {
+      kind: 'continuous';
+      effect: ContinuousEffectDefinition;
+    }
+  | {
+      kind: 'replacement';
+      effect: ReplacementEffectDefinition;
+    }
+  | {
+      kind: 'special-ref';
+      specialHandlerId: SpecialHandlerId;
+    };
+
+export interface CardEffectSource {
+  cardId: string;
+  effects?: readonly CardEffectEntry[];
+}
+
+export interface EditionEffectDefinitions {
+  editionId: string;
+  cards: readonly CardEffectSource[];
+}
+
+export type EffectEventType = EffectTriggerType;
+
+export type EffectEvent = {
+  type: EffectEventType;
+  playerSessionId: string;
+  sourceInstanceId: string;
+  sourceCardId: string;
+  targetInstanceId?: string;
+  targetCardId?: string;
+  sourceZone?: GameZone;
+  destinationZone?: GameZone;
+  effectControllerSessionId?: string;
+  playedByEffect?: boolean;
+};
+
+export type EffectEngineCardStatusPatch = {
+  faceDown?: boolean;
+  rested?: boolean;
+  playedThisTurn?: boolean;
+  cannotAttack?: boolean;
+  cannotAttackLeaderOnTurnPlayed?: boolean;
+  cannotBlock?: boolean;
+  cannotBeKoedInBattle?: boolean;
+  cannotBeKoedByEffects?: boolean;
+  cannotBeKoedBySlashInBattle?: boolean;
+  cannotBeKoedByStrikeInBattle?: boolean;
+  hasRush?: boolean;
+  hasDoubleAttack?: boolean;
+  hasBanish?: boolean;
+  canAttackActiveCharacters?: boolean;
+  mustBeAttackTarget?: boolean;
+  winOnDeckOut?: boolean;
+  cannotBeRemovedByOpponentEffects?: boolean;
+  effectNegated?: boolean;
+  cannotAttackUntilTurn?: number;
+  skipNextRefreshPhases?: number;
+};
+
+export type EffectEngineCardStatPatch = {
+  baseCost?: number;
+  basePower?: number;
+  power?: number;
+  cost?: number;
+  attachedDon?: number;
+};
+
+export interface SpecialEffectHandlerEngine {
+  state: DuelState;
+  getPlayer(sessionId: string): DuelPlayer | undefined;
+  getOpponentSessionId(sessionId: string): string | null;
+  getCard(instanceId: string): DuelCard | null;
+  getCards(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+  ): DuelCard[];
+  addLog(message: string): void;
+  patchCardStatus(
+    instanceId: string,
+    patch: EffectEngineCardStatusPatch,
+  ): DuelCard | null | undefined;
+  patchCardStats(
+    instanceId: string,
+    patch: EffectEngineCardStatPatch,
+  ): DuelCard | null | undefined;
+  patchPlayerStatus(
+    playerSessionId: string,
+    patch: { cannotPlayCharacters?: boolean },
+  ): DuelPlayer | undefined;
+  playCard(
+    card: DuelCard,
+    playerSessionId: string,
+    zone: 'characters' | 'stage',
+    options?: { rested?: boolean },
+  ): boolean;
+  moveCard(
+    card: DuelCard,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ): void;
+  setZoneOrder(
+    playerSessionId: string,
+    zone: 'deck' | 'life',
+    orderedInstanceIds: string[],
+    options?: { faceDown?: boolean },
+  ): boolean;
+  addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number;
+  returnDonToDonDeck(playerSessionId: string, amount: number): number;
+  koCharacter(
+    playerSessionId: string,
+    instanceId: string,
+    reason: 'battle' | 'effect',
+  ): boolean;
+  syncPlayer(playerSessionId: string): void;
+  chooseCards(...args: any[]): void;
+  chooseChoices(...args: any[]): void;
+  pauseDecision(...args: any[]): void;
+  addPowerModifier(...args: any[]): void;
+  addKeywordModifier(...args: any[]): void;
+  addCostModifier(...args: any[]): void;
+  addPlayerRestriction(...args: any[]): void;
+  registerNextPlayCostModifier(...args: any[]): void;
+  hasResolvedOncePerTurnKey(key: string): boolean;
+  markResolvedOncePerTurnKey(key: string): void;
+  arrangeDeckWindow(...args: any[]): void;
+  queueEffect(...args: any[]): void;
+  scheduleTurnEndActions(...args: any[]): void;
+  reapplyContinuousEffects(): void;
+}
+
+export interface SpecialHandlerDefinition {
+  id: string;
+  cardId: string;
+  resolve(event: EffectEvent, engine: SpecialEffectHandlerEngine): void;
+}
+
+export interface EffectSourceBundle {
+  definitions: readonly EditionEffectDefinitions[];
+  specialHandlers: readonly SpecialHandlerDefinition[];
+}

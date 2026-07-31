@@ -3,7 +3,7 @@
 ## Repository scope
 
 This skill is tailored to `/home/verbq/Documents/dev/onepiecetcg`.
-The backend lives in `packages/api/` and consumes authored effect-definition source files at runtime.
+The reusable engine lives in `packages/effect-engine/`. Authored effect-definition source files now live in `packages/cards/effects/`, and the backend in `packages/api/` consumes them through `@onepiecetcg/cards/effects` at runtime.
 
 Before changing effect behavior, read:
 
@@ -26,18 +26,18 @@ The execution layer for this skill lives in the skill folder itself:
 - `scripts/run-validate-effects.sh`
   Thin shell wrapper around the Python validator.
 
-These scripts intentionally avoid importing or invoking backend CLI implementation under `packages/api/src/`.
+These scripts intentionally avoid importing or invoking application-local CLI implementation under `packages/api/src/` or `packages/effect-engine/src/`.
 
 ## Project files this skill reads or writes
 
-- `packages/api/src/card-effect/definitions/`
-  One edition file per set or product line.
-- `packages/api/src/card-effect/definitions/index.ts`
-  Aggregate edition export list.
-- `packages/api/src/card-effect/definitions/special/`
-  Imperative special handlers for outlier cards.
-- `packages/api/src/card-effect/definitions/special/index.ts`
-  Aggregate special-handler export list.
+- `packages/cards/effects/`
+  Root effect-definition folder.
+- `packages/cards/effects/<FAMILY>/`
+  One family folder per product line prefix such as `OP`, `ST`, or `EB`, containing edition files and a family index.
+- `packages/cards/effects/<FAMILY>/special/`
+  Imperative special handlers for outlier cards in that family.
+- `packages/cards/effects/index.ts`
+  Aggregate family export list and aggregated `specialHandlerDefinitions`.
 
 ## What this skill is responsible for
 
@@ -45,7 +45,7 @@ This skill is responsible for:
 
 1. finding card metadata
 2. selecting which cards need an effect-definition entry
-3. generating edition file scaffolds in the correct folder
+3. generating edition file scaffolds in the correct family folder
 4. preserving existing authored entries
 5. validating the resulting definition set
 

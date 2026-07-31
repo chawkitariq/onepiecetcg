@@ -3,7 +3,7 @@
 Audit date: 2026-07-29
 
 This audit reviews every currently registered special handler in
-`packages/api/src/card-effect/definitions/special/index.ts` and classifies it
+`apps/api/src/card-effect/definitions/special/index.ts` and classifies it
 into one of three buckets:
 
 - `Converted to declarative DSL`

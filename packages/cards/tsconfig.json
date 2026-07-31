@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "strict": true,
+    "types": ["node"],
+    "typeRoots": [
+      "../../apps/web/node_modules/@types",
+      "../../apps/api/node_modules/@types",
+      "../../node_modules/@types"
+    ],
+    "useDefineForClassFields": false,
+    "outDir": "dist",
+    "declarationDir": "dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "noImplicitAny": false
+  },
+  "include": ["src/**/*.ts", "effects/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "effects/**/*.spec.ts",
+    "effects/**/*.test.ts",
+    "effects/test-utils.ts"
+  ]
+}

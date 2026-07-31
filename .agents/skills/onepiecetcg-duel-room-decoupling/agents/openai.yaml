@@ -1,0 +1,4 @@
+interface:
+  display_name: "OPTCG Duel Room Decoupling"
+  short_description: "Refactor DuelRoom orchestration cleanly"
+  default_prompt: "Use $onepiecetcg-duel-room-decoupling to continue separating DuelRoom orchestration from gameplay and effect runtimes."

@@ -23,7 +23,7 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - packages/api/.env.production.local
+      - apps/api/.env.production.local
     ports:
       - '3000:3000'
     restart: unless-stopped
@@ -36,7 +36,7 @@ services:
       api:
         condition: service_started
     env_file:
-      - packages/web/.env.production.local
+      - apps/web/.env.production.local
     ports:
       - '3001:3001'
     restart: unless-stopped

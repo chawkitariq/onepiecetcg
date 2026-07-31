@@ -1,0 +1,4 @@
+interface:
+  display_name: "OPTCG Effect Engine Extraction"
+  short_description: "Extract the effect engine from the API package"
+  default_prompt: "Use $onepiecetcg-effect-engine-extraction to move the effect engine into its own reusable package."

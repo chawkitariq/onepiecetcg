@@ -38,7 +38,7 @@ Use a special handler when:
 
 If several blocked cards share the same limitation, prefer extending the DSL rather than multiplying special handlers.
 
-## 3. Decide Shared-Type Change vs API-Only Change
+## 3. Decide Shared-Type Change vs Effect-Engine-Only Change
 
 Edit `packages/shared/src/effects.ts` when authored definitions need a new shape, such as:
 
@@ -48,12 +48,12 @@ Edit `packages/shared/src/effects.ts` when authored definitions need a new shape
 - a new decision prompt shape
 - a new replacement event
 
-Edit only `packages/api/src/card-effect/` when:
+Edit only `packages/effect-engine/src/` when:
 
 - the shared DSL already expresses the concept
 - the loader, indexes, or runtime just do not execute it correctly yet
 
-## 4. Decide Which API Runtime File Changes
+## 4. Decide Which Effect-Engine Runtime File Changes
 
 - `effect-engine.ts`
   - add action execution

@@ -1,0 +1,35 @@
+{
+  "name": "@onepiecetcg/cards",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./effects": {
+      "types": "./dist/effects/index.d.ts",
+      "import": "./dist/effects/index.js",
+      "default": "./dist/effects/index.js"
+    },
+    "./effects/*": {
+      "types": "./dist/effects/*.d.ts",
+      "import": "./dist/effects/*.js",
+      "default": "./dist/effects/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "test": "../web/node_modules/.bin/vitest",
+    "test:run": "../web/node_modules/.bin/vitest run --config ./vitest.config.ts"
+  },
+  "dependencies": {
+    "@onepiecetcg/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
