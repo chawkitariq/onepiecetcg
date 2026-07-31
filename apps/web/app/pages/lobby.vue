@@ -752,12 +752,6 @@ onBeforeUnmount(() => {
             class="flex items-start gap-2"
           >
             <span
-              class="mt-0.5 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
-              :class="getDuelLogLevelPresentation(log.level).badgeClass"
-            >
-              {{ getDuelLogLevelPresentation(log.level).label }}
-            </span>
-            <span
               v-if="resolveLogActor(log.actorSessionId)"
               class="mt-0.5 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
               :class="resolveLogActor(log.actorSessionId)?.classes"

@@ -1721,14 +1721,13 @@ describe('DuelBoard drag and drop', () => {
 
     const wrapper = mountBoard()
     const journalEntries = wrapper.findAll('[data-test="journal-entry"]')
-    const levelBadges = wrapper.findAll('[data-test="journal-level"]')
 
     expect(journalEntries[0]?.find('p').classes()).toContain('text-primary')
     expect(journalEntries[1]?.find('p').classes()).toContain('text-error')
     expect(journalEntries[2]?.find('p').classes()).toContain('text-warning')
     expect(journalEntries[3]?.find('p').classes()).toContain('text-info')
     expect(journalEntries[4]?.find('p').classes()).toContain('text-muted')
-    expect(levelBadges.map(badge => badge.text())).toEqual(['Action', 'Erreur', 'Effet', 'Système', 'Info'])
+    expect(wrapper.findAll('[data-test="journal-level"]')).toHaveLength(0)
   })
 
   it('renders the actor badge separately from the journal text when actorSessionId is present', () => {

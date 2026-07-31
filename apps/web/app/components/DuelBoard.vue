@@ -3366,13 +3366,6 @@ defineShortcuts({
                         :class="getDuelLogLevelPresentation(entry.level).toneClass"
                       >
                         <span
-                          class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
-                          :class="getDuelLogLevelPresentation(entry.level).badgeClass"
-                          data-test="journal-level"
-                        >
-                          {{ getDuelLogLevelPresentation(entry.level).label }}
-                        </span>
-                        <span
                           v-if="getLogActor(entry)"
                           class="mr-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] align-middle"
                           :class="getLogActor(entry)?.classes"
