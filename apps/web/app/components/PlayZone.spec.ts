@@ -404,6 +404,8 @@ describe('PlayZone transitions', () => {
     expect(untappedSecondOffset).toBeGreaterThan(untappedFirstOffset ?? 0)
     expect(restedFirstOffset).toBeGreaterThan(untappedSecondOffset ?? 0)
     expect(restedSecondOffset).toBeGreaterThan(untappedSecondOffset ?? 0)
+    expect(restedFirstOffset).toBeGreaterThanOrEqual(120)
+    expect(restedSecondOffset).toBeGreaterThanOrEqual(120)
   })
 
   it('keeps the same DON!! cost card node when Refresh flips it from rested to untapped so CSS can animate the move', async () => {

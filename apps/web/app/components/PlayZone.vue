@@ -230,7 +230,8 @@ function costCardTranslateX(index: number, cardCount: number, rested: boolean) {
     return index * COST_STACK_PEEK_PX
   }
 
-  const stackStart = Math.max(size.width - stackWidth, 0)
+  const rightLaneStart = size.width / 2
+  const stackStart = Math.max(rightLaneStart, size.width - stackWidth)
 
   return stackStart + index * COST_STACK_PEEK_PX
 }
