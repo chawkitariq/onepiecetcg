@@ -23,4 +23,19 @@ describe('DuelZoneSlot', () => {
 
     expect(wrapper.get('div').classes()).toContain('overflow-visible')
   })
+
+  it('renders the zone count as a styled badge', () => {
+    const wrapper = mount(DuelZoneSlot, {
+      props: {
+        label: 'Cost',
+        count: 7
+      }
+    })
+
+    const badge = wrapper.getComponent({ name: 'UBadge' })
+
+    expect(badge.text()).toContain('7')
+    expect(badge.classes()).toContain('duel-zone-count-badge')
+    expect(badge.html()).toContain('i-lucide:layers-2')
+  })
 })

@@ -35,11 +35,13 @@ const { label, flipped, hugCard = false, count, allowOverflow = false } = define
     </p>
     <UBadge
       v-if="count !== undefined"
-      color="primary"
-      variant="solid"
+      color="neutral"
+      variant="soft"
       size="sm"
-      class="pointer-events-none absolute right-1 top-1 z-70 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+      class="duel-zone-count-badge pointer-events-none absolute right-1.5 top-1.5 z-70 opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+      :ui="{ leadingIcon: 'size-3', label: 'font-semibold tabular-nums' }"
       :class="flipped ? '-scale-x-100 -scale-y-100' : ''"
+      icon="i-lucide-layers-2"
     >
       {{ count }}
     </UBadge>

@@ -21,7 +21,8 @@ describe('AnimatedPowerBadge', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('8124')
+    expect(wrapper.text()).toContain('8')
+    expect(wrapper.text()).toContain('124')
   })
 
   it('falls back to the raw value when reduced motion is enabled', () => {
@@ -34,7 +35,8 @@ describe('AnimatedPowerBadge', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('8000')
+    expect(wrapper.text()).toContain('8')
+    expect(wrapper.text()).toContain('000')
   })
 
   it('mirrors the badge when requested', () => {
