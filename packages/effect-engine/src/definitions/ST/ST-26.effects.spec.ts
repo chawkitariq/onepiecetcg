@@ -39,6 +39,8 @@ describe('ST26 effect definitions', () => {
     const player = host.getPlayer(sessionId)!;
     for (let index = 0; index < count; index += 1) {
       const don = new DuelCard();
+      don.instanceId = `${sessionId}:don:cost:${index}`;
+      don.ownerSessionId = sessionId;
       don.rested = rested;
       player.zones.cost.push(don);
     }
@@ -144,6 +146,8 @@ describe('ST26 effect definitions', () => {
       putDonInCost(host, 'p1', 2, false);
 
       const don = new DuelCard();
+      don.instanceId = 'p2:don:cost:0';
+      don.ownerSessionId = 'p2';
       don.rested = false;
       p2.zones.cost.push(don);
 
@@ -226,7 +230,9 @@ describe('ST26 effect definitions', () => {
       putDonInCost(host, 'p1', 2, false);
 
       const donCards = [new DuelCard(), new DuelCard(), new DuelCard()];
-      for (const don of donCards) {
+      for (const [index, don] of donCards.entries()) {
+        don.instanceId = `p1:don:deck:${index}`;
+        don.ownerSessionId = 'p1';
         p1.zones.donDeck.push(don);
       }
       // donDeck: 3, cost: 2

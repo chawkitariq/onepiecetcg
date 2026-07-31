@@ -9,7 +9,7 @@ import type {
   EffectEngineCardStatPatch,
   EffectEngineCardStatusPatch,
   EffectEngineHost,
-} from '../../card-effect/effect-engine';
+} from '@onepiecetcg/effect-engine';
 
 /**
  * Runtime dependencies needed to build the authoritative effect-engine host

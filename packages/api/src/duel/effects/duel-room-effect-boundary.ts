@@ -5,10 +5,11 @@ import type {
 } from '@onepiecetcg/shared';
 import {
   EffectEngine,
+  effectRegistry,
   type EffectEvent,
+  type EffectEngineState,
   type EffectEventType,
-} from '../../card-effect/effect-engine';
-import { effectRegistry } from '../../card-effect/effect-registry';
+} from '@onepiecetcg/effect-engine';
 import {
   createDuelEffectEngineHost,
   type DuelEffectEngineHostDeps,
@@ -22,7 +23,7 @@ export type DuelRoomEffectBoundaryDeps = DuelEffectEngineHostDeps & {
 };
 
 export type DuelRoomEffectBoundaryState = {
-  engine: import('../../card-effect/runtime/effect-engine-types').EffectEngineState;
+  engine: EffectEngineState;
   manualTrigger:
     | import('./duel-manual-trigger-manager').SerializedManualTriggerFallbackState
     | null;

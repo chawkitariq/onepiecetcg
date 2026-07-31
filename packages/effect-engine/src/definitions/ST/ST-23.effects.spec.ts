@@ -40,6 +40,8 @@ describe('ST23 effect definitions', () => {
     const player = host.getPlayer(sessionId)!;
     for (let index = 0; index < count; index += 1) {
       const don = new DuelCard();
+      don.instanceId = `${sessionId}:don:cost:${index}`;
+      don.ownerSessionId = sessionId;
       don.rested = rested;
       player.zones.cost.push(don);
     }

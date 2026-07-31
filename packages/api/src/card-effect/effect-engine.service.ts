@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { EffectEngine, type EffectEngineHost } from './effect-engine';
-import { createEffectRegistry, effectRegistry } from './effect-registry';
+import {
+  createEffectRegistry,
+  effectRegistry,
+  EffectEngine,
+  type EffectEngineHost,
+} from '@onepiecetcg/effect-engine';
 
 /**
  * Nest-facing factory for effect engines so other backend adapters can reuse
