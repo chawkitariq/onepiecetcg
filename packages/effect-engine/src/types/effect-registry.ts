@@ -1,12 +1,12 @@
 import type {
   CardEffectDefinition,
   ContinuousEffectDefinition,
+  EffectSourceBundle,
   EffectTriggerType,
   ReplacementEffectDefinition,
+  SpecialHandlerDefinition,
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
-import type { EffectEvent, SpecialEffectHandlerEngine } from '../effect-engine';
-import type { EditionEffectDefinitions } from './effect-definition-source';
 
 export type CardId = string;
 
@@ -22,16 +22,7 @@ export type ReplacementEffect = ReplacementEffectDefinition;
 
 export type ContinuousEffect = ContinuousEffectDefinition;
 
-export interface SpecialHandlerDefinition {
-  id: string;
-  cardId: CardId;
-  resolve(event: EffectEvent, engine: SpecialEffectHandlerEngine): void;
-}
-
-export interface EffectSourceBundle {
-  definitions: readonly EditionEffectDefinitions[];
-  specialHandlers: readonly SpecialHandlerDefinition[];
-}
+export type { EffectSourceBundle, SpecialHandlerDefinition };
 
 export interface TriggeredEffectReference {
   cardId: CardId;

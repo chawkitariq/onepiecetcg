@@ -1,14 +1,17 @@
 import { describe, expect, it } from '../web/node_modules/vitest/dist/index.js';
 import {
   buildCatalogFilterOptions,
+  effectDefinitionEditions,
   findCatalogCard,
   getCatalogRoot,
   listCatalogEditions,
+  loadEffectSources,
   loadCatalogCards,
   loadCatalogEdition,
   matchesCatalogQuery,
   searchCatalogCards,
   searchCatalogCardsInMemory,
+  specialHandlerDefinitions,
 } from './index';
 
 describe('@onepiecetcg/cards', () => {
@@ -80,5 +83,17 @@ describe('@onepiecetcg/cards', () => {
 
     expect(result.total).toBeGreaterThan(0);
     expect(result.cards.every((card) => card.type === 'Character')).toBe(true);
+  });
+
+  it('exposes the packaged effect definitions and special handlers', () => {
+    const sources = loadEffectSources();
+
+    expect(effectDefinitionEditions.length).toBeGreaterThan(0);
+    expect(specialHandlerDefinitions.length).toBeGreaterThan(0);
+    expect(
+      effectDefinitionEditions.some((edition) => edition.editionId === 'OP-01'),
+    ).toBe(true);
+    expect(sources.definitions).toBe(effectDefinitionEditions);
+    expect(sources.specialHandlers).toBe(specialHandlerDefinitions);
   });
 });

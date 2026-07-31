@@ -4,10 +4,6 @@ import type {
   ReplacementEffectDefinition,
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
-import {
-  effectDefinitionEditions,
-  specialHandlerDefinitions,
-} from './definitions';
 import { buildEffectIndexes } from './effect-indexes';
 import type {
   CardEffectEntry,
@@ -137,22 +133,9 @@ function indexSpecialHandlersById(
 }
 
 /**
- * Loads the authored edition files and special handlers exactly once for
- * bootstrap-time registry construction.
- */
-export function loadEffectSources(): EffectSourceBundle {
-  return {
-    definitions: effectDefinitionEditions,
-    specialHandlers: specialHandlerDefinitions,
-  };
-}
-
-/**
  * Builds the immutable in-memory effect registry used by every match.
  */
-export function buildEffectRegistry(
-  sourceBundle = loadEffectSources(),
-): EffectRegistry {
+export function buildEffectRegistry(sourceBundle: EffectSourceBundle): EffectRegistry {
   const effectsByCardId = Object.create(null) as Record<
     CardId,
     CardEffectDefinition

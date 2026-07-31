@@ -9,6 +9,8 @@ import type {
   CardType,
 } from '../../shared/dist/esm/index.js';
 
+export * from '../effects/index.js';
+
 const catalogRoot = fileURLToPath(new URL('../catalog', import.meta.url));
 
 /** Snapshot payload stored on disk for one catalog edition file. */

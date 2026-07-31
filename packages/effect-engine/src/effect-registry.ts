@@ -1,19 +1,16 @@
 import type { CardEffectDefinition } from '@onepiecetcg/shared';
-import { buildEffectRegistry, loadEffectSources } from './effect-loader';
-import type { EffectRegistry } from './types/effect-registry';
+import { buildEffectRegistry } from './effect-loader';
+import type { EffectRegistry, EffectSourceBundle } from './types/effect-registry';
 
-/** Process-level immutable registry built once and shared across all rooms. */
-export const effectRegistry: EffectRegistry =
-  buildEffectRegistry(loadEffectSources());
-
-/** Rebuild helper for tests or future bootstrap hooks. */
-export function createEffectRegistry(): EffectRegistry {
-  return buildEffectRegistry(loadEffectSources());
+/** Builds one registry snapshot from an explicit source bundle. */
+export function createEffectRegistry(sourceBundle: EffectSourceBundle): EffectRegistry {
+  return buildEffectRegistry(sourceBundle);
 }
 
 /** Direct normalized lookup for one card definition. */
 export function getEffectDefinition(
+  registry: EffectRegistry,
   cardId: string,
 ): CardEffectDefinition | undefined {
-  return effectRegistry.effectsByCardId[cardId.trim().toUpperCase()];
+  return registry.effectsByCardId[cardId.trim().toUpperCase()];
 }

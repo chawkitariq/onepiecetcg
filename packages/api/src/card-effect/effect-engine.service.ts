@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
-  createEffectRegistry,
-  effectRegistry,
   EffectEngine,
   type EffectEngineHost,
 } from '@onepiecetcg/effect-engine';
+import {
+  createEffectRegistrySnapshot,
+  effectRegistry,
+} from './effect-registry';
 
 /**
  * Nest-facing factory for effect engines so other backend adapters can reuse
@@ -22,6 +24,6 @@ export class EffectEngineService {
 
   /** Creates a fresh registry snapshot; useful for tests and bootstrap checks. */
   public createRegistrySnapshot() {
-    return createEffectRegistry();
+    return createEffectRegistrySnapshot();
   }
 }

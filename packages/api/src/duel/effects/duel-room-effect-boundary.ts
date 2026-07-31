@@ -5,11 +5,11 @@ import type {
 } from '@onepiecetcg/shared';
 import {
   EffectEngine,
-  effectRegistry,
   type EffectEvent,
   type EffectEngineState,
   type EffectEventType,
 } from '@onepiecetcg/effect-engine';
+import { effectRegistry } from '../../card-effect/effect-registry';
 import {
   createDuelEffectEngineHost,
   type DuelEffectEngineHostDeps,

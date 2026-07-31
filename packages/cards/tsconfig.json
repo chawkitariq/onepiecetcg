@@ -10,9 +10,9 @@
     "typeRoots": ["../web/node_modules/@types", "../api/node_modules/@types"],
     "useDefineForClassFields": false,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+  "include": ["src/**/*.ts", "effects/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "effects/**/*.spec.ts", "effects/**/*.test.ts"]
 }

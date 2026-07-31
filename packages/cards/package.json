@@ -8,6 +8,16 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./effects": {
+      "types": "./effects/index.ts",
+      "import": "./effects/index.ts",
+      "default": "./effects/index.ts"
+    },
+    "./effects/*": {
+      "types": "./effects/*.ts",
+      "import": "./effects/*.ts",
+      "default": "./effects/*.ts"
     }
   },
   "scripts": {

@@ -15,6 +15,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "@onepiecetcg/cards": ["../cards/src/index.ts"],
+      "@onepiecetcg/cards/effects": ["../cards/effects/index.ts"],
+      "@onepiecetcg/cards/effects/*": ["../cards/effects/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
