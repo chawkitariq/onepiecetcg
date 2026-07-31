@@ -23,7 +23,7 @@ function createLifecycle(state: DuelState): DuelRoomLifecycle {
 }
 
 describe('DuelRoomLeaveHandler', () => {
-  it('applies a consented leave and persists a concession when the match is active', async () => {
+  it('applies a consented leave when the match is active', async () => {
     const state = new DuelState();
     const lifecycle = createLifecycle(state);
     const alice = createPlayer('session-a', 'Alice');
@@ -34,7 +34,6 @@ describe('DuelRoomLeaveHandler', () => {
     lifecycle.registerPlayer('session-a', 'user-a');
     lifecycle.registerPlayer('session-b', 'user-b');
     lifecycle.markMatchStarted(new Date('2026-07-31T09:00:00.000Z'));
-    const persistRoomEventsOrThrow = jest.fn().mockResolvedValue(undefined);
     const rebuildAllClientViews = jest.fn();
     const syncPendingEffectDecision = jest.fn();
     const handler = new DuelRoomLeaveHandler({
@@ -50,28 +49,12 @@ describe('DuelRoomLeaveHandler', () => {
       },
       appendLogToState: jest.fn(),
       addLog: jest.fn(),
-      captureStateSnapshotFrom: (targetState) => ({
-        phase: targetState.phase,
-        endReason: targetState.endReason,
-        winnerSessionId: targetState.winnerSessionId,
-      }) as never,
-      buildTerminalEventDraftsFor: () => [],
-      persistRoomEventsOrThrow,
-      getPlayerId: (sessionId) => `player:${sessionId}`,
       rebuildAllClientViews,
       syncPendingEffectDecision,
-      reportPersistError: jest.fn(),
     });
 
     await handler.handleLeave({ sessionId: 'session-a' } as never, true, 120);
 
-    expect(persistRoomEventsOrThrow).toHaveBeenCalledWith('session-a', [
-      {
-        type: 'PlayerConceded',
-        version: 1,
-        payload: { playerId: 'player:session-a' },
-      },
-    ]);
     expect(state.phase).toBe('finished');
     expect(state.endReason).toBe('forfeit');
     expect(state.winnerSessionId).toBe('session-b');
@@ -93,13 +76,8 @@ describe('DuelRoomLeaveHandler', () => {
       createLifecycleForState: jest.fn() as never,
       appendLogToState: jest.fn(),
       addLog,
-      captureStateSnapshotFrom: jest.fn() as never,
-      buildTerminalEventDraftsFor: jest.fn() as never,
-      persistRoomEventsOrThrow: jest.fn(),
-      getPlayerId: jest.fn(),
       rebuildAllClientViews: jest.fn(),
       syncPendingEffectDecision: jest.fn(),
-      reportPersistError: jest.fn(),
     });
 
     await handler.handleLeave({ sessionId: 'session-a' } as never, false, 120);

@@ -1,4 +1,3 @@
-import type { DomainEventDraft } from '../../duel-events/duel-domain-event.types';
 import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gameplay-runtime';
 import type { Client } from 'colyseus';
 
@@ -6,7 +5,6 @@ export type DuelRoomIsolatedCommandClient = Pick<Client, 'sessionId' | 'send'>;
 
 export type DuelRoomIsolatedCommandSuccess = {
   handled: true;
-  eventDrafts: DomainEventDraft[];
 };
 
 export type DuelRoomIsolatedCommandFailure = {
@@ -22,15 +20,10 @@ export type DuelRoomIsolatedCommandRunnerDeps = {
   createRuntime: () => DuelRoomIsolatedGameplayRuntime;
   adoptRuntime: (runtime: DuelRoomIsolatedGameplayRuntime) => void;
   hasPendingPlayerInteraction: () => boolean;
-  persistRoomEventsOrThrow: (
-    actorSessionId: string | undefined,
-    eventDrafts: DomainEventDraft[],
-  ) => Promise<void>;
   sendActionError: (
     client: DuelRoomIsolatedCommandClient,
     message: string,
   ) => void;
-  reportPersistError: (error: unknown) => void;
 };
 
 export type RunIsolatedCommandInput = {
@@ -38,7 +31,6 @@ export type RunIsolatedCommandInput = {
   executor: (
     runtime: DuelRoomIsolatedGameplayRuntime,
   ) => DuelRoomIsolatedCommandResult;
-  outboxFailureMessage: string;
   pendingInteractionMessage?: string;
   allowPendingInteraction?: boolean;
   fallbackRuntimeError?: (
@@ -48,8 +40,8 @@ export type RunIsolatedCommandInput = {
 
 /**
  * Runs one isolated gameplay command with the standard lifecycle:
- * pending-interaction guard, detached runtime execution, outbox persistence,
- * and runtime adoption on success.
+ * pending-interaction guard, detached runtime execution, and runtime adoption
+ * on success.
  */
 export class DuelRoomIsolatedCommandRunner {
   public constructor(
@@ -80,17 +72,6 @@ export class DuelRoomIsolatedCommandRunner {
         this.deps.sendActionError(input.client, errorMessage);
       }
 
-      return;
-    }
-
-    try {
-      await this.deps.persistRoomEventsOrThrow(
-        input.client.sessionId,
-        result.eventDrafts,
-      );
-    } catch (error) {
-      this.deps.reportPersistError(error);
-      this.deps.sendActionError(input.client, input.outboxFailureMessage);
       return;
     }
 

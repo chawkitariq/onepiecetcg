@@ -1,4 +1,3 @@
-import type { DomainEventDraft } from '../../duel-events/duel-domain-event.types';
 import type {
   DuelRoomIsolatedCommandClient,
   DuelRoomIsolatedCommandFailure,
@@ -8,10 +7,6 @@ import type {
 import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gameplay-runtime';
 
 type IsolatedRuntime = DuelRoomIsolatedGameplayRuntime;
-
-type MainPhaseResult =
-  | { handled: false }
-  | { handled: true; eventDrafts: DomainEventDraft[] };
 
 type TurnOrCombatResult =
   | DuelRoomIsolatedCommandFailure
@@ -30,13 +25,11 @@ export class DuelRoomIsolatedCommandDispatcher {
    */
   public async runMainPhaseCommand(
     client: DuelRoomIsolatedCommandClient,
-    executor: (runtime: IsolatedRuntime) => MainPhaseResult,
-    outboxFailureMessage: string,
+    executor: (runtime: IsolatedRuntime) => TurnOrCombatResult,
   ): Promise<void> {
     await this.runner.run({
       client,
       executor,
-      outboxFailureMessage,
       fallbackRuntimeError: (runtime) => runtime.mainPhaseErrors.at(-1),
     });
   }
@@ -47,12 +40,10 @@ export class DuelRoomIsolatedCommandDispatcher {
   public async runTurnCommand(
     client: DuelRoomIsolatedCommandClient,
     executor: (runtime: IsolatedRuntime) => TurnOrCombatResult,
-    outboxFailureMessage: string,
   ): Promise<void> {
     await this.runner.run({
       client,
       executor,
-      outboxFailureMessage,
       pendingInteractionMessage: "Une decision d'effet est en attente.",
     });
   }
@@ -64,13 +55,11 @@ export class DuelRoomIsolatedCommandDispatcher {
   public async runCombatCommand(
     client: DuelRoomIsolatedCommandClient,
     executor: (runtime: IsolatedRuntime) => TurnOrCombatResult,
-    outboxFailureMessage: string,
     options?: { allowPendingInteraction?: boolean },
   ): Promise<void> {
     await this.runner.run({
       client,
       executor,
-      outboxFailureMessage,
       pendingInteractionMessage: "Une decision d'effet est en attente.",
       allowPendingInteraction: options?.allowPendingInteraction,
       fallbackRuntimeError: (runtime) => runtime.combatErrors.at(-1),

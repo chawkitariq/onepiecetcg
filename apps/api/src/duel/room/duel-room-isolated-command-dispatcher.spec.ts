@@ -22,7 +22,6 @@ describe('duel-room-isolated-command-dispatcher', () => {
     await dispatcher.runMainPhaseCommand(
       { sessionId: 'session-a', send: jest.fn() },
       () => ({ handled: false }),
-      'outbox',
     );
 
     const runtime = createRuntime();
@@ -30,7 +29,6 @@ describe('duel-room-isolated-command-dispatcher', () => {
     const config = run.mock.calls[0][0];
 
     expect(config.pendingInteractionMessage).toBeUndefined();
-    expect(config.outboxFailureMessage).toBe('outbox');
     expect(config.fallbackRuntimeError(runtime)).toBe('main error');
   });
 
@@ -43,12 +41,10 @@ describe('duel-room-isolated-command-dispatcher', () => {
     await dispatcher.runTurnCommand(
       { sessionId: 'session-a', send: jest.fn() },
       () => ({ handled: false, errorMessage: 'nope' }),
-      'outbox',
     );
 
     expect(run.mock.calls[0][0]).toEqual(
       expect.objectContaining({
-        outboxFailureMessage: 'outbox',
         pendingInteractionMessage: "Une decision d'effet est en attente.",
       }),
     );
@@ -63,7 +59,6 @@ describe('duel-room-isolated-command-dispatcher', () => {
     await dispatcher.runCombatCommand(
       { sessionId: 'session-a', send: jest.fn() },
       () => ({ handled: false }),
-      'outbox',
       { allowPendingInteraction: true },
     );
 

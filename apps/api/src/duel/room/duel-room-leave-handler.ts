@@ -4,9 +4,7 @@ import type {
 } from '@onepiecetcg/shared';
 import { adoptRoomDuelState, cloneRoomDuelState } from '@onepiecetcg/duel-engine';
 import type { Client } from 'colyseus';
-import type { DomainEventDraft } from '../../duel-events/duel-domain-event.types';
 import type { DuelRoomLifecycle } from './duel-room-lifecycle';
-import type { DuelStateSnapshot } from './duel-room-state-snapshot';
 
 export type DuelRoomLeaveClient = Pick<Client, 'sessionId'>;
 
@@ -36,19 +34,8 @@ export type DuelRoomLeaveHandlerDeps = {
     level?: DuelLogLevel,
     actorSessionId?: string,
   ) => void;
-  captureStateSnapshotFrom: (state: DuelState) => DuelStateSnapshot;
-  buildTerminalEventDraftsFor: (
-    before: DuelStateSnapshot,
-    state: DuelState,
-  ) => DomainEventDraft[];
-  persistRoomEventsOrThrow: (
-    actorSessionId: string | undefined,
-    eventDrafts: DomainEventDraft[],
-  ) => Promise<void>;
-  getPlayerId: (sessionId: string) => string | undefined;
   rebuildAllClientViews: () => void;
   syncPendingEffectDecision: () => void;
-  reportPersistError: (error: unknown) => void;
 };
 
 /**
@@ -93,28 +80,7 @@ export class DuelRoomLeaveHandler {
       'system',
       player.sessionId,
     );
-    const snapshot = this.deps.captureStateSnapshotFrom(state);
     lifecycle.declareForfeitIfMatchInProgress(player);
-    const shouldPersistConcession =
-      snapshot.phase !== 'finished' &&
-      state.phase === 'finished' &&
-      state.endReason === 'forfeit';
-
-    if (shouldPersistConcession) {
-      try {
-        await this.deps.persistRoomEventsOrThrow(sessionId, [
-          {
-            type: 'PlayerConceded',
-            version: 1,
-            payload: { playerId: this.deps.getPlayerId(sessionId) },
-          },
-          ...this.deps.buildTerminalEventDraftsFor(snapshot, state),
-        ]);
-      } catch (error) {
-        this.deps.reportPersistError(error);
-        return;
-      }
-    }
 
     adoptRoomDuelState(this.deps.state, state);
     const liveLifecycle = this.deps.getLifecycle();

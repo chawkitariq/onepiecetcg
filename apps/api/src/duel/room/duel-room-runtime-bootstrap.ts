@@ -6,17 +6,11 @@ import {
   type DuelRoomCardKeywordSnapshot,
 } from '@onepiecetcg/duel-engine';
 import type { Client } from 'colyseus';
-import type {
-  DomainEventDraft,
-  PlayerId,
-} from '../../duel-events/duel-domain-event.types';
-import type { DuelDomainEventsService } from '../../duel-events/duel-domain-events.service';
 import type { StatsService } from '../../stats/stats.service';
 import type { DuelRoomGameplayRuntime } from './duel-room-gameplay-runtime';
 import { DuelRoomClientNotifier } from './duel-room-client-notifier';
 import type { DuelRoomLifecycle } from './duel-room-lifecycle';
 import { createDuelRoomLifecycle } from './duel-room-lifecycle-factory';
-import { DuelRoomEventOutbox } from './duel-room-event-outbox';
 import { DuelRoomInteractionRuntimeCoordinator } from './duel-room-interaction-runtime';
 import type { DuelRoomPendingInteractionRuntime } from './duel-room-interaction-runtime';
 import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gameplay-runtime';
@@ -30,7 +24,6 @@ export type DuelRoomRuntimeBootstrap = {
   lifecycle: DuelRoomLifecycle;
   runtimeState: DuelRoomRuntimeState;
   notifier: DuelRoomClientNotifier;
-  eventOutbox: DuelRoomEventOutbox;
   isolatedCommandRunner: DuelRoomIsolatedCommandRunner;
   interactionRuntimeCoordinator: DuelRoomInteractionRuntimeCoordinator;
   seatBootstrap: DuelRoomSeatBootstrap;
@@ -41,9 +34,7 @@ export type DuelRoomRuntimeBootstrap = {
  */
 export type CreateDuelRoomRuntimeBootstrapInput = {
   state: DuelState;
-  roomId: string;
   statsService?: StatsService;
-  duelEventsService?: DuelDomainEventsService;
   getClients: () => readonly Client[];
   broadcast: (type: string, message: object) => void;
   getPendingRuntime: () => DuelRoomPendingInteractionRuntime | null;
@@ -61,22 +52,13 @@ export type CreateDuelRoomRuntimeBootstrapInput = {
   installGameplayRuntime: (runtime: DuelRoomGameplayRuntime) => void;
   adoptRuntime: (runtime: DuelRoomIsolatedGameplayRuntime) => void;
   hasPendingPlayerInteraction: () => boolean;
-  persistRoomEventsOrThrow: (
-    actorSessionId: string | undefined,
-    eventDrafts: DomainEventDraft[],
-  ) => Promise<void>;
-  requirePlayerId: (sessionId: string) => PlayerId;
-  listParticipants: () => Array<{ authUserId: string; playerId: string }>;
   rebuildAllClientViews: () => void;
   syncZoneCounts: (player: DuelPlayer) => void;
   broadcastCardView: (card: DuelCard) => void;
   sendActionError: (client: Pick<Client, 'send'>, message: string) => void;
   logSystemMessage: (message: string, actorSessionId?: string) => void;
   reportMatchResultError: (error: unknown) => void;
-  reportPersistError: (error: unknown) => void;
   disconnectRoom: () => Promise<void> | void;
-  createCommandId: () => string;
-  createActionId: () => string;
 };
 
 /**
@@ -99,23 +81,11 @@ export function createDuelRoomRuntimeBootstrap(
     broadcast: (type, message) => input.broadcast(type, message),
     getPendingEffectDecision: () => input.getActiveEffectDecision(),
   });
-  const eventOutbox = new DuelRoomEventOutbox({
-    duelEventsService: input.duelEventsService,
-    roomId: input.roomId,
-    getPlayerId: (sessionId) => input.requirePlayerId(sessionId),
-    listParticipants: () => input.listParticipants(),
-    createCommandId: () => input.createCommandId(),
-    createActionId: () => input.createActionId(),
-    reportPersistError: (error) => input.reportPersistError(error),
-  });
   const isolatedCommandRunner = new DuelRoomIsolatedCommandRunner({
     createRuntime: () => input.createIsolatedGameplayRuntime(),
     adoptRuntime: (runtime) => input.adoptRuntime(runtime),
     hasPendingPlayerInteraction: () => input.hasPendingPlayerInteraction(),
-    persistRoomEventsOrThrow: (actorSessionId, eventDrafts) =>
-      input.persistRoomEventsOrThrow(actorSessionId, eventDrafts),
     sendActionError: (client, message) => input.sendActionError(client, message),
-    reportPersistError: (error) => input.reportPersistError(error),
   });
   const interactionRuntimeCoordinator =
     new DuelRoomInteractionRuntimeCoordinator({
@@ -146,7 +116,6 @@ export function createDuelRoomRuntimeBootstrap(
     lifecycle,
     runtimeState,
     notifier,
-    eventOutbox,
     isolatedCommandRunner,
     interactionRuntimeCoordinator,
     seatBootstrap,
