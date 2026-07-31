@@ -581,7 +581,7 @@ onBeforeUnmount(() => {
               :schema="joinCodeSchema"
               :state="joinCodeState"
               data-test="join-code-form"
-              class="flex gap-2"
+              class="flex items-start gap-2"
               @submit="joinRoomByCode"
             >
               <UFormField
@@ -599,6 +599,7 @@ onBeforeUnmount(() => {
               <UButton
                 type="submit"
                 color="neutral"
+                class="shrink-0"
                 :loading="isBusy"
                 :disabled="!canPlay || isInRoom"
               >
@@ -640,7 +641,7 @@ onBeforeUnmount(() => {
             :schema="createLobbySchema"
             :state="createLobbyState"
             data-test="create-lobby-form"
-            class="flex gap-2 border-b border-default p-4"
+            class="flex items-start gap-2 border-b border-default p-4"
             @submit="createDescribedRoom"
           >
             <UFormField
@@ -660,6 +661,7 @@ onBeforeUnmount(() => {
               icon="i-lucide-plus"
               color="neutral"
               variant="subtle"
+              class="shrink-0"
               :loading="isBusy"
               :disabled="!canPlay || isInRoom"
             >
