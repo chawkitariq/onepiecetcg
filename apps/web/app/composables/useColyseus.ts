@@ -12,7 +12,7 @@ type DuelJoinOptions = {
 }
 
 /**
- * `DuelState` (the real Colyseus schema class, shared with `packages/api`
+ * `DuelState` (the real Colyseus schema class, shared with `apps/api`
  * via `packages/shared`) is passed as `rootSchema` to every join call below.
  * Relying on Colyseus's Reflection protocol instead (omitting `rootSchema`)
  * proved fragile with `@colyseus/schema` 3.x: it silently produced an empty

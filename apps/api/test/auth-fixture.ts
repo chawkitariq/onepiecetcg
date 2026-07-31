@@ -23,7 +23,7 @@ export type AuthenticatedTestUser = {
  * publicly exported `better-auth/crypto#makeSignature`.
  *
  * Email/password sign-in is intentionally disabled for this product (OAuth
- * only, see packages/api/CLAUDE.md), so Better Auth's own test-instance
+ * only, see apps/api/CLAUDE.md), so Better Auth's own test-instance
  * helpers (which sign in via email+password) cannot be used here.
  */
 export async function createAuthenticatedTestUser(

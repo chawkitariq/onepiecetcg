@@ -9,8 +9,8 @@ import type {
 } from './index.js';
 
 /**
- * Colyseus room state for the `duel` room, shared between `packages/api`
- * (authoritative, registers the room with these classes) and `packages/web`
+ * Colyseus room state for the `duel` room, shared between `apps/api`
+ * (authoritative, registers the room with these classes) and `apps/web`
  * (passes `DuelState` as `joinOrCreate`'s `rootSchema` argument instead of
  * relying on Colyseus's Reflection protocol, which proved fragile with
  * `@colyseus/schema` 3.x for this state shape).

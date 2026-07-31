@@ -1,6 +1,6 @@
 # @onepiecetcg/shared
 
-Types, schemas, and helpers shared between [`packages/api`](../api/README.md) and [`packages/web`](../web/README.md) — the contract that keeps the backend and frontend from drifting apart.
+Types, schemas, and helpers shared between [`apps/api`](../../apps/api/README.md) and [`apps/web`](../../apps/web/README.md) — the contract that keeps the backend and frontend from drifting apart.
 
 ## What belongs here
 
@@ -10,7 +10,7 @@ Types, schemas, and helpers shared between [`packages/api`](../api/README.md) an
 
 ## What doesn't belong here
 
-Anything that must stay authoritative on the server — final deck validation, structural combat resolution — stays in `packages/api`. Code duplicated here for a client-side *preview* (e.g. deck validation before submitting to the API) is fine; trusting that preview as the source of truth on the server is not. See [docs/spec.md](../../docs/spec.md) §0 for the full rule.
+Anything that must stay authoritative on the server — final deck validation, structural combat resolution — stays in `apps/api`. Code duplicated here for a client-side *preview* (e.g. deck validation before submitting to the API) is fine; trusting that preview as the source of truth on the server is not. See [docs/spec.md](../../docs/spec.md) §0 for the full rule.
 
 ## Consuming this package
 

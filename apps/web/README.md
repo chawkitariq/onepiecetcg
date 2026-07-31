@@ -1,6 +1,6 @@
 # @onepiecetcg/web
 
-Nuxt 4 frontend for the One Piece TCG Simulator. This package is a **pure client**: it holds no authority logic. Authentication, deck validation, game rules, and all state-of-record live in [`packages/api`](../api/README.md) (NestJS). This package only renders UI, calls the API, and connects to the realtime Colyseus server.
+Nuxt 4 frontend for the One Piece TCG Simulator. This app is a **pure client**: it holds no authority logic. Authentication, deck validation, game rules, and all state-of-record live in [`apps/api`](../api/README.md) (NestJS). This app only renders UI, calls the API, and connects to the realtime Colyseus server.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ Nuxt 4 frontend for the One Piece TCG Simulator. This package is a **pure client
 
 ## Quickstart
 
-Start the API first (see [packages/api/README.md](../api/README.md#quickstart)), then from `packages/web/`:
+Start the API first (see [apps/api/README.md](../api/README.md#quickstart)), then from `apps/web/`:
 
 ```bash
 pnpm install
@@ -19,7 +19,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser — Nuxt's dev server binds here by default; if the API is already using port 3000, Nuxt falls back to the next free port (typically 3001).
 
-You should see the home page. In local `development`, sign in from `/login` with the anonymous shortcut, or configure Google/Discord credentials in the API `.env` if you want to test those OAuth flows too (see [packages/api/README.md](../api/README.md#authentication)).
+You should see the home page. In local `development`, sign in from `/login` with the anonymous shortcut, or configure Google/Discord credentials in the API `.env` if you want to test those OAuth flows too (see [apps/api/README.md](../api/README.md#authentication)).
 
 ## Environment variables
 
@@ -32,7 +32,7 @@ Copy `.env.example` to `.env` if you need to override the defaults:
 
 ## Commands
 
-Run from `packages/web/`, or from the repo root with `pnpm --dir packages/web <script>`:
+Run from `apps/web/`, or from the repo root with `pnpm --dir apps/web <script>`:
 
 ```bash
 pnpm dev              # start Nuxt dev server
@@ -81,5 +81,5 @@ Vitest with `@nuxt/test-utils` and `@vue/test-utils`, using `happy-dom`. Test fi
 ## Related documentation
 
 - [Root README](../../README.md) — running the full stack together
-- [packages/api/README.md](../api/README.md) — the backend this app depends on
+- [apps/api/README.md](../api/README.md) — the backend this app depends on
 - [docs/spec.md](../../docs/spec.md) — product scope, including the client/server authority boundary this package must not cross

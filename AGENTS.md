@@ -2,10 +2,10 @@
 
 ## Project Structure & Module Organization
 
-This pnpm workspace has two application packages:
+This pnpm workspace has two application workspaces:
 
-- `packages/web/` contains the Nuxt 4 frontend. See `packages/web/CLAUDE.md` for its architecture, commands, and conventions.
-- `packages/api/` contains the NestJS backend. See `packages/api/CLAUDE.md` for its architecture, commands, and conventions.
+- `apps/web/` contains the Nuxt 4 frontend. See `apps/web/CLAUDE.md` for its architecture, commands, and conventions.
+- `apps/api/` contains the NestJS backend. See `apps/api/CLAUDE.md` for its architecture, commands, and conventions.
 - `packages/shared/` contains types and helpers shared between `api` and `web` (`packages/shared/src/index.ts`).
 - `docs/` contains project notes, game rules, and product specs.
 
@@ -17,7 +17,7 @@ Install dependencies from the repository root:
 pnpm install
 ```
 
-Run package scripts with `--dir`, e.g. `pnpm --dir packages/api start:dev`. Backend commands are documented in `packages/api/CLAUDE.md`, frontend commands in `packages/web/CLAUDE.md`.
+Run package scripts with `--dir`, e.g. `pnpm --dir apps/api start:dev`. Backend commands are documented in `apps/api/CLAUDE.md`, frontend commands in `apps/web/CLAUDE.md`.
 
 `packages/shared` is consumed via its built `dist/` output (see its `exports` map), not `src/` directly — `api`/`web` won't see edits to `packages/shared/src` until it rebuilds. Run `pnpm --dir packages/shared dev` alongside `api`/`web` dev servers to rebuild it on change instead of rerunning `pnpm --dir packages/shared build` manually, or just run `pnpm dev` from the repo root to start `shared` (build once, then watch), `api`, and `web` together via `concurrently`. `web` needs `api` bound to port 3000 first (Nuxt's dev server would otherwise race for the same port) — the root script waits on `tcp:3000` (`wait-on`) before starting `web`.
 
@@ -25,9 +25,9 @@ The root `pnpm test` script is a placeholder.
 
 ## Coding Style & Naming Conventions
 
-Use TypeScript throughout. Follow Vue Composition API patterns in `packages/web/app/**/*.vue` and NestJS class-based patterns in `packages/api/src/**/*.ts`. Use PascalCase for Vue components and NestJS classes, camelCase for functions and variables, and kebab-case for route or asset filenames.
+Use TypeScript throughout. Follow Vue Composition API patterns in `apps/web/app/**/*.vue` and NestJS class-based patterns in `apps/api/src/**/*.ts`. Use PascalCase for Vue components and NestJS classes, camelCase for functions and variables, and kebab-case for route or asset filenames.
 
-Backend linting uses ESLint, `typescript-eslint`, and Prettier (see `packages/api/CLAUDE.md`). Frontend linting is provided by Nuxt ESLint (see `packages/web/CLAUDE.md`). Prefer the package lint commands before submitting changes.
+Backend linting uses ESLint, `typescript-eslint`, and Prettier (see `apps/api/CLAUDE.md`). Frontend linting is provided by Nuxt ESLint (see `apps/web/CLAUDE.md`). Prefer the package lint commands before submitting changes.
 
 ## Agent-Specific Instructions
 
@@ -47,7 +47,7 @@ Always document exported functions, classes, and methods with JSDoc.
 
 ### Testing Requirements
 
-Always add unit tests for new features and behavior changes, and add e2e tests when the change is not adequately covered by unit tests (e.g. new API endpoints or realtime flows). Backend and frontend testing conventions are documented in `packages/api/CLAUDE.md` and `packages/web/CLAUDE.md` respectively. Add focused tests for new controllers, services, components, and behavior changes, and always include non-regression tests for important features.
+Always add unit tests for new features and behavior changes, and add e2e tests when the change is not adequately covered by unit tests (e.g. new API endpoints or realtime flows). Backend and frontend testing conventions are documented in `apps/api/CLAUDE.md` and `apps/web/CLAUDE.md` respectively. Add focused tests for new controllers, services, components, and behavior changes, and always include non-regression tests for important features.
 
 ### Build
 
@@ -55,11 +55,11 @@ Never run the package `build` commands (`pnpm build` / `pnpm --dir <package> bui
 
 ## Better Auth
 
-For Better Auth work, consult the AI-oriented documentation at `https://better-auth.com/llms.txt`. Implementation details live in `packages/api/CLAUDE.md`.
+For Better Auth work, consult the AI-oriented documentation at `https://better-auth.com/llms.txt`. Implementation details live in `apps/api/CLAUDE.md`.
 
 ## Nuxt UI
 
-For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/docs/getting-started/ai/llms-txt`. Implementation details live in `packages/web/CLAUDE.md`.
+For Nuxt UI work, consult the AI-oriented documentation at `https://ui.nuxt.com/docs/getting-started/ai/llms-txt`. Implementation details live in `apps/web/CLAUDE.md`.
 
 ## Commit & Pull Request Guidelines
 

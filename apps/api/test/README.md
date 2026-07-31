@@ -36,14 +36,14 @@ transpilation — but it does not touch this ESM issue at all.
   --experimental-vm-modules`: gets further (`.mjs` parses), but then fails on
   our **own** source: `ReferenceError: exports is not defined` when importing
   `app.module.ts`. This is because `tsconfig.json` already targets
-  `"module": "nodenext"`, but `packages/api/package.json` has no `"type"`
+  `"module": "nodenext"`, but `apps/api/package.json` has no `"type"`
   field (defaults to CommonJS) — so TypeScript/`ts-jest` still emits CJS
   `exports.foo = ...` for our own files even while Jest tries to import them
   as ESM, a mismatch.
 
 ## The actual fix, and why it's a separate task
 
-Setting `"type": "module"` in `packages/api/package.json` (which the
+Setting `"type": "module"` in `apps/api/package.json` (which the
 `nodenext` `tsconfig.json` already implies is the intended target) removes
 that mismatch — confirmed by testing it directly. But doing so immediately
 surfaces **65 compile errors from `nest build` alone**: Node's ESM resolver
@@ -58,7 +58,7 @@ import { AppModule } from './app.module.js';
 ```
 
 This is a mechanical but sweeping change touching essentially every file in
-`packages/api/src/` and `packages/api/test/`, not a jest-config-only fix, so
+`apps/api/src/` and `apps/api/test/`, not a jest-config-only fix, so
 it needs its own dedicated pass:
 
 1. Add `.js` extensions to every relative import in `src/` and `test/`.

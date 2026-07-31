@@ -1,9 +1,9 @@
 packages:
-  - 'packages/api'
+  - 'apps/api'
+  - 'apps/web'
   - 'packages/cards'
   - 'packages/duel-engine'
   - 'packages/effect-engine'
-  - 'packages/web'
   - 'packages/shared'
 packageExtensions:
   colyseus:

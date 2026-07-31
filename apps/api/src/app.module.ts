@@ -22,7 +22,7 @@ import { StatsModule } from './stats/stats.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['packages/api/.env', '.env'],
+      envFilePath: ['apps/api/.env', '.env'],
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),

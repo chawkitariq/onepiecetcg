@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "pnpm --dir packages/shared build && concurrently -n shared,api,web -c blue,green,magenta \"pnpm --dir packages/shared dev\" \"pnpm --dir packages/api start:dev\" \"wait-on tcp:3000 && pnpm --dir packages/web dev\"",
+    "dev": "pnpm --dir packages/shared build && concurrently -n shared,api,web -c blue,green,magenta \"pnpm --dir packages/shared dev\" \"pnpm --dir apps/api start:dev\" \"wait-on tcp:3000 && pnpm --dir apps/web dev\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

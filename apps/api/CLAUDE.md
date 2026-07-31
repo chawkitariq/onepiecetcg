@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Package overview
 
-`packages/api` is the NestJS backend of the One Piece TCG simulator. It is the **sole source of authority**: OAuth authentication, account/deck persistence, the card catalogue, and the realtime duel room all live here. `packages/web` (Nuxt) is a pure client and must never be trusted to enforce anything this package is responsible for. See `docs/spec.md` (product scope / MVP architecture) and `docs/optcg-rules.md` (gameplay rules) at the repo root before changing anything touching game logic or product scope.
+`apps/api` is the NestJS backend of the One Piece TCG simulator. It is the **sole source of authority**: OAuth authentication, account/deck persistence, the card catalogue, and the realtime duel room all live here. `apps/web` (Nuxt) is a pure client and must never be trusted to enforce anything this package is responsible for. See `docs/spec.md` (product scope / MVP architecture) and `docs/optcg-rules.md` (gameplay rules) at the repo root before changing anything touching game logic or product scope.
 
 ## Commands
 
-Run from `packages/api/`, or from the repo root with `pnpm --dir packages/api <script>`:
+Run from `apps/api/`, or from the repo root with `pnpm --dir apps/api <script>`:
 
 ```bash
 pnpm start:dev          # start NestJS in watch mode
@@ -63,7 +63,7 @@ When changing turn/phase logic, combat resolution, zone limits, or DON!! handlin
 
 ### Shared types
 
-Import card/deck/game-state types from `@onepiecetcg/shared` (workspace package, `packages/shared/src/index.ts`) rather than redefining them — it's the contract with `packages/web`. Validation logic that also exists in `shared` for client-side preview (e.g. deck text parsing) must still be re-validated authoritatively here; never trust a client-computed result.
+Import card/deck/game-state types from `@onepiecetcg/shared` (workspace package, `packages/shared/src/index.ts`) rather than redefining them — it's the contract with `apps/web`. Validation logic that also exists in `shared` for client-side preview (e.g. deck text parsing) must still be re-validated authoritatively here; never trust a client-computed result.
 
 ## Coding style
 

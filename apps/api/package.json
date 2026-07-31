@@ -77,11 +77,11 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "moduleNameMapper": {
-      "^@onepiecetcg/cards$": "<rootDir>/../../cards/src/index.ts",
-      "^@onepiecetcg/cards/effects$": "<rootDir>/../../cards/effects/index.ts",
-      "^@onepiecetcg/cards/effects/(.*)$": "<rootDir>/../../cards/effects/$1",
-      "^@onepiecetcg/duel-engine$": "<rootDir>/../../duel-engine/src/index.ts",
-      "^@onepiecetcg/effect-engine$": "<rootDir>/../../effect-engine/src/index.ts",
+      "^@onepiecetcg/cards$": "<rootDir>/../../../packages/cards/src/index.ts",
+      "^@onepiecetcg/cards/effects$": "<rootDir>/../../../packages/cards/effects/index.ts",
+      "^@onepiecetcg/cards/effects/(.*)$": "<rootDir>/../../../packages/cards/effects/$1",
+      "^@onepiecetcg/duel-engine$": "<rootDir>/../../../packages/duel-engine/src/index.ts",
+      "^@onepiecetcg/effect-engine$": "<rootDir>/../../../packages/effect-engine/src/index.ts",
       "^(\\.\\.?/.*)\\.js$": "$1"
     },
     "transform": {

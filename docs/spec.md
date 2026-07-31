@@ -35,10 +35,11 @@ Un point volontairement **non repris pour ce MVP** : OPTCG Sim propose un classe
 Monorepo pnpm (workspaces), organisé ainsi :
 
 ```
-packages/
+apps/
   api/       # NestJS — backend faisant autorité (auth, REST, Colyseus)
-  cards/     # snapshots du catalogue + loaders réutilisables
   web/       # Nuxt — client pur (UI, aucune logique d'autorité)
+packages/
+  cards/     # snapshots du catalogue + loaders réutilisables
   shared/    # types et schémas partagés entre api et web
 ```
 
@@ -47,9 +48,9 @@ packages/
 - Les schémas de `State` Colyseus (zones, `CardInstance`, phases) — Colyseus permet un typage partagé client/serveur, à exploiter ici pour éviter que `web` et `api` dérivent avec des définitions incompatibles de l'état de partie.
 - Les types de requêtes/réponses de l'API REST (contrats d'endpoints), si un client HTTP typé est généré ou écrit à la main.
 
-🎯 **`packages/cards`** : contient les snapshots versionnés du catalogue normalisé ainsi que les helpers réutilisables pour les charger, les lister et les filtrer hors du backend NestJS. Cela permet de réemployer le catalogue local dans d'autres packages ou scripts sans dépendre directement du module `catalog/` de `packages/api`.
+🎯 **`packages/cards`** : contient les snapshots versionnés du catalogue normalisé ainsi que les helpers réutilisables pour les charger, les lister et les filtrer hors du backend NestJS. Cela permet de réemployer le catalogue local dans d'autres packages ou scripts sans dépendre directement du module `catalog/` de `apps/api`.
 
-Ce que `shared` ne doit **pas** contenir : toute logique qui doit rester strictement côté serveur pour des raisons de confiance/sécurité (validation finale de deck, résolution de combat structurelle) — le code peut être partagé pour la prévisualisation côté client, mais l'exécution qui fait autorité reste uniquement dans `packages/api`. Dupliquer un validateur en `shared` pour un usage d'aperçu côté client est acceptable ; lui faire confiance côté serveur sans revalidation ne l'est pas.
+Ce que `shared` ne doit **pas** contenir : toute logique qui doit rester strictement côté serveur pour des raisons de confiance/sécurité (validation finale de deck, résolution de combat structurelle) — le code peut être partagé pour la prévisualisation côté client, mais l'exécution qui fait autorité reste uniquement dans `apps/api`. Dupliquer un validateur en `shared` pour un usage d'aperçu côté client est acceptable ; lui faire confiance côté serveur sans revalidation ne l'est pas.
 
 ## 1. Principe d'architecture
 

@@ -11,8 +11,8 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --dir packages/shared build
-RUN pnpm --dir packages/web build
+RUN pnpm --dir apps/web build
 
 EXPOSE 3001
 
-CMD ["node", "packages/web/.output/server/index.mjs"]
+CMD ["node", "apps/web/.output/server/index.mjs"]

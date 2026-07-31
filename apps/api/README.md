@@ -1,6 +1,6 @@
 # @onepiecetcg/api
 
-NestJS backend for the One Piece TCG Simulator. This package is the **sole source of authority**: OAuth authentication, account and deck persistence, the card catalogue, and the realtime duel room all live here. The [Nuxt web client](../web/README.md) is never trusted to enforce anything this package is responsible for.
+NestJS backend for the One Piece TCG Simulator. This app is the **sole source of authority**: OAuth authentication, account and deck persistence, the card catalogue, and the realtime duel room all live here. The [Nuxt web client](../web/README.md) is never trusted to enforce anything this app is responsible for.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ NestJS backend for the One Piece TCG Simulator. This package is the **sole sourc
 
 ## Quickstart
 
-From the repo root, start Postgres and install dependencies once (see [the root README](../../README.md#quickstart)). Then, from `packages/api/`:
+From the repo root, start Postgres and install dependencies once (see [the root README](../../README.md#quickstart)). Then, from `apps/api/`:
 
 ```bash
 cp .env.example .env
@@ -50,7 +50,7 @@ Local development also enables Better Auth's anonymous plugin when `NODE_ENV=dev
 
 ## Commands
 
-Run from `packages/api/`, or from the repo root with `pnpm --dir packages/api <script>`:
+Run from `apps/api/`, or from the repo root with `pnpm --dir apps/api <script>`:
 
 ```bash
 pnpm start:dev          # start NestJS in watch mode

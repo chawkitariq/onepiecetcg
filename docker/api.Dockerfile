@@ -11,8 +11,8 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --dir packages/shared build
-RUN pnpm --dir packages/api build
+RUN pnpm --dir apps/api build
 
 EXPOSE 3000
 
-CMD ["pnpm", "--dir", "packages/api", "start:prod"]
+CMD ["pnpm", "--dir", "apps/api", "start:prod"]
