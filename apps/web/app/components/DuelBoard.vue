@@ -170,14 +170,11 @@ const pendingHoveredCardDetailIds = ref<string[]>([])
 const hoveredCardDetailRetryTimestamps = reactive<Record<string, number | undefined>>({})
 const hoveredCardDetailRetryDelayMs = 5_000
 const reducedMotion = usePreferredReducedMotion()
-const isDesktopJournalLayout = useMediaQuery('(min-width: 1280px)')
 const journalScrollArea = useTemplateRef<ScrollAreaRef>('journal-scroll-area')
-const desktopJournalScrollArea = useTemplateRef<ScrollAreaRef>('desktop-journal-scroll-area')
 const journalEnd = useTemplateRef<HTMLElement>('journal-end')
-const desktopJournalEnd = useTemplateRef<HTMLElement>('desktop-journal-end')
 const isJournalOpen = ref(false)
 const seenLogCount = ref(0)
-const unseenLogCount = computed(() => isDesktopJournalLayout.value ? 0 : Math.max(logs.value.length - seenLogCount.value, 0))
+const unseenLogCount = computed(() => Math.max(logs.value.length - seenLogCount.value, 0))
 const pendingCharacterInstanceId = ref<string | null>(null)
 const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
@@ -1396,10 +1393,8 @@ async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
   await nextTick()
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
-  const target = isDesktopJournalLayout.value ? desktopJournalEnd.value : journalEnd.value
-  const desktopElement = resolveJournalScrollElement(desktopJournalScrollArea.value)
-  const mobileElement = resolveJournalScrollElement(journalScrollArea.value)
-  const element = isDesktopJournalLayout.value ? desktopElement : mobileElement
+  const target = journalEnd.value
+  const element = resolveJournalScrollElement(journalScrollArea.value)
 
   if (target) {
     target.scrollIntoView({
@@ -1416,14 +1411,6 @@ async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
     top: element.scrollHeight,
     behavior
   })
-}
-
-function isJournalScrollAreaVisible(element?: HTMLElement) {
-  return Boolean(element && element.getClientRects().length > 0)
-}
-
-function isDesktopJournalVisible() {
-  return isDesktopJournalLayout.value
 }
 
 function resolveJournalScrollElement(target: ScrollAreaRef | undefined) {
@@ -1449,7 +1436,7 @@ watch(() => logs.value.length, async (newLength, previousLength) => {
     handleNewLogFeedback(entry.message)
   }
 
-  if (isJournalOpen.value || isDesktopJournalVisible()) {
+  if (isJournalOpen.value) {
     seenLogCount.value = newLength
     await scrollJournalToLatest('smooth')
   }
@@ -1462,23 +1449,9 @@ watch(isJournalOpen, async (open) => {
   }
 })
 
-onMounted(async () => {
-  if (!isDesktopJournalVisible()) {
-    return
-  }
-
+onMounted(() => {
   seenLogCount.value = logs.value.length
-  await scrollJournalToLatest('auto')
 })
-
-watch(isDesktopJournalLayout, async (isDesktop) => {
-  if (!isDesktop) {
-    return
-  }
-
-  seenLogCount.value = logs.value.length
-  await scrollJournalToLatest('auto')
-}, { immediate: true })
 
 watch(errorMessage, (message) => {
   if (!message) {
@@ -3226,7 +3199,6 @@ defineShortcuts({
             size="sm"
             color="neutral"
             variant="ghost"
-            class="xl:hidden"
             aria-label="Journal"
             @click="isJournalOpen = true"
           >
@@ -3380,9 +3352,7 @@ defineShortcuts({
 
     <USlideover
       v-model:open="isJournalOpen"
-      class="xl:hidden"
-      title="Journal"
-      description="Vue en lecture seule de la partie : zones publiques et compteurs des zones cachées adverses."
+      :ui="{ header: 'hidden' }"
       :modal="false"
       side="left"
     >
@@ -3469,86 +3439,7 @@ defineShortcuts({
           />
         </div>
 
-        <UCard
-          class="min-h-0 min-w-0"
-          :ui="{ root: 'flex h-full flex-col overflow-hidden', body: 'min-h-0 flex-1 overflow-hidden' }"
-        >
-          <template #header>
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h2 class="text-sm font-semibold text-highlighted">
-                  Journal
-                </h2>
-                <p class="text-xs text-muted">
-                  Vue en lecture seule de la partie.
-                </p>
-              </div>
-              <UBadge
-                v-if="unseenLogCount > 0"
-                color="primary"
-                variant="solid"
-                size="sm"
-              >
-                {{ unseenLogCount }}
-              </UBadge>
-            </div>
-          </template>
-
-          <UScrollArea
-            ref="desktop-journal-scroll-area"
-            class="journal-scroll-root h-full min-h-0"
-            :ui="{ root: 'h-full min-h-0 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }"
-          >
-            <div class="mt-auto flex flex-col">
-              <ul class="flex flex-col text-xs">
-                <li
-                  v-if="logs.length === 0"
-                  class="text-muted"
-                >
-                  Aucun événement.
-                </li>
-                <template
-                  v-for="(entry, index) in logs"
-                  :key="entry.id"
-                >
-                  <li class="py-2">
-                    <div class="flex items-start gap-3">
-                      <time
-                        :datetime="entry.createdAt"
-                        class="shrink-0 tabular-nums text-[11px]"
-                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
-                      >
-                        {{ formatLogTime(entry.createdAt) }}
-                      </time>
-                      <p
-                        class="min-w-0 flex-1 leading-relaxed"
-                        :class="getDuelLogLevelPresentation(entry.level).toneClass"
-                      >
-                        <span
-                          v-if="getLogActor(entry)"
-                          class="mr-2 text-[10px] font-medium tracking-[0.04em]"
-                          :class="getLogActor(entry)?.classes"
-                        >
-                          [{{ getLogActor(entry)?.displayName }}]
-                        </span>
-                        <span>{{ getLogMessageText(entry) }}</span>
-                      </p>
-                    </div>
-                  </li>
-                  <USeparator
-                    v-if="index < logs.length - 1"
-                    class="opacity-60"
-                  />
-                </template>
-              </ul>
-              <div
-                ref="desktop-journal-end"
-                aria-hidden="true"
-                class="h-px w-full"
-              />
-            </div>
-          </UScrollArea>
-        </UCard>
+        <div class="min-h-0" />
 
         <div class="w-full max-w-[26rem] justify-self-end">
           <DuelHand
