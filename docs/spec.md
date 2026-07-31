@@ -37,6 +37,7 @@ Monorepo pnpm (workspaces), organisé ainsi :
 ```
 packages/
   api/       # NestJS — backend faisant autorité (auth, REST, Colyseus)
+  cards/     # snapshots du catalogue + loaders réutilisables
   web/       # Nuxt — client pur (UI, aucune logique d'autorité)
   shared/    # types et schémas partagés entre api et web
 ```
@@ -45,6 +46,8 @@ packages/
 - Le schéma de carte normalisé (`Card`, `CardType`, `normalizeCard`), le type `Deck`/`DeckCard`/`DeckValidation`, et le parsing du format texte d'import/export (§4/§6bis du schéma de données) — utile côté `web` pour valider/prévisualiser un deck avant envoi, et côté `api` pour la validation faisant autorité.
 - Les schémas de `State` Colyseus (zones, `CardInstance`, phases) — Colyseus permet un typage partagé client/serveur, à exploiter ici pour éviter que `web` et `api` dérivent avec des définitions incompatibles de l'état de partie.
 - Les types de requêtes/réponses de l'API REST (contrats d'endpoints), si un client HTTP typé est généré ou écrit à la main.
+
+🎯 **`packages/cards`** : contient les snapshots versionnés du catalogue normalisé ainsi que les helpers réutilisables pour les charger, les lister et les filtrer hors du backend NestJS. Cela permet de réemployer le catalogue local dans d'autres packages ou scripts sans dépendre directement du module `catalog/` de `packages/api`.
 
 Ce que `shared` ne doit **pas** contenir : toute logique qui doit rester strictement côté serveur pour des raisons de confiance/sécurité (validation finale de deck, résolution de combat structurelle) — le code peut être partagé pour la prévisualisation côté client, mais l'exécution qui fait autorité reste uniquement dans `packages/api`. Dupliquer un validateur en `shared` pour un usage d'aperçu côté client est acceptable ; lui faire confiance côté serveur sans revalidation ne l'est pas.
 

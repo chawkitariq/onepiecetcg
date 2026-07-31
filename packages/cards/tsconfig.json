@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "strict": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["node"],
+    "typeRoots": ["../web/node_modules/@types", "../api/node_modules/@types"],
+    "useDefineForClassFields": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+}

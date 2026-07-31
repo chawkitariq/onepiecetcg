@@ -1,5 +1,6 @@
 packages:
   - 'packages/api'
+  - 'packages/cards'
   - 'packages/duel-engine'
   - 'packages/effect-engine'
   - 'packages/web'

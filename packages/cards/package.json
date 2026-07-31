@@ -1,0 +1,20 @@
+{
+  "name": "@onepiecetcg/cards",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "../web/node_modules/.bin/vitest",
+    "test:run": "../web/node_modules/.bin/vitest run --config ./vitest.config.ts"
+  },
+  "dependencies": {
+    "@onepiecetcg/shared": "workspace:*"
+  }
+}
