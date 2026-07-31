@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -11,12 +10,9 @@ export const op10119SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-119',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-119:reveal-supernovas`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -35,9 +31,9 @@ export const op10119SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        host.addLog(`Revealed ${card.name} from hand`);
-        host.moveCard(card, event.playerSessionId, 'life', { faceDown: true });
-        host.syncPlayer(event.playerSessionId);
+        engine.addLog(`Revealed ${card.name} from hand`);
+        engine.moveCard(card, event.playerSessionId, 'life', { faceDown: true });
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

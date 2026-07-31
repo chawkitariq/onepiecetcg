@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -11,17 +10,14 @@ export const op10042SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-042',
   resolve(event, engine) {
     if (event.type !== 'whenAttacking') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const restedDon = host.getCards(
+    const restedDon = engine.getCards(
       { player: 'self', zones: ['cost'], filter: { rested: true } },
       event.playerSessionId,
     );
     const restedDonCount = restedDon.length;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-042:rest-char`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -36,7 +32,7 @@ export const op10042SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.restCard(card);
+          engine.patchCardStatus(card.instanceId, { rested: true });
         }
         engine.reapplyContinuousEffects();
       },

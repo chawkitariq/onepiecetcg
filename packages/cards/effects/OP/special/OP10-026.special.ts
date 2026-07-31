@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -11,12 +10,9 @@ export const op10026SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-026',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-026:kinemon-trash`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -39,15 +35,15 @@ export const op10026SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        if (host.getCard(event.sourceInstanceId)) {
-          host.moveCard(source, event.playerSessionId, 'deck', {
+        if (engine.getCard(event.sourceInstanceId)) {
+          engine.moveCard(source, event.playerSessionId, 'deck', {
             toBottom: true,
           });
         }
-        host.moveCard(kinemonFromTrash, event.playerSessionId, 'deck', {
+        engine.moveCard(kinemonFromTrash, event.playerSessionId, 'deck', {
           toBottom: true,
         });
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op10-026:kinemon-hand`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -67,7 +63,7 @@ export const op10026SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (handCards) => {
             for (const card of handCards) {
-              host.playCard(card, event.playerSessionId, 'characters');
+              engine.playCard(card, event.playerSessionId, 'characters');
             }
             engine.reapplyContinuousEffects();
           },

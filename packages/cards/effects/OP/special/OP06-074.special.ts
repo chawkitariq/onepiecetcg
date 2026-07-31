@@ -6,19 +6,17 @@ export const op06074SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP06-074',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const don = host.getCards(
+    const don = engine.getCards(
       { player: 'self', zones: ['cost'] },
       event.playerSessionId,
     );
     if (don.length < 1) return;
-    host.returnDonToDonDeck(event.playerSessionId, 1);
+    engine.returnDonToDonDeck(event.playerSessionId, 1);
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op06-074:negate`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -33,13 +31,13 @@ export const op06074SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          patchSpecialHandlerCardStatus(host, card, {
+          patchSpecialHandlerCardStatus(engine, card, {
             effectNegated: true,
           });
-          host.syncPlayer(card.ownerSessionId);
+          engine.syncPlayer(card.ownerSessionId);
 
           if ((card.power ?? 0) <= 5000) {
-            host.moveCard(card, event.playerSessionId, 'trash');
+            engine.moveCard(card, event.playerSessionId, 'trash');
           }
         }
         engine.reapplyContinuousEffects();

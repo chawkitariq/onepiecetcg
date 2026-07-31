@@ -12,9 +12,7 @@ export const op13106SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-106-special',
   cardId: 'OP13-106',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'trigger') {
@@ -46,19 +44,19 @@ export const op13106SpecialHandler: SpecialHandlerDefinition = {
     }
 
     if (event.type === 'onEventActivated') {
-      const isOpponentTurn = host.state.turnPlayer !== event.playerSessionId;
+      const isOpponentTurn = (engine.state as any).turnPlayer !== event.playerSessionId;
       if (!isOpponentTurn) return;
 
       const triggeredEvent = event as any;
       if (triggeredEvent.triggerType !== 'trigger') return;
 
-      host.addLog(
+      engine.addLog(
         "[Conney] Trigger activated on opponent's turn — gains [Blocker] this turn.",
       );
 
-      if (source.zones !== 'characters' || !source) return;
+      if ((source as any).zones !== 'characters' || !source) return;
 
-      anyEngine.modifiers.addKeywordModifier(
+      engine.addKeywordModifier(
         event.sourceInstanceId,
         event.playerSessionId,
         source.instanceId,

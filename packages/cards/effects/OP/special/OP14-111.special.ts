@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -14,10 +13,7 @@ export const op14111SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-111',
   resolve(event, engine) {
     if (event.type === 'onPlay' || event.type === 'onKo') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-111:prevent-attack`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -31,21 +27,18 @@ export const op14111SpecialHandler: SpecialHandlerDefinition = {
         },
         undefined,
         (selected) => {
-          const turn = host.state.turn;
+          const turn = engine.state.turn;
           for (const card of selected) {
-            patchSpecialHandlerCardStatus(host, card, {
+            patchSpecialHandlerCardStatus(engine, card, {
               cannotAttackUntilTurn: turn + 2,
             });
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-111:trigger`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -64,10 +57,10 @@ export const op14111SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            host.playCard(card, event.playerSessionId, 'characters');
-            patchSpecialHandlerCardStatus(host, card, { rested: true });
+            engine.playCard(card, event.playerSessionId, 'characters');
+            patchSpecialHandlerCardStatus(engine, card, { rested: true });
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );

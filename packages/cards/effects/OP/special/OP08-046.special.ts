@@ -1,49 +1,45 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 export const op08046SpecialHandler: SpecialHandlerDefinition = {
   id: 'op08-046-special',
   cardId: 'OP08-046',
   resolve(event, engine) {
-    if ((event as any).type !== 'onCardRemovedByEffect') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    if (event.type !== 'onCardRemovedByEffect') return;
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const isYourTurn = host.state.turnPlayer === event.playerSessionId;
+    const isYourTurn = (engine.state as any).turnPlayer === event.playerSessionId;
     if (!isYourTurn) return;
-    const opponentHand = host.getCards(
+    const opponentHand = engine.getCards(
       { player: 'opponent', zones: ['hand'] },
       event.playerSessionId,
     );
     if (opponentHand.length < 5) return;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op08-046',
-        host.state.turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(
+          event.sourceInstanceId,
+          'op08-046',
+          engine.state.turn,
+        ),
       )
     ) {
       return;
     }
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      'op08-046',
-      host.state.turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(
+        event.sourceInstanceId,
+        'op08-046',
+        engine.state.turn,
+      ),
     );
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-046:bottom-card`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
-      host.getOpponentSessionId(event.playerSessionId),
+      engine.getOpponentSessionId(event.playerSessionId),
       '[Shakuyaku] Place 1 card from your hand at the bottom of your deck:',
       {
         player: 'opponent',
@@ -53,9 +49,11 @@ export const op08046SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.moveCard(card, card.ownerSessionId, 'deck', { toBottom: true });
+          engine.moveCard(card, card.ownerSessionId, 'deck', {
+            toBottom: true,
+          });
         }
-        host.restCard(source);
+        engine.patchCardStatus(source.instanceId, { rested: true });
         engine.reapplyContinuousEffects();
       },
     );

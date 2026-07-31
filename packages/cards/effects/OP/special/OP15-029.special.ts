@@ -11,11 +11,7 @@ export const op15029SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-029:target`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -36,11 +32,11 @@ export const op15029SpecialHandler: SpecialHandlerDefinition = {
         // prevents the target from being rested via declare/effect actions.
         for (const card of cards) {
           card.cannotBeRestedUntilTurn =
-            host.state.turn + (host.state.turn % 2 === 0 ? 2 : 1);
+            engine.state.turn + (engine.state.turn % 2 === 0 ? 2 : 1);
         }
-        const opponentId = host.getOpponentSessionId(event.playerSessionId);
-        host.syncPlayer(event.playerSessionId);
-        if (opponentId) host.syncPlayer(opponentId);
+        const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
+        if (opponentId) engine.syncPlayer(opponentId);
         engine.reapplyContinuousEffects();
       },
     );

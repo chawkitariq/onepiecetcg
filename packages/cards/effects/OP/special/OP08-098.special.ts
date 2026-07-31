@@ -5,24 +5,22 @@ export const op08098SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-098',
   resolve(event, engine) {
     if (event.type !== 'whenAttacking') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const attachedDon = host.getCards(
+    const attachedDon = engine.getCards(
       {
         player: 'self',
         zones: ['cost'],
-        filter: { attachedTo: event.sourceInstanceId },
+        filter: { attachedTo: event.sourceInstanceId } as any,
       },
       event.playerSessionId,
     );
     if (attachedDon.length < 1) return;
-    const fieldDon = host.getCards(
+    const fieldDon = engine.getCards(
       { player: 'self', zones: ['cost'] },
       event.playerSessionId,
     ).length;
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-098:play-shandian`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -42,9 +40,9 @@ export const op08098SpecialHandler: SpecialHandlerDefinition = {
       (selected) => {
         if (selected.length > 0) {
           for (const card of selected) {
-            host.playCard(card, event.playerSessionId, 'characters');
+            engine.playCard(card, event.playerSessionId, 'characters');
           }
-          const lifeTop = host.getCards(
+          const lifeTop = engine.getCards(
             {
               player: 'self',
               zones: ['life'],
@@ -53,7 +51,7 @@ export const op08098SpecialHandler: SpecialHandlerDefinition = {
             event.playerSessionId,
           );
           if (lifeTop.length) {
-            host.moveCard(lifeTop[0], event.playerSessionId, 'hand');
+            engine.moveCard(lifeTop[0], event.playerSessionId, 'hand');
           }
         }
         engine.reapplyContinuousEffects();

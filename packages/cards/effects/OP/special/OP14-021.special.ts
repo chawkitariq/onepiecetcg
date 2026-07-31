@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -14,15 +13,13 @@ export const op14021SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-021',
   resolve(event, engine) {
     if (event.type !== 'onPlay' && event.type !== 'onDonAttached') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const activePlayerSessionId = host.state.activePlayerSessionId;
+    const activePlayerSessionId = engine.state.activePlayerSessionId;
     if (activePlayerSessionId !== event.playerSessionId) return;
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op14-021:life-to-hand`,
         effectId: 'op14-021-special',
@@ -40,7 +37,7 @@ export const op14021SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        const lifeTop = host.getCards(
+        const lifeTop = engine.getCards(
           {
             player: 'self',
             zones: ['life'],
@@ -49,9 +46,9 @@ export const op14021SpecialHandler: SpecialHandlerDefinition = {
           event.playerSessionId,
         );
         if (!lifeTop.length) return;
-        host.moveCard(lifeTop[0], event.playerSessionId, 'hand');
+        engine.moveCard(lifeTop[0], event.playerSessionId, 'hand');
 
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op14-021:select-rested`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -66,11 +63,11 @@ export const op14021SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            patchSpecialHandlerCardStatus(host, card, {
+            patchSpecialHandlerCardStatus(engine, card, {
               skipNextRefreshPhases: (card.skipNextRefreshPhases || 0) + 1,
             });
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
         );

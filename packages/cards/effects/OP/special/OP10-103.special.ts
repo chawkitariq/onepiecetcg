@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,16 +11,13 @@ export const op10103SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-103',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
     if (player.zones.life.length === 0) {
       engine.reapplyContinuousEffects();
       return;
     }
-    decisions.chooseChoices(
+    engine.chooseChoices(
       `${event.sourceInstanceId}:op10-103:life-top-or-bottom`,
       event.playerSessionId,
       'Add top or bottom Life card to hand?',
@@ -33,7 +29,7 @@ export const op10103SpecialHandler: SpecialHandlerDefinition = {
       1,
       (choiceIds) => {
         const fromBottom = choiceIds.includes('bottom');
-        const lifeCards = host.getCards(
+        const lifeCards = engine.getCards(
           { player: 'self', zones: ['life'] },
           event.playerSessionId,
         );
@@ -44,8 +40,8 @@ export const op10103SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        host.moveCard(targetLife, event.playerSessionId, 'hand');
-        decisions.chooseCards(
+        engine.moveCard(targetLife, event.playerSessionId, 'hand');
+        engine.chooseCards(
           `${event.sourceInstanceId}:op10-103:add-supernovas`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -60,9 +56,9 @@ export const op10103SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (cards) => {
             for (const card of cards) {
-              host.moveCard(card, event.playerSessionId, 'life');
+              engine.moveCard(card, event.playerSessionId, 'life');
             }
-            host.syncPlayer(event.playerSessionId);
+            engine.syncPlayer(event.playerSessionId);
             engine.reapplyContinuousEffects();
           },
         );

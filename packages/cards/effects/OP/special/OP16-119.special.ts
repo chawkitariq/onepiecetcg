@@ -13,10 +13,7 @@ export const op16119SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'trigger') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op16-119:negate`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -31,12 +28,12 @@ export const op16119SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (negateTargets) => {
         for (const card of negateTargets) {
-          patchSpecialHandlerCardStatus(host, card, {
+          patchSpecialHandlerCardStatus(engine, card, {
             effectNegated: true,
           });
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op16-119:ko`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -51,7 +48,7 @@ export const op16119SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (koTargets) => {
             for (const card of koTargets) {
-              host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+              engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
             }
             engine.reapplyContinuousEffects();
           },

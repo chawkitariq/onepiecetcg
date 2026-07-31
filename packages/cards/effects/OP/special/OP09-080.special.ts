@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -22,19 +21,19 @@ export const op09080SpecialHandler: SpecialHandlerDefinition = {
   id: 'op09-080-special',
   cardId: 'OP09-080',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
-    const activePlayerSessionId = host.state.activePlayerSessionId;
+    const opponentSessionId = engine.getOpponentSessionId(
+      event.playerSessionId,
+    );
+    const activePlayerSessionId = engine.state.activePlayerSessionId;
     if (activePlayerSessionId !== opponentSessionId) return;
 
     const stage = player.zones.stage;
     if (!stage || !stage.instanceId || stage.rested) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op09-080:rest-stage`,
         effectId: 'op09-080-special',
@@ -51,9 +50,9 @@ export const op09080SpecialHandler: SpecialHandlerDefinition = {
       },
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
-        patchSpecialHandlerCardStatus(host, stage, { rested: true });
-        host.addDonToCost(event.playerSessionId, 1, true);
-        host.syncPlayer(event.playerSessionId);
+        patchSpecialHandlerCardStatus(engine, stage, { rested: true });
+        engine.addDonToCost(event.playerSessionId, 1, true);
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

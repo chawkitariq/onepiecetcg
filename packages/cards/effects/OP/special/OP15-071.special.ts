@@ -12,16 +12,13 @@ export const op15071SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onTurnStart') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const modifiers = anyEngine.modifiers;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     // On the opponent's turn, set base power to 6000 for all [Ohm] cards
     // and this Character.
     if (event.playerSessionId !== source.ownerSessionId) {
-      const ohmCards = host.getCards(
+      const ohmCards = engine.getCards(
         {
           player: 'self',
           zones: ['characters', 'leader'],
@@ -33,7 +30,7 @@ export const op15071SpecialHandler: SpecialHandlerDefinition = {
 
       for (const card of ohmCards) {
         const delta = 6000 - (card.basePower > 0 ? card.basePower : card.power);
-        modifiers.addPowerModifier(
+        engine.addPowerModifier(
           event.sourceInstanceId,
           source.ownerSessionId,
           card.instanceId,

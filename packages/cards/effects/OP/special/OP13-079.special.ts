@@ -1,10 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * Handles Imu:
@@ -20,24 +16,23 @@ export const op13079SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op13-079',
-        host.state.turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(
+          event.sourceInstanceId,
+          'op13-079',
+          engine.state.turn,
+        ),
       )
     )
       return;
 
     const hasCelestialDragons =
-      host.getCards(
+      engine.getCards(
         {
           player: 'self',
           zones: ['characters'],
@@ -52,7 +47,7 @@ export const op13079SpecialHandler: SpecialHandlerDefinition = {
 
     if (!hasCelestialDragons && player.zones.hand.length < 1) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-079:confirm`,
         effectId: 'op13-079-special',
@@ -70,14 +65,15 @@ export const op13079SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op13-079',
-          host.state.turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(
+            event.sourceInstanceId,
+            'op13-079',
+            engine.state.turn,
+          ),
         );
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-079:trash-cost`,
           event.playerSessionId,
           {
@@ -98,7 +94,7 @@ export const op13079SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (_trashed) => {
             for (const card of _trashed) {
-              host.moveCard(card, event.playerSessionId, 'trash');
+              engine.moveCard(card, event.playerSessionId, 'trash');
             }
 
             const def: StandardEffectDefinition = {

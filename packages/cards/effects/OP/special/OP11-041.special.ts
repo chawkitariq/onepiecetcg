@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -15,20 +14,18 @@ export const op11041SpecialHandler: SpecialHandlerDefinition = {
   id: 'op11-041-special',
   cardId: 'OP11-041',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
 
     if (event.type === 'onLifeDamageDealt') {
       const oncePerTurnKey = `${event.sourceInstanceId}:op11-041:draw:${turn}`;
-      if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
+      if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       if (player.zones.hand.length > 7) return;
 
-      anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+      engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
       const drawDef: StandardEffectDefinition = {
         id: 'nami-leader-life-removed-draw',
@@ -48,15 +45,15 @@ export const op11041SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type === 'onAttacked') {
       const oncePerTurnKey = `${event.sourceInstanceId}:op11-041:power:${turn}`;
-      if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
+      if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       const hasDonAttached = (player.zones.leader.attachedDon ?? 0) >= 1;
       if (!hasDonAttached) return;
 
-      const handCards = host.getCards(
+      const handCards = engine.getCards(
         {
           player: 'self',
           zones: ['hand'],
@@ -66,7 +63,7 @@ export const op11041SpecialHandler: SpecialHandlerDefinition = {
       );
       if (handCards.length === 0) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op11-041:confirm-power`,
           effectId: 'op11-041-special',
@@ -83,9 +80,9 @@ export const op11041SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+          engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op11-041:trash`,
             event.playerSessionId,
             {
@@ -102,10 +99,10 @@ export const op11041SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (trashed) => {
               for (const card of trashed) {
-                host.moveCard(card, event.playerSessionId, 'trash');
+                engine.moveCard(card, event.playerSessionId, 'trash');
               }
 
-              anyEngine.modifiers.addPowerModifier(
+              engine.addPowerModifier(
                 event.sourceInstanceId,
                 event.playerSessionId,
                 player.zones.leader.instanceId,

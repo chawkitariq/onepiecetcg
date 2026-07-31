@@ -12,9 +12,7 @@ export const op13109SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-109-special',
   cardId: 'OP13-109',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if ((event as any).type === 'wouldKoCharacter') {
@@ -22,10 +20,10 @@ export const op13109SpecialHandler: SpecialHandlerDefinition = {
       if (koEvent.targetInstanceId !== event.sourceInstanceId) return;
       if (koEvent.reason !== 'effect') return;
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.life.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-109:replace`,
           effectId: 'op13-109-special',
@@ -46,7 +44,7 @@ export const op13109SpecialHandler: SpecialHandlerDefinition = {
           const topLife = player.zones.life[0];
           if (topLife) {
             topLife.faceDown = false;
-            host.addLog(
+            engine.addLog(
               '[Jewelry Bonney 109] Top Life card turned face-up instead of being removed.',
             );
           }

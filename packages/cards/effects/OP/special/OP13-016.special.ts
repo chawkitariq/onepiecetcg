@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -15,10 +14,8 @@ export const op13016SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     const leader = player.zones.leader;
@@ -30,7 +27,7 @@ export const op13016SpecialHandler: SpecialHandlerDefinition = {
 
     const topCardIds = new Set(topCards.map((c) => c.instanceId));
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op13-016:top4`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -48,7 +45,7 @@ export const op13016SpecialHandler: SpecialHandlerDefinition = {
         );
 
         if (chosen && (chosen.cost >= 3 || chosen.baseCost >= 3)) {
-          host.moveCard(chosen, event.playerSessionId, 'hand');
+          engine.moveCard(chosen, event.playerSessionId, 'hand');
         }
 
         const remaining = topCards.filter(
@@ -58,7 +55,7 @@ export const op13016SpecialHandler: SpecialHandlerDefinition = {
         if (remaining.length > 0) {
           const remainingIds = new Set(remaining.map((c) => c.instanceId));
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op13-016:return-bottom`,
             event.playerSessionId,
             {
@@ -76,16 +73,16 @@ export const op13016SpecialHandler: SpecialHandlerDefinition = {
             (ordered) => {
               for (const card of ordered as DuelCard[]) {
                 if (remainingIds.has(card.instanceId)) {
-                  host.moveCard(card, event.playerSessionId, 'deck', {
+                  engine.moveCard(card, event.playerSessionId, 'deck', {
                     toBottom: true,
                   });
                 }
               }
-              host.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(event.playerSessionId);
             },
           );
         } else {
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
         }
       },
     );

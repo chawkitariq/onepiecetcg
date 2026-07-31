@@ -5,11 +5,9 @@ export const op08118SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-118',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-118:select-two`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -25,7 +23,7 @@ export const op08118SpecialHandler: SpecialHandlerDefinition = {
       (selected) => {
         for (let i = 0; i < selected.length; i++) {
           const amount = i === 0 ? -3000 : -2000;
-          anyEngine.modifiers.addPowerModifier(
+          engine.addPowerModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             selected[i].instanceId,
@@ -33,7 +31,7 @@ export const op08118SpecialHandler: SpecialHandlerDefinition = {
             'untilStartOfYourNextTurn',
           );
         }
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op08-118:ko-target`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -48,7 +46,7 @@ export const op08118SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (koTargets) => {
             for (const card of koTargets) {
-              host.moveCard(card, card.ownerSessionId, 'trash');
+              engine.moveCard(card, card.ownerSessionId, 'trash');
             }
             engine.reapplyContinuousEffects();
           },

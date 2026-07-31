@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,18 +12,13 @@ export const op15046SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const registry = anyEngine.registry;
-
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     const leaderFamilies = Array.from(player.zones.leader.families);
     if (!leaderFamilies.includes('Dressrosa')) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-046:select-event`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -39,9 +33,9 @@ export const op15046SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
           const eventEffects =
-            registry.effectsByCardId[card.cardId]?.standard ?? [];
+            engine.effectsByCardId[card.cardId]?.standard ?? [];
           for (const effectDef of eventEffects) {
             engine.queueEffect(
               event.playerSessionId,
@@ -52,9 +46,9 @@ export const op15046SpecialHandler: SpecialHandlerDefinition = {
           }
         }
         if (cards.length > 0) {
-          host.syncPlayer(event.playerSessionId);
-          const opponentId = host.getOpponentSessionId(event.playerSessionId);
-          if (opponentId) host.syncPlayer(opponentId);
+          engine.syncPlayer(event.playerSessionId);
+          const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+          if (opponentId) engine.syncPlayer(opponentId);
         }
       },
     );

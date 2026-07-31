@@ -11,22 +11,18 @@ export const st28001SpecialHandler: SpecialHandlerDefinition = {
   id: 'st28-001-special',
   cardId: 'ST28-001',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
     if (event.type !== 'onPlay') {
       return;
     }
 
-    const anyEvt = event as any;
-    const player = host.getPlayer(anyEvt.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) {
       return;
     }
 
-    const leaderCards = host.getCards(
+    const leaderCards = engine.getCards(
       { player: 'self', zones: ['leader'], count: { kind: 'exact', value: 1 } },
-      anyEvt.playerSessionId,
+      event.playerSessionId,
     );
     const leader = leaderCards[0];
     if (!leader) {
@@ -39,26 +35,26 @@ export const st28001SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const opponentLife = host.getCards(
+    const opponentLife = engine.getCards(
       { player: 'opponent', zones: ['life'] },
-      anyEvt.playerSessionId,
+      event.playerSessionId,
     );
     if (opponentLife.length < 3) {
       return;
     }
 
     const opponentSessionId =
-      host.getOpponentSessionId(anyEvt.playerSessionId) ??
-      anyEvt.playerSessionId;
+      engine.getOpponentSessionId(event.playerSessionId) ??
+      event.playerSessionId;
 
-    anyEngine.decisions.chooseCards(
-      `${anyEvt.sourceInstanceId}:st28-001:on-play-ko`,
-      anyEvt.playerSessionId,
+    engine.chooseCards(
+      `${event.sourceInstanceId}:st28-001:on-play-ko`,
+      event.playerSessionId,
       {
-        sourceInstanceId: anyEvt.sourceInstanceId,
+        sourceInstanceId: event.sourceInstanceId,
         storedSelections: {},
       },
-      anyEvt.playerSessionId,
+      event.playerSessionId,
       '[Ashura Doji] Select up to 1 opponent Character with a base cost of 5 or less to K.O.',
       {
         player: 'opponent',
@@ -69,7 +65,7 @@ export const st28001SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selectedCards: any[]) => {
         for (const target of selectedCards) {
-          host.koCharacter(opponentSessionId, target.instanceId, 'effect');
+          engine.koCharacter(opponentSessionId, target.instanceId, 'effect');
         }
 
         engine.reapplyContinuousEffects();

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,21 +11,21 @@ export const op14053SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-053',
   resolve(event, engine) {
     if (event.type !== 'onPlay' && event.type !== 'onDonAttached') return;
-    const anyEngine = engine as any;
-    const { host } = anyEngine;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
-    const activePlayerSessionId = host.state.activePlayerSessionId;
+    const opponentSessionId = engine.getOpponentSessionId(
+      event.playerSessionId,
+    );
+    const activePlayerSessionId = engine.state.activePlayerSessionId;
     if (activePlayerSessionId !== opponentSessionId) return;
     if (player.zones.hand.length > 7) return;
 
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     const leader = player.zones.leader;
     if (!source || !leader) return;
 
     const diff = leader.basePower - source.basePower;
-    anyEngine.modifiers.addPowerModifier(
+    engine.addPowerModifier(
       event.sourceInstanceId,
       event.playerSessionId,
       event.sourceInstanceId,

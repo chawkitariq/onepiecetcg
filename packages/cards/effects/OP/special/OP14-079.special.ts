@@ -1,10 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP14-079 Crocodile
@@ -20,20 +15,15 @@ export const op14079SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-079',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op14-079',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'op14-079', turn),
       )
     )
       return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op14-079:ko-own`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -48,18 +38,15 @@ export const op14079SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (ownCards) => {
         if (!ownCards.length) return;
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op14-079',
-          turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'op14-079', turn),
         );
 
         for (const card of ownCards) {
-          host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+          engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
         }
 
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op14-079:cost-down`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -74,7 +61,7 @@ export const op14079SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (oppTargets) => {
             for (const card of oppTargets) {
-              anyEngine.modifiers.addCostModifier(
+              engine.addCostModifier(
                 event.sourceInstanceId,
                 event.playerSessionId,
                 card.instanceId,
@@ -83,7 +70,7 @@ export const op14079SpecialHandler: SpecialHandlerDefinition = {
               );
             }
 
-            decisions.pause(
+            engine.pauseDecision(
               {
                 id: `${event.sourceInstanceId}:op14-079:trash-deck`,
                 effectId: 'op14-079-special',
@@ -100,9 +87,9 @@ export const op14079SpecialHandler: SpecialHandlerDefinition = {
               },
               (trashResp: { confirmed?: boolean }) => {
                 if (trashResp.confirmed) {
-                  host.trashTopDeckCards(event.playerSessionId, 2);
+                  engine.trashTopDeckCards(event.playerSessionId, 2);
                 }
-                host.syncPlayer(event.playerSessionId);
+                engine.syncPlayer(event.playerSessionId);
                 engine.reapplyContinuousEffects();
               },
             );

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -16,12 +15,9 @@ export const op10030SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-030',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    decisions.chooseChoices(
+    engine.chooseChoices(
       `${event.sourceInstanceId}:op10-030:don-amount`,
       event.playerSessionId,
       'Set 0 or 1 DON!! active?',
@@ -34,12 +30,12 @@ export const op10030SpecialHandler: SpecialHandlerDefinition = {
       (choiceIds) => {
         const amount = parseInt(choiceIds[0], 10);
         if (amount > 0) {
-          host.addDonToCost(event.playerSessionId, 1, false);
+          engine.addDonToCost(event.playerSessionId, 1, false);
         }
-        host.addLog(
+        engine.addLog(
           '[OP10-030] Cannot set DON!! active using Character effects this turn.',
         );
-        host.syncPlayer(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

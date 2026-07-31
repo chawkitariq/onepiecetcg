@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -15,16 +14,14 @@ export const op13001SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onAttacked') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source || source.attachedDon < 1) return;
 
     const activeDon = player.zones.cost.filter((d: any) => !d.rested);
     if (activeDon.length < 1) return;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op13-001:rest-don`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -42,10 +39,10 @@ export const op13001SpecialHandler: SpecialHandlerDefinition = {
         if (restedCount === 0) return;
 
         for (const don of selectedDon) {
-          patchSpecialHandlerCardStatus(host, don, { rested: true });
+          patchSpecialHandlerCardStatus(engine, don, { rested: true });
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-001:power-target`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -63,7 +60,7 @@ export const op13001SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (targetCards) => {
             for (const target of targetCards) {
-              anyEngine.modifiers.addPowerModifier(
+              engine.addPowerModifier(
                 event.sourceInstanceId,
                 event.playerSessionId,
                 target.instanceId,

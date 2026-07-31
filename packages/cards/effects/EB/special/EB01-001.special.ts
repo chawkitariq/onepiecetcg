@@ -8,15 +8,13 @@ export const eb01001CounterRuleSpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!source) {
       return;
     }
 
-    const wanoChars = host.getCards(
+    const wanoChars = engine.getCards(
       {
         player: 'self',
         zones: ['characters'],

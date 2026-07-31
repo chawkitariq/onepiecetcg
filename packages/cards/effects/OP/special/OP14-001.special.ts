@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,12 +11,10 @@ export const op14001SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-001',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op14-001:select-two`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -38,14 +35,14 @@ export const op14001SpecialHandler: SpecialHandlerDefinition = {
         const [cardA, cardB] = selected;
         const pA = cardA.basePower;
         const pB = cardB.basePower;
-        anyEngine.modifiers.addPowerModifier(
+        engine.addPowerModifier(
           event.sourceInstanceId,
           event.playerSessionId,
           cardA.instanceId,
           pB - pA,
           'untilEndOfTurn',
         );
-        anyEngine.modifiers.addPowerModifier(
+        engine.addPowerModifier(
           event.sourceInstanceId,
           event.playerSessionId,
           cardB.instanceId,

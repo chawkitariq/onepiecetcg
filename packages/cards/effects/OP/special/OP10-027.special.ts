@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP10-027 (Kin'emon)
@@ -16,28 +12,22 @@ export const op10027SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-027',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP10-027',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP10-027', turn),
       )
     )
       return;
     if (player.zones.life.length > 6) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
-    const opponent = host.getPlayer(opponentSessionId);
+    const opponent = engine.getPlayer(opponentSessionId);
     if (!opponent) return;
     const oppLifeCount = opponent.zones.life.length;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-027:rest-char`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -52,13 +42,10 @@ export const op10027SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.restCard(card);
+          engine.patchCardStatus(card.instanceId, { rested: true });
         }
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'OP10-027',
-          turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'OP10-027', turn),
         );
         engine.reapplyContinuousEffects();
       },

@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import {
   createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
   patchSpecialHandlerCardStatus,
 } from '../../special-handler-utils.js';
 
@@ -21,14 +18,12 @@ export const op14119SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-119',
   resolve(event, engine) {
     if (event.type === 'onDonAttached' || event.type === 'onPlay') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-      const source = host.getCard(event.sourceInstanceId);
+      const source = engine.getCard(event.sourceInstanceId);
       if (!source || !source.rested) return;
-      const activePlayerSessionId = host.state.activePlayerSessionId;
+      const activePlayerSessionId = engine.state.activePlayerSessionId;
       if (activePlayerSessionId !== event.playerSessionId) return;
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-119:prevent-rest`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -43,29 +38,24 @@ export const op14119SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            patchSpecialHandlerCardStatus(host, card, {
+            patchSpecialHandlerCardStatus(engine, card, {
               skipNextRefreshPhases: (card.skipNextRefreshPhases || 0) + 1,
             });
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'onAttacked') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-      const turn = host.state.turn;
+      const turn = engine.state.turn;
       if (
-        hasResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op14-119',
-          turn,
+        engine.hasResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'op14-119', turn),
         )
       )
         return;
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-119:trash-hand`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -79,17 +69,14 @@ export const op14119SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (trashed) => {
           if (!trashed.length) return;
-          markResolvedOncePerTurn(
-            anyEngine,
-            event.sourceInstanceId,
-            'op14-119',
-            turn,
+          engine.markResolvedOncePerTurnKey(
+            createOncePerTurnKey(event.sourceInstanceId, 'op14-119', turn),
           );
           for (const card of trashed) {
-            host.moveCard(card, event.playerSessionId, 'trash');
+            engine.moveCard(card, event.playerSessionId, 'trash');
           }
 
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op14-119:power-up`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -103,7 +90,7 @@ export const op14119SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (selected) => {
               for (const card of selected) {
-                anyEngine.modifiers.addPowerModifier(
+                engine.addPowerModifier(
                   event.sourceInstanceId,
                   event.playerSessionId,
                   card.instanceId,

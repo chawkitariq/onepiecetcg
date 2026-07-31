@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,12 +11,9 @@ export const op10118SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-118',
   resolve(event, engine) {
     if (event.type !== 'whenAttacking') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-118:trash-to-deck`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -35,24 +31,24 @@ export const op10118SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
         for (const card of trashCards) {
-          host.moveCard(card, event.playerSessionId, 'deck', {
+          engine.moveCard(card, event.playerSessionId, 'deck', {
             toBottom: true,
           });
         }
-        const opponentSessionId = host.getOpponentSessionId(
+        const opponentSessionId = engine.getOpponentSessionId(
           event.playerSessionId,
         );
         if (!opponentSessionId) {
           engine.reapplyContinuousEffects();
           return;
         }
-        const opponent = host.getPlayer(opponentSessionId);
+        const opponent = engine.getPlayer(opponentSessionId);
         if (!opponent) {
           engine.reapplyContinuousEffects();
           return;
         }
         if (opponent.zones.hand.length >= 5) {
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op10-118:opponent-trash`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -66,15 +62,15 @@ export const op10118SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (discarded) => {
               for (const card of discarded) {
-                host.moveCard(card, opponentSessionId, 'trash');
+                engine.moveCard(card, opponentSessionId, 'trash');
               }
-              host.syncPlayer(event.playerSessionId);
-              host.syncPlayer(opponentSessionId);
+              engine.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(opponentSessionId);
               engine.reapplyContinuousEffects();
             },
           );
         } else {
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         }
       },

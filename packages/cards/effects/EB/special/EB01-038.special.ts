@@ -9,16 +9,13 @@ export const eb01038CounterRedirectAttackSpecialHandler: SpecialHandlerDefinitio
         return;
       }
 
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
 
       if (!player) {
         return;
       }
 
-      const opponentSessionId = host.getOpponentSessionId(
+      const opponentSessionId = engine.getOpponentSessionId(
         event.playerSessionId,
       );
 
@@ -36,7 +33,7 @@ export const eb01038CounterRedirectAttackSpecialHandler: SpecialHandlerDefinitio
         return;
       }
 
-      const characters = host.getCards(
+      const characters = engine.getCards(
         {
           player: 'self',
           zones: ['characters'],
@@ -49,7 +46,7 @@ export const eb01038CounterRedirectAttackSpecialHandler: SpecialHandlerDefinitio
         return;
       }
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:eb01-038:redirect-target`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -66,10 +63,10 @@ export const eb01038CounterRedirectAttackSpecialHandler: SpecialHandlerDefinitio
             return;
           }
 
-          host.returnDonToDonDeck(event.playerSessionId, 1);
-          host.state.combat.targetInstanceId = targets[0].instanceId;
-          host.state.combat.targetType = 'character';
-          host.state.combat.blockerInstanceId = targets[0].instanceId;
+          engine.returnDonToDonDeck(event.playerSessionId, 1);
+          engine.state.combat.targetInstanceId = targets[0].instanceId;
+          engine.state.combat.targetType = 'character';
+          engine.state.combat.blockerInstanceId = targets[0].instanceId;
           engine.reapplyContinuousEffects();
         },
       );

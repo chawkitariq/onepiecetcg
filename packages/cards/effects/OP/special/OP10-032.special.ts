@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP10-032
@@ -23,35 +19,30 @@ export const op10032SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-032',
   resolve(event, engine) {
     if (event.type !== 'onCharacterPlayed') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const attachedDon = host.getCards(
+    const attachedDon = engine.getCards(
       {
         player: 'self',
         zones: ['cost'],
-        filter: { attachedTo: event.sourceInstanceId },
+        filter: { attachedTo: event.sourceInstanceId } as any,
       },
       event.playerSessionId,
     );
     if (attachedDon.length < 1) return;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP10-032',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP10-032', turn),
       )
     )
       return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
-    const playedChar = host.getCard(event.sourceInstanceId);
+    const playedChar = engine.getCard(event.sourceInstanceId);
     if (!playedChar) return;
     const playedCost = playedChar.cost ?? playedChar.baseCost ?? 0;
-    const koCandidates = host.getCards(
+    const koCandidates = engine.getCards(
       {
         player: 'opponent',
         zones: ['characters'],
@@ -61,16 +52,13 @@ export const op10032SpecialHandler: SpecialHandlerDefinition = {
       event.playerSessionId,
     );
     if (koCandidates.length === 0) return;
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      'OP10-032',
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, 'OP10-032', turn),
     );
     for (const target of koCandidates) {
-      host.koCharacter(target.ownerSessionId, target.instanceId, 'effect');
+      engine.koCharacter(target.ownerSessionId, target.instanceId, 'effect');
     }
-    host.syncPlayer(event.playerSessionId);
-    if (opponentSessionId) host.syncPlayer(opponentSessionId);
+    engine.syncPlayer(event.playerSessionId);
+    if (opponentSessionId) engine.syncPlayer(opponentSessionId);
   },
 };

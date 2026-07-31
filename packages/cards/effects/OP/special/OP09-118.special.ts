@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+import type { DuelEndReason } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -21,13 +21,13 @@ export const op09118SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-118',
   resolve(event, engine) {
     if (event.type !== 'onBlock') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
 
-    const player = host.getPlayer(event.playerSessionId);
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(
+      event.playerSessionId,
+    );
     const opponent = opponentSessionId
-      ? host.getPlayer(opponentSessionId)
+      ? engine.getPlayer(opponentSessionId)
       : undefined;
 
     if (!player || !opponent) return;
@@ -36,15 +36,15 @@ export const op09118SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    host.state.winnerSessionId = event.playerSessionId;
-    host.state.endReason = 'effect';
-    host.state.phase = 'finished';
-    host.addLog(
+    engine.state.winnerSessionId = event.playerSessionId;
+    engine.state.endReason = 'effect' as DuelEndReason;
+    engine.state.phase = 'finished';
+    engine.addLog(
       `${player.displayName} wins the game with Gol.D.Roger's effect!`,
     );
-    host.syncPlayer(event.playerSessionId);
+    engine.syncPlayer(event.playerSessionId);
     if (opponentSessionId) {
-      host.syncPlayer(opponentSessionId);
+      engine.syncPlayer(opponentSessionId);
     }
   },
 };

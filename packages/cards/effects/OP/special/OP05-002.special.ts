@@ -12,15 +12,13 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
 
     if (!player) {
       return;
     }
 
-    const handCostCards = host.getCards(
+    const handCostCards = engine.getCards(
       {
         player: 'self',
         zones: ['hand'],
@@ -34,13 +32,13 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const oncePerTurnKey = `${event.sourceInstanceId}:op05-002:${host.state.turn}`;
+    const oncePerTurnKey = `${event.sourceInstanceId}:op05-002:${engine.state.turn}`;
 
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) {
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) {
       return;
     }
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op05-002:confirm`,
         effectId: 'op05-002-special',
@@ -59,7 +57,7 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op05-002:trash-1`,
           event.playerSessionId,
           {
@@ -82,10 +80,10 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
               return;
             }
 
-            host.moveCard(costCard, event.playerSessionId, 'trash');
-            anyEngine.resolvedOncePerTurnKeys.add(oncePerTurnKey);
+            engine.moveCard(costCard, event.playerSessionId, 'trash');
+            engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-            const selectableTargets = host.getCards(
+            const selectableTargets = engine.getCards(
               {
                 player: 'self',
                 zones: ['characters'],
@@ -99,7 +97,7 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
               return;
             }
 
-            anyEngine.decisions.chooseCards(
+            engine.chooseCards(
               `${event.sourceInstanceId}:op05-002:buff-up-to-3`,
               event.playerSessionId,
               {
@@ -124,7 +122,7 @@ export const op05002SpecialHandler: SpecialHandlerDefinition = {
                     continue;
                   }
 
-                  anyEngine.modifiers.addPowerModifier(
+                  engine.addPowerModifier(
                     event.sourceInstanceId,
                     event.playerSessionId,
                     target.instanceId,

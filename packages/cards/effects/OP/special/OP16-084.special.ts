@@ -16,22 +16,20 @@ export const op16084SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if ((source.baseCost ?? source.cost) < 20) return;
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     const donOnField = player.zones.cost.length;
     if (donOnField < 9) return;
 
-    host.moveCard(source, event.playerSessionId, 'trash');
+    engine.moveCard(source, event.playerSessionId, 'trash');
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op16-084:play-momo`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -51,7 +49,7 @@ export const op16084SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (momoCards) => {
         for (const card of momoCards) {
-          host.moveCard(card, event.playerSessionId, 'characters');
+          engine.moveCard(card, event.playerSessionId, 'characters');
         }
         engine.reapplyContinuousEffects();
       },

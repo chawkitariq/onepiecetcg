@@ -9,17 +9,13 @@ export const eb01061WhenAttackingCopyPowerSpecialHandler: SpecialHandlerDefiniti
         return;
       }
 
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const modifiers = anyEngine.modifiers;
-      const selfCard = host.getCard(event.sourceInstanceId);
+      const selfCard = engine.getCard(event.sourceInstanceId);
 
       if (!selfCard) {
         return;
       }
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:eb01-061:copy-target`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -41,7 +37,7 @@ export const eb01061WhenAttackingCopyPowerSpecialHandler: SpecialHandlerDefiniti
           const targetPower = target.power;
           const delta = targetPower - selfCard.basePower;
 
-          modifiers.addPowerModifier(
+          engine.addPowerModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             event.sourceInstanceId,

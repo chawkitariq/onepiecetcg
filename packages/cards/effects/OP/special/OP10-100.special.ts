@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -11,22 +10,19 @@ export const op10100SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-100',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const selfDon = host.getCards(
+    const selfDon = engine.getCards(
       { player: 'self', zones: ['cost'] },
       event.playerSessionId,
     );
-    const oppDon = host.getCards(
+    const oppDon = engine.getCards(
       { player: 'opponent', zones: ['cost'] },
       event.playerSessionId,
     );
     const totalDon = selfDon.length + oppDon.length;
     const maxCost = Math.max(0, totalDon - 1);
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-100:ko-char`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -41,7 +37,7 @@ export const op10100SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+          engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
         }
         engine.reapplyContinuousEffects();
       },

@@ -12,13 +12,11 @@ export const op13023SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-023-special',
   cardId: 'OP13-023',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'onPlay') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       const restedDon = (player.zones.cost as any[]).filter(
@@ -27,24 +25,24 @@ export const op13023SpecialHandler: SpecialHandlerDefinition = {
       if (restedDon.length > 0) {
         const toSet = Math.min(restedDon.length, 2);
         for (let i = 0; i < toSet; i++) {
-          patchSpecialHandlerCardStatus(host, restedDon[i], {
+          patchSpecialHandlerCardStatus(engine, restedDon[i], {
             rested: false,
           });
         }
-        host.addLog(`[Uta] Set ${toSet} DON!! card(s) as active.`);
+        engine.addLog(`[Uta] Set ${toSet} DON!! card(s) as active.`);
       }
 
-      host.addLog(
+      engine.addLog(
         '[Uta] Cannot play Character cards with base cost 5 or more during this turn.',
       );
       return;
     }
 
     if (event.type === 'onKo') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.hand.length < 1) return;
 
-      const playableChars = host.getCards(
+      const playableChars = engine.getCards(
         {
           player: 'self',
           zones: ['hand'],
@@ -59,7 +57,7 @@ export const op13023SpecialHandler: SpecialHandlerDefinition = {
 
       if (playableChars.length === 0) return;
 
-      anyEngine.decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op13-023:ko-play`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -74,8 +72,8 @@ export const op13023SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            host.playCard(card, event.playerSessionId, 'characters');
-            patchSpecialHandlerCardStatus(host, card, { rested: true });
+            engine.playCard(card, event.playerSessionId, 'characters');
+            patchSpecialHandlerCardStatus(engine, card, { rested: true });
           }
           engine.reapplyContinuousEffects();
         },

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -14,18 +13,16 @@ export const op14096SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-096',
   resolve(event, engine) {
     if (event.type === 'activateMain') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
-      const activeDon = host.getCards(
+      const activeDon = engine.getCards(
         { player: 'self', zones: ['cost'], filter: { rested: false } },
         event.playerSessionId,
       );
       if (activeDon.length < 2) return;
 
-      decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op14-096:rest-don`,
           effectId: 'op14-096-special',
@@ -43,12 +40,12 @@ export const op14096SpecialHandler: SpecialHandlerDefinition = {
         (resp: { confirmed?: boolean }) => {
           if (!resp.confirmed) return;
           for (let i = 0; i < 2 && i < activeDon.length; i++) {
-            patchSpecialHandlerCardStatus(host, activeDon[i], {
+            patchSpecialHandlerCardStatus(engine, activeDon[i], {
               rested: true,
             });
           }
 
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op14-096:negate`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -63,25 +60,23 @@ export const op14096SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (selected) => {
               for (const card of selected) {
-                patchSpecialHandlerCardStatus(host, card, {
+                patchSpecialHandlerCardStatus(engine, card, {
                   effectNegated: true,
                 });
               }
-              host.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(event.playerSessionId);
               engine.reapplyContinuousEffects();
             },
           );
         },
       );
     } else if (event.type === 'activateCounter') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       if (player.zones.trash.length < 10) return;
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-096:power-up`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -95,7 +90,7 @@ export const op14096SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            anyEngine.modifiers.addPowerModifier(
+            engine.addPowerModifier(
               event.sourceInstanceId,
               event.playerSessionId,
               card.instanceId,

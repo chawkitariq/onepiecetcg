@@ -1,10 +1,6 @@
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP15-002 "Lucy"
@@ -18,12 +14,8 @@ export const op15002SpecialHandler: SpecialHandlerDefinition = {
   id: 'op15-002-special',
   cardId: 'OP15-002',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-
     if (event.type === 'whenAttacking' || event.type === 'onAttacked') {
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op15-002:trash-events-stage`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -39,10 +31,10 @@ export const op15002SpecialHandler: SpecialHandlerDefinition = {
         (cards) => {
           const count = cards.length;
           for (const card of cards) {
-            host.moveCard(card, event.playerSessionId, 'trash');
+            engine.moveCard(card, event.playerSessionId, 'trash');
           }
           if (count > 0) {
-            anyEngine.modifiers.addPowerModifier(
+            engine.addPowerModifier(
               event.sourceInstanceId,
               event.playerSessionId,
               event.sourceInstanceId,
@@ -50,7 +42,7 @@ export const op15002SpecialHandler: SpecialHandlerDefinition = {
               'untilEndOfBattle',
             );
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );
@@ -59,22 +51,16 @@ export const op15002SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'activateMain') return;
 
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        event.sourceCardId,
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
       )
     )
       return;
 
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      event.sourceCardId,
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
     );
 
     const definition: StandardEffectDefinition = {

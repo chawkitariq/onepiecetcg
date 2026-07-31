@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
@@ -13,19 +12,17 @@ export const op13057SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-057-special',
   cardId: 'OP13-057',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'activateMain') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       const activeDon = player.zones.cost.filter((d: any) => !d.rested);
       if (activeDon.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-057:confirm-rest-don`,
           effectId: 'op13-057-special',
@@ -43,17 +40,19 @@ export const op13057SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          patchSpecialHandlerCardStatus(host, activeDon[0], {
+          patchSpecialHandlerCardStatus(engine, activeDon[0], {
             rested: true,
           });
 
           if (player.zones.life.length <= 1) {
-            const opponentId = host.getOpponentSessionId(event.playerSessionId);
+            const opponentId = engine.getOpponentSessionId(
+              event.playerSessionId,
+            );
             if (opponentId) {
-              const opponent = host.getPlayer(opponentId);
+              const opponent = engine.getPlayer(opponentId);
               if (opponent) {
                 for (const char of opponent.zones.characters) {
-                  anyEngine.modifiers.addKeywordModifier(
+                  engine.addKeywordModifier(
                     event.sourceInstanceId,
                     event.playerSessionId,
                     char.instanceId,
@@ -61,7 +60,7 @@ export const op13057SpecialHandler: SpecialHandlerDefinition = {
                     'untilEndOfTurn',
                   );
                 }
-                host.addLog(
+                engine.addLog(
                   '[If I Bowed Down...] Opponent Characters cannot activate [Blocker] when your Leader attacks this turn.',
                 );
                 engine.reapplyContinuousEffects();

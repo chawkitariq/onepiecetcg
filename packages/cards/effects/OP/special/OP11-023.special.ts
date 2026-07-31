@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -43,23 +42,21 @@ export const op11023SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
 
-    if (!player || !player.leader) return;
+    if (!player || !(player as any).leader) return;
 
-    const leaderIsFishMan = player.leader.types?.some(
+    const leaderIsFishMan = (player as any).leader.types?.some(
       (t: string) => t === 'Fish-Man',
     );
     if (!leaderIsFishMan) return;
 
     if (player.zones.life.length > 3) return;
 
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent) return;
 
     let restedCount = 0;
@@ -68,7 +65,7 @@ export const op11023SpecialHandler: SpecialHandlerDefinition = {
     }
     if (restedCount < 5) return;
 
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     const baseCost = source.baseCost ?? source.cost ?? 0;
@@ -76,7 +73,7 @@ export const op11023SpecialHandler: SpecialHandlerDefinition = {
 
     const reduction = 3 - baseCost;
 
-    anyEngine.modifiers.registerNextPlayCostModifier(
+    engine.registerNextPlayCostModifier(
       event.playerSessionId,
       event.sourceInstanceId,
       {

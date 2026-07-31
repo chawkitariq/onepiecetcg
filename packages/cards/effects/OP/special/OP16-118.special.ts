@@ -21,13 +21,8 @@ export const op16118SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay' && event.type !== 'onKo') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    anyEngine.decisions.chooseChoice(
+    engine.chooseChoices(
       `${event.sourceInstanceId}:op16-118:branch`,
-      event.playerSessionId,
-      { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
       event.playerSessionId,
       'Search for which card?',
       [

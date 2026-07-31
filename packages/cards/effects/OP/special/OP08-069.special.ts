@@ -5,19 +5,17 @@ export const op08069SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-069',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const don = host.getCards(
+    const don = engine.getCards(
       { player: 'self', zones: ['cost'], filter: { rested: false } },
       event.playerSessionId,
     );
     if (don.length < 1) return;
-    host.restCard(don[0]);
-    anyEngine.decisions.chooseCards(
+    engine.patchCardStatus(don[0].instanceId, { rested: true });
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-069:trash-hand-cost`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -27,9 +25,9 @@ export const op08069SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (trashed) => {
         for (const card of trashed) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
-        const deckTop = host.getCards(
+        const deckTop = engine.getCards(
           {
             player: 'self',
             zones: ['deck'],
@@ -38,9 +36,9 @@ export const op08069SpecialHandler: SpecialHandlerDefinition = {
           event.playerSessionId,
         );
         if (deckTop.length) {
-          host.moveCard(deckTop[0], event.playerSessionId, 'life');
+          engine.moveCard(deckTop[0], event.playerSessionId, 'life');
         }
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op08-069:move-opponent-char`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -55,8 +53,8 @@ export const op08069SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (selected) => {
             for (const card of selected) {
-              host.moveCard(card, card.ownerSessionId, 'life', {
-                faceUp: true,
+              engine.moveCard(card, card.ownerSessionId, 'life', {
+                faceDown: false,
               });
             }
             engine.reapplyContinuousEffects();

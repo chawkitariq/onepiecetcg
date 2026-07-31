@@ -15,15 +15,13 @@ export const st08013SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!source || source.attachedDon < 1) {
       return;
     }
 
-    const combat = host.state.combat;
+    const combat = engine.state.combat;
 
     if (
       combat.attackerInstanceId !== event.sourceInstanceId ||
@@ -32,7 +30,7 @@ export const st08013SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const target = host.getCard(combat.targetInstanceId);
+    const target = engine.getCard(combat.targetInstanceId);
 
     if (!target || target.ownerSessionId === event.playerSessionId) {
       return;
@@ -42,7 +40,7 @@ export const st08013SpecialHandler: SpecialHandlerDefinition = {
     const sourceInstanceId = source.instanceId;
     const playerSessionId = event.playerSessionId;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:st08-013:mutual-ko`,
         effectId: 'st08-013-special',
@@ -62,15 +60,15 @@ export const st08013SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        const targetCard = host.getCard(targetInstanceId);
-        const sourceCard = host.getCard(sourceInstanceId);
+        const targetCard = engine.getCard(targetInstanceId);
+        const sourceCard = engine.getCard(sourceInstanceId);
 
         if (targetCard) {
-          host.koCharacter(playerSessionId, targetInstanceId, 'effect');
+          engine.koCharacter(playerSessionId, targetInstanceId, 'effect');
         }
 
         if (sourceCard) {
-          host.koCharacter(playerSessionId, sourceInstanceId, 'effect');
+          engine.koCharacter(playerSessionId, sourceInstanceId, 'effect');
         }
 
         engine.reapplyContinuousEffects();

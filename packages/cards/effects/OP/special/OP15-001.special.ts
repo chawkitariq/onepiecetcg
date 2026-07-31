@@ -1,10 +1,8 @@
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import {
   createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
+  patchSpecialHandlerCardStatus,
 } from '../../special-handler-utils.js';
-import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
 /**
  * OP15-001 "Krieg"
@@ -17,22 +15,16 @@ export const op15001SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
 
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        event.sourceCardId,
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
       )
     )
       return;
 
-    const eligible = host
+    const eligible = engine
       .getCards(
         {
           player: 'opponent',
@@ -46,14 +38,11 @@ export const op15001SpecialHandler: SpecialHandlerDefinition = {
 
     if (eligible.length === 0) return;
 
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      event.sourceCardId,
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
     );
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-001:rest`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -66,12 +55,12 @@ export const op15001SpecialHandler: SpecialHandlerDefinition = {
       },
       undefined,
       (cards) => {
-        const opponentId = host.getOpponentSessionId(event.playerSessionId);
+        const opponentId = engine.getOpponentSessionId(event.playerSessionId);
         for (const card of cards) {
-          patchSpecialHandlerCardStatus(host, card, { rested: true });
+          patchSpecialHandlerCardStatus(engine, card, { rested: true });
         }
-        host.syncPlayer(event.playerSessionId);
-        if (opponentId) host.syncPlayer(opponentId);
+        engine.syncPlayer(event.playerSessionId);
+        if (opponentId) engine.syncPlayer(opponentId);
         engine.reapplyContinuousEffects();
       },
     );

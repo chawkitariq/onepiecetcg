@@ -13,18 +13,16 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
-    const opponent = opponentId ? host.getPlayer(opponentId) : undefined;
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+    const opponent = opponentId ? engine.getPlayer(opponentId) : undefined;
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!player || !opponent || !source) {
       return;
     }
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op05-099:confirm-rest`,
         effectId: 'op05-099-special',
@@ -43,10 +41,10 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        patchSpecialHandlerCardStatus(host, source, { rested: true });
+        patchSpecialHandlerCardStatus(engine, source, { rested: true });
 
         if (opponent.zones.life.length > 0) {
-          anyEngine.decisions.chooseChoices(
+          engine.chooseChoices(
             `${event.sourceInstanceId}:op05-099:opponent-life`,
             opponent.sessionId,
             '[Amazon] Votre adversaire peut defausser 1 carte du dessus de sa Vie.',
@@ -61,12 +59,12 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
                 const lifeCard = opponent.zones.life[0];
 
                 if (lifeCard) {
-                  host.moveCard(lifeCard, opponent.sessionId, 'trash');
+                  engine.moveCard(lifeCard, opponent.sessionId, 'trash');
                 }
                 return;
               }
 
-              anyEngine.decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op05-099:power-reduction`,
                 event.playerSessionId,
                 {
@@ -86,7 +84,7 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
                   const target = cards[0];
 
                   if (target) {
-                    anyEngine.modifiers.addPowerModifier(
+                    engine.addPowerModifier(
                       event.sourceInstanceId,
                       event.playerSessionId,
                       target.instanceId,
@@ -102,7 +100,7 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op05-099:power-reduction`,
           event.playerSessionId,
           {
@@ -122,7 +120,7 @@ export const op05099SpecialHandler: SpecialHandlerDefinition = {
             const target = cards[0];
 
             if (target) {
-              anyEngine.modifiers.addPowerModifier(
+              engine.addPowerModifier(
                 event.sourceInstanceId,
                 event.playerSessionId,
                 target.instanceId,

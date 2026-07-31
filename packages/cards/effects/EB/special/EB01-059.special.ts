@@ -9,16 +9,13 @@ export const eb01059MainKoAndTrashLifeSpecialHandler: SpecialHandlerDefinition =
         return;
       }
 
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
 
       if (!player) {
         return;
       }
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:eb01-059:ko`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -33,18 +30,18 @@ export const eb01059MainKoAndTrashLifeSpecialHandler: SpecialHandlerDefinition =
         undefined,
         (cards) => {
           for (const card of cards) {
-            host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+            engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
           }
 
           while (player.zones.life.length > 1) {
             const topLife = player.zones.life[player.zones.life.length - 1];
 
             if (topLife) {
-              host.moveCard(topLife, event.playerSessionId, 'trash');
+              engine.moveCard(topLife, event.playerSessionId, 'trash');
             }
           }
 
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );

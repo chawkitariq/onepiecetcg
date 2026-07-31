@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -10,9 +9,7 @@ export const op10113SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-113',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const allChars = host.getCards(
+    const allChars = engine.getCards(
       {
         player: 'either',
         zones: ['characters'],
@@ -21,11 +18,11 @@ export const op10113SpecialHandler: SpecialHandlerDefinition = {
       event.playerSessionId,
     );
     for (const card of allChars) {
-      host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+      engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
     }
-    const oppId = host.getOpponentSessionId(event.playerSessionId);
-    host.syncPlayer(event.playerSessionId);
-    if (oppId) host.syncPlayer(oppId);
+    const oppId = engine.getOpponentSessionId(event.playerSessionId);
+    engine.syncPlayer(event.playerSessionId);
+    if (oppId) engine.syncPlayer(oppId);
     engine.reapplyContinuousEffects();
   },
 };

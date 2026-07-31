@@ -5,25 +5,23 @@ export const op08062SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-062',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const leader = player.leader;
+    const leader = (player as any).leader;
     if (
       !leader ||
       !leader.types?.some((t: string) => t.includes('Big Mom Pirates'))
     )
       return;
-    const opponentDon = host.getCards(
+    const opponentDon = engine.getCards(
       { player: 'opponent', zones: ['cost'] },
       event.playerSessionId,
     );
     const costMax = opponentDon.length;
-    host.moveCard(source, event.playerSessionId, 'trash');
-    anyEngine.decisions.chooseCards(
+    engine.moveCard(source, event.playerSessionId, 'trash');
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-062:play-katakuri`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -42,7 +40,7 @@ export const op08062SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.playCard(card, event.playerSessionId, 'characters');
+          engine.playCard(card, event.playerSessionId, 'characters');
         }
         engine.reapplyContinuousEffects();
       },

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,15 +11,14 @@ export const op09052SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-052',
   resolve(event, engine) {
     if (event.type !== 'onKo') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
 
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
-    const activePlayerSessionId = host.state.activePlayerSessionId;
+    const opponentSessionId = engine.getOpponentSessionId(
+      event.playerSessionId,
+    );
+    const activePlayerSessionId = engine.state.activePlayerSessionId;
     if (activePlayerSessionId !== opponentSessionId) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op09-052:trash-hand`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -38,11 +36,11 @@ export const op09052SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
         for (const card of cards) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
-        const marcoCard = host.getCard(event.sourceInstanceId);
+        const marcoCard = engine.getCard(event.sourceInstanceId);
         if (marcoCard) {
-          host.moveCard(marcoCard, event.playerSessionId, 'characters', {
+          engine.moveCard(marcoCard, event.playerSessionId, 'characters', {
             rested: true,
           });
         }

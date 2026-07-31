@@ -1,9 +1,5 @@
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP15-058 "Enel (OP15-058)"
@@ -19,46 +15,37 @@ export const op15058SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
 
     if (turn < 2) return;
 
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        event.sourceCardId,
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
       )
     )
       return;
 
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      event.sourceCardId,
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
     );
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     // Add up to 1 DON!! active
     if (player.zones.donDeck.length > 0) {
-      host.addDonToCost(event.playerSessionId, 1, false);
+      engine.addDonToCost(event.playerSessionId, 1, false);
     }
 
     // Add up to 4 DON!! rested
     const toAdd = Math.min(4, player.zones.donDeck.length);
     if (toAdd > 0) {
-      host.addDonToCost(event.playerSessionId, toAdd, true);
+      engine.addDonToCost(event.playerSessionId, toAdd, true);
     }
 
     // Give up to 4 rested DON!! to 1 Character
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-058:target-char`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -78,14 +65,14 @@ export const op15058SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        const movedCount = host.attachDon(
+        const movedCount = engine.attachDon(
           event.playerSessionId,
           target.instanceId,
           Math.min(4, toAdd),
           { rested: true },
         );
 
-        host.syncPlayer(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

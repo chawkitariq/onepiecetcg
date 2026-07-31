@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP14-009 Trafalgar Law (Alternate Art)
@@ -17,20 +13,15 @@ export const op14009SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-009',
   resolve(event, engine) {
     if (event.type !== 'onAttacked') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op14-009',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'op14-009', turn),
       )
     )
       return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op14-009:trash-hand`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -45,16 +36,13 @@ export const op14009SpecialHandler: SpecialHandlerDefinition = {
       (trashed) => {
         if (trashed.length < 2) return;
         for (const card of trashed) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op14-009',
-          turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'op14-009', turn),
         );
 
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op14-009:select-character`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -70,19 +58,19 @@ export const op14009SpecialHandler: SpecialHandlerDefinition = {
           (chars) => {
             if (chars.length < 1) return;
             const character = chars[0];
-            const p = host.getPlayer(event.playerSessionId);
+            const p = engine.getPlayer(event.playerSessionId);
             const leader = p?.zones.leader;
             if (!leader || !leader.instanceId) return;
             const pLeader = leader.basePower;
             const pChar = character.basePower;
-            anyEngine.modifiers.addPowerModifier(
+            engine.addPowerModifier(
               event.sourceInstanceId,
               event.playerSessionId,
               leader.instanceId,
               pChar - pLeader,
               'untilEndOfBattle',
             );
-            anyEngine.modifiers.addPowerModifier(
+            engine.addPowerModifier(
               event.sourceInstanceId,
               event.playerSessionId,
               character.instanceId,

@@ -19,13 +19,10 @@ export const op11101SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
+    const oncePerTurnKey = `${anyEvt.sourceInstanceId}:op11-101:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-    const oncePerTurnKey = `${anyEvt.sourceInstanceId}:op11-101:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
-
-    const target = host.getCard(anyEvt.targetInstanceId);
+    const target = engine.getCard(anyEvt.targetInstanceId);
     if (!target) return;
 
     const isSupernovas = target.families?.some(
@@ -39,10 +36,10 @@ export const op11101SpecialHandler: SpecialHandlerDefinition = {
 
     if (anyEvt.reason !== 'effect') return;
 
-    const player = host.getPlayer(anyEvt.playerSessionId);
+    const player = engine.getPlayer(anyEvt.playerSessionId);
     if (!player) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${anyEvt.sourceInstanceId}:op11-101:replace`,
         effectId: 'op11-101-special',
@@ -60,14 +57,14 @@ export const op11101SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+        engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-        host.moveCard(target, anyEvt.playerSessionId, 'life', {
+        engine.moveCard(target, anyEvt.playerSessionId, 'life', {
           faceDown: true,
           toBottom: false,
         });
 
-        anyEngine.preventDefaultMove?.();
+        engine.preventDefaultMove();
         engine.reapplyContinuousEffects();
       },
     );

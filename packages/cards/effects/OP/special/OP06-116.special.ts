@@ -5,15 +5,11 @@ export const op06116SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP06-116',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    anyEngine.decisions.chooseChoice(
+    engine.chooseChoices(
       `${event.sourceInstanceId}:op06-116:choice`,
-      event.playerSessionId,
-      { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
       event.playerSessionId,
       'Choose one:',
       [
@@ -31,7 +27,7 @@ export const op06116SpecialHandler: SpecialHandlerDefinition = {
       1,
       (choiceIds) => {
         if (choiceIds[0] === 'ko') {
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op06-116:ko-target`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -46,25 +42,31 @@ export const op06116SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (cards) => {
               for (const card of cards)
-                host.moveCard(card, event.playerSessionId, 'trash');
+                engine.moveCard(card, event.playerSessionId, 'trash');
             },
           );
         } else {
-          const oppLife = host.getCards(
+          const oppLife = engine.getCards(
             { player: 'opponent', zones: ['life'] },
             event.playerSessionId,
-          ).length;
-          if (oppLife === 1) {
-            anyEngine.host.dealDamage(event.playerSessionId, 'opponent', 1);
+          );
+          if (oppLife.length === 1) {
+            const opponentId = engine.getOpponentSessionId(
+              event.playerSessionId,
+            );
+            if (opponentId && oppLife[0]) {
+              engine.moveCard(oppLife[0], opponentId, 'hand');
+              engine.syncPlayer(opponentId);
+            }
           }
         }
 
-        const lifeCard = host.getCards(
+        const lifeCard = engine.getCards(
           { player: 'self', zones: ['life'] },
           event.playerSessionId,
         )[0];
         if (lifeCard) {
-          host.moveCard(lifeCard, event.playerSessionId, 'hand');
+          engine.moveCard(lifeCard, event.playerSessionId, 'hand');
         }
       },
     );

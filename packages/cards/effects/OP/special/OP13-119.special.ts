@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -14,9 +13,7 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-119-special',
   cardId: 'OP13-119',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (
@@ -24,18 +21,18 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
       event.type === 'onTurnStart' ||
       event.type === 'onLifeDamageDealt'
     ) {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       if (player.zones.life.length <= 3) {
-        anyEngine.modifiers.addKeywordModifier(
+        engine.addKeywordModifier(
           event.sourceInstanceId,
           event.playerSessionId,
           event.sourceInstanceId,
           'rush',
           'untilEndOfTurn',
         );
-        host.addLog('[Portgas.D.Ace 119] 3 or less Life cards — gains [Rush].');
+        engine.addLog('[Portgas.D.Ace 119] 3 or less Life cards — gains [Rush].');
         engine.reapplyContinuousEffects();
       }
       return;
@@ -43,7 +40,7 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'activateMain') return;
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     const donDeckCount = player.zones.donDeck.length;
@@ -75,12 +72,12 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
       );
     }
 
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
-    const opponent = opponentId ? host.getPlayer(opponentId) : undefined;
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+    const opponent = opponentId ? engine.getPlayer(opponentId) : undefined;
 
     if (!opponent || opponent.zones.characters.length === 0) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-119:confirm-return`,
         effectId: 'op13-119-special',
@@ -98,7 +95,7 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-119:return-target`,
           event.playerSessionId,
           {
@@ -119,11 +116,11 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (returned) => {
             for (const card of returned) {
-              host.moveCard(card, card.ownerSessionId, 'hand');
+              engine.moveCard(card, card.ownerSessionId, 'hand');
             }
 
             if (returned.length > 0 && opponent.zones.hand.length > 0) {
-              const opponentHand = host.getCards(
+              const opponentHand = engine.getCards(
                 {
                   player: 'opponent',
                   zones: ['hand'],
@@ -138,8 +135,8 @@ export const op13119SpecialHandler: SpecialHandlerDefinition = {
 
               if (opponentHand.length > 0) {
                 const picked = opponentHand[0];
-                host.playCard(picked, opponent.sessionId, 'characters');
-                host.addLog(
+                engine.playCard(picked, opponent.sessionId, 'characters');
+                engine.addLog(
                   `[Portgas.D.Ace 119] Opponent plays ${picked.name} from hand.`,
                 );
               }

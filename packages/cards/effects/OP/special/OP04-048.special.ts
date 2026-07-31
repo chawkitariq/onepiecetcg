@@ -8,9 +8,7 @@ export const op04048SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
 
     if (!player) {
       return;
@@ -20,15 +18,15 @@ export const op04048SpecialHandler: SpecialHandlerDefinition = {
     const returnedCount = returnedCards.length;
 
     for (const card of returnedCards) {
-      host.moveCard(card, event.playerSessionId, 'deck');
+      engine.moveCard(card, event.playerSessionId, 'deck');
     }
 
-    host.shuffleDeck(event.playerSessionId);
+    engine.shuffleDeck(event.playerSessionId);
 
     for (let index = 0; index < returnedCount; index += 1) {
-      host.drawCard(event.playerSessionId);
+      engine.drawCard(event.playerSessionId);
     }
 
-    host.syncPlayer(event.playerSessionId);
+    engine.syncPlayer(event.playerSessionId);
   },
 };

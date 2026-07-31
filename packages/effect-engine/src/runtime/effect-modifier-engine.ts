@@ -292,6 +292,47 @@ export class EffectModifierEngine {
     this.reapplyContinuousEffects();
   }
 
+  /** Removes runtime power/cost/keyword modifiers matching a source/target pair. */
+  public removeModifier(args: {
+    sourceInstanceId: string;
+    targetInstanceId: string;
+    kind?: 'power' | 'cost' | 'keyword';
+  }): void {
+    const matches = (sourceInstanceId: string, targetInstanceId: string) =>
+      sourceInstanceId === args.sourceInstanceId &&
+      targetInstanceId === args.targetInstanceId;
+
+    if (args.kind === undefined || args.kind === 'power') {
+      this.modifiers.splice(
+        0,
+        this.modifiers.length,
+        ...this.modifiers.filter(
+          (modifier) => !matches(modifier.sourceInstanceId, modifier.targetInstanceId),
+        ),
+      );
+    }
+
+    if (args.kind === undefined || args.kind === 'cost') {
+      this.costModifiers.splice(
+        0,
+        this.costModifiers.length,
+        ...this.costModifiers.filter(
+          (modifier) => !matches(modifier.sourceInstanceId, modifier.targetInstanceId),
+        ),
+      );
+    }
+
+    if (args.kind === undefined || args.kind === 'keyword') {
+      this.keywordModifiers.splice(
+        0,
+        this.keywordModifiers.length,
+        ...this.keywordModifiers.filter(
+          (modifier) => !matches(modifier.sourceInstanceId, modifier.targetInstanceId),
+        ),
+      );
+    }
+  }
+
   /** Adds a temporary or permanent power modifier to one resolved target. */
   public addPowerModifier(
     sourceInstanceId: string,

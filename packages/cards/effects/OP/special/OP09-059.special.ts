@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,11 +12,7 @@ export const op09059SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-059',
   resolve(event, engine) {
     if (event.type === 'activateCounter') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op09-059:power`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -31,7 +26,7 @@ export const op09059SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (powerTargets) => {
           for (const card of powerTargets) {
-            anyEngine.modifiers.addPowerModifier(
+            engine.addPowerModifier(
               event.sourceInstanceId,
               event.playerSessionId,
               card.instanceId,
@@ -41,7 +36,7 @@ export const op09059SpecialHandler: SpecialHandlerDefinition = {
           }
           engine.reapplyContinuousEffects();
 
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op09-059:trash-hand`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -56,21 +51,19 @@ export const op09059SpecialHandler: SpecialHandlerDefinition = {
             (trashed) => {
               const amount = trashed.length;
               for (const card of trashed) {
-                host.moveCard(card, event.playerSessionId, 'trash');
+                engine.moveCard(card, event.playerSessionId, 'trash');
               }
               if (amount > 0) {
-                host.trashTopDeckCards(event.playerSessionId, amount);
+                engine.trashTopDeckCards(event.playerSessionId, amount);
               }
-              host.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(event.playerSessionId);
             },
           );
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      host.drawCard(event.playerSessionId);
-      host.syncPlayer(event.playerSessionId);
+      engine.drawCard(event.playerSessionId);
+      engine.syncPlayer(event.playerSessionId);
     }
   },
 };

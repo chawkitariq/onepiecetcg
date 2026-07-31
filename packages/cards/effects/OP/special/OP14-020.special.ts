@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import {
   patchSpecialHandlerCardStatus,
@@ -18,12 +17,10 @@ export const op14020SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-020',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const ownChars = host.getCards(
+    const ownChars = engine.getCards(
       {
         player: 'self',
         zones: ['characters', 'stage'],
@@ -34,7 +31,7 @@ export const op14020SpecialHandler: SpecialHandlerDefinition = {
     const hasHighCost = ownChars.some((c: { cost: number }) => c.cost >= 5);
     if (!hasHighCost) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op14-020:rest-card`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -49,25 +46,25 @@ export const op14020SpecialHandler: SpecialHandlerDefinition = {
       (cards) => {
         if (cards.length < 1) return;
         const card = cards[0];
-        patchSpecialHandlerCardStatus(host, card, { rested: true });
-        host.syncPlayer(event.playerSessionId);
+        patchSpecialHandlerCardStatus(engine, card, { rested: true });
+        engine.syncPlayer(event.playerSessionId);
 
-        const activeDon = host.getCards(
+        const activeDon = engine.getCards(
           { player: 'self', zones: ['cost'], filter: { rested: true } },
           event.playerSessionId,
         );
         const amount = Math.min(activeDon.length, 3);
         if (amount > 0) {
           for (const don of activeDon.slice(0, amount)) {
-            patchSpecialHandlerCardStatus(host, don, { rested: false });
+            patchSpecialHandlerCardStatus(engine, don, { rested: false });
           }
         }
 
-        patchSpecialHandlerPlayerStatus(host, player, {
+        patchSpecialHandlerPlayerStatus(engine, player, {
           cannotPlayCharacters: true,
         });
 
-        host.syncPlayer(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
         engine.reapplyContinuousEffects();
       },
     );

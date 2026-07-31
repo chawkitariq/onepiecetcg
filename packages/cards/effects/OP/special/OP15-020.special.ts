@@ -14,15 +14,11 @@ export const op15020SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     // Leader +3000 power during this turn
-    anyEngine.modifiers.addPowerModifier(
+    engine.addPowerModifier(
       event.sourceInstanceId,
       event.playerSessionId,
       player.zones.leader.instanceId ?? event.sourceInstanceId,
@@ -31,7 +27,7 @@ export const op15020SpecialHandler: SpecialHandlerDefinition = {
     );
 
     // Opponent Character -8000 until end of opponent's next End Phase
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-020:power-down-target`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -45,9 +41,9 @@ export const op15020SpecialHandler: SpecialHandlerDefinition = {
       },
       undefined,
       (targets) => {
-        const opponentId = host.getOpponentSessionId(event.playerSessionId);
+        const opponentId = engine.getOpponentSessionId(event.playerSessionId);
         for (const target of targets) {
-          anyEngine.modifiers.addPowerModifier(
+          engine.addPowerModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             target.instanceId,
@@ -57,7 +53,7 @@ export const op15020SpecialHandler: SpecialHandlerDefinition = {
         }
 
         // Then, may trash 2 from hand to KO 0-power character
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op15-020:trash-cost`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -75,10 +71,10 @@ export const op15020SpecialHandler: SpecialHandlerDefinition = {
               return;
             }
             for (const card of trashed) {
-              host.moveCard(card, event.playerSessionId, 'trash');
+              engine.moveCard(card, event.playerSessionId, 'trash');
             }
 
-            decisions.chooseCards(
+            engine.chooseCards(
               `${event.sourceInstanceId}:op15-020:ko-zero-power`,
               event.playerSessionId,
               {
@@ -96,14 +92,14 @@ export const op15020SpecialHandler: SpecialHandlerDefinition = {
               undefined,
               (koTargets) => {
                 for (const koTarget of koTargets) {
-                  host.koCharacter(
+                  engine.koCharacter(
                     koTarget.ownerSessionId,
                     koTarget.instanceId,
                     'effect',
                   );
                 }
-                host.syncPlayer(event.playerSessionId);
-                if (opponentId) host.syncPlayer(opponentId);
+                engine.syncPlayer(event.playerSessionId);
+                if (opponentId) engine.syncPlayer(opponentId);
                 engine.reapplyContinuousEffects();
               },
             );

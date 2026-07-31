@@ -20,15 +20,12 @@ export const op11001SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    const oncePerTurnKey = `${anyEvt.sourceInstanceId}:op11-001:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) {
+    const oncePerTurnKey = `${anyEvt.sourceInstanceId}:op11-001:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) {
       return;
     }
 
-    const target = host.getCard(anyEvt.targetInstanceId);
+    const target = engine.getCard(anyEvt.targetInstanceId);
     if (!target) return;
 
     const isNavy = target.families?.some((f: string) => f === 'Navy');
@@ -39,7 +36,7 @@ export const op11001SpecialHandler: SpecialHandlerDefinition = {
 
     if (anyEvt.reason !== 'effect') return;
 
-    const trashCards = host.getCards(
+    const trashCards = engine.getCards(
       {
         player: 'self',
         zones: ['trash'],
@@ -49,7 +46,7 @@ export const op11001SpecialHandler: SpecialHandlerDefinition = {
     );
     if (trashCards.length < 3) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${anyEvt.sourceInstanceId}:op11-001:replace-ko`,
         effectId: 'op11-001-special',
@@ -67,9 +64,9 @@ export const op11001SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+        engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-        const selected = host.getCards(
+        const selected = engine.getCards(
           {
             player: 'self',
             zones: ['trash'],
@@ -78,12 +75,12 @@ export const op11001SpecialHandler: SpecialHandlerDefinition = {
           anyEvt.playerSessionId,
         );
         for (const card of selected) {
-          host.moveCard(card, anyEvt.playerSessionId, 'deck', {
+          engine.moveCard(card, anyEvt.playerSessionId, 'deck', {
             toBottom: true,
           });
         }
 
-        anyEngine.preventDefaultMove?.();
+        engine.preventDefaultMove();
         engine.reapplyContinuousEffects();
       },
     );

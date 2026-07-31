@@ -1,8 +1,5 @@
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP16-041
@@ -18,34 +15,34 @@ export const op16041SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if ((event as any).type !== 'onCardRemovedByEffect') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     if (source.attachedDon < 1) return;
 
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op16-041',
-        host.state.turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(
+          event.sourceInstanceId,
+          'op16-041',
+          engine.state.turn,
+        ),
       )
     ) {
       return;
     }
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      'op16-041',
-      host.state.turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(
+        event.sourceInstanceId,
+        'op16-041',
+        engine.state.turn,
+      ),
     );
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op16-041:play-prisoner`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -63,7 +60,7 @@ export const op16041SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selected) => {
         for (const card of selected) {
-          host.moveCard(card, event.playerSessionId, 'characters');
+          engine.moveCard(card, event.playerSessionId, 'characters');
         }
         engine.reapplyContinuousEffects();
       },

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,12 +12,10 @@ export const op14105SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-105',
   resolve(event, engine) {
     if (event.type === 'activateMain') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-105:reveal-hand`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -34,7 +31,7 @@ export const op14105SpecialHandler: SpecialHandlerDefinition = {
         (revealed) => {
           if (revealed.length < 3) return;
 
-          const donDeck = host.getCards(
+          const donDeck = engine.getCards(
             { player: 'self', zones: ['donDeck'] },
             event.playerSessionId,
           );
@@ -45,26 +42,24 @@ export const op14105SpecialHandler: SpecialHandlerDefinition = {
           const amount = Math.min(donDeck.length, allTargets.length);
 
           for (let i = 0; i < amount; i++) {
-            host.addDonToCost(event.playerSessionId, 1, true);
+            engine.addDonToCost(event.playerSessionId, 1, true);
           }
 
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const { host } = anyEngine;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
       const leader = player.zones.leader;
       if (!leader || !leader.families?.some((f: string) => f.includes('Kuja')))
         return;
 
-      const source = host.getCard(event.sourceInstanceId);
+      const source = engine.getCard(event.sourceInstanceId);
       if (!source) return;
-      host.playCard(source, event.playerSessionId, 'characters');
-      host.syncPlayer(event.playerSessionId);
+      engine.playCard(source, event.playerSessionId, 'characters');
+      engine.syncPlayer(event.playerSessionId);
       engine.reapplyContinuousEffects();
     }
   },

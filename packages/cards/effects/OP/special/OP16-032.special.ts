@@ -14,18 +14,16 @@ export const op16032SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
 
-    const currentTurn = host.state.turn;
+    const currentTurn = engine.state.turn;
     const targetExpiryTurn = currentTurn + 2;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op16-032:select-restrict`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },

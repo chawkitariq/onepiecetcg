@@ -14,10 +14,8 @@ export const op05119SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!player || !source) {
       return;
@@ -27,7 +25,7 @@ export const op05119SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    host.returnDonToDonDeck(event.playerSessionId, 10);
+    engine.returnDonToDonDeck(event.playerSessionId, 10);
 
     const characters: DuelCard[] = Array.from(player.zones.characters);
 
@@ -36,9 +34,9 @@ export const op05119SpecialHandler: SpecialHandlerDefinition = {
         continue;
       }
 
-      host.moveCard(target, event.playerSessionId, 'deck', { toBottom: true });
+      engine.moveCard(target, event.playerSessionId, 'deck', { toBottom: true });
     }
 
-    host.state.pendingExtraTurnSessionId = event.playerSessionId;
+    engine.state.pendingExtraTurnSessionId = event.playerSessionId;
   },
 };

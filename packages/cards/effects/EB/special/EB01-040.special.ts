@@ -1,8 +1,5 @@
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 export const eb01040LifeFaceUpKoCost0SpecialHandler: SpecialHandlerDefinition =
   {
@@ -13,23 +10,17 @@ export const eb01040LifeFaceUpKoCost0SpecialHandler: SpecialHandlerDefinition =
         return;
       }
 
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const turn = host.state.turn;
+      const turn = engine.state.turn;
 
       if (
-        hasResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'EB01-040',
-          turn,
+        engine.hasResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'EB01-040', turn),
         )
       ) {
         return;
       }
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
 
       if (!player) {
         return;
@@ -39,7 +30,7 @@ export const eb01040LifeFaceUpKoCost0SpecialHandler: SpecialHandlerDefinition =
         return;
       }
 
-      decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:eb01-040:confirm`,
           effectId: 'eb01-040-activate-main-life-face-up-ko-cost-0',
@@ -66,14 +57,11 @@ export const eb01040LifeFaceUpKoCost0SpecialHandler: SpecialHandlerDefinition =
           }
 
           topLife.faceDown = false;
-          markResolvedOncePerTurn(
-            anyEngine,
-            event.sourceInstanceId,
-            'EB01-040',
-            turn,
+          engine.markResolvedOncePerTurnKey(
+            createOncePerTurnKey(event.sourceInstanceId, 'EB01-040', turn),
           );
 
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:eb01-040:ko-cost-0`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -92,14 +80,14 @@ export const eb01040LifeFaceUpKoCost0SpecialHandler: SpecialHandlerDefinition =
             undefined,
             (cards) => {
               for (const card of cards) {
-                host.koCharacter(
+                engine.koCharacter(
                   card.ownerSessionId,
                   card.instanceId,
                   'effect',
                 );
               }
 
-              host.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(event.playerSessionId);
               engine.reapplyContinuousEffects();
             },
           );

@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP10-087
@@ -21,28 +17,19 @@ export const op10087SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-087',
   resolve(event, engine) {
     if (event.type !== 'onKo') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP10-087',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP10-087', turn),
       )
     )
       return;
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      'OP10-087',
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, 'OP10-087', turn),
     );
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-087:play-wano`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -57,7 +44,7 @@ export const op10087SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.playCard(card, event.playerSessionId, 'characters');
+          engine.playCard(card, event.playerSessionId, 'characters');
         }
         engine.reapplyContinuousEffects();
       },

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -12,16 +11,14 @@ export const op13117SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-117-special',
   cardId: 'OP13-117',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'activateMain') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.life.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-117:confirm`,
           effectId: 'op13-117-special',
@@ -42,7 +39,7 @@ export const op13117SpecialHandler: SpecialHandlerDefinition = {
           const topLife = player.zones.life[0];
           if (topLife) {
             topLife.faceDown = false;
-            host.addLog('[Gum-Gum Dawn Stamp] Top Life card turned face-up.');
+            engine.addLog('[Gum-Gum Dawn Stamp] Top Life card turned face-up.');
           }
 
           const def: StandardEffectDefinition = {

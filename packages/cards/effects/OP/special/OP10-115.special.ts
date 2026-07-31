@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -11,16 +10,14 @@ export const op10115SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-115',
   resolve(event, engine) {
     if (event.type !== 'trigger') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
-    const opponent = host.getPlayer(opponentSessionId);
+    const opponent = engine.getPlayer(opponentSessionId);
     if (!opponent) return;
     const oppLifeCount = opponent.zones.life.length;
-    const targets = host.getCards(
+    const targets = engine.getCards(
       {
         player: 'opponent',
         zones: ['characters'],
@@ -30,10 +27,10 @@ export const op10115SpecialHandler: SpecialHandlerDefinition = {
       event.playerSessionId,
     );
     for (const card of targets) {
-      host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+      engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
     }
-    host.syncPlayer(event.playerSessionId);
-    host.syncPlayer(opponentSessionId);
+    engine.syncPlayer(event.playerSessionId);
+    engine.syncPlayer(opponentSessionId);
     engine.reapplyContinuousEffects();
   },
 };

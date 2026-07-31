@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -15,12 +14,10 @@ export const op13032SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op13-032:restriction-target`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -36,13 +33,8 @@ export const op13032SpecialHandler: SpecialHandlerDefinition = {
       (selected) => {
         for (const target of selected) {
           // Track restriction via custom internal state on engine
-          if (!anyEngine._cannotRestKeys) {
-            anyEngine._cannotRestKeys = new Set<string>();
-          }
-          anyEngine._cannotRestKeys.add(
-            `${target.instanceId}:${host.state.turn}`,
-          );
-          host.addLog(
+          engine.addCannotRestKey(`${target.instanceId}:${engine.state.turn}`);
+          engine.addLog(
             `[Nico Robin] ${target.name} cannot be rested until end of opponent's next End Phase.`,
           );
         }

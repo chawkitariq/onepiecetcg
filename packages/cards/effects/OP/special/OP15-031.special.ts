@@ -12,11 +12,7 @@ export const op15031SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op15-031:target`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -32,12 +28,12 @@ export const op15031SpecialHandler: SpecialHandlerDefinition = {
       (cards) => {
         for (const card of cards) {
           if (card.cost === card.attachedDon) {
-            host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+            engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
           }
         }
-        const opponentId = host.getOpponentSessionId(event.playerSessionId);
-        host.syncPlayer(event.playerSessionId);
-        if (opponentId) host.syncPlayer(opponentId);
+        const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+        engine.syncPlayer(event.playerSessionId);
+        if (opponentId) engine.syncPlayer(opponentId);
         engine.reapplyContinuousEffects();
       },
     );

@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
+  createOncePerTurnKey,
   patchSpecialHandlerCardStatus,
 } from '../../special-handler-utils.js';
 
@@ -20,11 +18,8 @@ export const op09093SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-093',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     const leader = player.zones.leader;
@@ -34,24 +29,18 @@ export const op09093SpecialHandler: SpecialHandlerDefinition = {
 
     if (!source.playedThisTurn) return;
 
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP09-093',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP09-093', turn),
       )
     )
       return;
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      'OP09-093',
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, 'OP09-093', turn),
     );
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op09-093:negate-leader`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -65,11 +54,11 @@ export const op09093SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (leaders) => {
         for (const l of leaders) {
-          patchSpecialHandlerCardStatus(host, l, {
+          patchSpecialHandlerCardStatus(engine, l, {
             effectNegated: true,
           });
         }
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op09-093:negate-character`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -84,17 +73,17 @@ export const op09093SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (characters) => {
             for (const c of characters) {
-              patchSpecialHandlerCardStatus(host, c, {
+              patchSpecialHandlerCardStatus(engine, c, {
                 effectNegated: true,
                 cannotAttack: true,
               });
             }
-            host.syncPlayer(event.playerSessionId);
-            const opponentSessionId = host.getOpponentSessionId(
+            engine.syncPlayer(event.playerSessionId);
+            const opponentSessionId = engine.getOpponentSessionId(
               event.playerSessionId,
             );
             if (opponentSessionId) {
-              host.syncPlayer(opponentSessionId);
+              engine.syncPlayer(opponentSessionId);
             }
             engine.reapplyContinuousEffects();
           },

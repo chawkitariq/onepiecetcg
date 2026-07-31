@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -15,13 +14,10 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
+    const oncePerTurnKey = `${event.sourceInstanceId}:op11-071:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-    const oncePerTurnKey = `${event.sourceInstanceId}:op11-071:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
-
-    const handCards = host.getCards(
+    const handCards = engine.getCards(
       {
         player: 'self',
         zones: ['hand'],
@@ -31,10 +27,10 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
     );
     if (handCards.length === 0) return;
 
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent || opponent.zones.deck.length === 0) return;
 
     const costChoices = Array.from({ length: 11 }, (_, i) => ({
@@ -42,7 +38,7 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
       label: `Cost ${i}`,
     }));
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-071:confirm`,
         effectId: 'op11-071-special',
@@ -59,9 +55,9 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
       (confirmResponse: { confirmed?: boolean }) => {
         if (!confirmResponse.confirmed) return;
 
-        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+        engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op11-071:trash`,
           event.playerSessionId,
           {
@@ -78,10 +74,10 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (trashed) => {
             for (const card of trashed) {
-              host.moveCard(card, event.playerSessionId, 'trash');
+              engine.moveCard(card, event.playerSessionId, 'trash');
             }
 
-            anyEngine.decisions.pause(
+            engine.pauseDecision(
               {
                 id: `${event.sourceInstanceId}:op11-071:choose-cost`,
                 effectId: 'op11-071-special',
@@ -106,7 +102,7 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
                   10,
                 );
 
-                const topCards = host.getCards(
+                const topCards = engine.getCards(
                   {
                     player: 'opponent',
                     zones: ['deck'],
@@ -120,13 +116,13 @@ export const op11071SpecialHandler: SpecialHandlerDefinition = {
                 const revealed = topCards[0];
                 const revealedCost = revealed.baseCost ?? revealed.cost ?? -1;
 
-                host.addLog?.(
+                engine.addLog?.(
                   `[Perospero] Revealed: ${revealed.name} (cost ${revealedCost}). Chosen: ${chosenCost}.`,
                 );
 
                 if (revealedCost === chosenCost) {
-                  host.drawCard(event.playerSessionId);
-                  host.addDonToCost(event.playerSessionId, 1, false);
+                  engine.drawCard(event.playerSessionId);
+                  engine.addDonToCost(event.playerSessionId, 1, false);
                 }
 
                 engine.reapplyContinuousEffects();

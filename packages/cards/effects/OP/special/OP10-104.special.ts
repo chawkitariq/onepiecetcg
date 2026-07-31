@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -16,29 +15,27 @@ export const op10104SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-104',
   resolve(event, engine) {
     if (event.type !== 'whenAttacking' && event.type !== 'onTurnStart') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const attachedDon = host.getCards(
+    const attachedDon = engine.getCards(
       {
         player: 'self',
         zones: ['cost'],
-        filter: { attachedTo: event.sourceInstanceId },
+        filter: { attachedTo: event.sourceInstanceId } as any,
       },
       event.playerSessionId,
     );
     if (attachedDon.length < 1) return;
-    const leader = player.leader;
+    const leader = (player as any).leader;
     if (!leader || !leader.families?.includes('Supernovas')) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
-    const opponent = host.getPlayer(opponentSessionId);
+    const opponent = engine.getPlayer(opponentSessionId);
     if (!opponent) return;
     if (opponent.zones.life.length < 3) return;
-    anyEngine.modifiers.addKeywordModifier(
+    engine.addKeywordModifier(
       event.sourceInstanceId,
       event.playerSessionId,
       source.instanceId,

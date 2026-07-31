@@ -8,10 +8,7 @@ export const op04047SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const modifiers = anyEngine.modifiers;
-    const combat = host.state.combat;
+    const combat = engine.state.combat;
 
     if (
       combat.attackerInstanceId !== event.sourceInstanceId ||
@@ -20,7 +17,7 @@ export const op04047SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const target = host.getCard(combat.targetInstanceId);
+    const target = engine.getCard(combat.targetInstanceId);
 
     if (
       !target ||
@@ -30,7 +27,7 @@ export const op04047SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    modifiers.scheduleMoveAtEndOfBattle(
+    engine.scheduleMoveAtEndOfBattle(
       target.instanceId,
       target.ownerSessionId,
       'deck',

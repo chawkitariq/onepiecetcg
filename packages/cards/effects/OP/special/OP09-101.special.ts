@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,11 +11,8 @@ export const op09101SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-101',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op09-101:place-in-life`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -36,7 +32,7 @@ export const op09101SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op09-101:top-or-bottom`,
           event.playerSessionId,
           '[Kuzan] Place at top or bottom of Life?',
@@ -48,16 +44,16 @@ export const op09101SpecialHandler: SpecialHandlerDefinition = {
           1,
           (choiceIds) => {
             const toBottom = choiceIds.includes('bottom');
-            host.moveCard(target, target.ownerSessionId, 'life', {
-              faceUp: true,
+            engine.moveCard(target, target.ownerSessionId, 'life', {
+              faceDown: false,
               toBottom,
             });
 
-            const opponentSessionId = host.getOpponentSessionId(
+            const opponentSessionId = engine.getOpponentSessionId(
               event.playerSessionId,
             );
             if (opponentSessionId) {
-              decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op09-101:opponent-trash`,
                 event.playerSessionId,
                 {
@@ -74,11 +70,11 @@ export const op09101SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (trashed) => {
                   for (const card of trashed) {
-                    host.moveCard(card, opponentSessionId, 'trash');
+                    engine.moveCard(card, opponentSessionId, 'trash');
                   }
-                  host.syncPlayer(event.playerSessionId);
+                  engine.syncPlayer(event.playerSessionId);
                   if (opponentSessionId) {
-                    host.syncPlayer(opponentSessionId);
+                    engine.syncPlayer(opponentSessionId);
                   }
                   engine.reapplyContinuousEffects();
                 },

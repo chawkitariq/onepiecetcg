@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -34,13 +33,10 @@ export const op11081SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent || opponent.zones.deck.length === 0) return;
 
     const costChoices = Array.from({ length: 11 }, (_, i) => ({
@@ -48,7 +44,7 @@ export const op11081SpecialHandler: SpecialHandlerDefinition = {
       label: `Cost ${i}`,
     }));
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-081:choose-cost`,
         effectId: 'op11-081-special',
@@ -70,7 +66,7 @@ export const op11081SpecialHandler: SpecialHandlerDefinition = {
 
         const chosenCost = parseInt(chosenCostStr.replace('cost-', ''), 10);
 
-        const topCards = host.getCards(
+        const topCards = engine.getCards(
           {
             player: 'opponent',
             zones: ['deck'],
@@ -84,12 +80,12 @@ export const op11081SpecialHandler: SpecialHandlerDefinition = {
         const revealed = topCards[0];
         const revealedCost = revealed.baseCost ?? revealed.cost ?? -1;
 
-        host.addLog?.(
+        engine.addLog?.(
           `[Cognac Mama-Mash] Revealed: ${revealed.name} (cost ${revealedCost}). Chosen: ${chosenCost}.`,
         );
 
         if (revealedCost === chosenCost) {
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op11-081:ko-target`,
             event.playerSessionId,
             {
@@ -110,7 +106,7 @@ export const op11081SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (koTargets) => {
               for (const card of koTargets) {
-                host.koCharacter(
+                engine.koCharacter(
                   event.playerSessionId,
                   card.instanceId,
                   'effect',

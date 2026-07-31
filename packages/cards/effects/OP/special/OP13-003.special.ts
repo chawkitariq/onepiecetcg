@@ -17,10 +17,8 @@ export const op13003SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay' && event.type !== 'onTurnStart') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     const donOnFieldCount =
@@ -32,7 +30,7 @@ export const op13003SpecialHandler: SpecialHandlerDefinition = {
       );
 
     if (event.type === 'onPlay') {
-      host.addLog(
+      engine.addLog(
         '[Gol.D.Roger 003] If you have any DON!! on field, first DON!! placed this turn goes to Leader.',
       );
     }

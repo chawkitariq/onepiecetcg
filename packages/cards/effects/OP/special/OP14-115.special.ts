@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,15 +11,13 @@ export const op14115SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-115',
   resolve(event, engine) {
     if (event.type === 'onKo') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-      const opponentSessionId = host.getOpponentSessionId(
+      const opponentSessionId = engine.getOpponentSessionId(
         event.playerSessionId,
       );
-      const activePlayerSessionId = host.state.activePlayerSessionId;
+      const activePlayerSessionId = engine.state.activePlayerSessionId;
       if (activePlayerSessionId !== opponentSessionId) return;
 
-      decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op14-115:deck-to-life`,
           effectId: 'op14-115-special',
@@ -38,7 +35,7 @@ export const op14115SpecialHandler: SpecialHandlerDefinition = {
         (resp: { confirmed?: boolean }) => {
           if (!resp.confirmed) return;
 
-          const deckTop = host.getCards(
+          const deckTop = engine.getCards(
             {
               player: 'self',
               zones: ['deck'],
@@ -47,10 +44,10 @@ export const op14115SpecialHandler: SpecialHandlerDefinition = {
             event.playerSessionId,
           );
           if (deckTop.length) {
-            host.moveCard(deckTop[0], event.playerSessionId, 'life');
+            engine.moveCard(deckTop[0], event.playerSessionId, 'life');
           }
 
-          const lifeTop = host.getCards(
+          const lifeTop = engine.getCards(
             {
               player: 'self',
               zones: ['life'],
@@ -59,26 +56,24 @@ export const op14115SpecialHandler: SpecialHandlerDefinition = {
             event.playerSessionId,
           );
           if (lifeTop.length) {
-            host.moveCard(lifeTop[0], event.playerSessionId, 'trash');
+            engine.moveCard(lifeTop[0], event.playerSessionId, 'trash');
           }
 
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const { host } = anyEngine;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
       const leader = player.zones.leader;
       if (!leader || !leader.families?.some((f: string) => f.includes('Kuja')))
         return;
 
-      const source = host.getCard(event.sourceInstanceId);
+      const source = engine.getCard(event.sourceInstanceId);
       if (!source) return;
-      host.playCard(source, event.playerSessionId, 'characters');
-      host.syncPlayer(event.playerSessionId);
+      engine.playCard(source, event.playerSessionId, 'characters');
+      engine.syncPlayer(event.playerSessionId);
       engine.reapplyContinuousEffects();
     }
   },

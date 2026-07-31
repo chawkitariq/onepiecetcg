@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,12 +12,9 @@ export const op10098SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-098',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-098:return-to-hand`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -33,9 +29,9 @@ export const op10098SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (returnCards) => {
         for (const card of returnCards) {
-          host.moveCard(card, card.ownerSessionId, 'hand');
+          engine.moveCard(card, card.ownerSessionId, 'hand');
         }
-        const selfDon = host.getCards(
+        const selfDon = engine.getCards(
           { player: 'self', zones: ['cost'] },
           event.playerSessionId,
         );
@@ -43,7 +39,7 @@ export const op10098SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op10-098:play-wano`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -62,7 +58,7 @@ export const op10098SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (playCards) => {
             for (const card of playCards) {
-              host.playCard(card, event.playerSessionId, 'characters');
+              engine.playCard(card, event.playerSessionId, 'characters');
             }
             engine.reapplyContinuousEffects();
           },

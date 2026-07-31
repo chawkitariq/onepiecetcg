@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,15 +12,12 @@ export const op09058SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-058',
   resolve(event, engine) {
     if (event.type === 'activateMain') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const opponentSessionId = host.getOpponentSessionId(
+      const opponentSessionId = engine.getOpponentSessionId(
         event.playerSessionId,
       );
       if (!opponentSessionId) return;
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op09-058:main`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -36,17 +32,13 @@ export const op09058SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (cards) => {
           for (const card of cards) {
-            host.moveCard(card, card.ownerSessionId, 'hand');
+            engine.moveCard(card, card.ownerSessionId, 'hand');
           }
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op09-058:trigger`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -61,7 +53,7 @@ export const op09058SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (cards) => {
           for (const card of cards) {
-            host.moveCard(card, card.ownerSessionId, 'hand');
+            engine.moveCard(card, card.ownerSessionId, 'hand');
           }
           engine.reapplyContinuousEffects();
         },

@@ -5,13 +5,11 @@ export const op07091SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP07-091',
   resolve(event, engine) {
     if (event.type !== 'whenAttacking') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op07-091:ko-target`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -26,8 +24,8 @@ export const op07091SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (koTargets) => {
         for (const card of koTargets)
-          host.moveCard(card, event.playerSessionId, 'trash');
-        anyEngine.decisions.chooseCards(
+          engine.moveCard(card, event.playerSessionId, 'trash');
+        engine.chooseCards(
           `${event.sourceInstanceId}:op07-091:bottom-cards`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -42,11 +40,11 @@ export const op07091SpecialHandler: SpecialHandlerDefinition = {
           (selected) => {
             const count = selected.length;
             for (const card of selected)
-              host.moveCard(card, event.playerSessionId, 'deck', {
+              engine.moveCard(card, event.playerSessionId, 'deck', {
                 toBottom: true,
               });
             if (count >= 3) {
-              anyEngine.modifiers.addPowerModifier(
+              engine.addPowerModifier(
                 event.sourceInstanceId,
                 event.playerSessionId,
                 source.instanceId,

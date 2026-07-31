@@ -1,41 +1,31 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 export const op10022SpecialHandler: SpecialHandlerDefinition = {
   id: 'op10-022-special',
   cardId: 'OP10-022',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
-    const attachedDon = host.getCards(
+    const attachedDon = engine.getCards(
       {
         player: 'self',
         zones: ['cost'],
-        filter: { attachedTo: event.sourceInstanceId },
+        filter: { attachedTo: event.sourceInstanceId } as any,
       },
       event.playerSessionId,
     );
     if (attachedDon.length < 1) return;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP10-022',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP10-022', turn),
       )
     )
       return;
-    const chars = host.getCards(
+    const chars = engine.getCards(
       {
         player: 'self',
         zones: ['characters'],
@@ -48,7 +38,7 @@ export const op10022SpecialHandler: SpecialHandlerDefinition = {
       0,
     );
     if (totalCost < 5) return;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-022:return-char`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -67,14 +57,11 @@ export const op10022SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        host.moveCard(returnedChar, event.playerSessionId, 'hand');
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'OP10-022',
-          turn,
+        engine.moveCard(returnedChar, event.playerSessionId, 'hand');
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'OP10-022', turn),
         );
-        const lifeTop = host.getCards(
+        const lifeTop = engine.getCards(
           {
             player: 'self',
             zones: ['life'],
@@ -87,13 +74,13 @@ export const op10022SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
         const lifeCard = lifeTop[0];
-        host.addLog(
+        engine.addLog(
           `Revealed top Life card: ${lifeCard.name} (${lifeCard.cardId})`,
         );
         const isSupernovas = lifeCard.families?.includes('Supernovas');
         const cost = lifeCard.cost ?? lifeCard.baseCost ?? 0;
         if (isSupernovas && cost <= 5) {
-          host.moveCard(lifeCard, event.playerSessionId, 'characters');
+          engine.moveCard(lifeCard, event.playerSessionId, 'characters');
         }
         engine.reapplyContinuousEffects();
       },

@@ -5,12 +5,10 @@ export const op08079SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-079',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const playedOnTurn = source.playedOnTurn === host.state.turn;
-    anyEngine.decisions.chooseCards(
+    const playedOnTurn = (source as any).playedOnTurn === engine.state.turn;
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-079:trash-hand`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -20,10 +18,10 @@ export const op08079SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (trashed) => {
         for (const card of trashed) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
         if (playedOnTurn && trashed.length > 0) {
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op08-079:ko-target`,
             event.playerSessionId,
             { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -38,16 +36,16 @@ export const op08079SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (koTargets) => {
               for (const card of koTargets) {
-                host.moveCard(card, card.ownerSessionId, 'trash');
+                engine.moveCard(card, card.ownerSessionId, 'trash');
               }
-              anyEngine.decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op08-079:opponent-trash`,
                 event.playerSessionId,
                 {
                   sourceInstanceId: event.sourceInstanceId,
                   storedSelections: {},
                 },
-                host.getOpponentSessionId(event.playerSessionId),
+                engine.getOpponentSessionId(event.playerSessionId),
                 '[Kaido] Trash 1 card from your hand:',
                 {
                   player: 'opponent',
@@ -57,7 +55,7 @@ export const op08079SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (opponentCards) => {
                   for (const card of opponentCards) {
-                    host.moveCard(card, card.ownerSessionId, 'trash');
+                    engine.moveCard(card, card.ownerSessionId, 'trash');
                   }
                   engine.reapplyContinuousEffects();
                 },

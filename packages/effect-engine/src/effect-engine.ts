@@ -3,6 +3,7 @@ import type {
   StandardEffectDefinition,
 } from '@onepiecetcg/shared';
 import type { DuelCard } from '@onepiecetcg/shared';
+import type { DuelPlayer, GameZone } from '@onepiecetcg/shared';
 import { EffectActionExecutor } from './runtime/effect-action-executor';
 import { EffectConditionEvaluator } from './runtime/effect-condition-evaluator';
 import { EffectDecisionManager } from './runtime/effect-decision-manager';
@@ -46,6 +47,10 @@ export type SpecialEffectHandlerEngine = Pick<
   | 'addDonToCost'
   | 'returnDonToDonDeck'
   | 'koCharacter'
+  | 'drawCard'
+  | 'trashTopDeckCards'
+  | 'shuffleDeck'
+  | 'attachDon'
   | 'syncPlayer'
   | 'chooseCards'
   | 'chooseChoices'
@@ -60,6 +65,14 @@ export type SpecialEffectHandlerEngine = Pick<
   | 'arrangeDeckWindow'
   | 'queueEffect'
   | 'scheduleTurnEndActions'
+  | 'scheduleTurnEndEffect'
+  | 'scheduleMoveAtEndOfBattle'
+  | 'addCannotRestKey'
+  | 'preventDefaultMove'
+  | 'findZoneOfCard'
+  | 'countTotalDonOnField'
+  | 'removeModifier'
+  | 'effectsByCardId'
   | 'reapplyContinuousEffects'
 >;
 
@@ -71,7 +84,14 @@ export class EffectEngine {
 
   private readonly delayedTurnEndQueue: QueuedEffect[] = [];
 
+  private readonly delayedTurnEndCallbacks: Array<{
+    sourceInstanceId: string;
+    resolve: () => void;
+  }> = [];
+
   private readonly resolvedOncePerTurnKeys = new Set<string>();
+
+  private preventDefaultMoveRequested = false;
 
   private readonly selectors: EffectSelectorResolver;
 
@@ -176,7 +196,15 @@ export class EffectEngine {
     instanceId: string,
     patch: EffectEngineCardStatusPatch,
   ) {
-    return this.host.patchCardStatus?.(instanceId, patch);
+    if (this.host.patchCardStatus) {
+      return this.host.patchCardStatus(instanceId, patch);
+    }
+
+    const card = this.host.getCard(instanceId);
+    if (card) {
+      Object.assign(card as object, patch);
+    }
+    return card;
   }
 
   /** Applies one gameplay card-stat patch through the gameplay command port. */
@@ -184,7 +212,15 @@ export class EffectEngine {
     instanceId: string,
     patch: EffectEngineCardStatPatch,
   ) {
-    return this.host.patchCardStats?.(instanceId, patch);
+    if (this.host.patchCardStats) {
+      return this.host.patchCardStats(instanceId, patch);
+    }
+
+    const card = this.host.getCard(instanceId);
+    if (card) {
+      Object.assign(card as object, patch);
+    }
+    return card;
   }
 
   /** Applies one gameplay player-status patch through the gameplay command port. */
@@ -192,7 +228,15 @@ export class EffectEngine {
     playerSessionId: string,
     patch: { cannotPlayCharacters?: boolean },
   ) {
-    return this.host.patchPlayerStatus?.(playerSessionId, patch);
+    if (this.host.patchPlayerStatus) {
+      return this.host.patchPlayerStatus(playerSessionId, patch);
+    }
+
+    const player = this.host.getPlayer(playerSessionId);
+    if (player) {
+      Object.assign(player as object, patch);
+    }
+    return player;
   }
 
   /** Moves one card through the gameplay command port. */
@@ -258,6 +302,34 @@ export class EffectEngine {
     reason: 'battle' | 'effect',
   ) {
     return this.host.koCharacter(playerSessionId, instanceId, reason);
+  }
+
+  /** Draws one card from the top of a player's deck into their hand. */
+  public drawCard(playerSessionId: string): DuelCard | null {
+    return this.host.drawCard?.(playerSessionId) ?? null;
+  }
+
+  /** Trashes cards from the top of a player's deck and returns them. */
+  public trashTopDeckCards(
+    playerSessionId: string,
+    amount: number,
+  ): DuelCard[] {
+    return this.host.trashTopDeckCards?.(playerSessionId, amount) ?? [];
+  }
+
+  /** Shuffles a player's deck through the gameplay command port. */
+  public shuffleDeck(playerSessionId: string): void {
+    this.host.shuffleDeck(playerSessionId);
+  }
+
+  /** Attaches DON!! cards from a player's cost to one of their cards. */
+  public attachDon(
+    playerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+    options?: { rested?: boolean },
+  ): number {
+    return this.host.attachDon?.(playerSessionId, targetInstanceId, amount, options) ?? 0;
   }
 
   /** Syncs one player after a gameplay command mutated their public state. */
@@ -357,6 +429,72 @@ export class EffectEngine {
     this.resolvedOncePerTurnKeys.add(key);
   }
 
+  /** Returns the authored effect definitions keyed by card id. */
+  public get effectsByCardId() {
+    return this.registry.effectsByCardId;
+  }
+
+  /** Locates the zone and owner that currently contains a card instance. */
+  public findZoneOfCard(
+    instanceId: string,
+  ): { player: DuelPlayer; zone: GameZone } | null {
+    const card = this.host.getCard(instanceId);
+
+    if (!card) {
+      return null;
+    }
+
+    return this.selectors.findZoneOfCard(card);
+  }
+
+  /** Counts DON!! cards resting in cost plus attached to cards in play. */
+  public countTotalDonOnField(playerSessionId: string): number {
+    return this.selectors.countTotalDonOnField(playerSessionId);
+  }
+
+  /** Removes runtime power/cost/keyword modifiers matching a source/target pair. */
+  public removeModifier(args: {
+    sourceInstanceId: string;
+    targetInstanceId: string;
+    kind?: 'power' | 'cost' | 'keyword';
+  }): void {
+    this.modifiers.removeModifier(args);
+  }
+
+  /** Requests that the current replacement flow prevents the default move/KO. */
+  public preventDefaultMove(): void {
+    this.preventDefaultMoveRequested = true;
+  }
+
+  /** Schedules a callback to resolve at the end of the current turn. */
+  public scheduleTurnEndEffect(
+    sourceInstanceId: string,
+    resolve: () => void,
+  ): void {
+    this.delayedTurnEndCallbacks.push({ sourceInstanceId, resolve });
+  }
+
+  /** Schedules a card to move at the end of the current battle. */
+  public scheduleMoveAtEndOfBattle(
+    targetInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ): void {
+    this.modifiers.scheduleMoveAtEndOfBattle(
+      targetInstanceId,
+      destinationPlayerSessionId,
+      destinationZone,
+      options,
+    );
+  }
+
+  /** Registers a custom "cannot be rested" restriction key on the engine. */
+  public addCannotRestKey(key: string): void {
+    this._cannotRestKeys ??= new Set<string>();
+    this._cannotRestKeys.add(key);
+  }
+
   /** Returns whether the engine currently carries a non-serializable pause. */
   public hasPendingDecision(): boolean {
     return this.decisions.hasPendingDecision();
@@ -435,6 +573,7 @@ export class EffectEngine {
 
     if (event.type === 'onTurnEnd') {
       this.flushDelayedTurnEndEffects();
+      this.flushDelayedTurnEndCallbacks();
     }
 
     this.flushQueue();
@@ -442,6 +581,7 @@ export class EffectEngine {
 
   /** Checks whether a replacement effect cancels or rewrites a pending KO event. */
   public applyReplacement(query: ReplacementQuery): boolean {
+    this.preventDefaultMoveRequested = false;
     const source = this.host.getCard(query.sourceInstanceId);
 
     if (!source) {
@@ -489,6 +629,29 @@ export class EffectEngine {
         );
       }
       return true;
+    }
+
+    const specialHandler = this.registry.specialHandlersByCardId[source.cardId];
+
+    if (specialHandler) {
+      specialHandler.resolve(
+        {
+          type: query.type,
+          playerSessionId: query.playerSessionId,
+          sourceInstanceId: query.sourceInstanceId,
+          sourceCardId: source.cardId,
+          targetInstanceId: query.targetInstanceId,
+          targetCardId: query.targetCardId,
+          destinationPlayerSessionId: query.destinationPlayerSessionId,
+          destinationZone: query.destinationZone,
+          reason: query.reason,
+        } as unknown as EffectEvent,
+        this,
+      );
+
+      if (this.preventDefaultMoveRequested) {
+        return true;
+      }
     }
 
     return false;
@@ -701,6 +864,18 @@ export class EffectEngine {
       }
 
       this.queue.push(queued);
+    }
+  }
+
+  private flushDelayedTurnEndCallbacks(): void {
+    while (this.delayedTurnEndCallbacks.length > 0) {
+      const callback = this.delayedTurnEndCallbacks.shift();
+
+      if (!callback) {
+        continue;
+      }
+
+      callback.resolve();
     }
   }
 

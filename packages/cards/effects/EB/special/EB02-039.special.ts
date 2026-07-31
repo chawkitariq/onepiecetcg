@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -19,17 +19,12 @@ export const eb02039SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const selectors = anyEngine.selectors;
-
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) {
       return;
     }
 
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) {
       return;
     }
@@ -46,7 +41,7 @@ export const eb02039SpecialHandler: SpecialHandlerDefinition = {
     }
 
     // Step 1: Prompt player to choose 0–1 GERMA 66 Character (≤4000 power) from hand
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:eb02-039:select-hand`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -71,12 +66,12 @@ export const eb02039SpecialHandler: SpecialHandlerDefinition = {
         const trashedCard = cards[0];
 
         // Trash the selected card (cost)
-        host.moveCard(trashedCard, trashedCard.ownerSessionId, 'trash');
-        host.syncPlayer(event.playerSessionId);
+        engine.moveCard(trashedCard, trashedCard.ownerSessionId, 'trash');
+        engine.syncPlayer(event.playerSessionId);
 
         // Check DON!! condition: player's field DON!! ≤ opponent's field DON!!
-        const playerDon = selectors.countTotalDonOnField(event.playerSessionId);
-        const opponentDon = selectors.countTotalDonOnField(opponentSessionId);
+        const playerDon = engine.countTotalDonOnField(event.playerSessionId);
+        const opponentDon = engine.countTotalDonOnField(opponentSessionId);
 
         if (playerDon > opponentDon) {
           return;
@@ -96,14 +91,14 @@ export const eb02039SpecialHandler: SpecialHandlerDefinition = {
         }
 
         if (matchingCards.length === 1) {
-          host.moveCard(matchingCards[0], event.playerSessionId, 'characters');
-          host.syncPlayer(event.playerSessionId);
+          engine.moveCard(matchingCards[0], event.playerSessionId, 'characters');
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
           return;
         }
 
         // Let player choose up to 1 to play from multiple matching candidates
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:eb02-039:play-trash`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -123,9 +118,9 @@ export const eb02039SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (playCards) => {
             for (const card of playCards) {
-              host.moveCard(card, event.playerSessionId, 'characters');
+              engine.moveCard(card, event.playerSessionId, 'characters');
             }
-            host.syncPlayer(event.playerSessionId);
+            engine.syncPlayer(event.playerSessionId);
             engine.reapplyContinuousEffects();
           },
         );

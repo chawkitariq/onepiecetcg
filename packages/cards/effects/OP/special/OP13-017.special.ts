@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * Handles Monkey.D.Dragon:
@@ -17,13 +14,11 @@ export const op13017SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if ((event as any).type !== 'onCardRemovedByEffect') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     const removeEvent = event as any;
-    const removedCard = host.getCard(removeEvent.targetInstanceId);
+    const removedCard = engine.getCard(removeEvent.targetInstanceId);
     if (!removedCard || removedCard.ownerSessionId !== event.playerSessionId)
       return;
 
@@ -33,16 +28,17 @@ export const op13017SpecialHandler: SpecialHandlerDefinition = {
     if (!isRevolutionaryArmy) return;
 
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op13-017',
-        host.state.turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(
+          event.sourceInstanceId,
+          'op13-017',
+          engine.state.turn,
+        ),
       )
     )
       return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-017:confirm`,
         effectId: 'op13-017-special',
@@ -60,14 +56,15 @@ export const op13017SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op13-017',
-          host.state.turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(
+            event.sourceInstanceId,
+            'op13-017',
+            engine.state.turn,
+          ),
         );
 
-        anyEngine.modifiers.addPowerModifier(
+        engine.addPowerModifier(
           event.sourceInstanceId,
           event.playerSessionId,
           event.sourceInstanceId,
@@ -76,7 +73,7 @@ export const op13017SpecialHandler: SpecialHandlerDefinition = {
         );
 
         engine.reapplyContinuousEffects();
-        host.addLog(
+        engine.addLog(
           '[Monkey.D.Dragon] Revolutionary Army character saved from removal.',
         );
       },

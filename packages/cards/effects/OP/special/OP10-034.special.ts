@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,14 +12,11 @@ export const op10034SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-034',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
-    decisions.chooseChoices(
+    engine.chooseChoices(
       `${event.sourceInstanceId}:op10-034:don-amount`,
       event.playerSessionId,
       'Set how many DON!! active? (up to 2)',
@@ -34,9 +30,9 @@ export const op10034SpecialHandler: SpecialHandlerDefinition = {
       (choiceIds) => {
         const amount = parseInt(choiceIds[0], 10);
         if (amount > 0) {
-          host.addDonToCost(event.playerSessionId, amount, false);
+          engine.addDonToCost(event.playerSessionId, amount, false);
         }
-        const opponentDeckTop = host.getCards(
+        const opponentDeckTop = engine.getCards(
           {
             player: 'self',
             zones: ['deck'],
@@ -45,22 +41,22 @@ export const op10034SpecialHandler: SpecialHandlerDefinition = {
           opponentSessionId,
         );
         if (opponentDeckTop.length > 0) {
-          host.moveCard(opponentDeckTop[0], opponentSessionId, 'life');
+          engine.moveCard(opponentDeckTop[0], opponentSessionId, 'life');
         }
-        const selfDon = host.getCards(
+        const selfDon = engine.getCards(
           { player: 'self', zones: ['cost'] },
           event.playerSessionId,
         );
-        const oppDon = host.getCards(
+        const oppDon = engine.getCards(
           { player: 'opponent', zones: ['cost'] },
           event.playerSessionId,
         );
         const totalDonOnField = selfDon.length + oppDon.length;
         if (totalDonOnField >= 8) {
-          host.drawCard(event.playerSessionId);
+          engine.drawCard(event.playerSessionId);
         }
-        host.syncPlayer(event.playerSessionId);
-        host.syncPlayer(opponentSessionId);
+        engine.syncPlayer(event.playerSessionId);
+        engine.syncPlayer(opponentSessionId);
         engine.reapplyContinuousEffects();
       },
     );

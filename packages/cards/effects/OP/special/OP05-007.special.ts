@@ -12,16 +12,13 @@ export const op05007SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
 
     if (!player) {
       return;
     }
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op05-007`,
       event.playerSessionId,
       {
@@ -47,7 +44,7 @@ export const op05007SpecialHandler: SpecialHandlerDefinition = {
         }
 
         for (const card of cards) {
-          host.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
+          engine.koCharacter(card.ownerSessionId, card.instanceId, 'effect');
         }
       },
     );

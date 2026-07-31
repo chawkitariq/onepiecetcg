@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP10-036
@@ -19,31 +15,24 @@ export const op10036SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-036',
   resolve(event, engine) {
     if (event.type !== 'onEventActivated') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    if (host.state.currentPlayerSessionId !== event.playerSessionId) return;
-    const turn = host.state.turn;
+    if ((engine.state as any).currentPlayerSessionId !== event.playerSessionId)
+      return;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP10-036',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP10-036', turn),
       )
     )
       return;
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      'OP10-036',
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, 'OP10-036', turn),
     );
-    host.addDonToCost(event.playerSessionId, 1, false);
-    host.syncPlayer(event.playerSessionId);
+    engine.addDonToCost(event.playerSessionId, 1, false);
+    engine.syncPlayer(event.playerSessionId);
     engine.reapplyContinuousEffects();
   },
 };

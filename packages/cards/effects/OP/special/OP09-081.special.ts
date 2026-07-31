@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -22,11 +21,8 @@ export const op09081SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-081',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op09-081:trash-hand`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -41,25 +37,25 @@ export const op09081SpecialHandler: SpecialHandlerDefinition = {
       (cards) => {
         if (cards.length === 0) return;
         for (const card of cards) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
 
-        const opponentSessionId = host.getOpponentSessionId(
+        const opponentSessionId = engine.getOpponentSessionId(
           event.playerSessionId,
         );
         if (!opponentSessionId) return;
-        const opponent = host.getPlayer(opponentSessionId);
+        const opponent = engine.getPlayer(opponentSessionId);
         if (!opponent) return;
 
         const targets = [opponent.zones.leader, ...opponent.zones.characters];
         for (const target of targets) {
           if (target.instanceId) {
-            patchSpecialHandlerCardStatus(host, target, {
+            patchSpecialHandlerCardStatus(engine, target, {
               effectNegated: true,
             });
           }
         }
-        host.syncPlayer(opponentSessionId);
+        engine.syncPlayer(opponentSessionId);
         engine.reapplyContinuousEffects();
       },
     );

@@ -16,13 +16,11 @@ export const op13064SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
-    host.addLog(
+    engine.addLog(
       '[Gol.D.Roger 064] Non-Roger Pirates cards have their effects negated (continuous).',
     );
 
@@ -36,7 +34,7 @@ export const op13064SpecialHandler: SpecialHandlerDefinition = {
 
     if (totalDonOnField < 3) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-064:confirm-don3`,
         effectId: 'op13-064-special',
@@ -79,14 +77,14 @@ export const op13064SpecialHandler: SpecialHandlerDefinition = {
           leaderDef,
         );
 
-        const opponentId = host.getOpponentSessionId(event.playerSessionId);
+        const opponentId = engine.getOpponentSessionId(event.playerSessionId);
         if (!opponentId) return;
 
-        const opponent = host.getPlayer(opponentId);
+        const opponent = engine.getPlayer(opponentId);
         if (!opponent || opponent.zones.characters.length === 0) return;
 
         for (const char of opponent.zones.characters) {
-          anyEngine.modifiers.addPowerModifier(
+          engine.addPowerModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             char.instanceId,
@@ -96,7 +94,7 @@ export const op13064SpecialHandler: SpecialHandlerDefinition = {
         }
 
         engine.reapplyContinuousEffects();
-        host.addLog(
+        engine.addLog(
           "[Gol.D.Roger 064] All opponent Characters -2000 power until end of opponent's next End Phase.",
         );
       },

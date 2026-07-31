@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -11,12 +10,9 @@ export const op10099SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-099',
   resolve(event, engine) {
     if (event.type !== 'whenAttacking') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-099:return-char`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -35,7 +31,7 @@ export const op10099SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op10-099:top-or-bottom`,
           event.playerSessionId,
           'Place at top or bottom of deck?',
@@ -47,10 +43,10 @@ export const op10099SpecialHandler: SpecialHandlerDefinition = {
           1,
           (choiceIds) => {
             const toBottom = choiceIds.includes('bottom');
-            host.moveCard(target, target.ownerSessionId, 'deck', { toBottom });
-            host.syncPlayer(event.playerSessionId);
-            const oppId = host.getOpponentSessionId(event.playerSessionId);
-            if (oppId) host.syncPlayer(oppId);
+            engine.moveCard(target, target.ownerSessionId, 'deck', { toBottom });
+            engine.syncPlayer(event.playerSessionId);
+            const oppId = engine.getOpponentSessionId(event.playerSessionId);
+            if (oppId) engine.syncPlayer(oppId);
             engine.reapplyContinuousEffects();
           },
         );

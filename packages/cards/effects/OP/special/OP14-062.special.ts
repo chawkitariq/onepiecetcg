@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -13,16 +12,13 @@ export const op14062SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-062',
   resolve(event, engine) {
     if (event.type !== 'onKo') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-
-    const activeDon = host.getCards(
+    const activeDon = engine.getCards(
       { player: 'self', zones: ['cost'], filter: { rested: false } },
       event.playerSessionId,
     );
     if (!activeDon.length) return;
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op14-062:pay-don`,
         effectId: 'op14-062-special',
@@ -39,9 +35,9 @@ export const op14062SpecialHandler: SpecialHandlerDefinition = {
       },
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
-        host.returnDonToDonDeck(event.playerSessionId, 1);
+        engine.returnDonToDonDeck(event.playerSessionId, 1);
 
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op14-062:ko-or-rest`,
           event.playerSessionId,
           '[Gladius] K.O. or rest?',
@@ -54,7 +50,7 @@ export const op14062SpecialHandler: SpecialHandlerDefinition = {
           (choiceIds) => {
             const doKo = choiceIds.includes('ko');
 
-            decisions.chooseCards(
+            engine.chooseCards(
               `${event.sourceInstanceId}:op14-062:target`,
               event.playerSessionId,
               {
@@ -75,18 +71,18 @@ export const op14062SpecialHandler: SpecialHandlerDefinition = {
               (targets) => {
                 for (const card of targets) {
                   if (doKo) {
-                    host.koCharacter(
+                    engine.koCharacter(
                       card.ownerSessionId,
                       card.instanceId,
                       'effect',
                     );
                   } else {
-                    patchSpecialHandlerCardStatus(host, card, {
+                    patchSpecialHandlerCardStatus(engine, card, {
                       rested: true,
                     });
                   }
                 }
-                host.syncPlayer(event.playerSessionId);
+                engine.syncPlayer(event.playerSessionId);
                 engine.reapplyContinuousEffects();
               },
             );

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,14 +12,11 @@ export const op10107SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-107',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
-    const opponent = host.getPlayer(opponentSessionId);
+    const opponent = engine.getPlayer(opponentSessionId);
     if (!opponent) return;
     const lifeDiff = Math.abs(
       player.zones.life.length - opponent.zones.life.length,
@@ -29,7 +25,7 @@ export const op10107SpecialHandler: SpecialHandlerDefinition = {
       engine.reapplyContinuousEffects();
       return;
     }
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-107:attach-don`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -47,7 +43,7 @@ export const op10107SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op10-107:don-amount`,
           event.playerSessionId,
           `Give how many DON!!? (up to ${lifeDiff})`,
@@ -60,8 +56,8 @@ export const op10107SpecialHandler: SpecialHandlerDefinition = {
           (choiceIds) => {
             const amount = parseInt(choiceIds[0], 10);
             if (amount > 0) {
-              host.attachDon(event.playerSessionId, target.instanceId, amount);
-              host.syncPlayer(event.playerSessionId);
+              engine.attachDon(event.playerSessionId, target.instanceId, amount);
+              engine.syncPlayer(event.playerSessionId);
             }
             engine.reapplyContinuousEffects();
           },

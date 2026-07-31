@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 export const op08043SpecialHandler: SpecialHandlerDefinition = {
@@ -6,22 +5,20 @@ export const op08043SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-043',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const leader = player.leader;
+    const leader = (player as any).leader;
     if (
       !leader ||
       !leader.types?.some((t: string) => t.includes('Whitebeard Pirates'))
     )
       return;
-    const life = host.getCards(
+    const life = engine.getCards(
       { player: 'self', zones: ['life'] },
       event.playerSessionId,
     );
     if (life.length > 2) return;
-    const opponentChars = host.getCards(
+    const opponentChars = engine.getCards(
       {
         player: 'opponent',
         zones: ['characters'],
@@ -33,7 +30,7 @@ export const op08043SpecialHandler: SpecialHandlerDefinition = {
       engine.reapplyContinuousEffects();
       return;
     }
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op08-043:select-all`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -48,7 +45,7 @@ export const op08043SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selected) => {
         for (const card of selected) {
-          anyEngine.modifiers.addKeywordModifier(
+          engine.addKeywordModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             card.instanceId,

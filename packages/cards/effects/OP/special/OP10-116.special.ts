@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,13 +11,10 @@ export const op10116SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-116',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
-    decisions.chooseChoices(
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
+    engine.chooseChoices(
       `${event.sourceInstanceId}:op10-116:choose-life`,
       event.playerSessionId,
       'Look at Life from you or opponent?',
@@ -33,12 +29,12 @@ export const op10116SpecialHandler: SpecialHandlerDefinition = {
           choiceIds.includes('opponent') && opponentSessionId
             ? opponentSessionId
             : event.playerSessionId;
-        const targetPlayer = host.getPlayer(targetPlayerId);
+        const targetPlayer = engine.getPlayer(targetPlayerId);
         if (!targetPlayer || targetPlayer.zones.life.length === 0) {
           engine.reapplyContinuousEffects();
           return;
         }
-        const lifeCards = host.getCards(
+        const lifeCards = engine.getCards(
           { player: 'self', zones: ['life'] },
           targetPlayerId,
         );
@@ -47,8 +43,8 @@ export const op10116SpecialHandler: SpecialHandlerDefinition = {
           engine.reapplyContinuousEffects();
           return;
         }
-        host.addLog(`Revealed top Life card: ${topLife.name}`);
-        decisions.chooseChoices(
+        engine.addLog(`Revealed top Life card: ${topLife.name}`);
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op10-116:place-top-bottom`,
           event.playerSessionId,
           'Place at top or bottom of Life?',
@@ -60,8 +56,8 @@ export const op10116SpecialHandler: SpecialHandlerDefinition = {
           1,
           (placeChoiceIds) => {
             const toBottom = placeChoiceIds.includes('bottom');
-            host.moveCard(topLife, targetPlayerId, 'life', { toBottom });
-            decisions.chooseCards(
+            engine.moveCard(topLife, targetPlayerId, 'life', { toBottom });
+            engine.chooseCards(
               `${event.sourceInstanceId}:op10-116:ko-char`,
               event.playerSessionId,
               {
@@ -79,14 +75,14 @@ export const op10116SpecialHandler: SpecialHandlerDefinition = {
               undefined,
               (koCards) => {
                 for (const card of koCards) {
-                  host.koCharacter(
+                  engine.koCharacter(
                     card.ownerSessionId,
                     card.instanceId,
                     'effect',
                   );
                 }
-                host.syncPlayer(event.playerSessionId);
-                if (opponentSessionId) host.syncPlayer(opponentSessionId);
+                engine.syncPlayer(event.playerSessionId);
+                if (opponentSessionId) engine.syncPlayer(opponentSessionId);
                 engine.reapplyContinuousEffects();
               },
             );

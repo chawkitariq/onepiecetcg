@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP09-022 "Lim (Parallel)"
@@ -21,31 +17,25 @@ export const op09022SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP09-022',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'OP09-022',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'OP09-022', turn),
       )
     )
       return;
 
-    const activeDon = host.getCards(
+    const activeDon = engine.getCards(
       { player: 'self', zones: ['cost'], filter: { rested: false } },
       event.playerSessionId,
     );
     if (activeDon.length < 3) return;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op09-022:rest-don`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -60,18 +50,15 @@ export const op09022SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selectedDon) => {
         for (const don of selectedDon) {
-          host.restCard(don);
+          engine.patchCardStatus(don.instanceId, { rested: true });
         }
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'OP09-022',
-          turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'OP09-022', turn),
         );
 
-        host.addDonToCost(event.playerSessionId, 1, true);
+        engine.addDonToCost(event.playerSessionId, 1, true);
 
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op09-022:play-odyssey`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -90,7 +77,7 @@ export const op09022SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (cards) => {
             for (const card of cards) {
-              host.playCard(card, event.playerSessionId, 'characters');
+              engine.playCard(card, event.playerSessionId, 'characters');
             }
             engine.reapplyContinuousEffects();
           },

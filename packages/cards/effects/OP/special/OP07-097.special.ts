@@ -5,19 +5,17 @@ export const op07097SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP07-097',
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
-    const don = host.getCards(
+    const don = engine.getCards(
       { player: 'self', zones: ['cost'] },
       event.playerSessionId,
     );
     if (don.length < 1) return;
-    host.restCard(don[0]);
-    anyEngine.decisions.chooseCards(
+    engine.patchCardStatus(don[0].instanceId, { rested: true });
+    engine.chooseCards(
       `${event.sourceInstanceId}:op07-097:select-card`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -36,10 +34,8 @@ export const op07097SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
         const card = selected[0];
-        anyEngine.decisions.chooseChoice(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op07-097:destination`,
-          event.playerSessionId,
-          { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
           event.playerSessionId,
           'Play or add to top of Life?',
           [
@@ -50,8 +46,8 @@ export const op07097SpecialHandler: SpecialHandlerDefinition = {
           1,
           (choiceIds) => {
             if (choiceIds[0] === 'play')
-              host.playCard(card, event.playerSessionId, 'characters');
-            else host.moveCard(card, event.playerSessionId, 'life');
+              engine.playCard(card, event.playerSessionId, 'characters');
+            else engine.moveCard(card, event.playerSessionId, 'life');
             engine.reapplyContinuousEffects();
           },
         );

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -15,10 +14,8 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     const leader = player.zones.leader;
@@ -27,7 +24,7 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
     const activeDon = player.zones.cost.filter((d: any) => !d.rested);
     if (activeDon.length < 1 || player.zones.hand.length < 1) return;
 
-    const fiveEldersInTrash = host.getCards(
+    const fiveEldersInTrash = engine.getCards(
       {
         player: 'self',
         zones: ['trash'],
@@ -49,7 +46,7 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
 
     if (uniqueNames.size < 1) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-082:confirm`,
         effectId: 'op13-082-special',
@@ -67,9 +64,9 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        patchSpecialHandlerCardStatus(host, activeDon[0], { rested: true });
+        patchSpecialHandlerCardStatus(engine, activeDon[0], { rested: true });
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-082:trash-hand`,
           event.playerSessionId,
           {
@@ -86,17 +83,17 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (handCards) => {
             for (const card of handCards) {
-              host.moveCard(card, event.playerSessionId, 'trash');
+              engine.moveCard(card, event.playerSessionId, 'trash');
             }
 
             const ownChars = [...player.zones.characters];
             for (const char of ownChars) {
-              host.moveCard(char, event.playerSessionId, 'trash');
+              engine.moveCard(char, event.playerSessionId, 'trash');
             }
 
-            host.addLog('[Five Elders] All your Characters trashed.');
+            engine.addLog('[Five Elders] All your Characters trashed.');
 
-            const available = host.getCards(
+            const available = engine.getCards(
               {
                 player: 'self',
                 zones: ['trash'],
@@ -120,7 +117,7 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
 
             const selectableNames = [...nameGroups.keys()];
 
-            anyEngine.decisions.chooseChoices(
+            engine.chooseChoices(
               `${event.sourceInstanceId}:op13-082:select-elders`,
               event.playerSessionId,
               '[Five Elders] Choose which Five Elders characters to play (up to 5, different names):',
@@ -135,7 +132,7 @@ export const op13082SpecialHandler: SpecialHandlerDefinition = {
                   const group = nameGroups.get(name);
                   if (group && group.length > 0) {
                     const card = group[0];
-                    host.playCard(card, event.playerSessionId, 'characters');
+                    engine.playCard(card, event.playerSessionId, 'characters');
                   }
                 }
                 engine.reapplyContinuousEffects();

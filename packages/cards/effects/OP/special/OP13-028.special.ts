@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -13,16 +12,14 @@ export const op13028SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     for (const don of player.zones.cost) {
-      patchSpecialHandlerCardStatus(host, don, { rested: false });
+      patchSpecialHandlerCardStatus(engine, don, { rested: false });
     }
-    host.addLog('[Shanks 028] Set all DON!! cards as active.');
+    engine.addLog('[Shanks 028] Set all DON!! cards as active.');
 
-    host.addLog('[Shanks 028] Cannot play cards from hand during this turn.');
+    engine.addLog('[Shanks 028] Cannot play cards from hand during this turn.');
   },
 };

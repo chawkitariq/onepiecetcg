@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * Handles Portgas.D.Ace (002):
@@ -17,26 +14,25 @@ export const op13002SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-002-special',
   cardId: 'OP13-002',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'onAttacked') {
       if (
-        hasResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op13-002-attack',
-          host.state.turn,
+        engine.hasResolvedOncePerTurnKey(
+          createOncePerTurnKey(
+            event.sourceInstanceId,
+            'op13-002-attack',
+            engine.state.turn,
+          ),
         )
       )
         return;
 
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.hand.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-002:confirm`,
           effectId: 'op13-002-special',
@@ -54,7 +50,7 @@ export const op13002SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op13-002:trash-hand`,
             event.playerSessionId,
             {
@@ -71,17 +67,18 @@ export const op13002SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (trashed) => {
               for (const card of trashed) {
-                host.moveCard(card, event.playerSessionId, 'trash');
+                engine.moveCard(card, event.playerSessionId, 'trash');
               }
 
-              markResolvedOncePerTurn(
-                anyEngine,
-                event.sourceInstanceId,
-                'op13-002-attack',
-                host.state.turn,
+              engine.markResolvedOncePerTurnKey(
+                createOncePerTurnKey(
+                  event.sourceInstanceId,
+                  'op13-002-attack',
+                  engine.state.turn,
+                ),
               );
 
-              anyEngine.decisions.chooseCards(
+              engine.chooseCards(
                 `${event.sourceInstanceId}:op13-002:power-target`,
                 event.playerSessionId,
                 {
@@ -99,7 +96,7 @@ export const op13002SpecialHandler: SpecialHandlerDefinition = {
                 undefined,
                 (targets) => {
                   for (const target of targets) {
-                    anyEngine.modifiers.addPowerModifier(
+                    engine.addPowerModifier(
                       event.sourceInstanceId,
                       event.playerSessionId,
                       target.instanceId,
@@ -122,33 +119,35 @@ export const op13002SpecialHandler: SpecialHandlerDefinition = {
       source.attachedDon >= 1
     ) {
       if (
-        hasResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op13-002-draw',
-          host.state.turn,
+        engine.hasResolvedOncePerTurnKey(
+          createOncePerTurnKey(
+            event.sourceInstanceId,
+            'op13-002-draw',
+            engine.state.turn,
+          ),
         )
       )
         return;
 
       if (event.type === 'onKo') {
         const koEvent = event as any;
-        const koedCard = host.getCard(koEvent.targetInstanceId);
+        const koedCard = engine.getCard(koEvent.targetInstanceId);
         if (
           !koedCard ||
           koedCard.ownerSessionId !== event.playerSessionId ||
-          (koedCard.category !== 'Character' &&
-            koedCard.cardType !== 'Character') ||
+          ((koedCard as any).category !== 'Character' &&
+            (koedCard as any).cardType !== 'Character') ||
           (koedCard.basePower ?? koedCard.power) < 6000
         )
           return;
       }
 
-      markResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op13-002-draw',
-        host.state.turn,
+      engine.markResolvedOncePerTurnKey(
+        createOncePerTurnKey(
+          event.sourceInstanceId,
+          'op13-002-draw',
+          engine.state.turn,
+        ),
       );
 
       const def: StandardEffectDefinition = {

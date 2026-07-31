@@ -15,9 +15,7 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-099-special',
   cardId: 'OP13-099',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (
@@ -25,10 +23,10 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
       event.type === 'onTurnStart' ||
       event.type === 'onCardDrawn'
     ) {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
-      const isYourTurn = host.state.turnPlayer === event.playerSessionId;
+      const isYourTurn = (engine.state as any).turnPlayer === event.playerSessionId;
       if (!isYourTurn) return;
 
       const trashCount = player.zones.trash.length;
@@ -63,7 +61,7 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'activateMain') return;
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     const activeDon = player.zones.cost.filter((d: any) => !d.rested);
@@ -80,7 +78,7 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
         0,
       );
 
-    const playableChars = host.getCards(
+    const playableChars = engine.getCards(
       {
         player: 'self',
         zones: ['hand'],
@@ -89,7 +87,7 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
           colors: ['Black'],
           trait: ['Five Elders'],
           costMax: totalDonOnField,
-        },
+        } as any,
         count: { kind: 'upTo', value: 1 },
       },
       event.playerSessionId,
@@ -97,7 +95,7 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
 
     if (playableChars.length === 0) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-099:confirm`,
         effectId: 'op13-099-special',
@@ -115,16 +113,16 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        patchSpecialHandlerCardStatus(host, source, { rested: true });
+        patchSpecialHandlerCardStatus(engine, source, { rested: true });
         for (let i = 0; i < 3; i++) {
           if (activeDon[i]) {
-            patchSpecialHandlerCardStatus(host, activeDon[i], {
+            patchSpecialHandlerCardStatus(engine, activeDon[i], {
               rested: true,
             });
           }
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-099:play-char`,
           event.playerSessionId,
           {
@@ -147,7 +145,7 @@ export const op13099SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (selected) => {
             for (const card of selected) {
-              host.playCard(card, event.playerSessionId, 'characters');
+              engine.playCard(card, event.playerSessionId, 'characters');
             }
             engine.reapplyContinuousEffects();
           },

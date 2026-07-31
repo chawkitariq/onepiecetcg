@@ -12,18 +12,16 @@ export const op05058SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
-    const opponent = opponentId ? host.getPlayer(opponentId) : undefined;
+    const player = engine.getPlayer(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+    const opponent = opponentId ? engine.getPlayer(opponentId) : undefined;
 
     if (!player || !opponent) {
       return;
     }
 
     const maxCost = event.type === 'trigger' ? 2 : 3;
-    const targets = host.getCards(
+    const targets = engine.getCards(
       {
         player: 'either',
         zones: ['characters'],
@@ -33,7 +31,7 @@ export const op05058SpecialHandler: SpecialHandlerDefinition = {
     );
 
     for (const target of targets) {
-      host.moveCard(target, target.ownerSessionId, 'deck', { toBottom: true });
+      engine.moveCard(target, target.ownerSessionId, 'deck', { toBottom: true });
     }
 
     if (event.type === 'trigger') {
@@ -44,7 +42,7 @@ export const op05058SpecialHandler: SpecialHandlerDefinition = {
       sessionId: string,
       onComplete?: () => void,
     ) => {
-      const targetPlayer = host.getPlayer(sessionId);
+      const targetPlayer = engine.getPlayer(sessionId);
 
       if (!targetPlayer) {
         onComplete?.();
@@ -58,7 +56,7 @@ export const op05058SpecialHandler: SpecialHandlerDefinition = {
         return;
       }
 
-      anyEngine.decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op05-058:trash-hand:${sessionId}`,
         sessionId,
         {
@@ -75,7 +73,7 @@ export const op05058SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (cards) => {
           for (const card of cards) {
-            host.moveCard(card, sessionId, 'trash');
+            engine.moveCard(card, sessionId, 'trash');
           }
 
           onComplete?.();

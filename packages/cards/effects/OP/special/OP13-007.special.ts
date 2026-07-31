@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,16 +12,14 @@ export const op13007SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     const activeDon = player.zones.cost.filter((d: any) => !d.rested);
     if (activeDon.length < 1) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-007:confirm`,
         effectId: 'op13-007-special',
@@ -40,7 +37,7 @@ export const op13007SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-007:don-target`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -54,7 +51,7 @@ export const op13007SpecialHandler: SpecialHandlerDefinition = {
           },
           undefined,
           () => {
-            anyEngine.decisions.chooseCards(
+            engine.chooseCards(
               `${event.sourceInstanceId}:op13-007:attach-target`,
               event.playerSessionId,
               {
@@ -72,15 +69,15 @@ export const op13007SpecialHandler: SpecialHandlerDefinition = {
               undefined,
               (attachTargets) => {
                 const attachTarget = attachTargets[0];
-                host.attachDon(
+                engine.attachDon(
                   event.playerSessionId,
                   attachTarget.instanceId,
                   1,
                 );
 
-                host.moveCard(source, event.playerSessionId, 'trash');
+                engine.moveCard(source, event.playerSessionId, 'trash');
 
-                anyEngine.decisions.chooseCards(
+                engine.chooseCards(
                   `${event.sourceInstanceId}:op13-007:power-target`,
                   event.playerSessionId,
                   {
@@ -98,7 +95,7 @@ export const op13007SpecialHandler: SpecialHandlerDefinition = {
                   undefined,
                   (debuffTargets) => {
                     for (const t of debuffTargets) {
-                      anyEngine.modifiers.addPowerModifier(
+                      engine.addPowerModifier(
                         event.sourceInstanceId,
                         event.playerSessionId,
                         t.instanceId,

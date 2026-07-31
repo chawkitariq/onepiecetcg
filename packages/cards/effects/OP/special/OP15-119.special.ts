@@ -11,9 +11,7 @@ export const op15119SpecialHandler: SpecialHandlerDefinition = {
   id: 'op15-119-special',
   cardId: 'OP15-119',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     // When opponent activates Event or Blocker
@@ -23,11 +21,10 @@ export const op15119SpecialHandler: SpecialHandlerDefinition = {
     const controllerId = source.ownerSessionId;
     if (event.playerSessionId === controllerId) return;
 
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(controllerId);
+    const player = engine.getPlayer(controllerId);
     if (!player || player.zones.life.length === 0) return;
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op15-119:reveal-life`,
         effectId: 'op15-119-reveal-life',
@@ -44,7 +41,7 @@ export const op15119SpecialHandler: SpecialHandlerDefinition = {
       (response) => {
         if (!response.confirmed) return;
 
-        const lifeCards = host.getCards(
+        const lifeCards = engine.getCards(
           {
             player: 'self',
             zones: ['life'],
@@ -60,7 +57,7 @@ export const op15119SpecialHandler: SpecialHandlerDefinition = {
         const revealedCost = revealed.cost > 0 ? revealed.cost : 0;
         const powerBonus = revealedCost * 1000;
 
-        anyEngine.modifiers.addPowerModifier(
+        engine.addPowerModifier(
           event.sourceInstanceId,
           controllerId,
           event.sourceInstanceId,
@@ -68,11 +65,11 @@ export const op15119SpecialHandler: SpecialHandlerDefinition = {
           'untilEndOfTurn',
         );
 
-        host.addLog(
+        engine.addLog(
           `Revealed ${revealed.name} (cost ${revealedCost}), ${source.name} gains +${powerBonus} power`,
         );
 
-        host.syncPlayer(controllerId);
+        engine.syncPlayer(controllerId);
         engine.reapplyContinuousEffects();
       },
     );

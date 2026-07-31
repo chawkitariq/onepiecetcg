@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -12,17 +11,13 @@ export const st21003SpecialHandler: SpecialHandlerDefinition = {
   id: 'st21-003-special',
   cardId: 'ST21-003',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
     if (event.type === 'onPlay') {
-      const anyEvt = event as any;
-      const player = host.getPlayer(anyEvt.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) {
         return;
       }
 
-      const selectableCards = host.getCards(
+      const selectableCards = engine.getCards(
         {
           player: 'self',
           zones: ['characters'],
@@ -33,21 +28,21 @@ export const st21003SpecialHandler: SpecialHandlerDefinition = {
           },
           count: { kind: 'upTo', value: 1 },
         },
-        anyEvt.playerSessionId,
+        event.playerSessionId,
       );
 
       if (selectableCards.length === 0) {
         return;
       }
 
-      anyEngine.decisions.chooseCards(
-        `${anyEvt.sourceInstanceId}:st21-003:select-target`,
-        anyEvt.playerSessionId,
+      engine.chooseCards(
+        `${event.sourceInstanceId}:st21-003:select-target`,
+        event.playerSessionId,
         {
-          sourceInstanceId: anyEvt.sourceInstanceId,
+          sourceInstanceId: event.sourceInstanceId,
           storedSelections: {},
         },
-        anyEvt.playerSessionId,
+        event.playerSessionId,
         '[Sanji] Select up to 1 {Straw Hat Crew} Character with 6000 power or more.',
         {
           player: 'self',
@@ -61,17 +56,17 @@ export const st21003SpecialHandler: SpecialHandlerDefinition = {
         },
         undefined,
         () => {
-          for (const target of host.getCards(
+          for (const target of engine.getCards(
             {
               player: 'opponent',
               zones: ['characters'],
               filter: { cardCategory: ['Character'] },
             },
-            anyEvt.playerSessionId,
+            event.playerSessionId,
           )) {
-            anyEngine.modifiers.addKeywordModifier(
-              anyEvt.sourceInstanceId,
-              anyEvt.playerSessionId,
+            engine.addKeywordModifier(
+              event.sourceInstanceId,
+              event.playerSessionId,
               target.instanceId,
               ['cannotBlock'],
               'untilEndOfTurn',

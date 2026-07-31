@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -14,10 +13,7 @@ export const op14104SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-104',
   resolve(event, engine) {
     if (event.type === 'onPlay') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-104:from-trash`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -38,7 +34,7 @@ export const op14104SpecialHandler: SpecialHandlerDefinition = {
           if (!selected.length) return;
           const card = selected[0];
 
-          decisions.chooseChoices(
+          engine.chooseChoices(
             `${event.sourceInstanceId}:op14-104:mode`,
             event.playerSessionId,
             '[Gecko Moria] Play or add to top of Life face-up?',
@@ -50,23 +46,20 @@ export const op14104SpecialHandler: SpecialHandlerDefinition = {
             1,
             (choiceIds) => {
               if (choiceIds.includes('play')) {
-                host.playCard(card, event.playerSessionId, 'characters');
+                engine.playCard(card, event.playerSessionId, 'characters');
               } else {
-                host.moveCard(card, event.playerSessionId, 'life', {
-                  faceUp: true,
+                engine.moveCard(card, event.playerSessionId, 'life', {
+                  faceDown: false,
                 });
               }
-              host.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(event.playerSessionId);
               engine.reapplyContinuousEffects();
             },
           );
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const { host, decisions } = anyEngine;
-
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op14-104:trigger`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -81,9 +74,9 @@ export const op14104SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            host.playCard(card, event.playerSessionId, 'characters');
+            engine.playCard(card, event.playerSessionId, 'characters');
           }
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
         },
       );

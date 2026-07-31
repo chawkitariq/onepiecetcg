@@ -14,16 +14,14 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     const leader = player?.zones.leader;
 
     if (!player || !leader || leader.colors.length < 2) {
       return;
     }
 
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!source) {
       return;
@@ -31,9 +29,8 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
 
     const topCards = Array.from(player.zones.deck).slice(0, 3) as DuelCard[];
     const topCardIds = new Set(topCards.map((card) => card.instanceId));
-    const decisions = anyEngine.decisions;
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op05-043:top3`,
       event.playerSessionId,
       {
@@ -54,32 +51,21 @@ export const op05043SpecialHandler: SpecialHandlerDefinition = {
         );
 
         if (selected) {
-          host.moveCard(selected, event.playerSessionId, 'hand');
+          engine.moveCard(selected, event.playerSessionId, 'hand');
         }
 
         const remainingCount = topCards.length - (selected ? 1 : 0);
 
         if (remainingCount <= 0) {
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           return;
         }
 
-        anyEngine.actions.resolveActions(
-          [
-            {
-              type: 'arrangeDeckWindow',
-              player: 'self',
-              amount: remainingCount,
-            },
-          ],
+        engine.arrangeDeckWindow(
           event.playerSessionId,
           source,
-          {
-            sourceInstanceId: event.sourceInstanceId,
-            storedSelections: {},
-          },
-          0,
-          () => host.syncPlayer(event.playerSessionId),
+          remainingCount,
+          () => engine.syncPlayer(event.playerSessionId),
         );
       },
     );

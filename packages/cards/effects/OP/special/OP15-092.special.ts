@@ -20,16 +20,13 @@ export const op15092SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onTurnStart') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const modifiers = anyEngine.modifiers;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     // Opponent's turn: check if controller has 20+ cards in trash
     if (event.playerSessionId === source.ownerSessionId) return;
 
-    const player = host.getPlayer(source.ownerSessionId);
+    const player = engine.getPlayer(source.ownerSessionId);
     if (!player) return;
 
     const trashCount = player.zones.trash.length;
@@ -40,7 +37,7 @@ export const op15092SpecialHandler: SpecialHandlerDefinition = {
 
     const delta =
       7000 - (leader.basePower > 0 ? leader.basePower : leader.power);
-    modifiers.addPowerModifier(
+    engine.addPowerModifier(
       event.sourceInstanceId,
       source.ownerSessionId,
       leader.instanceId,

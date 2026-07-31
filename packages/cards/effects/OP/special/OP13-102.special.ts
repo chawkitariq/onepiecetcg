@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -14,16 +13,14 @@ export const op13102SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-102-special',
   cardId: 'OP13-102',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'activateMain') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-102:confirm`,
           effectId: 'op13-102-special',
@@ -41,10 +38,10 @@ export const op13102SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          host.moveCard(source, event.playerSessionId, 'trash');
+          engine.moveCard(source, event.playerSessionId, 'trash');
 
-          const opponentId = host.getOpponentSessionId(event.playerSessionId);
-          const opponent = opponentId ? host.getPlayer(opponentId) : undefined;
+          const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+          const opponent = opponentId ? engine.getPlayer(opponentId) : undefined;
 
           if (
             opponent &&

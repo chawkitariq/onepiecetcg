@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,19 +12,16 @@ export const op10110SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-110',
   resolve(event, engine) {
     if (event.type === 'onPlay') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const decisions = anyEngine.decisions;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
-      const opponentSessionId = host.getOpponentSessionId(
+      const opponentSessionId = engine.getOpponentSessionId(
         event.playerSessionId,
       );
       if (!opponentSessionId) return;
-      const opponent = host.getPlayer(opponentSessionId);
+      const opponent = engine.getPlayer(opponentSessionId);
       if (!opponent) return;
       const oppLifeCount = opponent.zones.life.length;
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op10-110:rest-char`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -40,21 +36,19 @@ export const op10110SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (cards) => {
           for (const card of cards) {
-            host.restCard(card);
+            engine.patchCardStatus(card.instanceId, { rested: true });
           }
           engine.reapplyContinuousEffects();
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
       if (player.zones.life.length > 2) return;
-      const source = host.getCard(event.sourceInstanceId);
+      const source = engine.getCard(event.sourceInstanceId);
       if (!source) return;
-      host.moveCard(source, event.playerSessionId, 'characters');
-      host.syncPlayer(event.playerSessionId);
+      engine.moveCard(source, event.playerSessionId, 'characters');
+      engine.syncPlayer(event.playerSessionId);
       engine.reapplyContinuousEffects();
     }
   },

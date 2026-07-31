@@ -5,9 +5,7 @@ export const op08096SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP08-096',
   resolve(event, engine) {
     if (event.type === 'activateCounter') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      const deckTop = host.getCards(
+      const deckTop = engine.getCards(
         { player: 'self', zones: ['deck'], count: { kind: 'exact', value: 1 } },
         event.playerSessionId,
       );
@@ -17,9 +15,9 @@ export const op08096SpecialHandler: SpecialHandlerDefinition = {
       }
       const trashed = deckTop[0];
       const cost = trashed.baseCost || 0;
-      host.moveCard(trashed, event.playerSessionId, 'trash');
+      engine.moveCard(trashed, event.playerSessionId, 'trash');
       if (cost >= 6) {
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op08-096:power-boost`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -33,7 +31,7 @@ export const op08096SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (selected) => {
             for (const card of selected) {
-              anyEngine.modifiers.addPowerModifier(
+              engine.addPowerModifier(
                 event.sourceInstanceId,
                 event.playerSessionId,
                 card.instanceId,
@@ -48,9 +46,7 @@ export const op08096SpecialHandler: SpecialHandlerDefinition = {
         engine.reapplyContinuousEffects();
       }
     } else if (event.type === 'trigger') {
-      const anyEngine = engine as any;
-      const host = anyEngine.host;
-      anyEngine.decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op08-096:play-from-trash`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -69,7 +65,7 @@ export const op08096SpecialHandler: SpecialHandlerDefinition = {
         undefined,
         (selected) => {
           for (const card of selected) {
-            host.playCard(card, event.playerSessionId, 'characters');
+            engine.playCard(card, event.playerSessionId, 'characters');
           }
           engine.reapplyContinuousEffects();
         },

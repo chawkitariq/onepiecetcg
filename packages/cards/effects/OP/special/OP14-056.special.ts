@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -12,16 +11,14 @@ export const op14056SpecialHandler: SpecialHandlerDefinition = {
   id: 'op14-056-special',
   cardId: 'OP14-056',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const { host } = anyEngine;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     const syncCannotAttack = () => {
-      patchSpecialHandlerCardStatus(host, source, {
-        cannotAttack: source['op14-056:negatedTurn'] !== host.state.turn,
+      patchSpecialHandlerCardStatus(engine, source, {
+        cannotAttack: source['op14-056:negatedTurn'] !== engine.state.turn,
       });
-      host.syncPlayer(source.ownerSessionId);
+      engine.syncPlayer(source.ownerSessionId);
     };
 
     if (event.type === 'onPlay' || event.type === 'onTurnStart') {
@@ -30,7 +27,7 @@ export const op14056SpecialHandler: SpecialHandlerDefinition = {
     }
 
     if (event.type === 'onTurnEnd') {
-      if (source['op14-056:negatedTurn'] === host.state.turn) {
+      if (source['op14-056:negatedTurn'] === engine.state.turn) {
         source['op14-056:negatedTurn'] = undefined;
       }
       syncCannotAttack();
@@ -43,7 +40,7 @@ export const op14056SpecialHandler: SpecialHandlerDefinition = {
       event.sourceZone === 'hand' &&
       event.destinationZone === 'trash'
     ) {
-      source['op14-056:negatedTurn'] = host.state.turn;
+      source['op14-056:negatedTurn'] = engine.state.turn;
       syncCannotAttack();
     }
   },

@@ -14,10 +14,8 @@ export const op13118SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const source = host.getCard(event.sourceInstanceId);
+    const player = engine.getPlayer(event.playerSessionId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!player || !source) return;
 
     const leader = player.zones.leader;
@@ -28,14 +26,14 @@ export const op13118SpecialHandler: SpecialHandlerDefinition = {
     const toSet = Math.min(restedDon.length, 4);
 
     for (let i = 0; i < toSet; i++) {
-      patchSpecialHandlerCardStatus(host, restedDon[i], { rested: false });
+      patchSpecialHandlerCardStatus(engine, restedDon[i], { rested: false });
     }
 
     if (toSet > 0) {
-      host.addLog(`[Monkey.D.Luffy 118] Set ${toSet} DON!! card(s) as active.`);
+      engine.addLog(`[Monkey.D.Luffy 118] Set ${toSet} DON!! card(s) as active.`);
     }
 
-    host.addLog(
+    engine.addLog(
       '[Monkey.D.Luffy 118] Cannot play Character cards with base cost 5 or more during this turn.',
     );
   },

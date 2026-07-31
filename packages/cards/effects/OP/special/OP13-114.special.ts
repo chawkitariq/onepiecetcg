@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -12,16 +11,14 @@ export const op13114SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-114-special',
   cardId: 'OP13-114',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (event.type === 'onPlay' || event.type === 'whenAttacking') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.life.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-114:confirm`,
           effectId: 'op13-114-special',
@@ -42,7 +39,7 @@ export const op13114SpecialHandler: SpecialHandlerDefinition = {
           const topLife = player.zones.life[0];
           if (topLife) {
             topLife.faceDown = false;
-            host.addLog('[S-Snake] Top Life card turned face-up.');
+            engine.addLog('[S-Snake] Top Life card turned face-up.');
           }
 
           const def: StandardEffectDefinition = {
@@ -76,10 +73,10 @@ export const op13114SpecialHandler: SpecialHandlerDefinition = {
     }
 
     if (event.type === 'trigger') {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player || player.zones.hand.length < 1) return;
 
-      anyEngine.decisions.pause(
+      engine.pauseDecision(
         {
           id: `${event.sourceInstanceId}:op13-114:trigger-confirm`,
           effectId: 'op13-114-special',
@@ -96,7 +93,7 @@ export const op13114SpecialHandler: SpecialHandlerDefinition = {
         (response: { confirmed?: boolean }) => {
           if (!response.confirmed) return;
 
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op13-114:trigger-trash`,
             event.playerSessionId,
             {
@@ -113,7 +110,7 @@ export const op13114SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (trashed) => {
               for (const card of trashed) {
-                host.moveCard(card, event.playerSessionId, 'trash');
+                engine.moveCard(card, event.playerSessionId, 'trash');
               }
 
               const def: StandardEffectDefinition = {

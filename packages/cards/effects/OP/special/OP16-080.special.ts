@@ -1,9 +1,6 @@
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP16-080
@@ -20,35 +17,34 @@ export const op16080SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onAttacked') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const defender = host.getPlayer(event.playerSessionId);
+    const defender = engine.getPlayer(event.playerSessionId);
     if (!defender) return;
 
-    const opponentSessionId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentSessionId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentSessionId) return;
 
-    const isOpponentTurn = host.state.turnPlayer === opponentSessionId;
+    const isOpponentTurn = (engine.state as any).turnPlayer === opponentSessionId;
     if (!isOpponentTurn) return;
 
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op16-080',
-        host.state.turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(
+          event.sourceInstanceId,
+          'op16-080',
+          engine.state.turn,
+        ),
       )
     ) {
       return;
     }
 
-    const triggerCards = host.getCards(
+    const triggerCards = engine.getCards(
       { player: 'self', zones: ['hand'], filter: { hasTrigger: true } },
       event.playerSessionId,
     );
     if (triggerCards.length === 0) return;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op16-080:trash-trigger`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -64,18 +60,19 @@ export const op16080SpecialHandler: SpecialHandlerDefinition = {
       (trashed) => {
         if (trashed.length === 0) return;
 
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op16-080',
-          host.state.turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(
+            event.sourceInstanceId,
+            'op16-080',
+            engine.state.turn,
+          ),
         );
 
         for (const card of trashed) {
-          host.moveCard(card, event.playerSessionId, 'trash');
+          engine.moveCard(card, event.playerSessionId, 'trash');
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op16-080:redirect-target`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -92,8 +89,8 @@ export const op16080SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (targets) => {
             if (targets.length === 0) return;
-            host.state.combat.targetInstanceId = targets[0].instanceId;
-            host.state.combat.targetType =
+            engine.state.combat.targetInstanceId = targets[0].instanceId;
+            engine.state.combat.targetType =
               targets[0].type === 'Leader' ? 'leader' : 'character';
             engine.reapplyContinuousEffects();
           },

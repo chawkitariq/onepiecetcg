@@ -1,10 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP14-060 Donquixote Doflamingo (Alternate Art)
@@ -17,26 +12,21 @@ export const op14060SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP14-060',
   resolve(event, engine) {
     if (event.type !== 'onAttacked') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        'op14-060',
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, 'op14-060', turn),
       )
     )
       return;
 
-    const activeDon = host.getCards(
+    const activeDon = engine.getCards(
       { player: 'self', zones: ['cost'], filter: { rested: false } },
       event.playerSessionId,
     );
     if (!activeDon.length) return;
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op14-060:pay-don`,
         effectId: 'op14-060-special',
@@ -52,22 +42,19 @@ export const op14060SpecialHandler: SpecialHandlerDefinition = {
       },
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
-        markResolvedOncePerTurn(
-          anyEngine,
-          event.sourceInstanceId,
-          'op14-060',
-          turn,
+        engine.markResolvedOncePerTurnKey(
+          createOncePerTurnKey(event.sourceInstanceId, 'op14-060', turn),
         );
 
-        const donToReturn = host.getCards(
+        const donToReturn = engine.getCards(
           { player: 'self', zones: ['cost'], filter: { rested: false } },
           event.playerSessionId,
         );
         if (donToReturn.length) {
-          host.returnDonToDonDeck(event.playerSessionId, 1);
+          engine.returnDonToDonDeck(event.playerSessionId, 1);
         }
 
-        decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op14-060:select-target`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -86,10 +73,10 @@ export const op14060SpecialHandler: SpecialHandlerDefinition = {
           (selected) => {
             if (!selected.length) return;
             const target = selected[0];
-            host.state.combat.targetInstanceId = target.instanceId;
-            host.state.combat.targetType =
+            engine.state.combat.targetInstanceId = target.instanceId;
+            engine.state.combat.targetType =
               target.type === 'Leader' ? 'leader' : 'character';
-            host.syncPlayer(event.playerSessionId);
+            engine.syncPlayer(event.playerSessionId);
             engine.reapplyContinuousEffects();
           },
         );

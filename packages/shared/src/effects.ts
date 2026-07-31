@@ -606,6 +606,15 @@ export interface SpecialEffectHandlerEngine {
     instanceId: string,
     reason: 'battle' | 'effect',
   ): boolean;
+  drawCard(playerSessionId: string): DuelCard | null;
+  trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[];
+  shuffleDeck(playerSessionId: string): void;
+  attachDon(
+    playerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+    options?: { rested?: boolean },
+  ): number;
   syncPlayer(playerSessionId: string): void;
   chooseCards(...args: any[]): void;
   chooseChoices(...args: any[]): void;
@@ -620,6 +629,25 @@ export interface SpecialEffectHandlerEngine {
   arrangeDeckWindow(...args: any[]): void;
   queueEffect(...args: any[]): void;
   scheduleTurnEndActions(...args: any[]): void;
+  scheduleTurnEndEffect(sourceInstanceId: string, resolve: () => void): void;
+  scheduleMoveAtEndOfBattle(
+    targetInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ): void;
+  addCannotRestKey(key: string): void;
+  preventDefaultMove(): void;
+  findZoneOfCard(
+    instanceId: string,
+  ): { player: DuelPlayer; zone: GameZone } | null;
+  countTotalDonOnField(playerSessionId: string): number;
+  removeModifier(args: {
+    sourceInstanceId: string;
+    targetInstanceId: string;
+    kind?: 'power' | 'cost' | 'keyword';
+  }): void;
+  effectsByCardId: Readonly<Record<string, CardEffectDefinition>>;
   reapplyContinuousEffects(): void;
 }
 

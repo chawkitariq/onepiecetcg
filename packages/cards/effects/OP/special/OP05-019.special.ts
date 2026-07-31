@@ -13,23 +13,21 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
       return;
     }
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
-    const opponent = opponentId ? host.getPlayer(opponentId) : undefined;
+    const player = engine.getPlayer(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
+    const opponent = opponentId ? engine.getPlayer(opponentId) : undefined;
 
     if (!player || !opponent) {
       return;
     }
 
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!source) {
       return;
     }
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op05-019:minus-4000`,
       event.playerSessionId,
       {
@@ -49,7 +47,7 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
         const target = cards[0];
 
         if (target) {
-          anyEngine.modifiers.addPowerModifier(
+          engine.addPowerModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             target.instanceId,
@@ -63,7 +61,7 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        const koCandidates = host.getCards(
+        const koCandidates = engine.getCards(
           {
             player: 'opponent',
             zones: ['characters'],
@@ -77,7 +75,7 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op05-019:ko-zero-power`,
           event.playerSessionId,
           {
@@ -95,7 +93,7 @@ export const op05019SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (koCards) => {
             for (const koCard of koCards) {
-              host.koCharacter(
+              engine.koCharacter(
                 koCard.ownerSessionId,
                 koCard.instanceId,
                 'effect',

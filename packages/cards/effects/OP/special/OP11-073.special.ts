@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -16,13 +15,10 @@ export const op11073SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onAttacked') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
+    const oncePerTurnKey = `${event.sourceInstanceId}:op11-073:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-    const oncePerTurnKey = `${event.sourceInstanceId}:op11-073:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
-
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     let donOnField =
@@ -33,10 +29,10 @@ export const op11073SpecialHandler: SpecialHandlerDefinition = {
 
     if (donOnField < 5) return;
 
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent || opponent.zones.deck.length === 0) return;
 
     const costChoices = Array.from({ length: 11 }, (_, i) => ({
@@ -44,7 +40,7 @@ export const op11073SpecialHandler: SpecialHandlerDefinition = {
       label: `Cost ${i}`,
     }));
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-073:choose-cost`,
         effectId: 'op11-073-special',
@@ -64,11 +60,11 @@ export const op11073SpecialHandler: SpecialHandlerDefinition = {
         const chosenCostStr = response.selectedChoiceIds?.[0];
         if (!chosenCostStr) return;
 
-        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+        engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
         const chosenCost = parseInt(chosenCostStr.replace('cost-', ''), 10);
 
-        const topCards = host.getCards(
+        const topCards = engine.getCards(
           {
             player: 'opponent',
             zones: ['deck'],
@@ -82,12 +78,12 @@ export const op11073SpecialHandler: SpecialHandlerDefinition = {
         const revealed = topCards[0];
         const revealedCost = revealed.baseCost ?? revealed.cost ?? -1;
 
-        host.addLog?.(
+        engine.addLog?.(
           `[Linlin] Revealed: ${revealed.name} (cost ${revealedCost}). Chosen: ${chosenCost}.`,
         );
 
         if (revealedCost === chosenCost) {
-          anyEngine.modifiers.addPowerModifier(
+          engine.addPowerModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             player.zones.leader.instanceId,

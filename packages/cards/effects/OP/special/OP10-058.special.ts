@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -13,14 +12,12 @@ export const op10058SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-058',
   resolve(event, engine) {
     if (event.type !== 'onPlay') return;
-    const anyEngine = engine as any;
-    const { host, decisions } = anyEngine;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
 
     if (!source) return;
 
     const hasCost8OrMoreCharacter =
-      host.getCards(
+      engine.getCards(
         {
           player: 'either',
           zones: ['characters'],
@@ -34,11 +31,11 @@ export const op10058SpecialHandler: SpecialHandlerDefinition = {
       ).length > 0;
 
     if (hasCost8OrMoreCharacter) {
-      host.drawCard(event.playerSessionId);
-      host.syncPlayer(event.playerSessionId);
+      engine.drawCard(event.playerSessionId);
+      engine.syncPlayer(event.playerSessionId);
     }
 
-    decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op10-058:reveal`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -62,20 +59,20 @@ export const op10058SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        host.addLog(
+        engine.addLog(
           `${source.name} revele ${selected.map((card) => card.name).join(', ')}.`,
         );
 
         if (selected.length === 1) {
-          host.moveCard(selected[0], selected[0].ownerSessionId, 'characters', {
+          engine.moveCard(selected[0], selected[0].ownerSessionId, 'characters', {
             rested: false,
           });
-          host.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(event.playerSessionId);
           engine.reapplyContinuousEffects();
           return;
         }
 
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op10-058:play-first`,
           event.playerSessionId,
           '[Rebecca] Choose 1 revealed card to play first:',
@@ -95,17 +92,17 @@ export const op10058SpecialHandler: SpecialHandlerDefinition = {
               (card) => card.instanceId !== first.instanceId,
             );
 
-            host.moveCard(first, first.ownerSessionId, 'characters', {
+            engine.moveCard(first, first.ownerSessionId, 'characters', {
               rested: false,
             });
 
             if (second && second.cost <= 4) {
-              host.moveCard(second, second.ownerSessionId, 'characters', {
+              engine.moveCard(second, second.ownerSessionId, 'characters', {
                 rested: true,
               });
             }
 
-            host.syncPlayer(event.playerSessionId);
+            engine.syncPlayer(event.playerSessionId);
             engine.reapplyContinuousEffects();
           },
         );

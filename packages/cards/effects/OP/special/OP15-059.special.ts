@@ -14,16 +14,13 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onAttacked') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source || source.rested) return;
 
-    decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op15-059:rest-self`,
         effectId: 'op15-059-rest-self',
@@ -43,22 +40,22 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
           return;
         }
 
-        patchSpecialHandlerCardStatus(host, source, { rested: true });
+        patchSpecialHandlerCardStatus(engine, source, { rested: true });
 
-        const opponentId = host.getOpponentSessionId(event.playerSessionId);
+        const opponentId = engine.getOpponentSessionId(event.playerSessionId);
         if (!opponentId) {
           engine.reapplyContinuousEffects();
           return;
         }
 
-        const opponent = host.getPlayer(opponentId);
+        const opponent = engine.getPlayer(opponentId);
         const hasActiveDon =
           opponent &&
           Array.from(opponent.zones.cost).some((c: any) => !c.rested);
 
         if (!hasActiveDon) {
           // Opponent has no active DON!!, they cannot return, so give +2000
-          decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op15-059:power-target`,
             event.playerSessionId,
             {
@@ -75,7 +72,7 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (targets) => {
               for (const target of targets) {
-                anyEngine.modifiers.addPowerModifier(
+                engine.addPowerModifier(
                   event.sourceInstanceId,
                   event.playerSessionId,
                   target.instanceId,
@@ -83,8 +80,8 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
                   'untilEndOfTurn',
                 );
               }
-              host.syncPlayer(event.playerSessionId);
-              host.syncPlayer(opponentId);
+              engine.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(opponentId);
               engine.reapplyContinuousEffects();
             },
           );
@@ -92,7 +89,7 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
         }
 
         // Ask opponent: return active DON!! or give +2000?
-        decisions.chooseChoices(
+        engine.chooseChoices(
           `${event.sourceInstanceId}:op15-059:opponent-choice`,
           opponentId,
           '[Amazon] Opponent: return 1 active DON!! to deck, or give +2000 power to one of your cards?',
@@ -104,14 +101,14 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
           1,
           (choiceIds) => {
             if (choiceIds.includes('return')) {
-              host.returnDonToDonDeck(opponentId, 1);
-              host.syncPlayer(event.playerSessionId);
-              host.syncPlayer(opponentId);
+              engine.returnDonToDonDeck(opponentId, 1);
+              engine.syncPlayer(event.playerSessionId);
+              engine.syncPlayer(opponentId);
               engine.reapplyContinuousEffects();
               return;
             }
 
-            decisions.chooseCards(
+            engine.chooseCards(
               `${event.sourceInstanceId}:op15-059:power-target`,
               event.playerSessionId,
               {
@@ -128,7 +125,7 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
               undefined,
               (targets) => {
                 for (const target of targets) {
-                  anyEngine.modifiers.addPowerModifier(
+                  engine.addPowerModifier(
                     event.sourceInstanceId,
                     event.playerSessionId,
                     target.instanceId,
@@ -136,8 +133,8 @@ export const op15059SpecialHandler: SpecialHandlerDefinition = {
                     'untilEndOfTurn',
                   );
                 }
-                host.syncPlayer(event.playerSessionId);
-                host.syncPlayer(opponentId);
+                engine.syncPlayer(event.playerSessionId);
+                engine.syncPlayer(opponentId);
                 engine.reapplyContinuousEffects();
               },
             );

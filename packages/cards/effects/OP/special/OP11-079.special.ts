@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -35,13 +34,10 @@ export const op11079SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'activateCounter') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    const opponentId = host.getOpponentSessionId(event.playerSessionId);
+    const opponentId = engine.getOpponentSessionId(event.playerSessionId);
     if (!opponentId) return;
 
-    const opponent = host.getPlayer(opponentId);
+    const opponent = engine.getPlayer(opponentId);
     if (!opponent || opponent.zones.deck.length === 0) return;
 
     const costChoices = Array.from({ length: 11 }, (_, i) => ({
@@ -49,7 +45,7 @@ export const op11079SpecialHandler: SpecialHandlerDefinition = {
       label: `Cost ${i}`,
     }));
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-079:choose-cost`,
         effectId: 'op11-079-special',
@@ -71,7 +67,7 @@ export const op11079SpecialHandler: SpecialHandlerDefinition = {
 
         const chosenCost = parseInt(chosenCostStr.replace('cost-', ''), 10);
 
-        const topCards = host.getCards(
+        const topCards = engine.getCards(
           {
             player: 'opponent',
             zones: ['deck'],
@@ -85,12 +81,12 @@ export const op11079SpecialHandler: SpecialHandlerDefinition = {
         const revealed = topCards[0];
         const revealedCost = revealed.baseCost ?? revealed.cost ?? -1;
 
-        host.addLog?.(
+        engine.addLog?.(
           `[When Two Men Are Fighting...] Revealed: ${revealed.name} (cost ${revealedCost}). Chosen: ${chosenCost}.`,
         );
 
         if (revealedCost === chosenCost) {
-          anyEngine.decisions.chooseCards(
+          engine.chooseCards(
             `${event.sourceInstanceId}:op11-079:power-target`,
             event.playerSessionId,
             {
@@ -108,7 +104,7 @@ export const op11079SpecialHandler: SpecialHandlerDefinition = {
             undefined,
             (selected) => {
               for (const card of selected) {
-                anyEngine.modifiers.addPowerModifier(
+                engine.addPowerModifier(
                   event.sourceInstanceId,
                   event.playerSessionId,
                   card.instanceId,

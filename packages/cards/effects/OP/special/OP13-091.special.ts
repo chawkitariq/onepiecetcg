@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -13,9 +12,7 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
   id: 'op13-091-special',
   cardId: 'OP13-091',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
 
     if (
@@ -23,12 +20,12 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
       event.type === 'onTurnStart' ||
       event.type === 'onCardDrawn'
     ) {
-      const player = host.getPlayer(event.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) return;
 
       const trashCount = player.zones.trash.length;
       if (trashCount >= 7) {
-        anyEngine.modifiers.addKeywordModifier(
+        engine.addKeywordModifier(
           event.sourceInstanceId,
           event.playerSessionId,
           event.sourceInstanceId,
@@ -36,7 +33,7 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
           'untilEndOfTurn',
         );
 
-        host.addLog(
+        engine.addLog(
           '[St. Marcus Mars] 7+ cards in trash — cannot be removed by opponent effects and gains [Blocker].',
         );
         engine.reapplyContinuousEffects();
@@ -45,10 +42,10 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'onPlay') return;
 
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player || player.zones.hand.length < 1) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op13-091:confirm`,
         effectId: 'op13-091-special',
@@ -66,7 +63,7 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op13-091:trash-hand`,
           event.playerSessionId,
           {
@@ -83,7 +80,7 @@ export const op13091SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (trashed) => {
             for (const card of trashed) {
-              host.moveCard(card, event.playerSessionId, 'trash');
+              engine.moveCard(card, event.playerSessionId, 'trash');
             }
 
             const def: StandardEffectDefinition = {

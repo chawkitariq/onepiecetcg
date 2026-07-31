@@ -15,9 +15,7 @@ export const op16079SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'onCharacterPlayed') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const playedCard = host.getCard(event.sourceInstanceId);
+    const playedCard = engine.getCard(event.sourceInstanceId);
     if (!playedCard) return;
 
     if ((event as any).sourceZone !== 'trash') return;
@@ -25,7 +23,7 @@ export const op16079SpecialHandler: SpecialHandlerDefinition = {
     const families: string[] = Array.from(playedCard.families ?? []);
     if (!families.includes('Land of Wano')) return;
 
-    anyEngine.modifiers.addKeywordModifier(
+    engine.addKeywordModifier(
       event.sourceInstanceId,
       event.playerSessionId,
       playedCard.instanceId,

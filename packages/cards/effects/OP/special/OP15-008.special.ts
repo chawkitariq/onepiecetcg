@@ -1,10 +1,6 @@
 import type { StandardEffectDefinition } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
-import {
-  createOncePerTurnKey,
-  hasResolvedOncePerTurn,
-  markResolvedOncePerTurn,
-} from '../../special-handler-utils.js';
+import { createOncePerTurnKey } from '../../special-handler-utils.js';
 
 /**
  * OP15-008 "Krieg"
@@ -18,15 +14,11 @@ export const op15008SpecialHandler: SpecialHandlerDefinition = {
   id: 'op15-008-special',
   cardId: 'OP15-008',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const decisions = anyEngine.decisions;
-
     if (event.type === 'onPlay') {
-      const opponentId = host.getOpponentSessionId(event.playerSessionId);
+      const opponentId = engine.getOpponentSessionId(event.playerSessionId);
       if (!opponentId) return;
 
-      const opponent = host.getPlayer(opponentId);
+      const opponent = engine.getPlayer(opponentId);
       if (!opponent) return;
 
       const restedDonCount = Array.from(opponent.zones.cost).filter(
@@ -36,7 +28,7 @@ export const op15008SpecialHandler: SpecialHandlerDefinition = {
 
       if (maxDonToGive === 0) return;
 
-      decisions.chooseCards(
+      engine.chooseCards(
         `${event.sourceInstanceId}:op15-008:on-play-target-char`,
         event.playerSessionId,
         { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -56,9 +48,9 @@ export const op15008SpecialHandler: SpecialHandlerDefinition = {
             return;
           }
 
-          host.attachDon(opponentId, target.instanceId, maxDonToGive);
+          engine.attachDon(opponentId, target.instanceId, maxDonToGive);
 
-          anyEngine.modifiers.addKeywordModifier(
+          engine.addKeywordModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             event.sourceInstanceId,
@@ -66,8 +58,8 @@ export const op15008SpecialHandler: SpecialHandlerDefinition = {
             'untilEndOfTurn',
           );
 
-          host.syncPlayer(event.playerSessionId);
-          host.syncPlayer(opponentId);
+          engine.syncPlayer(event.playerSessionId);
+          engine.syncPlayer(opponentId);
           engine.reapplyContinuousEffects();
         },
       );
@@ -76,28 +68,22 @@ export const op15008SpecialHandler: SpecialHandlerDefinition = {
 
     if (event.type !== 'activateMain') return;
 
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source || !source.playedThisTurn) return;
 
-    const turn = host.state.turn;
+    const turn = engine.state.turn;
     if (
-      hasResolvedOncePerTurn(
-        anyEngine,
-        event.sourceInstanceId,
-        event.sourceCardId,
-        turn,
+      engine.hasResolvedOncePerTurnKey(
+        createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
       )
     )
       return;
 
-    markResolvedOncePerTurn(
-      anyEngine,
-      event.sourceInstanceId,
-      event.sourceCardId,
-      turn,
+    engine.markResolvedOncePerTurnKey(
+      createOncePerTurnKey(event.sourceInstanceId, event.sourceCardId, turn),
     );
 
-    const opponentChars = host.getCards(
+    const opponentChars = engine.getCards(
       {
         player: 'opponent',
         zones: ['characters'],
@@ -110,7 +96,7 @@ export const op15008SpecialHandler: SpecialHandlerDefinition = {
     for (const char of opponentChars) {
       const donGiven = char.attachedDon ?? 0;
       if (donGiven > 0) {
-        anyEngine.modifiers.addPowerModifier(
+        engine.addPowerModifier(
           event.sourceInstanceId,
           event.playerSessionId,
           char.instanceId,

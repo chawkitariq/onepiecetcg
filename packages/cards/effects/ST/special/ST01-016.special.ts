@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { DuelCard } from '@onepiecetcg/shared';
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
@@ -16,38 +15,34 @@ export const st01016SpecialHandler: SpecialHandlerDefinition = {
   id: 'st01-016-special',
   cardId: 'ST01-016',
   resolve(event, engine) {
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
     if (event.type === 'activateMain') {
-      const anyEvt = event as any;
-      const player = host.getPlayer(anyEvt.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) {
         return;
       }
 
-      const selectableCards = host.getCards(
+      const selectableCards = engine.getCards(
         {
           player: 'self',
           zones: ['leader', 'characters'],
           filter: { trait: ['Straw Hat Crew'] },
           count: { kind: 'upTo', value: 1 },
         },
-        anyEvt.playerSessionId,
+        event.playerSessionId,
       );
 
       if (selectableCards.length === 0) {
         return;
       }
 
-      anyEngine.decisions.chooseCards(
-        `${anyEvt.sourceInstanceId}:st01-016:select-target`,
-        anyEvt.playerSessionId,
+      engine.chooseCards(
+        `${event.sourceInstanceId}:st01-016:select-target`,
+        event.playerSessionId,
         {
-          sourceInstanceId: anyEvt.sourceInstanceId,
+          sourceInstanceId: event.sourceInstanceId,
           storedSelections: {},
         },
-        anyEvt.playerSessionId,
+        event.playerSessionId,
         '[Diable Jambe] Select up to 1 {Straw Hat Crew} Leader or Character.',
         {
           player: 'self',
@@ -57,17 +52,17 @@ export const st01016SpecialHandler: SpecialHandlerDefinition = {
         },
         undefined,
         () => {
-          for (const target of host.getCards(
+          for (const target of engine.getCards(
             {
               player: 'opponent',
               zones: ['characters'],
               filter: { cardCategory: ['Character'] },
             },
-            anyEvt.playerSessionId,
+            event.playerSessionId,
           )) {
-            anyEngine.modifiers.addKeywordModifier(
-              anyEvt.sourceInstanceId,
-              anyEvt.playerSessionId,
+            engine.addKeywordModifier(
+              event.sourceInstanceId,
+              event.playerSessionId,
               target.instanceId,
               ['cannotBlock'],
               'untilEndOfTurn',
@@ -78,20 +73,19 @@ export const st01016SpecialHandler: SpecialHandlerDefinition = {
         },
       );
     } else if (event.type === 'trigger') {
-      const anyEvt = event as any;
-      const player = host.getPlayer(anyEvt.playerSessionId);
+      const player = engine.getPlayer(event.playerSessionId);
       if (!player) {
         return;
       }
 
-      const blockerCandidates = host
+      const blockerCandidates = engine
         .getCards(
           {
             player: 'opponent',
             zones: ['characters'],
             filter: { cardCategory: ['Character'], costMax: 3 },
           },
-          anyEvt.playerSessionId,
+          event.playerSessionId,
         )
         .filter((card: DuelCard) => {
           return card.text?.includes('[Blocker]') === true;
@@ -101,14 +95,14 @@ export const st01016SpecialHandler: SpecialHandlerDefinition = {
         return;
       }
 
-      anyEngine.decisions.chooseCards(
-        `${anyEvt.sourceInstanceId}:st01-016:trigger-ko-blocker`,
-        anyEvt.playerSessionId,
+      engine.chooseCards(
+        `${event.sourceInstanceId}:st01-016:trigger-ko-blocker`,
+        event.playerSessionId,
         {
-          sourceInstanceId: anyEvt.sourceInstanceId,
+          sourceInstanceId: event.sourceInstanceId,
           storedSelections: {},
         },
-        anyEvt.playerSessionId,
+        event.playerSessionId,
         '[Diable Jambe] Select up to 1 [Blocker] Character with cost 3 or less to K.O.',
         {
           player: 'opponent',
@@ -120,8 +114,8 @@ export const st01016SpecialHandler: SpecialHandlerDefinition = {
         (selectedCards: any[]) => {
           for (const target of selectedCards) {
             if (target.text?.includes('[Blocker]')) {
-              host.koCharacter(
-                anyEvt.playerSessionId,
+              engine.koCharacter(
+                event.playerSessionId,
                 target.instanceId,
                 'effect',
               );

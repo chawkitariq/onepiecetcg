@@ -18,18 +18,16 @@ export const op11034SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
 
-    if (!player || !player.leader) return;
+    if (!player || !(player as any).leader) return;
 
-    const leaderIsFishManOrMerfolk = player.leader.types?.some(
+    const leaderIsFishManOrMerfolk = (player as any).leader.types?.some(
       (t: string) => t === 'Fish-Man' || t === 'Merfolk',
     );
     if (!leaderIsFishManOrMerfolk) return;
 
-    const opponentChars = host.getCards(
+    const opponentChars = engine.getCards(
       {
         player: 'opponent',
         zones: ['characters'],
@@ -41,7 +39,7 @@ export const op11034SpecialHandler: SpecialHandlerDefinition = {
 
     if (opponentChars.length === 0) return;
 
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op11-034:select-target`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -56,7 +54,7 @@ export const op11034SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selected) => {
         for (const card of selected) {
-          anyEngine.modifiers.addKeywordModifier(
+          engine.addKeywordModifier(
             event.sourceInstanceId,
             event.playerSessionId,
             card.instanceId,

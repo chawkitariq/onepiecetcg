@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 
 /**
@@ -17,25 +16,23 @@ export const op10085SpecialHandler: SpecialHandlerDefinition = {
   cardId: 'OP10-085',
   resolve(event, engine) {
     if (event.type !== 'onCharacterPlayed') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(event.sourceInstanceId);
+    const source = engine.getCard(event.sourceInstanceId);
     if (!source) return;
-    const attachedDon = host.getCards(
+    const attachedDon = engine.getCards(
       {
         player: 'self',
         zones: ['cost'],
-        filter: { attachedTo: event.sourceInstanceId },
+        filter: { attachedTo: event.sourceInstanceId } as any,
       },
       event.playerSessionId,
     );
     if (attachedDon.length < 1) return;
-    const trashCards = host.getCards(
+    const trashCards = engine.getCards(
       { player: 'self', zones: ['trash'] },
       event.playerSessionId,
     );
     if (trashCards.length < 8) return;
-    anyEngine.modifiers.addKeywordModifier(
+    engine.addKeywordModifier(
       event.sourceInstanceId,
       event.playerSessionId,
       source.instanceId,

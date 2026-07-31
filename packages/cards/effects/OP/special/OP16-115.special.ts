@@ -12,10 +12,7 @@ export const op16115SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'trigger') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-
-    anyEngine.decisions.chooseCards(
+    engine.chooseCards(
       `${event.sourceInstanceId}:op16-115:negate`,
       event.playerSessionId,
       { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -30,7 +27,7 @@ export const op16115SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (selected) => {
         for (const card of selected) {
-          patchSpecialHandlerCardStatus(host, card, {
+          patchSpecialHandlerCardStatus(engine, card, {
             effectNegated: true,
           });
         }

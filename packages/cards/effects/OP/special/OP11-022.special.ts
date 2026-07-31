@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';
 import { patchSpecialHandlerCardStatus } from '../../special-handler-utils.js';
 
@@ -18,13 +17,10 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     if (event.type !== 'activateMain') return;
 
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
+    const oncePerTurnKey = `${event.sourceInstanceId}:op11-022:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
 
-    const oncePerTurnKey = `${event.sourceInstanceId}:op11-022:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
-
-    const player = host.getPlayer(event.playerSessionId);
+    const player = engine.getPlayer(event.playerSessionId);
     if (!player) return;
 
     const hasDonToRest = player.zones.cost.length > 0;
@@ -37,7 +33,7 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
       totalDonOnField += char.attachedDon ?? 0;
     }
 
-    const handCards = host.getCards(
+    const handCards = engine.getCards(
       {
         player: 'self',
         zones: ['hand'],
@@ -51,7 +47,7 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
     );
     if (handCards.length === 0) return;
 
-    anyEngine.decisions.pause(
+    engine.pauseDecision(
       {
         id: `${event.sourceInstanceId}:op11-022:confirm`,
         effectId: 'op11-022-special',
@@ -69,14 +65,14 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
       (response: { confirmed?: boolean }) => {
         if (!response.confirmed) return;
 
-        anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
+        engine.markResolvedOncePerTurnKey(oncePerTurnKey);
 
         if (player.zones.cost.length > 0) {
           const firstDon = player.zones.cost[0];
-          patchSpecialHandlerCardStatus(host, firstDon, { rested: true });
+          patchSpecialHandlerCardStatus(engine, firstDon, { rested: true });
         }
 
-        const topLife = host.getCards(
+        const topLife = engine.getCards(
           {
             player: 'self',
             zones: ['life'],
@@ -89,7 +85,7 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
           topLife[0].faceDown = false;
         }
 
-        anyEngine.decisions.chooseCards(
+        engine.chooseCards(
           `${event.sourceInstanceId}:op11-022:play`,
           event.playerSessionId,
           { sourceInstanceId: event.sourceInstanceId, storedSelections: {} },
@@ -107,7 +103,7 @@ export const op11022SpecialHandler: SpecialHandlerDefinition = {
           undefined,
           (selected) => {
             for (const card of selected) {
-              host.playCard(card, event.playerSessionId, 'characters');
+              engine.playCard(card, event.playerSessionId, 'characters');
             }
             engine.reapplyContinuousEffects();
           },

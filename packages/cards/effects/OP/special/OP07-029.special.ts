@@ -7,18 +7,17 @@ export const op07029SpecialHandler: SpecialHandlerDefinition = {
   resolve(event, engine) {
     const anyEvt = event as any;
     if (anyEvt.type !== 'wouldMoveCard') return;
-    const anyEngine = engine as any;
-    const host = anyEngine.host;
-    const source = host.getCard(anyEvt.sourceInstanceId);
+    const source = engine.getCard(anyEvt.sourceInstanceId);
     if (!source) return;
-    const oncePerTurnKey = `${anyEvt.sourceInstanceId}:op07-029:${host.state.turn}`;
-    if (anyEngine.resolvedOncePerTurnKeys?.has(oncePerTurnKey)) return;
-    const player = host.getPlayer(anyEvt.playerSessionId);
+    const oncePerTurnKey = `${anyEvt.sourceInstanceId}:op07-029:${engine.state.turn}`;
+    if (engine.hasResolvedOncePerTurnKey(oncePerTurnKey)) return;
+    const player = engine.getPlayer(anyEvt.playerSessionId);
     if (!player) return;
-    const leaderHasSupernovas = player.leader?.families?.includes('Supernovas');
+    const leaderHasSupernovas =
+      player.zones.leader.families?.includes('Supernovas');
     if (!leaderHasSupernovas) return;
-    anyEngine.resolvedOncePerTurnKeys?.add(oncePerTurnKey);
-    anyEngine.decisions.chooseCards(
+    engine.markResolvedOncePerTurnKey(oncePerTurnKey);
+    engine.chooseCards(
       `${anyEvt.sourceInstanceId}:op07-029:rest-instead`,
       anyEvt.playerSessionId,
       { sourceInstanceId: anyEvt.sourceInstanceId, storedSelections: {} },
@@ -33,10 +32,10 @@ export const op07029SpecialHandler: SpecialHandlerDefinition = {
       undefined,
       (cards) => {
         for (const card of cards) {
-          host.restCard(card);
+          engine.patchCardStatus(card.instanceId, { rested: true });
         }
-        anyEngine.preventDefaultMove();
-        anyEngine.reapplyContinuousEffects();
+        engine.preventDefaultMove();
+        engine.reapplyContinuousEffects();
       },
     );
   },
