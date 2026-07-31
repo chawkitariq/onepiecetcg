@@ -36,8 +36,9 @@ const formattedValue = computed(() => {
     color="neutral"
     variant="soft"
     size="sm"
+    icon="i-lucide-zap"
     class="duel-board-badge duel-power-badge absolute bottom-1 left-1/2 z-30 -translate-x-1/2 tabular-nums"
-    :ui="{ label: 'font-semibold tabular-nums' }"
+    :ui="{ leadingIcon: 'size-3', label: 'font-semibold tabular-nums' }"
     :class="mirrored ? '-scale-x-100 -scale-y-100' : ''"
   >
     {{ formattedValue }}
