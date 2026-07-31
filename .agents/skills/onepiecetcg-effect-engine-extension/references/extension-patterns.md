@@ -46,7 +46,7 @@ If a new action needs host capabilities that do not exist yet, extend `EffectEng
 
 Once the engine supports the missing primitive:
 
-1. Return to the relevant `packages/effect-engine/src/definitions/<FAMILY>/*.effects.ts` file.
+1. Return to the relevant `packages/cards/effects/<FAMILY>/*.effects.ts` file.
 2. Replace placeholder entries or missing cards with real `effects` data.
 3. Prefer `kind: 'standard'`, `kind: 'continuous'`, or `kind: 'replacement'`.
 4. Use `kind: 'special-ref'` only when the card still cannot be expressed safely.
@@ -55,14 +55,14 @@ Once the engine supports the missing primitive:
 
 When a special handler is still justified:
 
-- add a card-specific file in `packages/effect-engine/src/definitions/<FAMILY>/special/`
+- add a card-specific file in `packages/cards/effects/<FAMILY>/special/`
 - export a `SpecialHandlerDefinition`
 - keep logic small and deterministic
 - prefer queueing standard effects through `engine.queueEffect()` instead of mutating gameplay state directly
 - register the handler in the family's `special/index.ts`, then ensure the family `index.ts` and root `definitions/index.ts` still aggregate it
 - reference it from the card definition via `kind: 'special-ref'`
 
-The handler in `packages/effect-engine/src/definitions/OP/special/OP04-047.special.ts` is a baseline example.
+The handler in `packages/cards/effects/OP/special/OP04-047.special.ts` is a baseline example.
 
 ## 5. Loader And Index Maintenance
 

@@ -20,32 +20,31 @@ Extract the effect engine into its own reusable package without leaving API-spec
    - engine runtime
    - runtime helper classes
    - effect registry and indexes
-   - authored effect definitions
-   - special handlers
    - engine-owned tests
-5. Expose the package through explicit public exports and public host interfaces. The package must depend on `@onepiecetcg/shared`, not on NestJS, Colyseus, or local API paths.
-6. Reduce `packages/api/src/card-effect/` to API-facing assembly only:
+5. Keep authored effect definitions, special handlers, effect-source indexes, and their dedicated card-level tests in `packages/cards/effects/`.
+6. Expose the package through explicit public exports and public host interfaces. The package must depend on `@onepiecetcg/shared`, not on NestJS, Colyseus, or local API paths.
+7. Reduce `packages/api/src/card-effect/` to API-facing assembly only:
    - Nest module
    - Nest service or factory that instantiates the engine
-7. Keep room-specific adapters in `packages/api/src/duel/effects/`:
+8. Keep room-specific adapters in `packages/api/src/duel/effects/`:
    - `createDuelEffectEngineHost`
    - `DuelEffectEventDispatcher`
    - `DuelRoomEffectBoundary`
    - manual trigger fallback and other room orchestration concerns
-8. Retarget API imports directly to `@onepiecetcg/effect-engine`. Do not keep `packages/api/src/card-effect/**` runtime re-export facades unless they are still true API composition roots.
-9. Delete compatibility leftovers once imports are updated:
+9. Retarget API imports to `@onepiecetcg/effect-engine` for runtime code and `@onepiecetcg/cards/effects` for authored effect sources. Do not keep `packages/api/src/card-effect/**` runtime re-export facades unless they are still true API composition roots.
+10. Delete compatibility leftovers once imports are updated:
    - old runtime folders under `packages/api/src/card-effect/`
-   - moved definitions left behind in API
+   - moved definitions left behind in API or effect-engine
    - stale Jest aliasing added only for the transition
-10. Run the validation loop from `references/project-context.md` until the package and API adapters both pass.
+11. Run the validation loop from `references/project-context.md` until the package and API adapters both pass.
 
 ## Working Rules
 
 - Treat `packages/effect-engine` as framework-agnostic. Do not leave NestJS services, Colyseus room classes, room persistence, auth, or networking logic inside it.
 - Prefer public host contracts and exported types from `packages/effect-engine/src/index.ts`.
 - Keep `packages/shared` for shared effect DSL and state types only. Do not move runtime orchestration there.
-- Move the engine's authored definitions and special handlers with the engine package. They are part of the reusable runtime surface.
-- Move or rewrite engine-owned tests so `packages/effect-engine` proves its own behavior locally.
+- Keep authored definitions, special handlers, and their dedicated card-level tests in `packages/cards/effects`.
+- Move or rewrite engine-owned runtime tests so `packages/effect-engine` proves its own behavior locally without owning the authored sources.
 - If you run `vitest` inside `packages/effect-engine`, scope it to that package's config so it does not sweep unrelated repo suites.
 - Never run package build commands for validation in this repo. Use typecheck and focused tests only.
 - Always ask before adding a new dependency.

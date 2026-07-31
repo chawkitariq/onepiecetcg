@@ -4,8 +4,11 @@
 
 - `packages/effect-engine/`
   - Own pure effect runtime code.
-  - Own public package exports, runtime contracts, registry assembly, authored definitions, special handlers, and package-local tests.
+  - Own public package exports, runtime contracts, registry assembly, and package-local runtime tests.
   - Stay reusable by API adapters and any future non-Colyseus integration.
+- `packages/cards/effects/`
+  - Own authored effect definitions, special handlers, effect-source indexes, and their dedicated card-level tests.
+  - Stay reusable by both `packages/api/` and `packages/effect-engine/`.
 - `packages/api/src/card-effect/`
   - Own Nest-facing assembly only.
   - Keep `EffectsModule` and any Nest service or factory that instantiates the engine package.
@@ -34,9 +37,13 @@
 Move a file to `packages/effect-engine` when it:
 - resolves or executes effect behavior
 - owns effect registry bootstrapping or indexes
-- defines authored effect cards or special handlers
 - depends only on `@onepiecetcg/shared` plus public engine contracts
 - should be reusable outside the current NestJS and Colyseus runtime
+
+Keep a file in `packages/cards/effects` when it:
+- defines authored effect cards or special handlers
+- aggregates edition definitions or special-handler bundles
+- tests card-specific authored behavior or special handlers
 
 Keep a file in `packages/api` when it:
 - depends on NestJS modules or services
@@ -61,7 +68,7 @@ Run the smallest useful checks for the touched surface:
 
 After each refactor wave, grep for leftovers:
 
-- `rg -n "@onepiecetcg/effect-engine|../../card-effect|../card-effect" packages/api/src -g '*.ts'`
+- `rg -n "@onepiecetcg/effect-engine|@onepiecetcg/cards/effects|../../card-effect|../card-effect" packages/api/src -g '*.ts'`
 - `rg -n "card-effect/(definitions|runtime|types)|../../card-effect|../card-effect" packages/api packages/effect-engine -g '*.ts'`
 - `rg -n "@nestjs|colyseus|Room|Client|StateView" packages/effect-engine/src -g '*.ts'`
 

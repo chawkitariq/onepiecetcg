@@ -17,7 +17,7 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 4. Read `references/extension-patterns.md` before editing any type or runtime file so the extension stays declarative and reusable.
 5. Read `references/validation-loop.md` before testing so every engine change is proven by the right mix of runtime tests, reusable family tests, card-specific tests when justified, and a generation retry loop.
 6. Implement the smallest reusable engine capability that unlocks the blocked cards.
-7. Update or add the affected effect definitions in `packages/effect-engine/src/definitions/`.
+7. Update or add the affected effect definitions in `packages/cards/effects/`.
 8. Run the validation loop until the blocked cards can be authored cleanly and the targeted tests pass.
 
 ## Working Rules
@@ -27,7 +27,7 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 - Audit existing handlers before adding new engine behavior and decide whether any of them should be converted into a reusable primitive or kept as special-case code based on the current context.
 - Touch `packages/shared/src/effects.ts` first when the missing concept is part of authored card definitions.
 - Touch `packages/effect-engine/src/effect-engine.ts` when the runtime cannot resolve an already-valid DSL concept.
-- Keep `definitions/<FAMILY>/special/` as the fallback for truly card-specific sequencing or temporary escape hatches, not as the default place for reusable mechanics.
+- Keep `effects/<FAMILY>/special/` as the fallback for truly card-specific sequencing or temporary escape hatches, not as the default place for reusable mechanics.
 - When a missing effect shape can recur across cards or sets, do not solve it only inside one special handler.
 - Preserve the repository split:
   - `packages/shared/` owns the effect DSL contracts.
@@ -36,7 +36,7 @@ Use this skill when effect-definition generation stops on an unsupported rule sh
 - Always add or update the right test layer for every new engine capability:
   - `packages/effect-engine/src/effect-engine.spec.ts` for reusable runtime or rules behavior
   - `packages/effect-engine/src/effect-loader.spec.ts` when loader or registry wiring changes
-  - edition-specific card suites such as `packages/effect-engine/src/definitions/OP/OP-01.effects.spec.ts` when the new capability unlocks a unique, ambiguous, special-handled, or especially critical card behavior
+  - edition-specific card suites such as `packages/cards/effects/OP/OP-01.effects.spec.ts` when the new capability unlocks a unique, ambiguous, special-handled, or especially critical card behavior
 - After unlocking the runtime, return to the blocked effect definitions and finish the declarative DSL conversion instead of leaving placeholders behind.
 - Do not default to one dedicated test per unlocked card if the behavior is already well protected by reusable engine or family coverage.
 - Add a dedicated per-card suite when the card uses a special handler, when the effect is uniquely complex, when several sensitive rules are mixed together, or when the card is important enough that a regression deserves explicit protection.

@@ -11,7 +11,7 @@ Use this reference when you need the exact source files for the effect-definitio
 - Need the effect DSL types:
   Read `packages/shared/src/effects.ts`
 - Need the authoring source shape used by `*.effects.ts` files:
-  Read `packages/effect-engine/src/types/effect-definition-source.ts`
+  Read `packages/shared/src/effects.ts`
 - Need the runtime registry contracts:
   Read `packages/effect-engine/src/types/effect-registry.ts`
 - Need to understand how authored source becomes runtime buckets:
@@ -19,9 +19,9 @@ Use this reference when you need the exact source files for the effect-definitio
 - Need to understand the precomputed indexes:
   Read `packages/effect-engine/src/effect-indexes.ts`
 - Need to inspect example authored edition files:
-  Read `packages/effect-engine/src/definitions/OP/OP-01.effects.ts`
+  Read `packages/cards/effects/OP/OP-01.effects.ts`
 - Need to inspect a real special handler:
-  Read `packages/effect-engine/src/definitions/OP/special/OP04-047.special.ts`
+  Read `packages/cards/effects/OP/special/OP04-047.special.ts`
 - Need to inspect helper accessors over resolved definitions:
   Read `packages/effect-engine/src/effect-definition-dispatch.ts`
 - Need to inspect runtime event and special-handler host types:
@@ -78,7 +78,7 @@ This file tells you which fields are legal inside authored `effects` entries.
 
 ## Authoring source types
 
-### `packages/effect-engine/src/types/effect-definition-source.ts`
+### `packages/shared/src/effects.ts`
 
 This file defines the source shape used inside edition files:
 
@@ -89,7 +89,7 @@ This file defines the source shape used inside edition files:
 
 This is the direct contract for:
 
-- `packages/effect-engine/src/definitions/<FAMILY>/*.effects.ts`
+- `packages/cards/effects/<FAMILY>/*.effects.ts`
 
 If you are unsure how a card block should be structured, start here.
 
@@ -144,7 +144,7 @@ Read it when a new authored definition should be discoverable through a trigger 
 
 ## Example authored definition files
 
-### `packages/effect-engine/src/definitions/OP/OP-01.effects.ts`
+### `packages/cards/effects/OP/OP-01.effects.ts`
 
 Use as the primary example for:
 
@@ -153,7 +153,7 @@ Use as the primary example for:
 - `special-ref` entries
 - comment banner format
 
-### `packages/effect-engine/src/definitions/OP/index.ts`
+### `packages/cards/effects/OP/index.ts`
 
 Use as the example for:
 
@@ -163,7 +163,7 @@ Use as the example for:
 
 ## Example special-handler files
 
-### `packages/effect-engine/src/definitions/OP/special/OP04-047.special.ts`
+### `packages/cards/effects/OP/special/OP04-047.special.ts`
 
 Use as the primary example for:
 
@@ -173,7 +173,7 @@ Use as the primary example for:
 - `resolve(event, engine)` shape
 - queueing a synthetic `StandardEffectDefinition`
 
-### `packages/effect-engine/src/definitions/OP/special/index.ts`
+### `packages/cards/effects/OP/special/index.ts`
 
 Use as the example for:
 
@@ -182,7 +182,7 @@ Use as the example for:
 
 ## Helper accessors and runtime engine context
 
-### `packages/effect-engine/src/definitions/index.ts`
+### `packages/cards/effects/index.ts`
 
 Use as the example for:
 

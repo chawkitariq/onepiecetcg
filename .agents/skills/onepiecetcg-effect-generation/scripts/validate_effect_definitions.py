@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate project effect-definition files without relying on backend source scripts."""
+"""Validate project effect-definition files without relying on app-local source scripts."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--definitions-dir",
         type=Path,
-        help="Definitions directory. Defaults to packages/effect-engine/src/definitions.",
+        help="Definitions directory. Defaults to packages/cards/effects.",
     )
     parser.add_argument(
         "--special-dir",

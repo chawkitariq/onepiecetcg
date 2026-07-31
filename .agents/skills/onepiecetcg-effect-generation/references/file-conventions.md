@@ -4,9 +4,9 @@
 
 Write effect-definition files only in:
 
-- edition definitions: `packages/effect-engine/src/definitions/<FAMILY>/`
-- special handlers: `packages/effect-engine/src/definitions/<FAMILY>/special/` (e.g. `OP/special/`, `ST/special/`)
-- shared handler utilities: `packages/effect-engine/src/definitions/` (`special-handler-utils.ts`)
+- edition definitions: `packages/cards/effects/<FAMILY>/`
+- special handlers: `packages/cards/effects/<FAMILY>/special/` (e.g. `OP/special/`, `ST/special/`)
+- shared handler utilities: `packages/cards/effects/` (`special-handler-utils.ts`)
 
 ## Edition file naming
 
@@ -48,7 +48,7 @@ Examples:
 Each edition file must follow this structure:
 
 ```ts
-import type { EditionEffectDefinitions } from '../../types/effect-definition-source';
+import type { EditionEffectDefinitions } from '@onepiecetcg/shared';
 
 export const op01EffectDefinitions: EditionEffectDefinitions = {
   editionId: 'OP-01',
@@ -69,7 +69,7 @@ export const op01EffectDefinitions: EditionEffectDefinitions = {
 
 The root aggregate index lives here:
 
-- `packages/effect-engine/src/definitions/index.ts`
+- `packages/cards/effects/index.ts`
 
 It must:
 
@@ -82,7 +82,7 @@ It must:
 
 Each family folder must have an index here:
 
-- `packages/effect-engine/src/definitions/<FAMILY>/index.ts`
+- `packages/cards/effects/<FAMILY>/index.ts`
 
 It must:
 
@@ -115,7 +115,7 @@ Example from the repo:
 
 Each edition must have a per-edition special index at:
 
-- `packages/effect-engine/src/definitions/<FAMILY>/special/index.ts`
+- `packages/cards/effects/<FAMILY>/special/index.ts`
 
 It must:
 

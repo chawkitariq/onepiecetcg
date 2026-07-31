@@ -128,7 +128,7 @@ def detect_repo_root(start: Path | None = None) -> Path:
         pass
 
     for parent in [candidate, *candidate.parents]:
-        if (parent / "packages/effect-engine/src/definitions").is_dir():
+        if (parent / "packages/cards/effects").is_dir():
             return parent
 
     raise RuntimeError(
@@ -139,7 +139,7 @@ def detect_repo_root(start: Path | None = None) -> Path:
 def resolve_default_definitions_dir(repo_root: Path) -> Path:
     """Return the default definitions directory inside the repository."""
 
-    return repo_root / "packages/effect-engine/src/definitions"
+    return repo_root / "packages/cards/effects"
 
 
 def resolve_default_special_dir(repo_root: Path) -> Path:
@@ -820,7 +820,7 @@ def render_edition_file(
         rendered_cards = "\n" + ",\n".join(indented_blocks) + ",\n  "
 
     return (
-        "import type { EditionEffectDefinitions } from '../../types/effect-definition-source';\n\n"
+        "import type { EditionEffectDefinitions } from '@onepiecetcg/shared';\n\n"
         f"export const {variable_name}: EditionEffectDefinitions = {{\n"
         f"  editionId: {quote_ts_string(edition_id)},\n"
         f"  cards: [{rendered_cards}],\n"
@@ -829,10 +829,10 @@ def render_edition_file(
 
 
 def render_family_index(family: str, edition_ids: list[str]) -> str:
-    """Render `definitions/<FAMILY>/index.ts` for one family."""
+    """Render `effects/<FAMILY>/index.ts` for one family."""
 
     imports = "\n".join(
-        f"import {{ {to_variable_name(edition_id)} }} from './{to_effect_file_name(edition_id).removesuffix('.ts')}';"
+        f"import {{ {to_variable_name(edition_id)} }} from './{to_effect_file_name(edition_id).removesuffix('.ts')}.js';"
         for edition_id in edition_ids
     )
     entries = "\n".join(f"  {to_variable_name(edition_id)}," for edition_id in edition_ids)
@@ -840,10 +840,9 @@ def render_family_index(family: str, edition_ids: list[str]) -> str:
     edition_definitions_name = to_family_edition_definitions_name(family)
     edition_special_handlers_name = to_family_edition_special_handlers_name(family)
     return (
-        "import type { EditionEffectDefinitions } from '../../types/effect-definition-source';\n"
-        "import type { SpecialHandlerDefinition } from '../../types/effect-registry';\n"
+        "import type { EditionEffectDefinitions, SpecialHandlerDefinition } from '@onepiecetcg/shared';\n"
         f"{imports}\n"
-        f"import {{ {special_handlers_name} }} from './special';\n\n"
+        f"import {{ {special_handlers_name} }} from './special/index.js';\n\n"
         f"export const {edition_definitions_name}: readonly EditionEffectDefinitions[] = [\n"
         f"{entries}\n"
         "] as const;\n\n"
@@ -853,12 +852,12 @@ def render_family_index(family: str, edition_ids: list[str]) -> str:
 
 
 def render_root_definitions_index(families: list[str]) -> str:
-    """Render `definitions/index.ts` from the discovered family folders."""
+    """Render `effects/index.ts` from the discovered family folders."""
 
     imports = "\n".join(
         (
             f"import {{ {to_family_edition_definitions_name(family)}, "
-            f"{to_family_edition_special_handlers_name(family)} }} from './{family}';"
+            f"{to_family_edition_special_handlers_name(family)} }} from './{family}/index.js';"
         )
         for family in families
     )
@@ -869,28 +868,33 @@ def render_root_definitions_index(families: list[str]) -> str:
         f"  ...{to_family_edition_special_handlers_name(family)}," for family in families
     )
     return (
-        "import type { EditionEffectDefinitions } from '../types/effect-definition-source';\n"
-        "import type { SpecialHandlerDefinition } from '../types/effect-registry';\n"
+        "import type { EditionEffectDefinitions, EffectSourceBundle, SpecialHandlerDefinition } from '@onepiecetcg/shared';\n"
         f"{imports}\n\n"
         "export const effectDefinitionEditions: readonly EditionEffectDefinitions[] = [\n"
         f"{edition_entries}\n"
         "] as const;\n\n"
         "export const specialHandlerDefinitions: readonly SpecialHandlerDefinition[] = [\n"
         f"{special_entries}\n"
-        "] as const;\n"
+        "] as const;\n\n"
+        "export function loadEffectSources(): EffectSourceBundle {\n"
+        "  return {\n"
+        "    definitions: effectDefinitionEditions,\n"
+        "    specialHandlers: specialHandlerDefinitions,\n"
+        "  };\n"
+        "}\n"
     )
 
 
 def render_special_index(family: str, handlers: list[ParsedSpecialHandler]) -> str:
-    """Render `definitions/<FAMILY>/special/index.ts` from the discovered special files."""
+    """Render `effects/<FAMILY>/special/index.ts` from the discovered special files."""
 
     imports = "\n".join(
-        f"import {{ {handler.export_name} }} from './{handler.path.stem}';"
+        f"import {{ {handler.export_name} }} from './{handler.path.stem}.js';"
         for handler in handlers
     )
     entries = "\n".join(f"  {handler.export_name}," for handler in handlers)
     return (
-        "import type { SpecialHandlerDefinition } from '../../../types/effect-registry';\n"
+        "import type { SpecialHandlerDefinition } from '@onepiecetcg/shared';\n"
         f"{imports}\n\n"
         f"export const {to_family_special_handlers_name(family)}: readonly SpecialHandlerDefinition[] = [\n"
         f"{entries}\n"

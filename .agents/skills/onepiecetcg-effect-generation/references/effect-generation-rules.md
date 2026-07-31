@@ -84,7 +84,7 @@ When replacing a placeholder with a real definition, add `effects` using only th
 - `replacement`
 - `special-ref`
 
-Use `special-ref` only when the card truly needs a special handler in `definitions/<FAMILY>/special/`.
+Use `special-ref` only when the card truly needs a special handler in `effects/<FAMILY>/special/`.
 
 ## Required completion step after generation
 

@@ -19,7 +19,7 @@ Every engine extension must end with a validation loop, not just a code change.
   - add behavioral tests for new actions, conditions, decisions, replacement behavior, or other reusable rules behavior
 - `packages/effect-engine/src/effect-loader.spec.ts`
   - add bootstrap or registry tests if indexing or loader behavior changed
-- edition-specific specs such as `packages/effect-engine/src/definitions/OP/OP-01.effects.spec.ts`
+- edition-specific specs such as `packages/cards/effects/OP/OP-01.effects.spec.ts`
   - add card-level tests when the unlocked card behavior needs dedicated protection
 
 Good tests should prove:
@@ -37,7 +37,7 @@ The point of this skill is to unblock full effect-definition authoring.
 
 After the engine change:
 
-1. return to the blocked edition file, such as `packages/effect-engine/src/definitions/OP/OP-01.effects.ts`
+1. return to the blocked edition file, such as `packages/cards/effects/OP/OP-01.effects.ts`
 2. replace previously skipped cards with real `effects` entries where the new capability applies
 3. keep special handlers only where still justified
 4. rerun the targeted tests
