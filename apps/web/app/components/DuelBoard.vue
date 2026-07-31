@@ -354,7 +354,17 @@ const shouldShowOpponentHandLane = computed(() =>
   Boolean(opponent.value)
 )
 const selectableHandCardIds = computed(() => {
-  if (!self.value || !isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
+  if (!self.value) {
+    return []
+  }
+
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    return self.value.hand
+      .filter(card => selectableEffectCardIdSet.value.has(card.instanceId))
+      .map(card => card.instanceId)
+  }
+
+  if (!isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
     return []
   }
 
@@ -2885,6 +2895,16 @@ function finishAttackDrag(event: PointerEvent) {
 }
 
 function onSelfHandCardOrCounterClick(instanceId: string, options: { ctrlKey: boolean }) {
+  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
+    if (!selectableEffectCardIdSet.value.has(instanceId)) {
+      pulseHandCard(instanceId)
+      return
+    }
+
+    toggleEffectCardSelection(instanceId)
+    return
+  }
+
   if (isCounteringStep.value && isSelfDefender.value) {
     if (!options.ctrlKey) {
       clearSelectedHandCards()

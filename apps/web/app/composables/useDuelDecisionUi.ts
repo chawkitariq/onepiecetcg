@@ -195,6 +195,10 @@ export function useDuelDecisionUi(options: DuelDecisionUiOptions) {
   const selectedEffectChoiceIds = ref<string[]>([])
 
   const activeDecision = computed<DuelUiDecision | null>(() => {
+    if (options.pendingEffectDecision.value) {
+      return { source: 'effect', pending: options.pendingEffectDecision.value }
+    }
+
     if (options.isAwaitingTriggerDecision.value && options.isSelfDefender.value) {
       return { source: 'combat', kind: 'trigger' }
     }
@@ -205,10 +209,6 @@ export function useDuelDecisionUi(options: DuelDecisionUiOptions) {
 
     if (options.isBlockingStep.value && options.isSelfDefender.value) {
       return { source: 'combat', kind: 'block' }
-    }
-
-    if (options.pendingEffectDecision.value) {
-      return { source: 'effect', pending: options.pendingEffectDecision.value }
     }
 
     return null
@@ -223,18 +223,6 @@ export function useDuelDecisionUi(options: DuelDecisionUiOptions) {
   )
 
   const selectableContext = computed<DuelSelectableContext>(() => {
-    if (options.isBlockingStep.value && options.isSelfDefender.value) {
-      return {
-        source: 'combat',
-        kind: 'block',
-        selector: null,
-        selectableCardInstanceIds: options.self.value?.characters
-          .filter(character => !character.rested)
-          .map(character => character.instanceId) ?? [],
-        revealedCardInstanceIds: []
-      }
-    }
-
     const decision = options.pendingEffectDecision.value
 
     if (decision?.prompt.type === 'selectCards') {
@@ -244,6 +232,18 @@ export function useDuelDecisionUi(options: DuelDecisionUiOptions) {
         selector: decision.prompt.selector,
         selectableCardInstanceIds: selectableEffectCards.value.map(card => card.instanceId),
         revealedCardInstanceIds: decision.prompt.revealedCards ?? []
+      }
+    }
+
+    if (options.isBlockingStep.value && options.isSelfDefender.value) {
+      return {
+        source: 'combat',
+        kind: 'block',
+        selector: null,
+        selectableCardInstanceIds: options.self.value?.characters
+          .filter(character => !character.rested)
+          .map(character => character.instanceId) ?? [],
+        revealedCardInstanceIds: []
       }
     }
 

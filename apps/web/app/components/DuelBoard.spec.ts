@@ -2046,6 +2046,11 @@ describe('DuelBoard leave to lobby', () => {
     pendingEffectDecision.value = null
     activeDecision.value = null
     isAwaitingEffectDecision.value = false
+    toggleEffectCardSelection.mockReset()
+    toggleEffectChoiceSelection.mockReset()
+    submitEffectDecision.mockReset()
+    declineEffectDecision.mockReset()
+    cancelEffectDecisionSelection.mockReset()
     leave.mockReset()
     confirm.mockReset()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
@@ -2390,6 +2395,62 @@ describe('DuelBoard leave to lobby', () => {
     const wrapper = mountBoard()
 
     expect(wrapper.text()).toContain('En attente de la résolution de l’effet par l’adversaire')
+  })
+
+  it('prioritizes a pending hand-based effect decision over the counter-step modal during combat', async () => {
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-leader',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      blockerInstanceId: '',
+      step: 'countering',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    pendingEffectDecision.value = {
+      id: 'decision-cards',
+      effectId: 'effect-1',
+      effectCardId: 'OP03-001',
+      sourceInstanceId: 'self-leader',
+      playerSessionId: 'self',
+      createdAt: '2026-07-31T12:00:00.000Z',
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez des cartes Evenement ou Lieu a defausser.',
+        selector: {
+          player: 'self',
+          zones: ['hand'],
+          filter: {
+            cardCategory: ['Event', 'Stage']
+          },
+          count: { kind: 'upTo', value: 99 }
+        },
+        min: 0,
+        max: 99,
+        revealedCards: []
+      }
+    }
+    activeDecision.value = {
+      source: 'effect',
+      pending: pendingEffectDecision.value
+    }
+    selectableDecisionCardIds.value = ['hand-stage', 'hand-event']
+    selectableEffectCards.value = self.value?.hand.filter(card =>
+      ['Event', 'Stage'].includes(card.type)
+    ) ?? []
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    expect(document.body.textContent).toContain('Choix de cartes')
+    expect(document.body.textContent).not.toContain("Terminer l'étape de Contre")
+
+    await wrapper.get('[data-test="hand-click-hand-event"]').trigger('click')
+
+    expect(toggleEffectCardSelection).toHaveBeenCalledWith('hand-event')
+    expect(declareCounter).not.toHaveBeenCalled()
+    expect(finishCounterStep).not.toHaveBeenCalled()
   })
 
   it('leaves the room and does not navigate away when the confirmation is dismissed', async () => {

@@ -699,6 +699,79 @@ describe('useDuelRoom effect decision helpers', () => {
     expect(isAwaitingEffectDecision.value).toBe(true)
   })
 
+  it('prioritizes a pending effect decision over the combat counter step', () => {
+    const { room } = useColyseus()
+    const selfPlayer = createFakePlayer('session-b', true)
+    selfPlayer.zones.hand = [
+      createFakeCard({
+        instanceId: 'hand-character',
+        cardId: 'char-1',
+        number: 'CHAR-001',
+        name: 'Character Card',
+        type: 'Character'
+      }),
+      createFakeCard({
+        instanceId: 'hand-stage',
+        cardId: 'stage-1',
+        number: 'STAGE-001',
+        name: 'Stage Card',
+        type: 'Stage'
+      }),
+      createFakeCard({
+        instanceId: 'hand-event',
+        cardId: 'event-1',
+        number: 'EVENT-001',
+        name: 'Event Card',
+        type: 'Event'
+      })
+    ]
+    const fakeRoom = createFakeRoom({
+      sessionId: 'session-b',
+      phase: 'main',
+      startingPlayerSessionId: 'session-a',
+      firstPlayerSessionId: 'session-a',
+      activePlayerSessionId: 'session-a',
+      players: [createFakePlayer('session-a', true), selfPlayer],
+      combat: createFakeCombat({
+        attackerSessionId: 'session-a',
+        attackerInstanceId: 'leader-a',
+        defenderSessionId: 'session-b',
+        step: 'countering'
+      })
+    })
+    room.value = fakeRoom as never
+
+    const { activeDecision, selectableDecisionCardIds } = useDuelRoom()
+
+    fakeRoom.emitMessage('pendingEffectDecision', createPendingEffectDecision({
+      playerSessionId: 'session-b',
+      prompt: {
+        type: 'selectCards',
+        message: 'Choisissez des cartes Evenement ou Lieu a defausser.',
+        selector: {
+          player: 'self',
+          zones: ['hand'],
+          filter: {
+            cardCategory: ['Event', 'Stage']
+          },
+          count: { kind: 'upTo', value: 99 }
+        },
+        min: 0,
+        max: 99
+      }
+    }))
+
+    expect(activeDecision.value).toEqual({
+      source: 'effect',
+      pending: expect.objectContaining({
+        prompt: expect.objectContaining({
+          type: 'selectCards'
+        })
+      })
+    })
+    expect(selectableDecisionCardIds.value).toEqual(['hand-stage', 'hand-event'])
+  })
+
   it('serializes a selectChoice decision response', () => {
     const send = vi.fn()
     const { room } = useColyseus()
