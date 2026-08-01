@@ -437,6 +437,12 @@ importers:
 
   packages/duel-engine:
     dependencies:
+      '@onepiecetcg/cards':
+        specifier: workspace:*
+        version: link:../cards
+      '@onepiecetcg/effect-engine':
+        specifier: workspace:*
+        version: link:../effect-engine
       '@onepiecetcg/shared':
         specifier: workspace:*
         version: link:../shared

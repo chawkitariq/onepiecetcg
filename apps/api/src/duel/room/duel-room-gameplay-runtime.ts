@@ -2,17 +2,16 @@ import type {
   CreateDuelGameplayRuntimeInput,
   DuelGameplayRuntime,
 } from '@onepiecetcg/duel-engine';
-import { createDuelGameplayRuntime } from '@onepiecetcg/duel-engine';
 import {
-  DuelRoomEffectBoundary,
-  type DuelRoomEffectBoundaryDeps,
-} from '../effects/duel-room-effect-boundary';
+  createDuelGameplayRuntime,
+  DuelEffectBoundary,
+} from '@onepiecetcg/duel-engine';
 
 export type DuelRoomGameplayRuntime = Omit<
   DuelGameplayRuntime,
   'effectBoundary'
 > & {
-  effectBoundary: DuelRoomEffectBoundary;
+  effectBoundary: DuelEffectBoundary;
 };
 
 export type CreateDuelRoomGameplayRuntimeInput = Omit<
@@ -28,6 +27,6 @@ export function createDuelRoomGameplayRuntime(
 ): DuelRoomGameplayRuntime {
   return createDuelGameplayRuntime({
     ...input,
-    createEffectBoundary: (deps) => new DuelRoomEffectBoundary(deps),
+    createEffectBoundary: (deps) => new DuelEffectBoundary(deps),
   }) as DuelRoomGameplayRuntime;
 }

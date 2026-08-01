@@ -1,5 +1,9 @@
+jest.mock('@onepiecetcg/cards/effects', () => ({
+  loadEffectSources: () => ({ definitions: [], specialHandlers: [] }),
+}));
+
 import { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
+import { DuelEffectBoundary } from '@onepiecetcg/duel-engine';
 import { DuelRoomStateServices } from './duel-room-state-services';
 
 function createPlayer(sessionId: string, displayName: string): DuelPlayer {
@@ -11,8 +15,8 @@ function createPlayer(sessionId: string, displayName: string): DuelPlayer {
   return player;
 }
 
-function createEffectBoundary(state: DuelState): DuelRoomEffectBoundary {
-  return new DuelRoomEffectBoundary({
+function createEffectBoundary(state: DuelState): DuelEffectBoundary {
+  return new DuelEffectBoundary({
     state,
     addLog: () => undefined,
     onPendingEffectDecisionChange: () => undefined,

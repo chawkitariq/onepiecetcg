@@ -1,13 +1,7 @@
+import { describe, expect, it } from 'vitest';
 import type { Card } from '@onepiecetcg/shared';
 import { DuelPlayer, DuelState, createDuelCard } from '@onepiecetcg/shared';
-import { DuelRoomEffectBoundary } from './duel-room-effect-boundary';
-
-jest.mock('@onepiecetcg/shared', () => {
-  const sharedMock: typeof import('../../deck/shared-test.mock') =
-    jest.requireActual('../../deck/shared-test.mock');
-
-  return sharedMock;
-});
+import { DuelEffectBoundary } from './duel-effect-boundary.js';
 
 const leader: Card = {
   id: 'L-001',
@@ -123,7 +117,7 @@ function createBoundaryFixture() {
     synced.push(destinationPlayerSessionId);
   };
 
-  const boundary = new DuelRoomEffectBoundary({
+  const boundary = new DuelEffectBoundary({
     state,
     addLog: (message) => {
       logs.push(message);
@@ -142,7 +136,7 @@ function createBoundaryFixture() {
     addDonToCost: () => 0,
     attachDon: () => 0,
     returnDonToDonDeck: () => 0,
-    koCharacter: () => undefined,
+    koCharacter: () => false,
     syncPlayer: (sessionId) => {
       synced.push(sessionId);
     },
@@ -152,7 +146,7 @@ function createBoundaryFixture() {
   return { state, logs, synced, broadcasted, alice, bob, boundary };
 }
 
-describe('DuelRoomEffectBoundary', () => {
+describe('DuelEffectBoundary', () => {
   it('keeps vanilla life cards structural by adding them to hand', () => {
     const { alice, boundary, synced } = createBoundaryFixture();
     const revealedCard = createDuelCard(

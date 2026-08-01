@@ -9,33 +9,34 @@ import {
   type EffectEngineState,
   type EffectEventType,
 } from '@onepiecetcg/effect-engine';
-import { effectRegistry } from '../../card-effect/effect-registry';
 import {
   createDuelEffectEngineHost,
   type DuelEffectEngineHostDeps,
-} from './duel-effect-engine-host';
-import { DuelEffectEventDispatcher } from './duel-effect-event-dispatcher';
-import { DuelLifeCardResolutionEngine } from './duel-life-card-resolution-engine';
-import { DuelManualTriggerManager } from './duel-manual-trigger-manager';
+} from './duel-effect-engine-host.js';
+import { DuelEffectEventDispatcher } from './duel-effect-event-dispatcher.js';
+import { effectRegistry } from './duel-effect-registry.js';
+import { DuelLifeCardResolutionEngine } from './duel-life-card-resolution-engine.js';
+import {
+  DuelManualTriggerManager,
+  type SerializedManualTriggerFallbackState,
+} from './duel-manual-trigger-manager.js';
 
-export type DuelRoomEffectBoundaryDeps = DuelEffectEngineHostDeps & {
+export type DuelEffectBoundaryDeps = DuelEffectEngineHostDeps & {
   broadcastCardView: (card: DuelCard) => void;
 };
 
-export type DuelRoomEffectBoundaryState = {
+export type DuelEffectBoundaryState = {
   engine: EffectEngineState;
-  manualTrigger:
-    | import('./duel-manual-trigger-manager').SerializedManualTriggerFallbackState
-    | null;
+  manualTrigger: SerializedManualTriggerFallbackState | null;
 };
 
 /**
- * Explicit API boundary between Colyseus duel orchestration and the card
- * effect engine. `DuelRoom` keeps structural combat/state rules; this class
- * translates gameplay windows into effect events and isolates the temporary
- * manual Trigger fallback for cards that still lack a local definition.
+ * Explicit boundary between structural duel orchestration and the card-effect
+ * engine. This class translates gameplay windows into effect events and
+ * isolates the temporary manual Trigger fallback for cards that still lack a
+ * local definition.
  */
-export class DuelRoomEffectBoundary {
+export class DuelEffectBoundary {
   private readonly engine: EffectEngine;
 
   private readonly manualTriggers: DuelManualTriggerManager;
@@ -44,7 +45,7 @@ export class DuelRoomEffectBoundary {
 
   private readonly dispatcher: DuelEffectEventDispatcher;
 
-  public constructor(private readonly deps: DuelRoomEffectBoundaryDeps) {
+  public constructor(private readonly deps: DuelEffectBoundaryDeps) {
     this.engine = new EffectEngine(
       effectRegistry,
       createDuelEffectEngineHost(deps),
@@ -111,7 +112,7 @@ export class DuelRoomEffectBoundary {
   }
 
   /** Exports the serializable mutable boundary state. */
-  public exportState(): DuelRoomEffectBoundaryState {
+  public exportState(): DuelEffectBoundaryState {
     return {
       engine: this.engine.exportState(),
       manualTrigger: this.manualTriggers.exportState(),
@@ -119,14 +120,9 @@ export class DuelRoomEffectBoundary {
   }
 
   /** Restores a previously exported mutable boundary state. */
-  public importState(state: DuelRoomEffectBoundaryState): void {
+  public importState(state: DuelEffectBoundaryState): void {
     this.engine.importState(state.engine);
     this.manualTriggers.importState(state.manualTrigger);
-  }
-
-  /** Returns the serializable pending manual Trigger fallback state, if any. */
-  public getPendingManualTriggerState() {
-    return this.manualTriggers.exportState();
   }
 
   public applyKoReplacement(

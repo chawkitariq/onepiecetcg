@@ -2,6 +2,7 @@ import type {
   DuelCard,
   DuelPlayer,
   DuelState,
+  EffectDecisionResponse,
   EffectTargetSelector,
   GameZone,
   PendingEffectDecision,
@@ -117,6 +118,7 @@ export type DuelEngineEffectBoundaryDeps = {
 export type DuelEngineEffectBoundary = {
   hasPendingPlayerInteraction(): boolean;
   getPendingEffectDecision(): PendingEffectDecision | null;
+  answerEffectDecision(response: EffectDecisionResponse): void;
   reapplyContinuousEffects(): void;
   clearTurnModifiers(): void;
   clearTurnStartModifiers(playerSessionId: string): void;
@@ -160,4 +162,8 @@ export type DuelEngineEffectBoundary = {
     defender: DuelPlayer,
     revealedCard: DuelCard,
   ): 'addedToHand' | 'engineTrigger' | 'manualFallback';
+  resolveManualTriggerDecision(
+    playerSessionId: string,
+    activate: boolean,
+  ): { ok: true } | { ok: false; error: string };
 };

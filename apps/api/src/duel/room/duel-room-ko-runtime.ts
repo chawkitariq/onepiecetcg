@@ -1,10 +1,10 @@
 import type { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
 import {
+  DuelEffectBoundary,
   knockOutCharacterByIdInState,
   knockOutCharacterInState,
   type DuelEngineEffectBoundary,
 } from '@onepiecetcg/duel-engine';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import type { DuelRoomStateServices } from './duel-room-state-services';
 
 /**
@@ -13,7 +13,7 @@ import type { DuelRoomStateServices } from './duel-room-state-services';
 type DuelRoomLiveKoRuntimeInput = {
   stateServices: DuelRoomStateServices;
   state: DuelState;
-  effectBoundary: DuelRoomEffectBoundary;
+  effectBoundary: DuelEffectBoundary;
 };
 
 /**

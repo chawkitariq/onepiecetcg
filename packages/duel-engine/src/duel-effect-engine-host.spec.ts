@@ -1,29 +1,30 @@
-import { createDuelEffectEngineHost } from './duel-effect-engine-host';
+import { describe, expect, it, vi } from 'vitest';
+import { createDuelEffectEngineHost } from './duel-effect-engine-host.js';
 
 describe('createDuelEffectEngineHost', () => {
   it('exposes explicit card patch commands from the duel runtime', () => {
-    const patchCardStatus = jest.fn();
-    const patchCardStats = jest.fn();
-    const setZoneOrder = jest.fn().mockReturnValue(true);
+    const patchCardStatus = vi.fn();
+    const patchCardStats = vi.fn();
+    const setZoneOrder = vi.fn().mockReturnValue(true);
 
     const host = createDuelEffectEngineHost({
       state: {} as never,
-      addLog: jest.fn(),
-      getPlayer: jest.fn(),
-      getOpponentSessionId: jest.fn(),
-      getCard: jest.fn(),
-      getCards: jest.fn().mockReturnValue([]),
-      playCard: jest.fn().mockReturnValue(true),
-      moveCard: jest.fn(),
+      addLog: vi.fn(),
+      getPlayer: vi.fn(),
+      getOpponentSessionId: vi.fn(),
+      getCard: vi.fn(),
+      getCards: vi.fn().mockReturnValue([]),
+      playCard: vi.fn().mockReturnValue(true),
+      moveCard: vi.fn(),
       setZoneOrder,
-      shuffleDeck: jest.fn(),
-      drawCard: jest.fn().mockReturnValue(null),
-      trashTopDeckCards: jest.fn().mockReturnValue([]),
-      addDonToCost: jest.fn().mockReturnValue(0),
-      attachDon: jest.fn().mockReturnValue(0),
-      returnDonToDonDeck: jest.fn().mockReturnValue(0),
-      koCharacter: jest.fn().mockReturnValue(false),
-      syncPlayer: jest.fn(),
+      shuffleDeck: vi.fn(),
+      drawCard: vi.fn().mockReturnValue(null),
+      trashTopDeckCards: vi.fn().mockReturnValue([]),
+      addDonToCost: vi.fn().mockReturnValue(0),
+      attachDon: vi.fn().mockReturnValue(0),
+      returnDonToDonDeck: vi.fn().mockReturnValue(0),
+      koCharacter: vi.fn().mockReturnValue(false),
+      syncPlayer: vi.fn(),
       patchCardStatus,
       patchCardStats,
     });

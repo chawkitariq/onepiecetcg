@@ -1,9 +1,9 @@
 import type { DuelState } from '@onepiecetcg/shared';
 import type {
   DuelCombatEngine,
+  DuelEffectBoundary,
   DuelRoomRuntimeState,
 } from '@onepiecetcg/duel-engine';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 import type { DuelRoomGameplayRuntime } from './duel-room-gameplay-runtime';
 import type { DuelRoomIsolatedGameplayRuntime } from './duel-room-isolated-gameplay-runtime';
 
@@ -24,7 +24,7 @@ export type DuelRoomRuntimeControllerDeps = {
 export type DuelRoomActiveRuntimeContext = {
   state: DuelState;
   runtimeState: DuelRoomRuntimeState;
-  effectBoundary: DuelRoomEffectBoundary;
+  effectBoundary: DuelEffectBoundary;
   combatEngine: DuelCombatEngine;
 };
 
@@ -66,7 +66,7 @@ export class DuelRoomRuntimeController {
    * Returns the effect boundary currently authoritative for player
    * interactions.
    */
-  public getActiveEffectBoundary(): DuelRoomEffectBoundary {
+  public getActiveEffectBoundary(): DuelEffectBoundary {
     return (
       this.deps.getPendingRuntime()?.gameplayRuntime.effectBoundary ??
       this.getGameplayRuntime().effectBoundary

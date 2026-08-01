@@ -1,4 +1,8 @@
 import { DuelState } from '@onepiecetcg/shared';
+jest.mock('@onepiecetcg/cards/effects', () => ({
+  loadEffectSources: () => ({ definitions: [], specialHandlers: [] }),
+}));
+
 import { DuelRoomInteractionRuntimeCoordinator } from './duel-room-interaction-runtime';
 
 function createPendingDecision() {

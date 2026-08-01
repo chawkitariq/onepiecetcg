@@ -1,6 +1,8 @@
 import type { DuelState, PendingEffectDecision } from '@onepiecetcg/shared';
-import { adoptRoomDuelState } from '@onepiecetcg/duel-engine';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
+import {
+  adoptRoomDuelState,
+  type DuelEffectBoundary,
+} from '@onepiecetcg/duel-engine';
 import type { DuelRoomGameplayRuntime } from './duel-room-gameplay-runtime';
 import type {
   DuelRoomLifecycle,
@@ -47,8 +49,8 @@ export class DuelRoomInteractionRuntimeCoordinator {
    * interaction state.
    */
   public getActiveEffectBoundary(
-    liveEffectBoundary: DuelRoomEffectBoundary,
-  ): DuelRoomEffectBoundary {
+    liveEffectBoundary: DuelEffectBoundary,
+  ): DuelEffectBoundary {
     return (
       this.deps.getPendingRuntime()?.gameplayRuntime.effectBoundary ??
       liveEffectBoundary
@@ -59,7 +61,7 @@ export class DuelRoomInteractionRuntimeCoordinator {
    * Returns whether any player interaction is currently pending.
    */
   public hasPendingPlayerInteraction(
-    liveEffectBoundary: DuelRoomEffectBoundary,
+    liveEffectBoundary: DuelEffectBoundary,
   ): boolean {
     return this.getActiveEffectBoundary(
       liveEffectBoundary,
@@ -131,7 +133,7 @@ export class DuelRoomInteractionRuntimeCoordinator {
     nextState: DuelState,
     lifecycleState: DuelRoomLifecycleState,
     exportEffectBoundaryState: () => ReturnType<
-      DuelRoomEffectBoundary['exportState']
+      DuelEffectBoundary['exportState']
     >,
   ): void {
     this.deps.setPendingRuntime(null);

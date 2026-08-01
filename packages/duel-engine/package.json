@@ -16,6 +16,8 @@
     }
   },
   "dependencies": {
+    "@onepiecetcg/cards": "workspace:*",
+    "@onepiecetcg/effect-engine": "workspace:*",
     "@onepiecetcg/shared": "workspace:*"
   },
   "devDependencies": {

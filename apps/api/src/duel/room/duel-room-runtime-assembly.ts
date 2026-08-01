@@ -6,8 +6,10 @@ import type {
   DuelState,
   PendingEffectDecision,
 } from '@onepiecetcg/shared';
-import type { DuelEngineEffectBoundary } from '@onepiecetcg/duel-engine';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
+import type {
+  DuelEffectBoundary,
+  DuelEngineEffectBoundary,
+} from '@onepiecetcg/duel-engine';
 import {
   createDuelRoomGameplayRuntime,
   type DuelRoomGameplayRuntime,
@@ -73,7 +75,7 @@ export type CreateLiveDuelRoomGameplayRuntimeInput =
 export type CreateIsolatedDuelRoomGameplayRuntimeInput = {
   liveState: DuelState;
   liveLifecycleState: DuelRoomLifecycleState;
-  liveEffectBoundaryState: ReturnType<DuelRoomEffectBoundary['exportState']>;
+  liveEffectBoundaryState: ReturnType<DuelEffectBoundary['exportState']>;
   maxClients: number;
   createLifecycleForState: (state: DuelState) => DuelRoomLifecycle;
   appendLogToState: (

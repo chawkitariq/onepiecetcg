@@ -5,17 +5,17 @@ import type {
   DuelState,
 } from '@onepiecetcg/shared';
 import type {
+  DuelEffectBoundary,
   DuelEngineEffectBoundary,
   DuelRoomCharacterKoDeps,
 } from '@onepiecetcg/duel-engine';
-import type { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
 
 /**
  * Input required to build the KO dependencies for one duel-state scope.
  */
 export type CreateDuelRoomCharacterKoDepsInput = {
   state: DuelState;
-  effectBoundary: DuelEngineEffectBoundary | DuelRoomEffectBoundary;
+  effectBoundary: DuelEngineEffectBoundary | DuelEffectBoundary;
   addLog: (
     message: string,
     level?: DuelLogLevel,

@@ -9,9 +9,9 @@ import { ArraySchema } from '@colyseus/schema';
 import type { DeckService } from '../deck/deck.service';
 import type { StatsService } from '../stats/stats.service';
 import { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import { DuelRoomEffectBoundary } from './effects/duel-room-effect-boundary';
 import { DuelRoomClientNotifier } from './room/duel-room-client-notifier';
 import {
+  DuelEffectBoundary,
   isProtectedFromBattleKo,
   knockOutCharacterInState,
 } from '@onepiecetcg/duel-engine';
@@ -100,7 +100,7 @@ export function configureDuelRoomAuth(nextResolver: DuelSessionResolver) {
 export class DuelRoom extends Room<DuelState> {
   private readonly logger = new Logger(DuelRoom.name);
 
-  private effectBoundary!: DuelRoomEffectBoundary;
+  private effectBoundary!: DuelEffectBoundary;
 
   private lifecycle!: DuelRoomLifecycle;
 
@@ -449,7 +449,7 @@ export class DuelRoom extends Room<DuelState> {
     }
   }
 
-  private getActiveEffectBoundary(): DuelRoomEffectBoundary {
+  private getActiveEffectBoundary(): DuelEffectBoundary {
     return this.runtimeController.getActiveEffectBoundary();
   }
 

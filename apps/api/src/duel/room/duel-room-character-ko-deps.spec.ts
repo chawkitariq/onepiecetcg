@@ -1,11 +1,15 @@
+jest.mock('@onepiecetcg/cards/effects', () => ({
+  loadEffectSources: () => ({ definitions: [], specialHandlers: [] }),
+}));
+
 import { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import { DuelRoomEffectBoundary } from '../effects/duel-room-effect-boundary';
+import { DuelEffectBoundary } from '@onepiecetcg/duel-engine';
 import { createDuelRoomCharacterKoDeps } from './duel-room-character-ko-deps';
 
 describe('duel-room-character-ko-deps', () => {
   it('forwards stateful KO callbacks to the provided room adapters', () => {
     const state = new DuelState();
-    const effectBoundary = new DuelRoomEffectBoundary({
+    const effectBoundary = new DuelEffectBoundary({
       state,
       addLog: () => undefined,
       onPendingEffectDecisionChange: () => undefined,
