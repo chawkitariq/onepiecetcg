@@ -19,6 +19,13 @@ import {
   type DuelCardFeedbackFamily,
   type DuelFloatingFeedbackFamily
 } from '~/utils/duelFeedback'
+import {
+  formatMatchDurationLabel,
+  formatMatchupLabel,
+  formatResultTurnLabel,
+  formatTurnButtonLabel,
+  resolveWaitingToastText
+} from '~/utils/duelBoardPresentation'
 import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
 import { createHoveredDuelCard, mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
 import { createStaggeredTravelPlan } from '~/utils/travelStagger'
@@ -588,45 +595,7 @@ const isFinished = computed(() => phase.value === 'finished')
 const isSelfWinner = computed(() =>
   Boolean(self.value && winnerSessionId.value === self.value.sessionId)
 )
-const resultTurnLabel = computed(() => {
-  if (turn.value <= 0) {
-    return '—'
-  }
-
-  return `${turn.value} tour${turn.value > 1 ? 's' : ''}`
-})
-function parseIsoDate(value: string | null) {
-  if (!value) {
-    return null
-  }
-
-  const parsed = new Date(value)
-
-  return Number.isNaN(parsed.getTime()) ? null : parsed
-}
-
-function formatMatchDurationLabel(startIso: string | null, endIso: string | null) {
-  const start = parseIsoDate(startIso)
-  const end = parseIsoDate(endIso)
-
-  if (!start || !end) {
-    return '—'
-  }
-
-  const totalSeconds = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000))
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  if (minutes === 0) {
-    return `${seconds} s`
-  }
-
-  if (seconds === 0) {
-    return `${minutes} min`
-  }
-
-  return `${minutes} min ${seconds.toString().padStart(2, '0')} s`
-}
+const resultTurnLabel = computed(() => formatResultTurnLabel(turn.value))
 
 const resultDurationLabel = computed(() =>
   formatMatchDurationLabel(startedAt.value, finishedAt.value)
@@ -664,48 +633,25 @@ watch(activeTrashCards, (cards) => {
   }
 })
 
-const waitingToastText = computed(() => {
-  if (isOpponentDisconnected.value) {
-    return 'Adversaire temporairement deconnecte. La partie reste en attente pendant la fenetre de reconnexion.'
-  }
+const waitingToastText = computed(() =>
+  resolveWaitingToastText({
+    isOpponentDisconnected: isOpponentDisconnected.value,
+    isBlockingStep: isBlockingStep.value,
+    isSelfAttacker: isSelfAttacker.value,
+    isCounteringStep: isCounteringStep.value,
+    isAwaitingTriggerDecision: isAwaitingTriggerDecision.value,
+    isAwaitingEffectDecision: isAwaitingEffectDecision.value,
+    hasPendingEffectDecision: Boolean(pendingEffectDecision.value)
+  })
+)
 
-  if (isBlockingStep.value && isSelfAttacker.value) {
-    return 'En attente de la décision de blocage de l\'adversaire...'
-  }
+const matchupLabel = computed(() =>
+  formatMatchupLabel(self.value?.displayName, opponent.value?.displayName)
+)
 
-  if (isCounteringStep.value && isSelfAttacker.value) {
-    return 'En attente de la décision de contre de l\'adversaire...'
-  }
-
-  if (isAwaitingTriggerDecision.value && isSelfAttacker.value) {
-    return 'En attente de la décision de Déclenchement du défenseur...'
-  }
-
-  if (isAwaitingEffectDecision.value && !pendingEffectDecision.value) {
-    return 'En attente de la résolution de l’effet par l’adversaire...'
-  }
-
-  return null
-})
-
-const matchupLabel = computed(() => {
-  const selfName = self.value?.displayName ?? 'Vous'
-  const opponentName = opponent.value?.displayName ?? 'Adversaire'
-
-  return `${selfName} vs ${opponentName}`
-})
-
-const turnButtonLabel = computed(() => {
-  if (!isSelfTurn.value) {
-    return 'Tour adverse'
-  }
-
-  if (canEndPhase.value) {
-    return 'Fin du tour'
-  }
-
-  return 'Votre tour'
-})
+const turnButtonLabel = computed(() =>
+  formatTurnButtonLabel(isSelfTurn.value, canEndPhase.value)
+)
 
 const turnButtonColor = computed(() => (isSelfTurn.value ? 'primary' : 'neutral'))
 const turnButtonVariant = 'solid' as const
