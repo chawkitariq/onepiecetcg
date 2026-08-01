@@ -370,11 +370,12 @@ export class EffectActionExecutor {
         return;
       }
       case 'moveCard': {
-        this.forSelectedCards(
+        this.selectCardsForAction(
           action.selector,
           controllerSessionId,
           context,
-          this.createDecisionId(source.instanceId, action.type),
+          source.instanceId,
+          action.type,
           'Choisissez la carte a deplacer.',
           (cards) => {
             this.moveCardsWithOptionalDestinationChoice(
@@ -445,11 +446,12 @@ export class EffectActionExecutor {
         return;
       }
       case 'modifyPower': {
-        this.forSelectedCards(
+        this.applyModifierToSelectedCards(
           action.selector,
           controllerSessionId,
           context,
-          this.createDecisionId(source.instanceId, action.type),
+          source.instanceId,
+          action.type,
           'Choisissez la carte dont la puissance sera modifiee.',
           (cards) => {
             for (const target of cards) {
@@ -461,10 +463,8 @@ export class EffectActionExecutor {
                 action.duration.type,
               );
             }
-
-            this.modifiers.reapplyContinuousEffects();
-            next();
           },
+          next,
         );
         return;
       }
@@ -477,11 +477,12 @@ export class EffectActionExecutor {
           return;
         }
 
-        this.forSelectedCards(
+        this.applyModifierToSelectedCards(
           action.selector,
           controllerSessionId,
           context,
-          this.createDecisionId(source.instanceId, action.type),
+          source.instanceId,
+          action.type,
           'Choisissez la carte dont la puissance sera modifiee.',
           (targets) => {
             for (const target of targets) {
@@ -493,19 +494,18 @@ export class EffectActionExecutor {
                 action.duration.type,
               );
             }
-
-            this.modifiers.reapplyContinuousEffects();
-            next();
           },
+          next,
         );
         return;
       }
       case 'modifyCost': {
-        this.forSelectedCards(
+        this.applyModifierToSelectedCards(
           action.selector,
           controllerSessionId,
           context,
-          this.createDecisionId(source.instanceId, action.type),
+          source.instanceId,
+          action.type,
           'Choisissez la carte dont le cout sera modifie.',
           (cards) => {
             for (const target of cards) {
@@ -517,19 +517,18 @@ export class EffectActionExecutor {
                 action.duration.type,
               );
             }
-
-            this.modifiers.reapplyContinuousEffects();
-            next();
           },
+          next,
         );
         return;
       }
       case 'grantKeywords': {
-        this.forSelectedCards(
+        this.applyModifierToSelectedCards(
           action.selector,
           controllerSessionId,
           context,
-          this.createDecisionId(source.instanceId, action.type),
+          source.instanceId,
+          action.type,
           'Choisissez la carte qui gagne un mot-cle.',
           (cards) => {
             for (const target of cards) {
@@ -541,10 +540,8 @@ export class EffectActionExecutor {
                 action.duration.type,
               );
             }
-
-            this.modifiers.reapplyContinuousEffects();
-            next();
           },
+          next,
         );
         return;
       }
@@ -817,14 +814,12 @@ export class EffectActionExecutor {
         return;
       }
       case 'storeSelectedCards': {
-        this.forSelectedCards(
+        this.selectCardsForAction(
           action.selector,
           controllerSessionId,
           context,
-          this.createDecisionId(
-            source.instanceId,
-            `${action.type}:${action.key}`,
-          ),
+          source.instanceId,
+          `${action.type}:${action.key}`,
           'Choisissez la ou les cartes.',
           (cards) => {
             context.storedSelections[action.key] = cards;
@@ -846,7 +841,7 @@ export class EffectActionExecutor {
         return;
       }
       case 'moveStoredCards': {
-        const cards = context.storedSelections[action.key] ?? [];
+        const cards = this.getStoredSelection(context, action.key);
         this.moveCardsWithOptionalDestinationChoice(
           cards,
           controllerSessionId,
@@ -864,7 +859,7 @@ export class EffectActionExecutor {
         return;
       }
       case 'ifStoredSelectionMatches': {
-        const cards = context.storedSelections[action.key] ?? [];
+        const cards = this.getStoredSelection(context, action.key);
         const matches = cards.some((card) =>
           this.selectors.matchesFilter(
             card,
@@ -879,12 +874,11 @@ export class EffectActionExecutor {
           return;
         }
 
-        this.resolveActions(
+        this.resolveChildActions(
           action.actions,
           controllerSessionId,
           source,
           context,
-          0,
           next,
         );
         return;
@@ -901,12 +895,11 @@ export class EffectActionExecutor {
           return;
         }
 
-        this.resolveActions(
+        this.resolveChildActions(
           action.actions,
           controllerSessionId,
           source,
           context,
-          0,
           next,
         );
         return;
@@ -933,12 +926,11 @@ export class EffectActionExecutor {
           return;
         }
 
-        this.resolveActions(
+        this.resolveChildActions(
           action.actions,
           controllerSessionId,
           source,
           context,
-          0,
           next,
         );
         return;
@@ -1038,12 +1030,11 @@ export class EffectActionExecutor {
               return;
             }
 
-            this.resolveActions(
+            this.resolveChildActions(
               selected.actions,
               controllerSessionId,
               source,
               context,
-              0,
               next,
             );
           },
@@ -1109,6 +1100,74 @@ export class EffectActionExecutor {
       undefined,
       resolve,
     );
+  }
+
+  private selectCardsForAction(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+    context: EffectResolutionContext,
+    sourceInstanceId: string,
+    actionTypeSuffix: string,
+    message: string,
+    resolve: (cards: DuelCard[]) => void,
+  ): void {
+    this.forSelectedCards(
+      selector,
+      controllerSessionId,
+      context,
+      this.createDecisionId(sourceInstanceId, actionTypeSuffix),
+      message,
+      resolve,
+    );
+  }
+
+  private applyModifierToSelectedCards(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+    context: EffectResolutionContext,
+    sourceInstanceId: string,
+    actionTypeSuffix: string,
+    message: string,
+    applyModifier: (cards: DuelCard[]) => void,
+    onComplete: () => void,
+  ): void {
+    this.selectCardsForAction(
+      selector,
+      controllerSessionId,
+      context,
+      sourceInstanceId,
+      actionTypeSuffix,
+      message,
+      (cards) => {
+        applyModifier(cards);
+        this.modifiers.reapplyContinuousEffects();
+        onComplete();
+      },
+    );
+  }
+
+  private resolveChildActions(
+    actions: EffectAction[],
+    controllerSessionId: string,
+    source: DuelCard,
+    context: EffectResolutionContext,
+    onComplete: () => void,
+  ): void {
+    this.resolveActions(
+      actions,
+      controllerSessionId,
+      source,
+      context,
+      0,
+      onComplete,
+    );
+  }
+
+  private getStoredSelection(
+    context: EffectResolutionContext,
+    key: string,
+  ): DuelCard[] {
+    return context.storedSelections[key] ?? [];
   }
 
   private arrangeDeckWindow(
