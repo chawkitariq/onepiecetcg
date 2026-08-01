@@ -20,6 +20,11 @@ import {
   type DuelFloatingFeedbackFamily
 } from '~/utils/duelFeedback'
 import {
+  extractBlockerCardName,
+  extractDonGainFeedback,
+  resolveAttackBannerMessage
+} from '~/utils/duelBoardLogFeedback'
+import {
   formatMatchDurationLabel,
   formatMatchupLabel,
   formatResultTurnLabel,
@@ -89,7 +94,6 @@ const {
   activeDecision,
   isAwaitingEffectDecision,
   selectedEffectCardIds,
-  selectedEffectChoiceIds,
   selectableDecisionCardIds,
   selectableRevealedDecisionCardIds,
   selectableEffectCards,
@@ -139,17 +143,6 @@ async function confirmLeaveToLobby() {
   }
 
   await navigateTo('/lobby')
-}
-
-const phaseLabels: Record<string, string> = {
-  setup: 'Préparation',
-  mulligan: 'Mulligan',
-  refresh: 'Recharge',
-  draw: 'Pioche',
-  don: 'DON!!',
-  main: 'Principale',
-  end: 'Fin',
-  finished: 'Terminée'
 }
 
 type ScrollAreaInstance = {
@@ -718,7 +711,7 @@ watch(
       text: card.text ?? null,
       trigger: card.trigger ?? null
     }
-    delete hoveredCardDetailRetryTimestamps[card.cardId]
+    hoveredCardDetailRetryTimestamps[card.cardId] = undefined
   },
   { immediate: true }
 )
@@ -1099,22 +1092,9 @@ function findVisibleCardInstanceIdByName(name: string) {
 }
 
 function resolveGlobalActionMessage(message: string) {
-  const attackMatch = message.match(/^(?<attacker>.+?) attaque avec (?<source>.+?) vers (?<target>.+)\.$/u)
-
-  const attackGroups = attackMatch?.groups
-
-  if (attackGroups?.source && attackGroups.target) {
-    const source = attackGroups.source.trim()
-    const rawTarget = attackGroups.target.trim()
-    const leaderMatch = rawTarget.match(/^le Leader de (?<defender>.+)$/u)
-    const target = leaderMatch?.groups?.defender
-      ? findPlayerByDisplayName(leaderMatch.groups.defender)?.leader?.name ?? 'le Leader'
-      : rawTarget
-
-    return `${source} attaque ${target}`
-  }
-
-  return null
+  return resolveAttackBannerMessage(message, {
+    resolveLeaderNameByDisplayName: displayName => findPlayerByDisplayName(displayName)?.leader?.name
+  })
 }
 
 function cardMapFromPlayer(player: DuelPlayerView | null) {
@@ -1190,8 +1170,7 @@ function handleNewLogFeedback(message: string) {
     spawnBannerFeedback(globalActionMessage, 'narration')
   }
 
-  const blockerMatch = message.match(/^(?<player>.+?) declare (?<card>.+?) comme Bloqueur\.$/u)
-  const blockerCardName = blockerMatch?.groups?.card
+  const blockerCardName = extractBlockerCardName(message)
 
   if (blockerCardName) {
     nextTick(() => spawnCardFeedback(
@@ -1201,16 +1180,15 @@ function handleNewLogFeedback(message: string) {
     ))
   }
 
-  const donGainMatch = message.match(/^(?<player>.+?) donne \d+ DON!! a (?<target>.+?) \(\+(?<power>\d+) de puissance\)\.$/u)
-  const donGainGroups = donGainMatch?.groups
+  const donGainFeedback = extractDonGainFeedback(message)
 
-  if (donGainGroups?.player && donGainGroups.target && donGainGroups.power) {
-    const player = findPlayerByDisplayName(donGainGroups.player)
-    const targetInstanceId = donGainGroups.target === 'son Leader'
+  if (donGainFeedback) {
+    const player = findPlayerByDisplayName(donGainFeedback.playerDisplayName)
+    const targetInstanceId = donGainFeedback.targetLabel === 'son Leader'
       ? player?.leader?.instanceId ?? undefined
-      : findVisibleCardInstanceIdByName(donGainGroups.target) ?? undefined
+      : findVisibleCardInstanceIdByName(donGainFeedback.targetLabel) ?? undefined
 
-    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainGroups.power}`, 'gain'))
+    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainFeedback.power}`, 'gain'))
   }
 }
 
@@ -1353,7 +1331,7 @@ function getLogMessageText(entry: DuelLogEntry) {
 async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
   stopJournalReleaseMomentum()
   await nextTick()
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
 
   const target = journalEnd.value
   const element = resolveJournalScrollElement(journalScrollArea.value)
