@@ -115,6 +115,27 @@
       "skillPath": "skills/pnpm/SKILL.md",
       "computedHash": "0e72c2b2563556bc027cd025d0b3e11bf7147f362f4815ac9ad083ccbac55750"
     },
+    "refactor": {
+      "source": "github/awesome-copilot",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/refactor/SKILL.md",
+      "computedHash": "87789a786b96f99ba0680e89345a975106e10e7db1071c7cdc2e76d507c449d6"
+    },
+    "refactor-plan": {
+      "source": "github/awesome-copilot",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/refactor-plan/SKILL.md",
+      "computedHash": "26f32d34d48e9a40e5dd91d877319c94c6b8537e204d95d187ba45b443276868"
+    },
+    "security-review": {
+      "source": "github/awesome-copilot",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/security-review/SKILL.md",
+      "computedHash": "9b1791054c648b84ca424fc1342dede2e04759dc73436bb91d21675d5a4c13ea"
+    },
     "tresjs": {
       "source": "onmax/nuxt-skills",
       "sourceType": "github",
@@ -168,6 +189,13 @@
       "sourceType": "github",
       "skillPath": "skills/vueuse-functions/SKILL.md",
       "computedHash": "9b6b0afdbc577317e8c29e6ac0ee6890a2ec95d5ad7c8ce66247c1a62b95621d"
+    },
+    "web-design-reviewer": {
+      "source": "github/awesome-copilot",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-reviewer/SKILL.md",
+      "computedHash": "10c6fad8b4f01dbeae969009d81d6c306c8a96d56077cad9bfe2a73a38f5dcbe"
     },
     "writing-web-documentation": {
       "source": "onmax/nuxt-skills",
