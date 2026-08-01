@@ -144,128 +144,11 @@ export class DuelRoom extends Room<DuelState> {
 
   async onCreate(options: DuelJoinOptions = {}) {
     this.setState(new DuelState());
-    this.stateServices = new DuelRoomStateServices({
-      liveState: this.state,
-      statsService: services?.statsService,
-      disconnectRoom: () => this.disconnect(),
-      logLiveMessage: (message) => this.logger.log(message),
-      reportMatchResultError: (error) =>
-        this.logger.error('Failed to record match result', error),
-      unshiftIntoTrash: (player, card) =>
-        this.unshiftIntoZone(player.zones.trash, card),
-    });
-    this.runtimeController = new DuelRoomRuntimeController({
-      liveState: this.state,
-      getPendingRuntime: () => this.pendingInteractionRuntime,
-    });
-    const bootstrap = createDuelRoomRuntimeBootstrap({
-      state: this.state,
-      statsService: services?.statsService,
-      getClients: () => this.clients,
-      broadcast: (type, message) => this.broadcast(type, message),
-      getPendingRuntime: () => this.pendingInteractionRuntime,
-      setPendingRuntime: (runtime) => {
-        this.pendingInteractionRuntime =
-          runtime as IsolatedGameplayRuntime | null;
-      },
-      getActiveEffectDecision: () =>
-        this.runtimeController
-          .getActiveEffectBoundary()
-          .getPendingEffectDecision(),
-      createLifecycleForState: (state, runtimeOptions) =>
-        this.stateServices.createLifecycleForState(state, runtimeOptions),
-      createLiveGameplayRuntime: (state) =>
-        this.createLiveGameplayRuntime(state),
-      createIsolatedGameplayRuntime: () => this.createIsolatedGameplayRuntime(),
-      installLifecycle: (lifecycle) => {
-        this.lifecycle = lifecycle;
-      },
-      installGameplayRuntime: (runtime) => {
-        this.effectBoundary = runtime.effectBoundary;
-        this.runtimeController.installGameplayRuntime(runtime);
-      },
-      adoptRuntime: (runtime) =>
-        this.interactionRuntimeCoordinator.adoptRuntime(runtime),
-      hasPendingPlayerInteraction: () =>
-        this.runtimeController.hasPendingPlayerInteraction(),
-      rebuildAllClientViews: () => this.rebuildAllClientViews(),
-      syncZoneCounts: (player) =>
-        this.runtimeController.getRuntimeState().syncZoneCounts(player),
-      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
-      sendActionError: (client, message) =>
-        this.notifier.sendActionError(client, message),
-      logSystemMessage: (message, actorSessionId) =>
-        this.stateServices.addLiveLog(message, 'system', actorSessionId),
-      reportMatchResultError: (error) =>
-        this.logger.error('Failed to record match result', error),
-      disconnectRoom: () => this.disconnect(),
-    });
-    this.lifecycle = bootstrap.lifecycle;
-    this.notifier = bootstrap.notifier;
-    this.isolatedCommandRunner = bootstrap.isolatedCommandRunner;
-    this.isolatedCommandDispatcher = new DuelRoomIsolatedCommandDispatcher(
-      this.isolatedCommandRunner,
-    );
-    this.interactionRuntimeCoordinator =
-      bootstrap.interactionRuntimeCoordinator;
-    this.seatBootstrap = bootstrap.seatBootstrap;
-    this.leaveHandler = new DuelRoomLeaveHandler({
-      state: this.state,
-      getLifecycle: () => this.lifecycle,
-      allowReconnection: (client, seconds) =>
-        this.allowReconnection(client, seconds),
-      createLifecycleForState: (state, runtimeOptions) =>
-        this.stateServices.createLifecycleForState(state, runtimeOptions),
-      appendLogToState: (state, message, level, actorSessionId) =>
-        this.stateServices.appendLogToState(
-          state,
-          message,
-          level,
-          actorSessionId,
-        ),
-      addLog: (message, level, actorSessionId) =>
-        this.stateServices.addLiveLog(message, level, actorSessionId),
-      rebuildAllClientViews: () => this.rebuildAllClientViews(),
-      syncPendingEffectDecision: () =>
-        this.notifier.syncPendingEffectDecision(
-          this.runtimeController
-            .getActiveEffectBoundary()
-            .getPendingEffectDecision(),
-        ),
-    });
-    const gameplayRuntime = this.createLiveGameplayRuntime(this.state);
-    this.effectBoundary = gameplayRuntime.effectBoundary;
-    this.runtimeController.installGameplayRuntime(gameplayRuntime);
-
-    const description = options.description
-      ?.trim()
-      .slice(0, MAX_DESCRIPTION_LENGTH);
-
-    if (description) {
-      await this.setMetadata({ description });
-    }
-
-    registerDuelRoomMessages({
-      room: this,
-      handleChooseFirstOrSecond: (client, message) =>
-        this.handleChooseFirstOrSecond(client, message),
-      handleMulligan: (client, message) => this.handleMulligan(client, message),
-      handleEndPhase: (client) => this.handleEndPhase(client),
-      handlePlayCard: (client, message) => this.handlePlayCard(client, message),
-      handleAttachDon: (client, message) =>
-        this.handleAttachDon(client, message),
-      handleDeclareAttack: (client, message) =>
-        this.handleDeclareAttack(client, message),
-      handleDeclareBlock: (client, message) =>
-        this.handleDeclareBlock(client, message),
-      handleDeclareCounter: (client, message) =>
-        this.handleDeclareCounter(client, message),
-      handleFinishCounterStep: (client) => this.handleFinishCounterStep(client),
-      handleResolveTrigger: (client, message) =>
-        this.handleResolveTrigger(client, message),
-      handleResolveEffectDecision: (client, message) =>
-        this.handleResolveEffectDecision(client, message),
-    });
+    this.initializeStateServices();
+    this.initializeRuntimeServices();
+    this.installLiveGameplayRuntime();
+    await this.setDescriptionMetadata(options.description);
+    this.registerMessageHandlers();
   }
 
   async onJoin(client: Client, options: DuelJoinOptions, auth?: DuelAuthData) {
@@ -352,12 +235,11 @@ export class DuelRoom extends Room<DuelState> {
     await initializer.initialize();
   }
 
-  private async handleChooseFirstOrSecond(
+  private handleChooseFirstOrSecond(
     client: Client,
     message: ChooseFirstOrSecondMessage,
   ) {
     const runtime = this.createIsolatedGameplayRuntime();
-    const beforeFirstPlayerSessionId = runtime.state.firstPlayerSessionId;
     runtime.gameplayRuntime.turnEngine.handleChooseFirstOrSecond(
       client.sessionId,
       message.choice,
@@ -366,36 +248,28 @@ export class DuelRoom extends Room<DuelState> {
   }
 
   private async handleMulligan(client: Client, message: MulliganMessage) {
-    await this.executeIsolatedTurnCommand(
-      client,
-      (runtime) => {
-        runtime.gameplayRuntime.turnEngine.handleMulligan(
-          client.sessionId,
-          message.mulligan,
-        );
+    await this.executeIsolatedTurnCommand(client, (runtime) => {
+      runtime.gameplayRuntime.turnEngine.handleMulligan(
+        client.sessionId,
+        message.mulligan,
+      );
 
-        return { handled: true };
-      },
-      'Impossible de resoudre le mulligan pour le moment.',
-    );
+      return { handled: true };
+    });
   }
 
   private async handleEndPhase(client: Client) {
-    await this.executeIsolatedTurnCommand(
-      client,
-      (runtime) => {
-        const error = runtime.gameplayRuntime.turnEngine.handleEndPhase(
-          client.sessionId,
-        );
+    await this.executeIsolatedTurnCommand(client, (runtime) => {
+      const error = runtime.gameplayRuntime.turnEngine.handleEndPhase(
+        client.sessionId,
+      );
 
-        if (error) {
-          return { handled: false, errorMessage: error };
-        }
+      if (error) {
+        return { handled: false, errorMessage: error };
+      }
 
-        return { handled: true };
-      },
-      'Impossible de terminer la phase pour le moment.',
-    );
+      return { handled: true };
+    });
   }
 
   private async handleDeclareAttack(
@@ -403,22 +277,13 @@ export class DuelRoom extends Room<DuelState> {
     message: DeclareAttackMessage,
   ) {
     this.notifier.bindCombatClient(client);
-    await this.executeIsolatedCombatCommand(
-      client,
-      (runtime) => {
-        const handled =
-          runtime.gameplayRuntime.combatEngine.handleDeclareAttack(
-            client.sessionId,
-            message,
-          );
-
-        if (!handled) {
-          return { handled: false };
-        }
-
-        return { handled: true };
-      },
-      "Impossible de declarer l'attaque pour le moment.",
+    await this.executeIsolatedCombatCommand(client, (runtime) =>
+      this.toHandledCommandResult(
+        runtime.gameplayRuntime.combatEngine.handleDeclareAttack(
+          client.sessionId,
+          message,
+        ),
+      ),
     );
   }
 
@@ -427,21 +292,13 @@ export class DuelRoom extends Room<DuelState> {
     message: DeclareBlockMessage,
   ) {
     this.notifier.bindCombatClient(client);
-    await this.executeIsolatedCombatCommand(
-      client,
-      (runtime) => {
-        const handled = runtime.gameplayRuntime.combatEngine.handleDeclareBlock(
+    await this.executeIsolatedCombatCommand(client, (runtime) =>
+      this.toHandledCommandResult(
+        runtime.gameplayRuntime.combatEngine.handleDeclareBlock(
           client.sessionId,
           message,
-        );
-
-        if (!handled) {
-          return { handled: false };
-        }
-
-        return { handled: true };
-      },
-      'Impossible de declarer le blocage pour le moment.',
+        ),
+      ),
     );
   }
 
@@ -450,42 +307,24 @@ export class DuelRoom extends Room<DuelState> {
     message: DeclareCounterMessage,
   ) {
     this.notifier.bindCombatClient(client);
-    await this.executeIsolatedCombatCommand(
-      client,
-      (runtime) => {
-        const handled =
-          runtime.gameplayRuntime.combatEngine.handleDeclareCounter(
-            client.sessionId,
-            message,
-          );
-
-        if (!handled) {
-          return { handled: false };
-        }
-
-        return { handled: true };
-      },
-      'Impossible de declarer le contre pour le moment.',
+    await this.executeIsolatedCombatCommand(client, (runtime) =>
+      this.toHandledCommandResult(
+        runtime.gameplayRuntime.combatEngine.handleDeclareCounter(
+          client.sessionId,
+          message,
+        ),
+      ),
     );
   }
 
   private async handleFinishCounterStep(client: Client) {
     this.notifier.bindCombatClient(client);
-    await this.executeIsolatedCombatCommand(
-      client,
-      (runtime) => {
-        const handled =
-          runtime.gameplayRuntime.combatEngine.handleFinishCounterStep(
-            client.sessionId,
-          );
-
-        if (!handled) {
-          return { handled: false };
-        }
-
-        return { handled: true };
-      },
-      'Impossible de resoudre le combat pour le moment.',
+    await this.executeIsolatedCombatCommand(client, (runtime) =>
+      this.toHandledCommandResult(
+        runtime.gameplayRuntime.combatEngine.handleFinishCounterStep(
+          client.sessionId,
+        ),
+      ),
     );
   }
 
@@ -539,52 +378,35 @@ export class DuelRoom extends Room<DuelState> {
 
         return { handled: true };
       },
-      'Impossible de resoudre le declenchement pour le moment.',
       { allowPendingInteraction: true },
     );
   }
 
   private async handlePlayCard(client: Client, message: PlayCardMessage) {
     this.notifier.bindMainPhaseClient(client);
-    await this.executeIsolatedMainPhaseCommand(
-      client,
-      (runtime) => {
-        const handled = runtime.gameplayRuntime.mainPhaseEngine.handlePlayCard(
+    await this.executeIsolatedMainPhaseCommand(client, (runtime) =>
+      this.toHandledCommandResult(
+        runtime.gameplayRuntime.mainPhaseEngine.handlePlayCard(
           client.sessionId,
           message,
-        );
-
-        if (!handled) {
-          return { handled: false };
-        }
-
-        return { handled: true };
-      },
-      'Impossible de jouer la carte pour le moment.',
+        ),
+      ),
     );
   }
 
   private async handleAttachDon(client: Client, message: AttachDonMessage) {
     this.notifier.bindMainPhaseClient(client);
-    await this.executeIsolatedMainPhaseCommand(
-      client,
-      (runtime) => {
-        const handled = runtime.gameplayRuntime.mainPhaseEngine.handleAttachDon(
+    await this.executeIsolatedMainPhaseCommand(client, (runtime) =>
+      this.toHandledCommandResult(
+        runtime.gameplayRuntime.mainPhaseEngine.handleAttachDon(
           client.sessionId,
           message,
-        );
-
-        if (!handled) {
-          return { handled: false };
-        }
-
-        return { handled: true };
-      },
-      "Impossible d'attacher le DON!! pour le moment.",
+        ),
+      ),
     );
   }
 
-  private async handleResolveEffectDecision(
+  private handleResolveEffectDecision(
     client: Client,
     message: ResolveEffectDecisionMessage,
   ) {
@@ -730,7 +552,6 @@ export class DuelRoom extends Room<DuelState> {
     executor: (
       runtime: IsolatedGameplayRuntime,
     ) => { handled: false } | { handled: true },
-    _failureMessage: string,
   ): Promise<void> {
     await this.isolatedCommandDispatcher.runMainPhaseCommand(client, executor);
   }
@@ -740,7 +561,6 @@ export class DuelRoom extends Room<DuelState> {
     executor: (
       runtime: IsolatedGameplayRuntime,
     ) => { handled: false; errorMessage?: string } | { handled: true },
-    _failureMessage: string,
   ): Promise<void> {
     await this.isolatedCommandDispatcher.runTurnCommand(client, executor);
   }
@@ -750,7 +570,6 @@ export class DuelRoom extends Room<DuelState> {
     executor: (
       runtime: IsolatedGameplayRuntime,
     ) => { handled: false; errorMessage?: string } | { handled: true },
-    _failureMessage: string,
     options?: { allowPendingInteraction?: boolean },
   ): Promise<void> {
     await this.isolatedCommandDispatcher.runCombatCommand(
@@ -769,5 +588,141 @@ export class DuelRoom extends Room<DuelState> {
     [index: number]: DuelCard | undefined;
   }) {
     shuffleArrayLike(cards);
+  }
+
+  private initializeStateServices(): void {
+    this.stateServices = new DuelRoomStateServices({
+      liveState: this.state,
+      statsService: services?.statsService,
+      disconnectRoom: () => this.disconnect(),
+      logLiveMessage: (message) => this.logger.log(message),
+      reportMatchResultError: (error) =>
+        this.logger.error('Failed to record match result', error),
+      unshiftIntoTrash: (player, card) =>
+        this.unshiftIntoZone(player.zones.trash, card),
+    });
+  }
+
+  private initializeRuntimeServices(): void {
+    this.runtimeController = new DuelRoomRuntimeController({
+      liveState: this.state,
+      getPendingRuntime: () => this.pendingInteractionRuntime,
+    });
+    const bootstrap = createDuelRoomRuntimeBootstrap({
+      state: this.state,
+      statsService: services?.statsService,
+      getClients: () => this.clients,
+      broadcast: (type, message) => this.broadcast(type, message),
+      getPendingRuntime: () => this.pendingInteractionRuntime,
+      setPendingRuntime: (runtime) => {
+        this.pendingInteractionRuntime =
+          runtime as IsolatedGameplayRuntime | null;
+      },
+      getActiveEffectDecision: () =>
+        this.getActiveEffectBoundary().getPendingEffectDecision(),
+      createLifecycleForState: (state, runtimeOptions) =>
+        this.stateServices.createLifecycleForState(state, runtimeOptions),
+      createLiveGameplayRuntime: (state) =>
+        this.createLiveGameplayRuntime(state),
+      createIsolatedGameplayRuntime: () => this.createIsolatedGameplayRuntime(),
+      installLifecycle: (lifecycle) => {
+        this.lifecycle = lifecycle;
+      },
+      installGameplayRuntime: (runtime) => {
+        this.effectBoundary = runtime.effectBoundary;
+        this.runtimeController.installGameplayRuntime(runtime);
+      },
+      adoptRuntime: (runtime) =>
+        this.interactionRuntimeCoordinator.adoptRuntime(runtime),
+      hasPendingPlayerInteraction: () => this.hasPendingPlayerInteraction(),
+      rebuildAllClientViews: () => this.rebuildAllClientViews(),
+      syncZoneCounts: (player) =>
+        this.runtimeController.getRuntimeState().syncZoneCounts(player),
+      broadcastCardView: (card) => this.notifier.broadcastCardView(card),
+      sendActionError: (client, message) =>
+        this.notifier.sendActionError(client, message),
+      logSystemMessage: (message, actorSessionId) =>
+        this.stateServices.addLiveLog(message, 'system', actorSessionId),
+      reportMatchResultError: (error) =>
+        this.logger.error('Failed to record match result', error),
+      disconnectRoom: () => this.disconnect(),
+    });
+
+    this.lifecycle = bootstrap.lifecycle;
+    this.notifier = bootstrap.notifier;
+    this.isolatedCommandRunner = bootstrap.isolatedCommandRunner;
+    this.isolatedCommandDispatcher = new DuelRoomIsolatedCommandDispatcher(
+      this.isolatedCommandRunner,
+    );
+    this.interactionRuntimeCoordinator =
+      bootstrap.interactionRuntimeCoordinator;
+    this.seatBootstrap = bootstrap.seatBootstrap;
+    this.leaveHandler = new DuelRoomLeaveHandler({
+      state: this.state,
+      getLifecycle: () => this.lifecycle,
+      allowReconnection: (client, seconds) =>
+        this.allowReconnection(client, seconds),
+      createLifecycleForState: (state, runtimeOptions) =>
+        this.stateServices.createLifecycleForState(state, runtimeOptions),
+      appendLogToState: (state, message, level, actorSessionId) =>
+        this.stateServices.appendLogToState(
+          state,
+          message,
+          level,
+          actorSessionId,
+        ),
+      addLog: (message, level, actorSessionId) =>
+        this.stateServices.addLiveLog(message, level, actorSessionId),
+      rebuildAllClientViews: () => this.rebuildAllClientViews(),
+      syncPendingEffectDecision: () =>
+        this.notifier.syncPendingEffectDecision(
+          this.getActiveEffectBoundary().getPendingEffectDecision(),
+        ),
+    });
+  }
+
+  private installLiveGameplayRuntime(): void {
+    const gameplayRuntime = this.createLiveGameplayRuntime(this.state);
+
+    this.effectBoundary = gameplayRuntime.effectBoundary;
+    this.runtimeController.installGameplayRuntime(gameplayRuntime);
+  }
+
+  private async setDescriptionMetadata(rawDescription?: string): Promise<void> {
+    const description = rawDescription?.trim().slice(0, MAX_DESCRIPTION_LENGTH);
+
+    if (description) {
+      await this.setMetadata({ description });
+    }
+  }
+
+  private registerMessageHandlers(): void {
+    registerDuelRoomMessages({
+      room: this,
+      handleChooseFirstOrSecond: (client, message) =>
+        this.handleChooseFirstOrSecond(client, message),
+      handleMulligan: (client, message) => this.handleMulligan(client, message),
+      handleEndPhase: (client) => this.handleEndPhase(client),
+      handlePlayCard: (client, message) => this.handlePlayCard(client, message),
+      handleAttachDon: (client, message) =>
+        this.handleAttachDon(client, message),
+      handleDeclareAttack: (client, message) =>
+        this.handleDeclareAttack(client, message),
+      handleDeclareBlock: (client, message) =>
+        this.handleDeclareBlock(client, message),
+      handleDeclareCounter: (client, message) =>
+        this.handleDeclareCounter(client, message),
+      handleFinishCounterStep: (client) => this.handleFinishCounterStep(client),
+      handleResolveTrigger: (client, message) =>
+        this.handleResolveTrigger(client, message),
+      handleResolveEffectDecision: (client, message) =>
+        this.handleResolveEffectDecision(client, message),
+    });
+  }
+
+  private toHandledCommandResult(
+    handled: boolean,
+  ): { handled: false } | { handled: true } {
+    return handled ? { handled: true } : { handled: false };
   }
 }
