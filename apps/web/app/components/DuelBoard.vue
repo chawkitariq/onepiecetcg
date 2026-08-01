@@ -1,29 +1,8 @@
 <script setup lang="ts">
-import type { Card, DuelLogEntry, DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
-import type { PlayerTransitionDiff, TransitionGhost } from '~/utils/duelTransitions'
+import type { DuelPlayerView, PublicCard } from '@onepiecetcg/shared'
+import type { TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
-import { animate } from 'animejs'
-import cardBackRegular from '~/assets/card-back-regular.png'
-import cardFrontDon from '~/assets/don.png'
-import { deriveAttachedDonTravelTargetIds } from '~/utils/attachedDonTransitions'
-import {
-  getDuelLogLevelPresentation,
-  getDuelLogMessageText,
-  resolveDuelLogActorPresentation
-} from '~/utils/duelLogs'
-import {
-  getDuelBannerFeedbackAnimation,
-  getDuelCardFeedbackAnimation,
-  resolveDuelFeedbackClasses,
-  type DuelBannerFeedbackFamily,
-  type DuelCardFeedbackFamily,
-  type DuelFloatingFeedbackFamily
-} from '~/utils/duelFeedback'
-import {
-  extractBlockerCardName,
-  extractDonGainFeedback,
-  resolveAttackBannerMessage
-} from '~/utils/duelBoardLogFeedback'
+import { getDuelLogLevelPresentation } from '~/utils/duelLogs'
 import {
   formatMatchDurationLabel,
   formatMatchupLabel,
@@ -31,41 +10,6 @@ import {
   formatTurnButtonLabel,
   resolveWaitingToastText
 } from '~/utils/duelBoardPresentation'
-import { derivePlayerTransitionDiff } from '~/utils/duelTransitions'
-import { createHoveredDuelCard, mergeHoveredDuelCardDetails, type HoveredDuelCard } from '~/utils/hoveredDuelCard'
-import { createStaggeredTravelPlan } from '~/utils/travelStagger'
-
-type BoardTravelOverlay = {
-  key: string
-  instanceId: string
-  imageUrl: string
-  sourceRect: DOMRect
-  destinationRect: DOMRect
-  translateX: number
-  translateY: number
-  scaleX: number
-  scaleY: number
-  settled: boolean
-  durationMs: number
-  easing: string
-  variant: 'default' | 'attachedDon'
-  opacity: number
-  rotated?: boolean
-}
-
-type CardFeedbackInstance = {
-  key: number
-  label: string
-  x: number
-  y: number
-  family: DuelCardFeedbackFamily
-}
-
-type BannerFeedbackInstance = {
-  key: number
-  message: string
-  family: DuelBannerFeedbackFamily
-}
 
 const BOARD_TRAVEL_MS = 520
 const BOARD_TRAVEL_STAGGER_MS = 90
@@ -145,185 +89,11 @@ async function confirmLeaveToLobby() {
   await navigateTo('/lobby')
 }
 
-type ScrollAreaInstance = {
-  $el?: HTMLElement
-}
-
-type ScrollAreaRef = HTMLElement | ScrollAreaInstance | null
-type JournalDragSession = {
-  pointerId: number
-  anchorY: number
-  anchorScrollTop: number
-  previousY: number
-  previousTimestamp: number
-  velocityPxPerMs: number
-}
-
-const JOURNAL_RELEASE_MIN_VELOCITY = 0.05
-const JOURNAL_RELEASE_STOP_VELOCITY = 0.01
-const JOURNAL_RELEASE_FRICTION = 0.92
-const JOURNAL_RELEASE_FALLBACK_FRAME_MS = 16
-
 const api = useApi()
-const hoveredCard = ref<HoveredDuelCard | null>(null)
-const hoveredEffectPromptCard = ref<HoveredDuelCard | null>(null)
-const selectedEffectPromptCard = ref<HoveredDuelCard | null>(null)
-const hoveredCardCatalogDetails = reactive<Record<string, Pick<Card, 'text' | 'trigger'> | undefined>>({})
-const pendingHoveredCardDetailIds = ref<string[]>([])
-const hoveredCardDetailRetryTimestamps = reactive<Record<string, number | undefined>>({})
-const hoveredCardDetailRetryDelayMs = 5_000
 const reducedMotion = usePreferredReducedMotion()
-const journalScrollArea = useTemplateRef<ScrollAreaRef>('journal-scroll-area')
-const journalEnd = useTemplateRef<HTMLElement>('journal-end')
-const isJournalOpen = ref(false)
-const seenLogCount = ref(0)
-const unseenLogCount = computed(() => Math.max(logs.value.length - seenLogCount.value, 0))
-const journalDragSession = ref<JournalDragSession | null>(null)
-let journalReleaseAnimationFrame: number | null = null
 const pendingCharacterInstanceId = ref<string | null>(null)
-const pendingAttackerInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
 const counterPowerBonusInput = ref(1000)
-const draggedHandCardInstanceId = ref<string | null>(null)
-const selectedHandCardIds = ref<string[]>([])
-const pendingQueuedHandCardIds = ref<string[]>([])
-const queuedHandCardInstanceId = ref<string | null>(null)
-const selectedDonCardIds = ref<string[]>([])
-const selectedDonAnchorInstanceId = ref<string | null>(null)
-const draggedDonCardInstanceId = ref<string | null>(null)
-const pointerPosition = ref<{ x: number, y: number } | null>(null)
-const declaredAttackTargetInstanceId = ref<string | null>(null)
-const confirmedAttackArrow = ref<{ key: number, fromInstanceId: string, toInstanceId: string } | null>(null)
-const lastConfirmedAttackArrowSignature = ref<string | null>(null)
-let confirmedAttackArrowKey = 0
-
-function onBoardPointerMove(event: PointerEvent) {
-  pointerPosition.value = { x: event.clientX, y: event.clientY }
-}
-
-function beginAttackDrag(instanceId: string) {
-  if (!canDeclareAttack.value) {
-    return
-  }
-
-  pendingAttackerInstanceId.value = instanceId
-  declaredAttackTargetInstanceId.value = null
-}
-
-const attackArrowFromInstanceId = computed(() => {
-  if (pendingAttackerInstanceId.value) {
-    return pendingAttackerInstanceId.value
-  }
-
-  return confirmedAttackArrow.value?.fromInstanceId ?? null
-})
-
-const attackArrowToInstanceId = computed(() =>
-  pendingAttackerInstanceId.value
-    ? declaredAttackTargetInstanceId.value
-    : confirmedAttackArrow.value?.toInstanceId ?? null
-)
-
-const attackArrowToPoint = computed(() =>
-  isChoosingTarget.value && !declaredAttackTargetInstanceId.value ? pointerPosition.value : null
-)
-const shouldRenderAttackArrow = computed(() =>
-  Boolean(
-    attackArrowFromInstanceId.value
-    && (attackArrowToInstanceId.value || attackArrowToPoint.value)
-  )
-)
-
-function resolveCombatTargetInstanceId() {
-  if (!combat.value) {
-    return null
-  }
-
-  if (combat.value.targetType === 'character') {
-    return combat.value.targetInstanceId
-  }
-
-  return combat.value.defenderSessionId === self.value?.sessionId
-    ? self.value?.leader?.instanceId ?? null
-    : opponent.value?.leader?.instanceId ?? null
-}
-
-function hasResolvedCombatAttackerAndTarget() {
-  if (!combat.value) {
-    return false
-  }
-
-  return combat.value.attackerInstanceId.length > 0 && resolveCombatTargetInstanceId() !== null
-}
-
-function resolveConfirmedAttackArrowSignature() {
-  const targetInstanceId = resolveCombatTargetInstanceId()
-
-  if (!combat.value || !targetInstanceId || combat.value.attackerInstanceId.length === 0) {
-    return null
-  }
-
-  return [
-    combat.value.attackerSessionId,
-    combat.value.attackerInstanceId,
-    combat.value.defenderSessionId,
-    combat.value.targetType,
-    targetInstanceId
-  ].join(':')
-}
-
-function showConfirmedAttackArrow(fromInstanceId: string, toInstanceId: string) {
-  confirmedAttackArrow.value = {
-    key: ++confirmedAttackArrowKey,
-    fromInstanceId,
-    toInstanceId
-  }
-}
-
-watch(
-  [
-    () => combat.value?.step,
-    () => combat.value?.attackerInstanceId,
-    () => combat.value?.targetType,
-    () => combat.value?.targetInstanceId,
-    () => combat.value?.defenderSessionId,
-    () => self.value?.leader?.instanceId,
-    () => opponent.value?.leader?.instanceId
-  ],
-  ([step, attackerInstanceId], [_previousStep, _previousAttackerInstanceId]) => {
-    if (combat.value && attackerInstanceId && hasResolvedCombatAttackerAndTarget()) {
-      const targetInstanceId = resolveCombatTargetInstanceId()
-      const signature = resolveConfirmedAttackArrowSignature()
-
-      declaredAttackTargetInstanceId.value = targetInstanceId
-
-      if (
-        targetInstanceId
-        && signature
-        && signature !== lastConfirmedAttackArrowSignature.value
-      ) {
-        lastConfirmedAttackArrowSignature.value = signature
-        showConfirmedAttackArrow(attackerInstanceId, targetInstanceId)
-      }
-
-      return
-    }
-
-    if (!pendingAttackerInstanceId.value) {
-      declaredAttackTargetInstanceId.value = null
-    }
-
-    if (!attackerInstanceId) {
-      confirmedAttackArrow.value = null
-    }
-
-    if (!step || !attackerInstanceId) {
-      lastConfirmedAttackArrowSignature.value = null
-    }
-  },
-  { immediate: true }
-)
-const invalidHandCardIds = ref<string[]>([])
 
 const emptyPublicCards: PublicCard[] = []
 const emptyPrivateCards: PrivateCard[] = []
@@ -386,26 +156,7 @@ const selectableDonCardIds = computed(() =>
     .filter(card => !card.rested)
     .map(card => card.instanceId) ?? []
 )
-const draggedHandCardCount = computed(() => {
-  if (!draggedHandCardInstanceId.value) {
-    return 0
-  }
-
-  return selectedHandCardIds.value.includes(draggedHandCardInstanceId.value)
-    ? Math.max(selectedHandCardIds.value.length, 1)
-    : 1
-})
-const draggedDonCardCount = computed(() => {
-  if (!draggedDonCardInstanceId.value) {
-    return 0
-  }
-
-  return selectedDonCardIds.value.includes(draggedDonCardInstanceId.value)
-    ? Math.max(selectedDonCardIds.value.length, 1)
-    : 1
-})
 const isChoosingCharacterToDiscard = computed(() => pendingCharacterInstanceId.value !== null)
-const isChoosingTarget = computed(() => pendingAttackerInstanceId.value !== null)
 const isChoosingCounterCard = computed(() => pendingCounterCardInstanceId.value !== null)
 const targetableOpponentCharacterIds = computed(() =>
   isChoosingTarget.value
@@ -458,25 +209,10 @@ const opponentDeferredHandTravelIds = ref<string[]>([])
 const opponentDeferredBoardCardIds = ref<string[]>([])
 const opponentDeferredCostCardIds = ref<string[]>([])
 const opponentDeferredTrashCardIds = ref<string[]>([])
-const boardTravelOverlays = ref<BoardTravelOverlay[]>([])
-const boardTravelOverlayElements = new Map<string, HTMLElement>()
-const cardFeedbackElements = new Map<number, HTMLElement>()
-const bannerFeedbackElements = new Map<number, HTMLElement>()
-const pendingBoardTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect }>()
-const pendingTrashTravelSources = new Map<string, { imageUrl: string, sourceRect: DOMRect, expiresAt: number }>()
-const pendingAttachedDonTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
-const pendingSelfHandTravelSources: Array<{ source: 'life' | 'deck', sourceRect: DOMRect, expiresAt: number }> = []
-const pendingOpponentHandTravelSources: Array<{ sourceRect: DOMRect, expiresAt: number }> = []
 const animatedSelfLifeToHandIds = new Set<string>()
 const animatedSelfDeckToHandIds = new Set<string>()
 const animatedOpponentBoardEntryIds = new Set<string>()
-const attachedDonOverlayTarget = ref<string[]>([])
-let attachedDonTravelKey = 0
-let opponentHiddenHandTravelKey = 0
 const transientErrorModalState = ref<DuelActionModalState | null>(null)
-const openedTrashSide = ref<0 | 1 | null>(null)
-const selectedTrashCardInstanceId = ref<string | null>(null)
-const trashModalCardSize = ref<{ width: number, height: number } | null>(null)
 
 function dismissTransientErrorModal() {
   transientErrorModalState.value = null
@@ -594,37 +330,11 @@ const resultDurationLabel = computed(() =>
   formatMatchDurationLabel(startedAt.value, finishedAt.value)
 )
 
-const activeTrashPlayer = computed(() => {
-  if (openedTrashSide.value === 0) {
-    return self.value
-  }
-
-  if (openedTrashSide.value === 1) {
-    return opponent.value
-  }
-
-  return null
-})
-
-const activeTrashCards = computed(() => activeTrashPlayer.value?.trash ?? [])
-
 watch(phase, (nextPhase, previousPhase) => {
   if (nextPhase === 'finished' && previousPhase !== 'finished') {
     isResultModalOpen.value = true
   }
 }, { immediate: true })
-
-watch(activeTrashCards, (cards) => {
-  if (cards.length === 0) {
-    openedTrashSide.value = null
-    selectedTrashCardInstanceId.value = null
-    return
-  }
-
-  if (!cards.some(card => card.instanceId === selectedTrashCardInstanceId.value)) {
-    selectedTrashCardInstanceId.value = cards[0]?.instanceId ?? null
-  }
-})
 
 const waitingToastText = computed(() =>
   resolveWaitingToastText({
@@ -649,874 +359,210 @@ const turnButtonLabel = computed(() =>
 const turnButtonColor = computed(() => (isSelfTurn.value ? 'primary' : 'neutral'))
 const turnButtonVariant = 'solid' as const
 
-const inspectedCard = computed(() =>
-  hoveredCard.value
-  ?? hoveredEffectPromptCard.value
-  ?? selectedEffectPromptCard.value
-)
-
-const effectPromptLinkedPreviewInstanceId = computed(() =>
-  hoveredEffectPromptCard.value?.instanceId
-  ?? selectedEffectPromptCard.value?.instanceId
-  ?? null
-)
-
-const effectPromptLinkedSelectedInstanceIds = computed(() =>
-  pendingEffectDecision.value?.prompt.type === 'selectCards'
-    ? [...selectedEffectCardIds.value]
-    : []
-)
-
-const resolvedHoveredCard = computed(() =>
-  mergeHoveredDuelCardDetails(
-    inspectedCard.value,
-    inspectedCard.value ? hoveredCardCatalogDetails[inspectedCard.value.cardId] : null
-  )
-)
-const isHoveredCardDetailPending = computed(() =>
-  Boolean(
-    inspectedCard.value
-    && pendingHoveredCardDetailIds.value.includes(inspectedCard.value.cardId)
-  )
-)
-const hoveredCardRows = computed<Array<[string, string | number]>>(() => {
-  if (!resolvedHoveredCard.value) {
-    return []
-  }
-
-  return [
-    ['Numero', resolvedHoveredCard.value.number],
-    ['Type', resolvedHoveredCard.value.type],
-    ['Couleur', resolvedHoveredCard.value.colors.join(', ') || 'Aucune'],
-    ['Cout', resolvedHoveredCard.value.cost ?? '-'],
-    ['Puissance', resolvedHoveredCard.value.power ?? '-'],
-    ['Contre', resolvedHoveredCard.value.counter ?? '-'],
-    ['Vie', resolvedHoveredCard.value.life ?? '-'],
-    ['Declenchement', resolvedHoveredCard.value.trigger ?? '-']
-  ]
+const {
+  pendingAttackerInstanceId,
+  confirmedAttackArrow,
+  isChoosingTarget,
+  attackArrowFromInstanceId,
+  attackArrowToInstanceId,
+  attackArrowToPoint,
+  shouldRenderAttackArrow,
+  onBoardPointerMove,
+  beginAttackDrag,
+  cancelTargetSelection,
+  confirmLeaderTarget,
+  confirmCharacterTarget
+} = useDuelAttackTargeting({
+  combat,
+  canDeclareAttack,
+  selfSessionId: computed(() => self.value?.sessionId ?? null),
+  selfLeaderInstanceId: computed(() => self.value?.leader?.instanceId ?? null),
+  opponentLeaderInstanceId: computed(() => opponent.value?.leader?.instanceId ?? null),
+  targetableOpponentCharacterIds,
+  onDeclareLeaderAttack: attackerInstanceId => declareAttack(attackerInstanceId, 'leader'),
+  onDeclareCharacterAttack: (attackerInstanceId, targetInstanceId) =>
+    declareAttack(attackerInstanceId, 'character', targetInstanceId),
+  onInvalidTarget: targetInstanceId => pulseCharacter(invalidOpponentCharacterIds, targetInstanceId)
 })
 
-watch(
-  () => inspectedCard.value,
-  (card) => {
-    if (!card) {
-      return
-    }
-
-    if (card.text === undefined && card.trigger === undefined) {
-      return
-    }
-
-    hoveredCardCatalogDetails[card.cardId] = {
-      text: card.text ?? null,
-      trigger: card.trigger ?? null
-    }
-    hoveredCardDetailRetryTimestamps[card.cardId] = undefined
-  },
-  { immediate: true }
-)
-
-watch(
-  () => inspectedCard.value?.cardId ?? null,
-  async (cardId) => {
-    if (!cardId || hoveredCardCatalogDetails[cardId]) {
-      return
-    }
-
-    const nextRetryAt = hoveredCardDetailRetryTimestamps[cardId]
-
-    if (nextRetryAt && Date.now() < nextRetryAt) {
-      return
-    }
-
-    if (!pendingHoveredCardDetailIds.value.includes(cardId)) {
-      pendingHoveredCardDetailIds.value = [...pendingHoveredCardDetailIds.value, cardId]
-    }
-
-    try {
-      const card = await api<Card>(`/catalog/cards/${cardId}`)
-
-      hoveredCardCatalogDetails[cardId] = {
-        text: card.text,
-        trigger: card.trigger
-      }
-    } catch {
-      hoveredCardDetailRetryTimestamps[cardId] = Date.now() + hoveredCardDetailRetryDelayMs
-    } finally {
-      pendingHoveredCardDetailIds.value = pendingHoveredCardDetailIds.value.filter(id => id !== cardId)
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  () => pendingEffectDecision.value?.id ?? null,
-  () => {
-    hoveredEffectPromptCard.value = null
-    selectedEffectPromptCard.value = null
-  }
-)
-
-function previewEffectPromptCard(card: PublicCard) {
-  const preview = createHoveredDuelCard(card)
-  hoveredEffectPromptCard.value = preview
-  selectedEffectPromptCard.value = preview
-}
-
-function clearEffectPromptPreview() {
-  hoveredEffectPromptCard.value = null
-}
-
-function mergeGhosts(target: Ref<TransitionGhost[]>, ghosts: TransitionGhost[]) {
-  if (ghosts.length === 0) {
-    return
-  }
-
-  const existingKeys = new Set(target.value.map(ghost => `${ghost.source}:${ghost.instanceId}`))
-  const freshGhosts = ghosts.filter(ghost => !existingKeys.has(`${ghost.source}:${ghost.instanceId}`))
-
-  if (freshGhosts.length === 0) {
-    return
-  }
-
-  target.value = [...target.value, ...freshGhosts]
-
-  window.setTimeout(() => {
-    const expiredKeys = new Set(freshGhosts.map(ghost => `${ghost.source}:${ghost.instanceId}`))
-    target.value = target.value.filter(ghost => !expiredKeys.has(`${ghost.source}:${ghost.instanceId}`))
-  }, 520)
-}
-
-function mergeRevealedHandCards(target: Ref<string[]>, ids: string[]) {
-  if (ids.length === 0) {
-    return
-  }
-
-  const freshIds = ids.filter(id => !target.value.includes(id))
-
-  if (freshIds.length === 0) {
-    return
-  }
-
-  target.value = [...target.value, ...freshIds]
-
-  window.setTimeout(() => {
-    target.value = target.value.filter(id => !freshIds.includes(id))
-  }, 320)
-}
-
-function mergeDeferredVisibleCards(target: Ref<string[]>, ids: string[]) {
-  if (ids.length === 0) {
-    return
-  }
-
-  target.value = Array.from(new Set([...target.value, ...ids]))
-}
-
-function cacheOpponentHandTravelSources(count: number) {
-  if (count <= 0 || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  const sourceElement = queryOpponentHandTopCardElement()
-
-  if (!sourceElement) {
-    return
-  }
-
-  const sourceRect = sourceElement.getBoundingClientRect()
-  const expiresAt = Date.now() + 3000
-
-  for (let index = 0; index < count; index += 1) {
-    pendingOpponentHandTravelSources.push({ sourceRect, expiresAt })
-  }
-}
-
-function cacheSelfHandTravelSources(source: 'life' | 'deck', count: number, sourceElement: HTMLElement | null) {
-  if (count <= 0 || reducedMotion.value === 'reduce' || typeof window === 'undefined' || !sourceElement) {
-    return
-  }
-
-  const sourceRect = sourceElement.getBoundingClientRect()
-  const expiresAt = Date.now() + 5000
-
-  for (let index = 0; index < count; index += 1) {
-    pendingSelfHandTravelSources.push({ source, sourceRect, expiresAt })
-  }
-}
-
-function cacheMulliganDeckToHandTravelSources(current: DuelPlayerView, previous: DuelPlayerView | null) {
-  if (!previous || phase.value !== 'mulligan') {
-    return
-  }
-
-  const previousHandIds = new Set(previous.hand.map(card => card.instanceId))
-  const currentHandIds = new Set(current.hand.map(card => card.instanceId))
-  const newHandCount = current.hand.filter(card => !previousHandIds.has(card.instanceId)).length
-  const replacedHandCount = previous.hand.filter(card => !currentHandIds.has(card.instanceId)).length
-
-  if (newHandCount === 0 || replacedHandCount === 0) {
-    return
-  }
-
-  cacheSelfHandTravelSources('deck', newHandCount, querySelfDeckElement())
-}
-
-function pruneSelfHandTravelSources() {
-  const now = Date.now()
-
-  while (pendingSelfHandTravelSources[0] && pendingSelfHandTravelSources[0].expiresAt <= now) {
-    pendingSelfHandTravelSources.shift()
-  }
-}
-
-function pruneOpponentHandTravelSources() {
-  const now = Date.now()
-
-  while (pendingOpponentHandTravelSources[0] && pendingOpponentHandTravelSources[0].expiresAt <= now) {
-    pendingOpponentHandTravelSources.shift()
-  }
-}
-
-function pruneTrashTravelSources() {
-  const now = Date.now()
-
-  for (const [instanceId, source] of pendingTrashTravelSources) {
-    if (source.expiresAt <= now) {
-      pendingTrashTravelSources.delete(instanceId)
-    }
-  }
-}
-
-function pruneAttachedDonTravelSources() {
-  const now = Date.now()
-
-  while (pendingAttachedDonTravelSources[0] && pendingAttachedDonTravelSources[0].expiresAt <= now) {
-    pendingAttachedDonTravelSources.shift()
-  }
-}
-
-type FloatingNumberInstance = {
-  key: number
-  value: number
-  x: number
-  y: number
-  family: DuelFloatingFeedbackFamily
-}
-
-const floatingNumbers = ref<FloatingNumberInstance[]>([])
-const cardFeedbacks = ref<CardFeedbackInstance[]>([])
-const bannerFeedbacks = ref<BannerFeedbackInstance[]>([])
-const isTurnFeedbackVisible = ref(false)
-let floatingNumberKey = 0
-let cardFeedbackKey = 0
-let bannerFeedbackKey = 0
-let turnFeedbackTimeoutHandle: number | null = null
-
-function spawnLifeLossFloatingNumber(leaderInstanceId: string | undefined, lifeLoss: number) {
-  if (!leaderInstanceId || lifeLoss <= 0) {
-    return
-  }
-
-  const element = document.querySelector(`[data-instance-id="${CSS.escape(leaderInstanceId)}"]`)
-
-  if (!element) {
-    return
-  }
-
-  const rect = element.getBoundingClientRect()
-
-  floatingNumbers.value = [...floatingNumbers.value, {
-    key: floatingNumberKey++,
-    value: lifeLoss,
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2,
-    family: 'impact'
-  }]
-}
-
-function removeFloatingNumber(key: number) {
-  floatingNumbers.value = floatingNumbers.value.filter(entry => entry.key !== key)
-}
-
-function spawnCardFeedbackAtPosition(
-  x: number,
-  y: number,
-  label: string,
-  family: DuelCardFeedbackFamily
-) {
-  const key = cardFeedbackKey++
-
-  cardFeedbacks.value = [...cardFeedbacks.value, {
-    key,
-    label,
-    x,
-    y,
-    family
-  }]
-
-  nextTick(() => {
-    const element = cardFeedbackElements.get(key)
-
-    if (!element) {
-      return
-    }
-
-    animate(
-      element,
-      getDuelCardFeedbackAnimation(family, reducedMotion.value === 'reduce', () => removeCardFeedback(key))
-    )
-  })
-}
-
-function spawnCardFeedback(instanceId: string | undefined, label: string, family: DuelCardFeedbackFamily) {
-  const element = instanceId ? queryCardElement(instanceId) : null
-
-  if (element) {
-    const rect = element.getBoundingClientRect()
-
-    spawnCardFeedbackAtPosition(
-      rect.left + rect.width / 2,
-      rect.top + Math.min(rect.height * 0.3, 44),
-      label,
-      family
-    )
-    return
-  }
-
-  const containerRect = boardContainer.value?.getBoundingClientRect()
-
-  if (!containerRect) {
-    return
-  }
-
-  spawnCardFeedbackAtPosition(
-    containerRect.left + containerRect.width / 2,
-    containerRect.top + Math.min(containerRect.height * 0.32, 180),
-    label,
-    family
-  )
-}
-
-function removeCardFeedback(key: number) {
-  cardFeedbackElements.delete(key)
-  cardFeedbacks.value = cardFeedbacks.value.filter(entry => entry.key !== key)
-}
-
-function spawnBannerFeedback(message: string, family: DuelBannerFeedbackFamily) {
-  const key = bannerFeedbackKey++
-
-  bannerFeedbacks.value = [...bannerFeedbacks.value, {
-    key,
-    message,
-    family
-  }]
-
-  nextTick(() => {
-    const element = bannerFeedbackElements.get(key)
-
-    if (!element) {
-      return
-    }
-
-    animate(
-      element,
-      getDuelBannerFeedbackAnimation(family, reducedMotion.value === 'reduce', () => removeBannerFeedback(key))
-    )
-  })
-}
-
-function removeBannerFeedback(key: number) {
-  bannerFeedbackElements.delete(key)
-  bannerFeedbacks.value = bannerFeedbacks.value.filter(entry => entry.key !== key)
-}
-
-function clearTurnFeedbackTimeout() {
-  if (turnFeedbackTimeoutHandle !== null) {
-    window.clearTimeout(turnFeedbackTimeoutHandle)
-    turnFeedbackTimeoutHandle = null
-  }
-}
-
-function showTurnFeedback() {
-  clearTurnFeedbackTimeout()
-  isTurnFeedbackVisible.value = true
-  turnFeedbackTimeoutHandle = window.setTimeout(() => {
-    isTurnFeedbackVisible.value = false
-    turnFeedbackTimeoutHandle = null
-  }, reducedMotion.value === 'reduce' ? 720 : 980)
-}
-
-function cardFeedbackClasses(family: DuelCardFeedbackFamily) {
-  return resolveDuelFeedbackClasses(appConfig, 'card', family)
-}
-
-function bannerFeedbackClasses(family: DuelBannerFeedbackFamily) {
-  return resolveDuelFeedbackClasses(appConfig, 'banner', family)
-}
-
-function findPlayerByDisplayName(displayName: string) {
-  if (self.value?.displayName === displayName) {
-    return self.value
-  }
-
-  if (opponent.value?.displayName === displayName) {
-    return opponent.value
-  }
-
-  return null
-}
-
-function findVisibleCardInstanceIdByName(name: string) {
-  for (const player of [self.value, opponent.value]) {
-    if (!player) {
-      continue
-    }
-
-    if (player.leader?.name === name) {
-      return player.leader.instanceId
-    }
-
-    if (player.stage?.name === name) {
-      return player.stage.instanceId
-    }
-
-    const character = player.characters.find(card => card.name === name)
-
-    if (character) {
-      return character.instanceId
-    }
-  }
-
-  return null
-}
-
-function resolveGlobalActionMessage(message: string) {
-  return resolveAttackBannerMessage(message, {
-    resolveLeaderNameByDisplayName: displayName => findPlayerByDisplayName(displayName)?.leader?.name
-  })
-}
-
-function cardMapFromPlayer(player: DuelPlayerView | null) {
-  const map = new Map<string, PublicCard>()
-
-  if (!player) {
-    return map
-  }
-
-  if (player.leader) {
-    map.set(player.leader.instanceId, player.leader)
-  }
-
-  if (player.stage) {
-    map.set(player.stage.instanceId, player.stage)
-  }
-
-  for (const card of player.characters) {
-    map.set(card.instanceId, card)
-  }
-
-  return map
-}
-
-function queueAttachedDonFeedback(current: DuelPlayerView | null, previous: DuelPlayerView | null) {
-  const currentCards = cardMapFromPlayer(current)
-  const previousCards = cardMapFromPlayer(previous)
-
-  for (const [instanceId, card] of currentCards) {
-    const previousAttachedDon = previousCards.get(instanceId)?.attachedDon ?? 0
-    const attachedDonGain = card.attachedDon - previousAttachedDon
-
-    if (attachedDonGain <= 0) {
-      continue
-    }
-
-    nextTick(() => spawnCardFeedback(instanceId, `+${attachedDonGain * 1000}`, 'gain'))
-  }
-}
-
-function queueKoFeedback(current: DuelPlayerView | null, previous: DuelPlayerView | null) {
-  if (!previous) {
-    return
-  }
-
-  const currentCharacterIds = new Set(current?.characters.map(card => card.instanceId) ?? [])
-
-  for (const previousCharacter of previous.characters) {
-    if (currentCharacterIds.has(previousCharacter.instanceId)) {
-      continue
-    }
-
-    const element = queryCardElement(previousCharacter.instanceId)
-
-    if (!element) {
-      continue
-    }
-
-    const rect = element.getBoundingClientRect()
-    spawnCardFeedbackAtPosition(
-      rect.left + rect.width / 2,
-      rect.top + rect.height / 2,
-      'KO',
-      'impact'
-    )
-  }
-}
-
-function handleNewLogFeedback(message: string) {
-  const globalActionMessage = resolveGlobalActionMessage(message)
-
-  if (globalActionMessage) {
-    spawnBannerFeedback(globalActionMessage, 'narration')
-  }
-
-  const blockerCardName = extractBlockerCardName(message)
-
-  if (blockerCardName) {
-    nextTick(() => spawnCardFeedback(
-      findVisibleCardInstanceIdByName(blockerCardName) ?? combat.value?.blockerInstanceId ?? undefined,
-      'Blocker',
-      'status'
-    ))
-  }
-
-  const donGainFeedback = extractDonGainFeedback(message)
-
-  if (donGainFeedback) {
-    const player = findPlayerByDisplayName(donGainFeedback.playerDisplayName)
-    const targetInstanceId = donGainFeedback.targetLabel === 'son Leader'
-      ? player?.leader?.instanceId ?? undefined
-      : findVisibleCardInstanceIdByName(donGainFeedback.targetLabel) ?? undefined
-
-    nextTick(() => spawnCardFeedback(targetInstanceId, `+${donGainFeedback.power}`, 'gain'))
-  }
-}
-
-function syncPlayerTransitions(
-  current: DuelPlayerView | null,
-  previous: DuelPlayerView | null,
-  ghostsTarget: Ref<TransitionGhost[]>,
-  revealedHandTarget?: Ref<string[]>,
-  skippedGhostSources: TransitionGhost['source'][] = []
-) {
-  if (!current) {
-    return null
-  }
-
-  const diff = derivePlayerTransitionDiff(previous, current)
-  mergeGhosts(
-    ghostsTarget,
-    diff.ghosts.filter(ghost => !skippedGhostSources.includes(ghost.source))
-  )
-
-  if (revealedHandTarget && !skippedGhostSources.includes('life')) {
-    mergeRevealedHandCards(revealedHandTarget, diff.revealedHandCardIds)
-  }
-
-  if (diff.lifeLoss > 0) {
-    nextTick(() => spawnLifeLossFloatingNumber(current.leader?.instanceId, diff.lifeLoss))
-  }
-
-  return diff
-}
-
-watch(self, (current, previous) => {
-  const currentHandIds = new Set(current?.hand.map(card => card.instanceId) ?? [])
-
-  for (const instanceId of Array.from(animatedSelfLifeToHandIds)) {
-    if (!currentHandIds.has(instanceId)) {
-      animatedSelfLifeToHandIds.delete(instanceId)
-    }
-  }
-
-  for (const instanceId of Array.from(animatedSelfDeckToHandIds)) {
-    if (!currentHandIds.has(instanceId)) {
-      animatedSelfDeckToHandIds.delete(instanceId)
-    }
-  }
-
-  if (previous && current) {
-    pruneSelfHandTravelSources()
-    cacheSelfHandTravelSources('life', Math.max(previous.lifeCount - current.lifeCount, 0), queryLifeStackElement(0))
-    cacheSelfHandTravelSources('deck', Math.max(previous.deckCount - current.deckCount, 0), querySelfDeckElement())
-    cacheMulliganDeckToHandTravelSources(current, previous)
-  }
-
-  queueKoFeedback(current, previous)
-  const diff = syncPlayerTransitions(current, previous, selfTransitionGhosts, selfRevealedHandCardIds, ['donDeck', 'life'])
-
-  if (current) {
-    queueSelfHandTravelOverlays(current, previous)
-    queuePendingBoardTravelOverlays(current, previous)
-    queueDonDeckToCostTravelOverlays(diff, 0, selfDeferredCostCardIds)
-    queueAttachedDonTravelOverlays(current, previous)
-  }
-
-  queueTrashTravelOverlay(current, previous, 0, selfDeferredTrashCardIds)
-  queueAttachedDonFeedback(current, previous)
-  syncPendingHandPlayQueue(current)
+const {
+  attachedDonOverlayTarget,
+  boardTravelOverlays,
+  boardTravelOverlayStyle,
+  cacheAttachedDonTravelSources,
+  cacheBoardTravelSource,
+  cacheOpponentHandTravelSources,
+  cacheSelfHandTravelSources,
+  cacheTrashTravelSource,
+  createReadableAttachedDonDestinationRect,
+  createTravelOverlay,
+  createTravelOverlayFromRect,
+  deriveRemovedUntappedCostSourceRects,
+  nextAttachedDonOverlayKey,
+  nextOpponentHiddenHandOverlayInstanceId,
+  pendingAttachedDonTravelSources,
+  pendingBoardTravelSources,
+  pendingOpponentHandTravelSources,
+  pendingSelfHandTravelSources,
+  pendingTrashTravelSources,
+  pruneAttachedDonTravelSources,
+  pruneOpponentHandTravelSources,
+  pruneSelfHandTravelSources,
+  pruneTrashTravelSources,
+  queryAttachedDonSlotElement,
+  queryCardElement,
+  queryCharacterZoneCardElement,
+  queryLifeStackElement,
+  queryOpponentCostCardElement,
+  queryOpponentDeckElement,
+  queryOpponentDonDeckElement,
+  queryOpponentHandElement,
+  queryOpponentHandTopCardElement,
+  queryOpponentUntappedCostCardElement,
+  querySelfCostCardElement,
+  querySelfDeckElement,
+  querySelfDonDeckElement,
+  querySelfUntappedCostCardElement,
+  queryTrashCardElement,
+  revealDeferredVisibleCard,
+  setBoardTravelOverlayElement
+} = useDuelBoardTravel({
+  reducedMotion,
+  boardTravelMs: BOARD_TRAVEL_MS,
+  defaultTravelEasing: DEFAULT_TRAVEL_EASING,
+  attachedDonTravelEasing: ATTACHED_DON_TRAVEL_EASING
 })
 
-watch(phase, (currentPhase, previousPhase) => {
-  if (currentPhase !== 'mulligan' || previousPhase === 'mulligan' || !self.value) {
-    return
-  }
-
-  mergeRevealedHandCards(selfRevealedHandCardIds, self.value.hand.map(card => card.instanceId))
+const {
+  cacheMulliganDeckToHandTravelSources,
+  mergeRevealedHandCards,
+  queueAttachedDonTravelOverlays,
+  queueDonDeckToCostTravelOverlays,
+  queueOpponentAttachedDonTravelOverlays,
+  queueOpponentDeckToHandTravelOverlays,
+  queueOpponentHandToBoardTravelOverlays,
+  queueOpponentLifeToHandTravelOverlays,
+  queuePendingBoardTravelOverlays,
+  queueSelfHandTravelOverlays,
+  queueTrashTravelOverlay
+} = useDuelBoardTravelQueues({
+  phase,
+  reducedMotion,
+  boardTravelStaggerMs: BOARD_TRAVEL_STAGGER_MS,
+  attachedDonTravelStaggerMs: ATTACHED_DON_TRAVEL_STAGGER_MS,
+  selfRevealedHandCardIds,
+  selfDeferredHandCardIds,
+  selfDeferredBoardCardIds,
+  selfDeferredCostCardIds,
+  selfDeferredTrashCardIds,
+  opponentDeferredHandTravelIds,
+  opponentDeferredBoardCardIds,
+  opponentDeferredCostCardIds,
+  opponentDeferredTrashCardIds,
+  animatedSelfLifeToHandIds,
+  animatedSelfDeckToHandIds,
+  animatedOpponentBoardEntryIds,
+  pendingSelfHandTravelSources,
+  pendingBoardTravelSources,
+  pendingOpponentHandTravelSources,
+  pendingTrashTravelSources,
+  pendingAttachedDonTravelSources,
+  cacheSelfHandTravelSources,
+  pruneSelfHandTravelSources,
+  pruneOpponentHandTravelSources,
+  pruneTrashTravelSources,
+  pruneAttachedDonTravelSources,
+  nextOpponentHiddenHandOverlayInstanceId,
+  nextAttachedDonOverlayKey,
+  attachedDonOverlayTarget,
+  revealDeferredVisibleCard,
+  createReadableAttachedDonDestinationRect,
+  createTravelOverlay,
+  createTravelOverlayFromRect,
+  deriveRemovedUntappedCostSourceRects,
+  queryCardElement,
+  queryLifeStackElement,
+  queryOpponentCostCardElement,
+  queryOpponentDeckElement,
+  queryOpponentDonDeckElement,
+  queryOpponentHandElement,
+  queryOpponentHandTopCardElement,
+  queryOpponentUntappedCostCardElement,
+  querySelfCostCardElement,
+  querySelfDeckElement,
+  querySelfDonDeckElement,
+  querySelfUntappedCostCardElement,
+  queryAttachedDonSlotElement,
+  queryTrashCardElement
 })
 
-watch(opponent, (current, previous) => {
-  const previousVisibleBoardIds = new Set([
-    ...(previous?.characters.map(card => card.instanceId) ?? []),
-    ...(previous?.stage ? [previous.stage.instanceId] : [])
-  ])
-  const currentVisibleBoardIds = new Set([
-    ...(current?.characters.map(card => card.instanceId) ?? []),
-    ...(current?.stage ? [current.stage.instanceId] : [])
-  ])
-
-  for (const instanceId of Array.from(animatedOpponentBoardEntryIds)) {
-    if (!currentVisibleBoardIds.has(instanceId) && !previousVisibleBoardIds.has(instanceId)) {
-      animatedOpponentBoardEntryIds.delete(instanceId)
-    }
-  }
-
-  queueKoFeedback(current, previous)
-  const diff = syncPlayerTransitions(current, previous, opponentTransitionGhosts)
-  const handLoss = previous && current ? Math.max(previous.handCount - current.handCount, 0) : 0
-
-  pruneOpponentHandTravelSources()
-  cacheOpponentHandTravelSources(handLoss)
-
-  if (current) {
-    queueOpponentLifeToHandTravelOverlays(previous, current)
-    queueOpponentDeckToHandTravelOverlays(previous, current)
-    queueOpponentHandToBoardTravelOverlays(current, previous)
-    queueDonDeckToCostTravelOverlays(diff, 1, opponentDeferredCostCardIds)
-    queueOpponentAttachedDonTravelOverlays(current, previous)
-  }
-
-  queueTrashTravelOverlay(current, previous, 1, opponentDeferredTrashCardIds)
-  queueAttachedDonFeedback(current, previous)
+const {
+  draggedHandCard,
+  draggedHandCardCount,
+  draggedHandCardInstanceId,
+  draggableHandCardIds,
+  invalidHandCardIds,
+  pulseHandCard,
+  selectedHandCardIds,
+  clearPendingHandPlayQueue,
+  clearSelectedHandCards,
+  onInvalidHandCardDragAttempt,
+  onSelfCharacterZoneDrop,
+  onSelfHandCardClick,
+  onSelfHandCardDragEnd,
+  onSelfHandCardDragStart,
+  onSelfStageZoneDrop,
+  syncPendingHandPlayQueue
+} = useDuelHandInteraction({
+  self,
+  phase,
+  isSelfTurn,
+  isMainPhase,
+  isCombatInProgress,
+  selfUntappedDonCount,
+  isSelfCharacterZoneFull,
+  selectableHandCardIds,
+  pendingCharacterInstanceId,
+  onCacheBoardTravelSource: cacheBoardTravelSource,
+  onPlayCard: playCard
 })
 
-function formatLogTime(createdAt: string): string {
-  const date = new Date(createdAt)
-
-  if (Number.isNaN(date.getTime())) {
-    return '--:--'
-  }
-
-  return date.toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-function resolveLogActor(sessionId: string) {
-  return resolveDuelLogActorPresentation(sessionId, {
-    self: self.value,
-    opponent: opponent.value
-  })
-}
-
-function getLogActor(entry: DuelLogEntry) {
-  return resolveLogActor(entry.actorSessionId)
-}
-
-function getLogMessageText(entry: DuelLogEntry) {
-  return getDuelLogMessageText(entry, getLogActor(entry))
-}
-
-async function scrollJournalToLatest(behavior: ScrollBehavior = 'smooth') {
-  stopJournalReleaseMomentum()
-  await nextTick()
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-
-  const target = journalEnd.value
-  const element = resolveJournalScrollElement(journalScrollArea.value)
-
-  if (target) {
-    target.scrollIntoView({
-      behavior,
-      block: 'end'
-    })
-  }
-
-  if (!element) {
-    return
-  }
-
-  element.scrollTo({
-    top: element.scrollHeight,
-    behavior
-  })
-}
-
-function resolveJournalScrollElement(target: ScrollAreaRef | undefined) {
-  if (target instanceof HTMLElement) {
-    return target
-  }
-
-  if (target?.$el instanceof HTMLElement) {
-    return target.$el
-  }
-
-  return null
-}
-
-function resolveJournalEventTimestamp(event: PointerEvent) {
-  return event.timeStamp > 0 ? event.timeStamp : performance.now()
-}
-
-function stopJournalReleaseMomentum() {
-  if (journalReleaseAnimationFrame === null) {
-    return
-  }
-
-  cancelAnimationFrame(journalReleaseAnimationFrame)
-  journalReleaseAnimationFrame = null
-}
-
-function startJournalReleaseMomentum(initialVelocity: number) {
-  if (reducedMotion.value === 'reduce' || Math.abs(initialVelocity) < JOURNAL_RELEASE_MIN_VELOCITY) {
-    return
-  }
-
-  stopJournalReleaseMomentum()
-
-  let velocityPxPerMs = initialVelocity
-  let previousFrameTimestamp: number | null = null
-
-  // Keep the journal coasting briefly after release so mouse dragging feels less abrupt.
-  const step = (timestamp: number) => {
-    const element = resolveJournalScrollElement(journalScrollArea.value)
-
-    if (!element) {
-      journalReleaseAnimationFrame = null
-      return
-    }
-
-    const deltaMs = previousFrameTimestamp === null
-      ? JOURNAL_RELEASE_FALLBACK_FRAME_MS
-      : Math.max(timestamp - previousFrameTimestamp, 1)
-    previousFrameTimestamp = timestamp
-
-    element.scrollTop += velocityPxPerMs * deltaMs
-    velocityPxPerMs *= JOURNAL_RELEASE_FRICTION
-
-    if (Math.abs(velocityPxPerMs) < JOURNAL_RELEASE_STOP_VELOCITY) {
-      journalReleaseAnimationFrame = null
-      return
-    }
-
-    journalReleaseAnimationFrame = requestAnimationFrame(step)
-  }
-
-  journalReleaseAnimationFrame = requestAnimationFrame(step)
-}
-
-function onJournalPointerDown(event: PointerEvent) {
-  if (event.button !== 0 || event.pointerType === 'touch') {
-    return
-  }
-
-  const element = resolveJournalScrollElement(journalScrollArea.value)
-  const surface = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
-
-  if (!element || !surface || element.scrollHeight <= element.clientHeight) {
-    return
-  }
-
-  stopJournalReleaseMomentum()
-
-  const timestamp = resolveJournalEventTimestamp(event)
-
-  journalDragSession.value = {
-    pointerId: event.pointerId,
-    anchorY: event.clientY,
-    anchorScrollTop: element.scrollTop,
-    previousY: event.clientY,
-    previousTimestamp: timestamp,
-    velocityPxPerMs: 0
-  }
-
-  if (typeof surface.setPointerCapture === 'function') {
-    surface.setPointerCapture(event.pointerId)
-  }
-
-  event.preventDefault()
-}
-
-function onJournalPointerMove(event: PointerEvent) {
-  if (!journalDragSession.value || journalDragSession.value.pointerId !== event.pointerId) {
-    return
-  }
-
-  const element = resolveJournalScrollElement(journalScrollArea.value)
-
-  if (!element) {
-    journalDragSession.value = null
-    return
-  }
-
-  const deltaY = event.clientY - journalDragSession.value.anchorY
-  const timestamp = resolveJournalEventTimestamp(event)
-  const deltaSinceLastMove = event.clientY - journalDragSession.value.previousY
-  const deltaTime = Math.max(timestamp - journalDragSession.value.previousTimestamp, 1)
-
-  element.scrollTop = journalDragSession.value.anchorScrollTop - deltaY
-  journalDragSession.value.velocityPxPerMs = -(deltaSinceLastMove / deltaTime)
-  journalDragSession.value.previousY = event.clientY
-  journalDragSession.value.previousTimestamp = timestamp
-  event.preventDefault()
-}
-
-function endJournalDrag(event: PointerEvent) {
-  if (!journalDragSession.value || journalDragSession.value.pointerId !== event.pointerId) {
-    return
-  }
-
-  const surface = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
-
-  if (surface && typeof surface.releasePointerCapture === 'function') {
-    surface.releasePointerCapture(event.pointerId)
-  }
-
-  startJournalReleaseMomentum(journalDragSession.value.velocityPxPerMs)
-  journalDragSession.value = null
-}
-
-watch(() => logs.value.length, async (newLength, previousLength) => {
-  if (newLength <= previousLength) {
-    return
-  }
-
-  const newEntries = logs.value.slice(previousLength, newLength)
-
-  for (const entry of newEntries) {
-    handleNewLogFeedback(entry.message)
-  }
-
-  if (isJournalOpen.value) {
-    seenLogCount.value = newLength
-    await scrollJournalToLatest('smooth')
-  }
+const {
+  draggedDonCardCount,
+  draggedDonCardInstanceId,
+  selectedDonCardIds,
+  attachDonToTarget,
+  clearDraggedDonCard,
+  clearSelectedDonCards,
+  onSelfCharacterDonDrop,
+  onSelfDonCardDragEnd: endSelfDonCardDrag,
+  onSelfDonCardDragStart,
+  onSelfDonCardSelectionHover,
+  onSelfDonCardSelectionStart,
+  onSelfLeaderDonDrop
+} = useDuelDonInteraction({
+  canAttachDon,
+  selectableDonCardIds,
+  onAttachDon: (target, targetInstanceId, count) => attachDon(target, targetInstanceId, count),
+  onCacheAttachedDonTravelSources: cacheAttachedDonTravelSources,
+  onInvalidLeaderTarget: () => pulseLeader(invalidSelfLeaderPulse),
+  onInvalidCharacterTarget: instanceId => pulseCharacter(invalidSelfCharacterIds, instanceId)
 })
 
-watch(isJournalOpen, async (open) => {
-  if (open) {
-    seenLogCount.value = logs.value.length
-    await scrollJournalToLatest('auto')
-  }
-})
-
-onMounted(() => {
-  seenLogCount.value = logs.value.length
-})
-
-onBeforeUnmount(() => {
-  stopJournalReleaseMomentum()
+const {
+  hoveredCard,
+  hoveredCardRows,
+  effectPromptLinkedPreviewInstanceId,
+  effectPromptLinkedSelectedInstanceIds,
+  isHoveredCardDetailPending,
+  previewEffectPromptCard,
+  clearEffectPromptPreview,
+  resolvedHoveredCard
+} = useDuelCardInspection({
+  api,
+  pendingEffectDecisionId: computed(() => pendingEffectDecision.value?.id ?? null),
+  pendingEffectPromptType: computed(() => pendingEffectDecision.value?.prompt.type ?? null),
+  selectedEffectCardIds
 })
 
 watch(errorMessage, (message) => {
@@ -1553,1777 +599,217 @@ function pulseCharacter(target: Ref<string[]>, instanceId: string) {
   }, 220)
 }
 
-function pulseHandCard(instanceId: string) {
-  invalidHandCardIds.value = Array.from(new Set([...invalidHandCardIds.value, instanceId]))
-
-  window.setTimeout(() => {
-    invalidHandCardIds.value = invalidHandCardIds.value.filter(current => current !== instanceId)
-  }, 220)
-}
-
-function queryCardElement(instanceId: string): HTMLElement | null {
-  return document.querySelector(`[data-instance-id="${CSS.escape(instanceId)}"]`)
-}
-
-function querySelfDonDeckElement(): HTMLElement | null {
-  return document.querySelector('[data-don-deck-side="0"]')
-}
-
-function queryOpponentDonDeckElement(): HTMLElement | null {
-  return document.querySelector('[data-don-deck-side="1"]')
-}
-
-function querySelfDeckElement(): HTMLElement | null {
-  return document.querySelector('[data-deck-side="0"][data-deck-top="true"]')
-}
-
-function queryOpponentDeckElement(): HTMLElement | null {
-  return document.querySelector('[data-deck-side="1"][data-deck-top="true"]')
-}
-
-function queryOpponentHandElement(): HTMLElement | null {
-  return document.querySelector('[data-opponent-hand="true"]')
-}
-
-function queryOpponentHandTopCardElement(): HTMLElement | null {
-  return document.querySelector('[data-opponent-hand="true"] [data-hidden-hand-top="true"]')
-}
-
-function queryLifeStackElement(side: 0 | 1): HTMLElement | null {
-  return document.querySelector(`[data-life-side="${side}"] [data-life-top="true"]`)
-}
-
-function querySelfCostCardElement(instanceId: string): HTMLElement | null {
-  return document.querySelector(`[data-zone-side="0"][data-instance-id="${CSS.escape(instanceId)}"]`)
-}
-
-function queryOpponentCostCardElement(instanceId: string): HTMLElement | null {
-  return document.querySelector(`[data-zone-side="1"][data-instance-id="${CSS.escape(instanceId)}"]`)
-}
-
-function querySelfUntappedCostCardElement(): HTMLElement | null {
-  const matches = Array.from(document.querySelectorAll<HTMLElement>('[data-zone-side="0"][data-cost-state="untapped"]'))
-
-  return matches.at(-1) ?? null
-}
-
-function queryOpponentUntappedCostCardElement(): HTMLElement | null {
-  const matches = Array.from(document.querySelectorAll<HTMLElement>('[data-zone-side="1"][data-cost-state="untapped"]'))
-
-  return matches.at(-1) ?? null
-}
-
-function queryAttachedDonSlotElement(instanceId: string, slotIndex: number): HTMLElement | null {
-  return document.querySelector(
-    `[data-attached-don-owner="${CSS.escape(instanceId)}"][data-attached-don-slot="${String(slotIndex)}"]`
-  )
-}
-
-function queryTrashCardElement(side: 0 | 1, instanceId: string): HTMLElement | null {
-  return document.querySelector(`[data-trash-side="${side}"] [data-instance-id="${CSS.escape(instanceId)}"]`)
-}
-
-function queryCharacterZoneCardElement(side: 0 | 1): HTMLElement | null {
-  return document.querySelector(`[data-character-side="${side}"] [data-instance-id]`)
-}
-
-function revealDeferredVisibleCard(target: Ref<string[]>, instanceId: string) {
-  target.value = target.value.filter(id => id !== instanceId)
-}
-
-function removeBoardTravelOverlay(key: string, target: Ref<string[]>, instanceId: string) {
-  boardTravelOverlayElements.delete(key)
-  boardTravelOverlays.value = boardTravelOverlays.value.filter(overlay => overlay.key !== key)
-  revealDeferredVisibleCard(target, instanceId)
-}
-
-function boardTravelOverlayStyle(overlay: BoardTravelOverlay) {
-  const settledOpacity = overlay.variant === 'attachedDon'
-    ? 0.18
-    : 1
-
-  return {
-    left: `${overlay.sourceRect.left}px`,
-    top: `${overlay.sourceRect.top}px`,
-    width: `${overlay.sourceRect.width}px`,
-    height: `${overlay.sourceRect.height}px`,
-    transform: overlay.settled
-      ? `translate(${overlay.translateX}px, ${overlay.translateY}px) scale(${overlay.scaleX}, ${overlay.scaleY})`
-      : 'translate(0px, 0px) scale(1, 1)',
-    opacity: overlay.settled ? settledOpacity : overlay.opacity,
-    transitionDuration: `${overlay.durationMs}ms`,
-    transitionTimingFunction: overlay.easing
-  }
-}
-
-function setBoardTravelOverlayElement(key: string, value: Element | null) {
-  if (value instanceof HTMLElement) {
-    boardTravelOverlayElements.set(key, value)
-    return
-  }
-
-  boardTravelOverlayElements.delete(key)
-}
-
-function setCardFeedbackElement(key: number, value: Element | null) {
-  if (value instanceof HTMLElement) {
-    cardFeedbackElements.set(key, value)
-    return
-  }
-
-  cardFeedbackElements.delete(key)
-}
-
-function setBannerFeedbackElement(key: number, value: Element | null) {
-  if (value instanceof HTMLElement) {
-    bannerFeedbackElements.set(key, value)
-    return
-  }
-
-  bannerFeedbackElements.delete(key)
-}
-
-function createTravelOverlayFromRect(
-  key: string,
-  instanceId: string,
-  imageUrl: string,
-  sourceRect: DOMRect,
-  destinationRect: DOMRect,
-  target: Ref<string[]>,
-  rotated = false,
-  delayMs = 0,
-  variant: BoardTravelOverlay['variant'] = 'default',
-  onComplete?: () => void
-) {
-  const translateX = destinationRect.left - sourceRect.left
-  const translateY = destinationRect.top - sourceRect.top
-  const scaleX = sourceRect.width === 0 ? 1 : destinationRect.width / sourceRect.width
-  const scaleY = sourceRect.height === 0 ? 1 : destinationRect.height / sourceRect.height
-  const distance = Math.hypot(translateX, translateY)
-  const durationMs = variant === 'attachedDon'
-    ? Math.min(580, Math.max(340, 320 + distance * 0.18))
-    : Math.min(BOARD_TRAVEL_MS, Math.max(220, 200 + distance * 0.16))
-  const easing = variant === 'attachedDon'
-    ? ATTACHED_DON_TRAVEL_EASING
-    : DEFAULT_TRAVEL_EASING
-  const opacity = variant === 'attachedDon' ? 0.98 : 1
-
-  window.setTimeout(() => {
-    boardTravelOverlays.value = [
-      ...boardTravelOverlays.value.filter(overlay => overlay.key !== key),
-      {
-        key,
-        instanceId,
-        imageUrl,
-        sourceRect,
-        destinationRect,
-        translateX,
-        translateY,
-        scaleX,
-        scaleY,
-        settled: false,
-        durationMs,
-        easing,
-        variant,
-        opacity,
-        rotated
-      }
-    ]
-
-    nextTick(() => {
-      const element = boardTravelOverlayElements.get(key)
-
-      if (!element) {
-        removeBoardTravelOverlay(key, target, instanceId)
-        onComplete?.()
-        return
-      }
-
-      const scheduleOverlayStart = typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 16)
-
-      scheduleOverlayStart(() => {
-        boardTravelOverlays.value = boardTravelOverlays.value.map((overlay) => {
-          if (overlay.key !== key) {
-            return overlay
-          }
-
-          return {
-            ...overlay,
-            settled: true
-          }
-        })
-      })
-
-      window.setTimeout(() => {
-        removeBoardTravelOverlay(key, target, instanceId)
-        onComplete?.()
-      }, durationMs)
-    })
-  }, delayMs)
-}
-
-function createTravelOverlay(
-  key: string,
-  instanceId: string,
-  imageUrl: string,
-  sourceRect: DOMRect,
-  destinationElement: HTMLElement,
-  target: Ref<string[]>,
-  rotated = false,
-  delayMs = 0,
-  variant: BoardTravelOverlay['variant'] = 'default',
-  onComplete?: () => void
-) {
-  createTravelOverlayFromRect(
-    key,
-    instanceId,
-    imageUrl,
-    sourceRect,
-    destinationElement.getBoundingClientRect(),
-    target,
-    rotated,
-    delayMs,
-    variant,
-    onComplete
-  )
-}
-
-function createReadableAttachedDonDestinationRect(sourceRect: DOMRect, destinationElement: HTMLElement) {
-  const rect = destinationElement.getBoundingClientRect()
-  const width = Math.max(rect.width + 18, sourceRect.width * 0.62)
-  const height = Math.max(rect.height + 10, sourceRect.height * 0.62)
-  const left = rect.left + (rect.width - width) / 2
-  const top = rect.top + (rect.height - height) / 2 - 4
-
-  return new DOMRect(left, top, width, height)
-}
-
-function queryCostCardElement(side: 0 | 1, instanceId: string): HTMLElement | null {
-  return side === 0
-    ? querySelfCostCardElement(instanceId)
-    : queryOpponentCostCardElement(instanceId)
-}
-
-function deriveRemovedUntappedCostSourceRects(
-  previous: DuelPlayerView | null,
-  current: DuelPlayerView,
-  side: 0 | 1
-) {
-  if (!previous) {
-    return []
-  }
-
-  const currentCostIds = new Set(current.cost.map(card => card.instanceId))
-
-  return previous.cost
-    .filter(card => !card.rested && !currentCostIds.has(card.instanceId))
-    .map(card => queryCostCardElement(side, card.instanceId)?.getBoundingClientRect())
-    .filter((rect): rect is DOMRect => Boolean(rect))
-}
-
-function queueSelfHandTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
-  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  pruneSelfHandTravelSources()
-
-  const previousHandIds = new Set(previous.hand.map(card => card.instanceId))
-  const newHandCards = current.hand
-    .filter(card => !previousHandIds.has(card.instanceId))
-    .filter(card => !animatedSelfLifeToHandIds.has(card.instanceId) && !animatedSelfDeckToHandIds.has(card.instanceId))
-    .filter((card): card is PrivateCard & { imageUrl: string } => typeof card.imageUrl === 'string' && card.imageUrl.length > 0)
-
-  if (newHandCards.length === 0 || pendingSelfHandTravelSources.length === 0) {
-    return
-  }
-
-  const assignments: Array<{
-    card: PrivateCard & { imageUrl: string }
-    source: 'life' | 'deck'
-    sourceRect: DOMRect
-  }> = []
-
-  for (const card of newHandCards) {
-    const source = pendingSelfHandTravelSources.shift()
-
-    if (!source) {
-      break
-    }
-
-    assignments.push({
-      card,
-      source: source.source,
-      sourceRect: source.sourceRect
-    })
-  }
-
-  if (assignments.length === 0) {
-    return
-  }
-
-  nextTick(() => {
-    const destinationRects = new Map<string, DOMRect>()
-
-    for (const { card } of assignments) {
-      const destinationElement = queryCardElement(card.instanceId)
-
-      if (destinationElement) {
-        destinationRects.set(card.instanceId, destinationElement.getBoundingClientRect())
-      }
-    }
-
-    if (destinationRects.size === 0) {
-      return
-    }
-
-    mergeDeferredVisibleCards(
-      selfDeferredHandCardIds,
-      assignments
-        .map(({ card }) => card)
-        .filter(card => destinationRects.has(card.instanceId))
-        .map(card => card.instanceId)
-    )
-
-    for (const { item: assignment, delayMs } of createStaggeredTravelPlan(assignments, BOARD_TRAVEL_STAGGER_MS)) {
-      const { card, source, sourceRect } = assignment
-      const destinationRect = destinationRects.get(card.instanceId)
-
-      if (!destinationRect) {
-        revealDeferredVisibleCard(selfDeferredHandCardIds, card.instanceId)
-        continue
-      }
-
-      if (source === 'life') {
-        animatedSelfLifeToHandIds.add(card.instanceId)
-      } else {
-        animatedSelfDeckToHandIds.add(card.instanceId)
-      }
-
-      createTravelOverlayFromRect(
-        `${source}-hand:${card.instanceId}`,
-        card.instanceId,
-        card.imageUrl,
-        sourceRect,
-        destinationRect,
-        selfDeferredHandCardIds,
-        false,
-        delayMs,
-        'default',
-        source === 'life'
-          ? () => mergeRevealedHandCards(selfRevealedHandCardIds, [card.instanceId])
-          : undefined
-      )
-    }
-  })
-}
-
-function queueOpponentHiddenHandTravelOverlays(
-  source: 'deck' | 'life',
-  count: number,
-  sourceElement: HTMLElement | null
-) {
-  if (count <= 0 || reducedMotion.value === 'reduce' || typeof window === 'undefined' || !sourceElement) {
-    return
-  }
-
-  const sourceRect = sourceElement.getBoundingClientRect()
-
-  nextTick(() => {
-    const destinationElement = queryOpponentHandTopCardElement()
-
-    if (!destinationElement) {
-      return
-    }
-
-    const destinationRect = destinationElement.getBoundingClientRect()
-
-    for (const { item: index, delayMs } of createStaggeredTravelPlan(
-      Array.from({ length: count }, (_, itemIndex) => itemIndex),
-      BOARD_TRAVEL_STAGGER_MS
-    )) {
-      const overlayInstanceId = `opponent-hidden-hand:${source}:${++opponentHiddenHandTravelKey}:${index}`
-
-      mergeDeferredVisibleCards(opponentDeferredHandTravelIds, [overlayInstanceId])
-
-      createTravelOverlayFromRect(
-        overlayInstanceId,
-        overlayInstanceId,
-        cardBackRegular,
-        sourceRect,
-        destinationRect,
-        opponentDeferredHandTravelIds,
-        false,
-        delayMs
-      )
-    }
-  })
-}
-
-function queueOpponentLifeToHandTravelOverlays(previous: DuelPlayerView | null, current: DuelPlayerView) {
-  if (!previous) {
-    return
-  }
-
-  const handGain = Math.max(current.handCount - previous.handCount, 0)
-  const lifeLoss = Math.max(previous.lifeCount - current.lifeCount, 0)
-  const lifeToHandCount = Math.min(handGain, lifeLoss)
-
-  queueOpponentHiddenHandTravelOverlays('life', lifeToHandCount, queryLifeStackElement(1))
-}
-
-function queueOpponentDeckToHandTravelOverlays(previous: DuelPlayerView | null, current: DuelPlayerView) {
-  if (!previous) {
-    return
-  }
-
-  const handGain = Math.max(current.handCount - previous.handCount, 0)
-  const lifeLoss = Math.max(previous.lifeCount - current.lifeCount, 0)
-  const deckLoss = Math.max(previous.deckCount - current.deckCount, 0)
-  const deckToHandCount = Math.min(Math.max(handGain - lifeLoss, 0), deckLoss)
-
-  queueOpponentHiddenHandTravelOverlays('deck', deckToHandCount, queryOpponentDeckElement())
-}
-
-function queueTrashTravelOverlay(
-  current: DuelPlayerView | null,
-  previous: DuelPlayerView | null,
-  side: 0 | 1,
-  deferredTrashTarget: Ref<string[]>
-) {
-  if (!current || !previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  pruneTrashTravelSources()
-
-  const topTrash = current.trash[0]
-
-  if (
-    !topTrash
-    || typeof topTrash.imageUrl !== 'string'
-    || topTrash.imageUrl.length === 0
-    || previous.trash.some(card => card.instanceId === topTrash.instanceId)
-  ) {
-    return
-  }
-
-  const trashImageUrl = topTrash.imageUrl
-
-  const existedInVisibleZone = previous.characters.some(card => card.instanceId === topTrash.instanceId)
-    || previous.stage?.instanceId === topTrash.instanceId
-    || previous.cost.some(card => card.instanceId === topTrash.instanceId)
-    || (side === 0 && previous.hand.some(card => card.instanceId === topTrash.instanceId))
-
-  if (!existedInVisibleZone) {
-    return
-  }
-
-  const pendingSource = pendingTrashTravelSources.get(topTrash.instanceId)
-  pendingTrashTravelSources.delete(topTrash.instanceId)
-  const sourceRect = pendingSource?.sourceRect ?? queryCardElement(topTrash.instanceId)?.getBoundingClientRect()
-
-  if (!sourceRect) {
-    return
-  }
-
-  mergeDeferredVisibleCards(deferredTrashTarget, [topTrash.instanceId])
-
-  nextTick(() => {
-    const destinationElement = queryTrashCardElement(side, topTrash.instanceId)
-
-    if (!destinationElement) {
-      revealDeferredVisibleCard(deferredTrashTarget, topTrash.instanceId)
-      return
-    }
-
-    createTravelOverlay(
-      `trash:${side}:${topTrash.instanceId}`,
-      topTrash.instanceId,
-      trashImageUrl,
-      sourceRect,
-      destinationElement,
-      deferredTrashTarget
-    )
-  })
-}
-
-function cacheBoardTravelSource(card: PrivateCard) {
-  if (reducedMotion.value === 'reduce' || typeof window === 'undefined' || !card.imageUrl) {
-    return
-  }
-
-  const sourceElement = queryCardElement(card.instanceId)
-
-  if (!sourceElement) {
-    return
-  }
-
-  pendingBoardTravelSources.set(card.instanceId, {
-    imageUrl: card.imageUrl,
-    sourceRect: sourceElement.getBoundingClientRect()
-  })
-}
-
-function cacheTrashTravelSource(card: PrivateCard | PublicCard | null | undefined) {
-  if (reducedMotion.value === 'reduce' || typeof window === 'undefined' || !card?.imageUrl) {
-    return
-  }
-
-  const sourceElement = queryCardElement(card.instanceId)
-
-  if (!sourceElement) {
-    return
-  }
-
-  pendingTrashTravelSources.set(card.instanceId, {
-    imageUrl: card.imageUrl,
-    sourceRect: sourceElement.getBoundingClientRect(),
-    expiresAt: Date.now() + 3000
-  })
-}
-
-function queuePendingBoardTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
-  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  const boardArrivalIds = [
-    ...current.characters
-      .filter(character =>
-        !previous.characters.some(previousCharacter => previousCharacter.instanceId === character.instanceId)
-        && pendingBoardTravelSources.has(character.instanceId)
-      )
-      .map(character => character.instanceId),
-    ...(current.stage
-      && previous.stage?.instanceId !== current.stage.instanceId
-      && pendingBoardTravelSources.has(current.stage.instanceId)
-      ? [current.stage.instanceId]
-      : [])
-  ]
-  const pendingArrivals = boardArrivalIds.filter(instanceId => pendingBoardTravelSources.has(instanceId))
-
-  if (pendingArrivals.length === 0) {
-    return
-  }
-
-  mergeDeferredVisibleCards(selfDeferredBoardCardIds, pendingArrivals)
-
-  nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(pendingArrivals, BOARD_TRAVEL_STAGGER_MS)) {
-      const pendingSource = pendingBoardTravelSources.get(instanceId)
-      pendingBoardTravelSources.delete(instanceId)
-
-      const destinationElement = queryCardElement(instanceId)
-
-      if (!pendingSource || !destinationElement) {
-        revealDeferredVisibleCard(selfDeferredBoardCardIds, instanceId)
-        continue
-      }
-
-      createTravelOverlay(
-        `board:${instanceId}`,
-        instanceId,
-        pendingSource.imageUrl,
-        pendingSource.sourceRect,
-        destinationElement,
-        selfDeferredBoardCardIds,
-        false,
-        delayMs
-      )
-    }
-  })
-}
-
-function queueOpponentHandToBoardTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
-  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  pruneOpponentHandTravelSources()
-
-  const sourceElement = queryOpponentHandElement()
-
-  if (!sourceElement) {
-    return
-  }
-
-  const boardArrivalIds = [
-    ...current.characters
-      .filter(character =>
-        !previous.characters.some(previousCharacter => previousCharacter.instanceId === character.instanceId)
-        && !animatedOpponentBoardEntryIds.has(character.instanceId)
-      )
-      .map(character => character.instanceId),
-    ...(current.stage && previous.stage?.instanceId !== current.stage.instanceId && !animatedOpponentBoardEntryIds.has(current.stage.instanceId)
-      ? [current.stage.instanceId]
-      : [])
-  ]
-
-  const travelCount = Math.min(boardArrivalIds.length, pendingOpponentHandTravelSources.length)
-
-  if (travelCount === 0) {
-    return
-  }
-
-  const travellingArrivalIds = boardArrivalIds.slice(0, travelCount)
-  travellingArrivalIds.forEach(instanceId => animatedOpponentBoardEntryIds.add(instanceId))
-  mergeDeferredVisibleCards(opponentDeferredBoardCardIds, travellingArrivalIds)
-
-  nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(travellingArrivalIds, BOARD_TRAVEL_STAGGER_MS)) {
-      const destinationElement = queryCardElement(instanceId)
-      const card = current.characters.find(character => character.instanceId === instanceId)
-        ?? (current.stage?.instanceId === instanceId ? current.stage : null)
-      const sourceRect = pendingOpponentHandTravelSources.shift()?.sourceRect
-        ?? queryOpponentHandTopCardElement()?.getBoundingClientRect()
-
-      if (!destinationElement || !card?.imageUrl || !sourceRect) {
-        revealDeferredVisibleCard(opponentDeferredBoardCardIds, instanceId)
-        continue
-      }
-
-      createTravelOverlay(
-        `opponent-board:${instanceId}`,
-        instanceId,
-        card.imageUrl,
-        sourceRect,
-        destinationElement,
-        opponentDeferredBoardCardIds,
-        false,
-        delayMs
-      )
-    }
-  })
-}
-
-function queueDonDeckToCostTravelOverlays(
-  diff: PlayerTransitionDiff | null,
-  side: 0 | 1,
-  deferredCostTarget: Ref<string[]>
-) {
-  if (!diff || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  const donCostIds = diff.ghosts
-    .filter(ghost => ghost.source === 'donDeck')
-    .map(ghost => ghost.instanceId)
-
-  if (donCostIds.length === 0) {
-    return
-  }
-
-  const sourceElement = side === 0
-    ? querySelfDonDeckElement()
-    : queryOpponentDonDeckElement()
-
-  if (!sourceElement) {
-    return
-  }
-
-  const sourceRect = sourceElement.getBoundingClientRect()
-  mergeDeferredVisibleCards(deferredCostTarget, donCostIds)
-
-  nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(donCostIds, BOARD_TRAVEL_STAGGER_MS)) {
-      const destinationElement = side === 0
-        ? querySelfCostCardElement(instanceId)
-        : queryOpponentCostCardElement(instanceId)
-
-      if (!destinationElement) {
-        revealDeferredVisibleCard(deferredCostTarget, instanceId)
-        continue
-      }
-
-      createTravelOverlay(
-        `cost:${side}:${instanceId}`,
-        instanceId,
-        cardFrontDon,
-        sourceRect,
-        destinationElement,
-        deferredCostTarget,
-        false,
-        delayMs
-      )
-    }
-  })
-}
-
-function cacheAttachedDonTravelSources(instanceIds: string[]) {
-  if (reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  pruneAttachedDonTravelSources()
-
-  for (const instanceId of instanceIds) {
-    const sourceElement = querySelfCostCardElement(instanceId)
-
-    if (!sourceElement) {
-      continue
-    }
-
-    pendingAttachedDonTravelSources.push({
-      sourceRect: sourceElement.getBoundingClientRect(),
-      expiresAt: Date.now() + 3000
-    })
-  }
-}
-
-function clearSelectedDonCards() {
-  selectedDonCardIds.value = []
-  selectedDonAnchorInstanceId.value = null
-}
-
-function clearSelectedHandCards() {
-  selectedHandCardIds.value = []
-}
-
-function clearPendingHandPlayQueue() {
-  pendingQueuedHandCardIds.value = []
-  queuedHandCardInstanceId.value = null
-}
-
-function clearDraggedDonCard() {
-  draggedDonCardInstanceId.value = null
-}
-
-function syncSelectedHandCardsWithHand() {
-  const selectableIds = new Set(selectableHandCardIds.value)
-
-  selectedHandCardIds.value = selectedHandCardIds.value.filter(id => selectableIds.has(id))
-
-  if (draggedHandCardInstanceId.value && !selectableIds.has(draggedHandCardInstanceId.value)) {
-    resetDraggedHandCard()
-  }
-}
-
-watch(selectableHandCardIds, syncSelectedHandCardsWithHand, { immediate: true })
-
-watch(
-  [phase, isSelfTurn],
-  ([currentPhase, selfTurn], [previousPhase, previousSelfTurn]) => {
-    if (
-      currentPhase === 'main'
-      && selfTurn
-      && (previousPhase !== 'main' || !previousSelfTurn)
-    ) {
-      clearSelectedHandCards()
-      clearPendingHandPlayQueue()
-      resetDraggedHandCard()
-      invalidHandCardIds.value = []
-    }
-  },
-  { immediate: true }
-)
-
-watch(isSelfTurn, (selfTurn, previousSelfTurn) => {
-  if (!selfTurn || previousSelfTurn || phase.value === 'finished') {
-    return
-  }
-
-  showTurnFeedback()
+const {
+  cancelCounterSelection,
+  cancelDiscardSelection,
+  clearTransientBoardSelections,
+  confirmCounter,
+  onOpponentCharacterClick,
+  onOpponentLeaderClick,
+  onSelfCharacterAttackStart,
+  onSelfCharacterClick,
+  onSelfDonCardDragEnd,
+  onSelfHandCardOrCounterClick,
+  onSelfLeaderAttackStart,
+  onSelfLeaderClick,
+  skipBlock
+} = useDuelBoardInteractions({
+  self,
+  opponent,
+  canAttachDon,
+  canDeclareAttack,
+  isBlockingStep,
+  isCounteringStep,
+  isSelfDefender,
+  isChoosingCharacterToDiscard,
+  pendingCharacterInstanceId,
+  pendingCounterCardInstanceId,
+  counterPowerBonusInput,
+  pendingEffectDecision,
+  selectableEffectCardIdSet,
+  selectedDonCardIds,
+  invalidSelfLeaderPulse,
+  invalidOpponentLeaderPulse,
+  invalidSelfCharacterIds,
+  invalidOpponentCharacterIds,
+  pulseHandCard,
+  clearSelectedHandCards,
+  clearSelectedDonCards,
+  clearDraggedDonCard,
+  endSelfDonCardDrag,
+  onSelfHandCardClick,
+  attachDonToTarget,
+  beginAttackDrag,
+  confirmLeaderTarget,
+  confirmCharacterTarget,
+  cancelTargetSelection,
+  cacheBoardTravelSource,
+  cacheTrashTravelSource,
+  playCard,
+  declareBlock,
+  declareCounter,
+  toggleEffectCardSelection
 })
 
-onBeforeUnmount(() => {
-  clearTurnFeedbackTimeout()
+useDuelBoardSelectionShell({
+  isChoosingCharacterToDiscard,
+  isChoosingTarget,
+  selectedHandCardIds,
+  selectedDonCardIds,
+  querySelfCostCardElement,
+  cancelDiscardSelection,
+  cancelTargetSelection,
+  clearSelectedHandCards,
+  clearSelectedDonCards,
+  clearTransientBoardSelections
 })
 
-watch(
-  [phase, isSelfTurn, isCombatInProgress, isAwaitingEffectDecision, pendingEffectDecision],
-  ([currentPhase, selfTurn, combatInProgress, awaitingEffectDecision, decision]) => {
-    if (
-      !selfTurn
-      || combatInProgress
-      || (awaitingEffectDecision && !decision)
-      || !AUTO_ADVANCE_PHASES.has(currentPhase)
-      || currentPhase === 'finished'
-    ) {
-      return
-    }
-
-    window.setTimeout(() => {
-      if (
-        isSelfTurn.value
-        && !isCombatInProgress.value
-        && !(isAwaitingEffectDecision.value && !pendingEffectDecision.value)
-        && phase.value === currentPhase
-        && AUTO_ADVANCE_PHASES.has(currentPhase)
-      ) {
-        endPhase()
-      }
-    }, 0)
-  },
-  { immediate: true }
-)
-
-function syncSelectedDonCardsWithCost() {
-  const selectableIds = new Set(selectableDonCardIds.value)
-
-  if (!canAttachDon.value) {
-    clearSelectedDonCards()
-    clearDraggedDonCard()
-    return
-  }
-
-  selectedDonCardIds.value = selectedDonCardIds.value.filter(id => selectableIds.has(id))
-
-  if (!selectedDonAnchorInstanceId.value || !selectableIds.has(selectedDonAnchorInstanceId.value)) {
-    selectedDonAnchorInstanceId.value = selectedDonCardIds.value.at(-1) ?? null
-  }
-
-  if (draggedDonCardInstanceId.value && !selectableIds.has(draggedDonCardInstanceId.value)) {
-    clearDraggedDonCard()
-  }
-}
-
-watch([selectableDonCardIds, canAttachDon], syncSelectedDonCardsWithCost, { immediate: true })
-
-function resolveAttachDonSourceIds(preferredInstanceId?: string) {
-  const orderedIds = selectableDonCardIds.value
-
-  if (
-    preferredInstanceId
-    && selectedDonCardIds.value.length > 0
-    && selectedDonCardIds.value.includes(preferredInstanceId)
-  ) {
-    return orderedIds.filter(id => selectedDonCardIds.value.includes(id))
-  }
-
-  if (!preferredInstanceId && selectedDonCardIds.value.length > 0) {
-    return orderedIds.filter(id => selectedDonCardIds.value.includes(id))
-  }
-
-  if (preferredInstanceId) {
-    return orderedIds.includes(preferredInstanceId) ? [preferredInstanceId] : []
-  }
-
-  const fallbackId = orderedIds.at(-1)
-
-  return fallbackId ? [fallbackId] : []
-}
-
-function consumeAttachDonCount(preferredInstanceId?: string) {
-  if (
-    selectedDonCardIds.value.length > 0
-    && (
-      !preferredInstanceId
-      || selectedDonCardIds.value.includes(preferredInstanceId)
-    )
-  ) {
-    const count = selectedDonCardIds.value.length
-    clearSelectedDonCards()
-
-    return count
-  }
-
-  return 1
-}
-
-function queueAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
-  if (reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    pendingAttachedDonTravelSources.length = 0
-    return
-  }
-
-  const targetIds = deriveAttachedDonTravelTargetIds(previous, current)
-
-  if (targetIds.length === 0) {
-    return
-  }
-
-  pruneAttachedDonTravelSources()
-
-  const previousAttachedCounts = new Map<string, number>()
-
-  if (previous?.leader) {
-    previousAttachedCounts.set(previous.leader.instanceId, previous.leader.attachedDon)
-  }
-
-  for (const character of previous?.characters ?? []) {
-    previousAttachedCounts.set(character.instanceId, character.attachedDon)
-  }
-
-  const currentAttachedCounts = new Map<string, number>()
-
-  if (current.leader) {
-    currentAttachedCounts.set(current.leader.instanceId, current.leader.attachedDon)
-  }
-
-  for (const character of current.characters) {
-    currentAttachedCounts.set(character.instanceId, character.attachedDon)
-  }
-
-  const consumedTargetCounts = new Map<string, number>()
-  const removedCostSourceRects = deriveRemovedUntappedCostSourceRects(previous, current, 0)
-
-  nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, ATTACHED_DON_TRAVEL_STAGGER_MS)) {
-      const previousAttachedCount = previousAttachedCounts.get(instanceId) ?? 0
-      const consumedCount = consumedTargetCounts.get(instanceId) ?? 0
-      const destinationSlotIndex = previousAttachedCount + consumedCount
-      const destinationElement = queryAttachedDonSlotElement(instanceId, destinationSlotIndex)
-      const immediateSourceRect = removedCostSourceRects.shift()
-      const pendingSource = pendingAttachedDonTravelSources.shift()
-      const fallbackSource = querySelfUntappedCostCardElement()
-      const sourceRect = immediateSourceRect ?? pendingSource?.sourceRect ?? fallbackSource?.getBoundingClientRect()
-
-      consumedTargetCounts.set(instanceId, consumedCount + 1)
-
-      if (!destinationElement || !sourceRect || !currentAttachedCounts.has(instanceId)) {
-        continue
-      }
-
-      attachedDonTravelKey += 1
-
-      createTravelOverlayFromRect(
-        `attached-don:${attachedDonTravelKey}`,
-        `attached-don:${instanceId}:${attachedDonTravelKey}`,
-        cardFrontDon,
-        sourceRect,
-        createReadableAttachedDonDestinationRect(sourceRect, destinationElement),
-        attachedDonOverlayTarget,
-        false,
-        delayMs,
-        'attachedDon'
-      )
-    }
-  })
-}
-
-function queueOpponentAttachedDonTravelOverlays(current: DuelPlayerView, previous: DuelPlayerView | null) {
-  if (!previous || reducedMotion.value === 'reduce' || typeof window === 'undefined') {
-    return
-  }
-
-  const targetIds = deriveAttachedDonTravelTargetIds(previous, current)
-
-  if (targetIds.length === 0) {
-    return
-  }
-
-  const previousAttachedCounts = new Map<string, number>()
-
-  if (previous.leader) {
-    previousAttachedCounts.set(previous.leader.instanceId, previous.leader.attachedDon)
-  }
-
-  for (const character of previous.characters) {
-    previousAttachedCounts.set(character.instanceId, character.attachedDon)
-  }
-
-  const sourceRects = Array.from(
-    deriveRemovedUntappedCostSourceRects(previous, current, 1)
-  )
-
-  while (sourceRects.length < targetIds.length) {
-    const fallbackRect = queryOpponentUntappedCostCardElement()?.getBoundingClientRect()
-
-    if (!fallbackRect) {
-      break
-    }
-
-    sourceRects.push(fallbackRect)
-  }
-  const consumedTargetCounts = new Map<string, number>()
-
-  nextTick(() => {
-    for (const { item: instanceId, delayMs } of createStaggeredTravelPlan(targetIds, ATTACHED_DON_TRAVEL_STAGGER_MS)) {
-      const previousAttachedCount = previousAttachedCounts.get(instanceId) ?? 0
-      const consumedCount = consumedTargetCounts.get(instanceId) ?? 0
-      const destinationSlotIndex = previousAttachedCount + consumedCount
-      const destinationElement = queryAttachedDonSlotElement(instanceId, destinationSlotIndex)
-      const sourceRect = sourceRects.shift()
-
-      consumedTargetCounts.set(instanceId, consumedCount + 1)
-
-      if (!destinationElement || !sourceRect) {
-        continue
-      }
-
-      attachedDonTravelKey += 1
-
-      createTravelOverlayFromRect(
-        `attached-don:${attachedDonTravelKey}`,
-        `attached-don:${instanceId}:${attachedDonTravelKey}`,
-        cardFrontDon,
-        sourceRect,
-        createReadableAttachedDonDestinationRect(sourceRect, destinationElement),
-        attachedDonOverlayTarget,
-        false,
-        delayMs,
-        'attachedDon'
-      )
-    }
-  })
-}
-
-const draggableHandCardIds = computed(() => {
-  return selectableHandCardIds.value
+const {
+  bannerFeedbacks,
+  cardFeedbacks,
+  floatingNumbers,
+  isTurnFeedbackVisible,
+  bannerFeedbackClasses,
+  cardFeedbackClasses,
+  clearTurnFeedbackTimeout,
+  removeFloatingNumber,
+  setBannerFeedbackElement,
+  setCardFeedbackElement,
+  showTurnFeedback,
+  spawnBannerFeedback,
+  spawnCardFeedback,
+  spawnCardFeedbackAtPosition,
+  spawnLifeLossFloatingNumber
+} = useDuelBoardFeedback({
+  appConfig,
+  reducedMotion,
+  queryCardElement
 })
 
-const draggedHandCard = computed(() =>
-  self.value?.hand.find(card => card.instanceId === draggedHandCardInstanceId.value) ?? null
-)
-
-function resetDraggedHandCard() {
-  draggedHandCardInstanceId.value = null
-}
-
-function requestPlayFromHand(instanceId: string) {
-  if (!isMainPhase.value || !isSelfTurn.value || isCombatInProgress.value) {
-    pulseHandCard(instanceId)
-    return false
-  }
-
-  const card = self.value?.hand.find(candidate => candidate.instanceId === instanceId)
-
-  if (
-    !card
-    || !['Character', 'Stage'].includes(card.type)
-    || (card.cost ?? Number.POSITIVE_INFINITY) > selfUntappedDonCount.value
-  ) {
-    pulseHandCard(instanceId)
-    return false
-  }
-
-  if (card.type === 'Character' && isSelfCharacterZoneFull.value) {
-    clearSelectedHandCards()
-    pendingCharacterInstanceId.value = instanceId
-    return true
-  }
-
-  if (card.type === 'Character' || card.type === 'Stage') {
-    cacheBoardTravelSource(card)
-  }
-
-  clearSelectedHandCards()
-  playCard(instanceId)
-  return true
-}
-
-function resolveSelectedHandPlayIds(targetType: 'Character' | 'Stage', preferredInstanceId: string) {
-  const orderedIds = self.value?.hand
-    .filter(card => card.type === targetType)
-    .map(card => card.instanceId) ?? []
-
-  if (selectedHandCardIds.value.length > 0 && selectedHandCardIds.value.includes(preferredInstanceId)) {
-    return orderedIds.filter(id => selectedHandCardIds.value.includes(id))
-  }
-
-  return orderedIds.includes(preferredInstanceId) ? [preferredInstanceId] : []
-}
-
-function playQueuedHandCards(instanceIds: string[]) {
-  const remainingIds = [...instanceIds]
-
-  while (remainingIds.length > 0) {
-    const nextInstanceId = remainingIds.shift()
-
-    if (!nextInstanceId) {
-      continue
-    }
-
-    const isQueued = remainingIds.length > 0
-    queuedHandCardInstanceId.value = nextInstanceId
-    pendingQueuedHandCardIds.value = remainingIds
-
-    const accepted = requestPlayFromHand(nextInstanceId)
-
-    if (!accepted) {
-      clearPendingHandPlayQueue()
-      return
-    }
-
-    if (!isQueued && !pendingCharacterInstanceId.value) {
-      clearPendingHandPlayQueue()
-    }
-
-    return
-  }
-
-  clearPendingHandPlayQueue()
-}
-
-function syncPendingHandPlayQueue(current: DuelPlayerView | null) {
-  if (!queuedHandCardInstanceId.value) {
-    return
-  }
-
-  if (pendingCharacterInstanceId.value === queuedHandCardInstanceId.value) {
-    return
-  }
-
-  const queuedCardStillInHand = current?.hand.some(card => card.instanceId === queuedHandCardInstanceId.value) ?? false
-
-  if (queuedCardStillInHand) {
-    return
-  }
-
-  queuedHandCardInstanceId.value = null
-
-  if (pendingQueuedHandCardIds.value.length === 0) {
-    clearPendingHandPlayQueue()
-    return
-  }
-
-  playQueuedHandCards(pendingQueuedHandCardIds.value)
-}
-
-function cancelTargetSelection() {
-  pendingAttackerInstanceId.value = null
-  declaredAttackTargetInstanceId.value = null
-}
-
-function attachDonToTarget(target: 'leader' | 'character', targetInstanceId?: string, preferredDonInstanceId?: string) {
-  if (!canAttachDon.value) {
-    if (target === 'leader') {
-      pulseLeader(invalidSelfLeaderPulse)
-    } else if (targetInstanceId) {
-      pulseCharacter(invalidSelfCharacterIds, targetInstanceId)
-    }
-    return
-  }
-
-  const sourceIds = resolveAttachDonSourceIds(preferredDonInstanceId)
-
-  if (sourceIds.length === 0) {
-    if (target === 'leader') {
-      pulseLeader(invalidSelfLeaderPulse)
-    } else if (targetInstanceId) {
-      pulseCharacter(invalidSelfCharacterIds, targetInstanceId)
-    }
-    return
-  }
-
-  const count = consumeAttachDonCount(preferredDonInstanceId)
-
-  cacheAttachedDonTravelSources(sourceIds)
-  clearDraggedDonCard()
-  attachDon(target, targetInstanceId, count)
-}
-
-function onOpponentLeaderTargetClick() {
-  if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
-    return
-  }
-
-  declareAttack(pendingAttackerInstanceId.value, 'leader')
-  pendingAttackerInstanceId.value = null
-}
-
-function onOpponentCharacterTargetClick(instanceId: string) {
-  if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
-    return
-  }
-
-  const target = opponent.value?.characters.find(candidate => candidate.instanceId === instanceId)
-
-  if (!target || !target.rested) {
-    pulseCharacter(invalidOpponentCharacterIds, instanceId)
-    return
-  }
-
-  declareAttack(pendingAttackerInstanceId.value, 'character', instanceId)
-  pendingAttackerInstanceId.value = null
-}
-
-function onBlockerCharacterClick(instanceId: string) {
-  if (!isBlockingStep.value || !isSelfDefender.value) {
-    return
-  }
-
-  const blocker = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
-
-  if (!blocker || blocker.rested) {
-    pulseCharacter(invalidSelfCharacterIds, instanceId)
-    return
-  }
-
-  declareBlock(instanceId)
-}
-
-function skipBlock() {
-  declareBlock(null)
-}
-
-function onCounterHandCardClick(instanceId: string) {
-  if (!isCounteringStep.value || !isSelfDefender.value) {
-    return
-  }
-
-  const card = self.value?.hand.find(candidate => candidate.instanceId === instanceId)
-
-  if (!card) {
-    return
-  }
-
-  pendingCounterCardInstanceId.value = instanceId
-  counterPowerBonusInput.value = card.counter && card.counter > 0 ? card.counter : 1000
-}
-
-function confirmCounter() {
-  if (!pendingCounterCardInstanceId.value) {
-    return
-  }
-
-  const counterCard = self.value?.hand.find(candidate => candidate.instanceId === pendingCounterCardInstanceId.value)
-  cacheTrashTravelSource(counterCard)
-  declareCounter(pendingCounterCardInstanceId.value, counterPowerBonusInput.value)
-  pendingCounterCardInstanceId.value = null
-}
-
-function cancelCounterSelection() {
-  pendingCounterCardInstanceId.value = null
-}
-
-function toggleSelectedHandCard(instanceId: string) {
-  if (!selectableHandCardIds.value.includes(instanceId)) {
-    pulseHandCard(instanceId)
-    return
-  }
-
-  if (selectedHandCardIds.value.includes(instanceId)) {
-    selectedHandCardIds.value = selectedHandCardIds.value.filter(id => id !== instanceId)
-    return
-  }
-
-  selectedHandCardIds.value = [...selectedHandCardIds.value, instanceId]
-}
-
-function onSelfHandCardClick(instanceId: string, options: { ctrlKey: boolean }) {
-  if (options.ctrlKey) {
-    toggleSelectedHandCard(instanceId)
-    return
-  }
-
-  clearSelectedHandCards()
-  requestPlayFromHand(instanceId)
-}
-
-function onSelfLeaderClick(_side: 0 | 1) {
-  if (pendingEffectDecision.value?.prompt.type === 'selectCards' && self.value?.leader) {
-    if (!selectableEffectCardIdSet.value.has(self.value.leader.instanceId)) {
-      pulseLeader(invalidSelfLeaderPulse)
-      return
-    }
-
-    toggleEffectCardSelection(self.value.leader.instanceId)
-    return
-  }
-
-  if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
-    attachDonToTarget('leader')
-  }
-}
-
-function onSelfCharacterClick(_side: 0 | 1, instanceId: string) {
-  if (isChoosingCharacterToDiscard.value && pendingCharacterInstanceId.value) {
-    const pendingCard = self.value?.hand.find(card => card.instanceId === pendingCharacterInstanceId.value)
-
-    if (pendingCard) {
-      cacheBoardTravelSource(pendingCard)
-    }
-
-    playCard(pendingCharacterInstanceId.value, instanceId)
-    pendingCharacterInstanceId.value = null
-    return
-  }
-
-  if (isBlockingStep.value && isSelfDefender.value) {
-    onBlockerCharacterClick(instanceId)
-    return
-  }
-
-  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
-    if (!selectableEffectCardIdSet.value.has(instanceId)) {
-      pulseCharacter(invalidSelfCharacterIds, instanceId)
-      return
-    }
-
-    toggleEffectCardSelection(instanceId)
-    return
-  }
-
-  if (canAttachDon.value && selectedDonCardIds.value.length > 0) {
-    attachDonToTarget('character', instanceId)
-  }
-}
-
-function onOpponentLeaderClick() {
-  if (pendingEffectDecision.value?.prompt.type === 'selectCards' && opponent.value?.leader) {
-    if (!selectableEffectCardIdSet.value.has(opponent.value.leader.instanceId)) {
-      pulseLeader(invalidOpponentLeaderPulse)
-      return
-    }
-
-    toggleEffectCardSelection(opponent.value.leader.instanceId)
-    return
-  }
-
-  onOpponentLeaderTargetClick()
-}
-
-function onOpponentCharacterClick(_side: 0 | 1, instanceId: string) {
-  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
-    if (!selectableEffectCardIdSet.value.has(instanceId)) {
-      pulseCharacter(invalidOpponentCharacterIds, instanceId)
-      return
-    }
-
-    toggleEffectCardSelection(instanceId)
-    return
-  }
-
-  onOpponentCharacterTargetClick(instanceId)
-}
-
-function onSelfLeaderAttackStart() {
-  if (!self.value?.leader || self.value.leader.rested || !canDeclareAttack.value) {
-    pulseLeader(invalidSelfLeaderPulse)
-    return
-  }
-
-  beginAttackDrag(self.value.leader.instanceId)
-}
-
-function onSelfCharacterAttackStart(_side: 0 | 1, instanceId: string) {
-  const character = self.value?.characters.find(candidate => candidate.instanceId === instanceId)
-
-  if (!character || character.rested || character.playedThisTurn || !canDeclareAttack.value) {
-    pulseCharacter(invalidSelfCharacterIds, instanceId)
-    return
-  }
-
-  beginAttackDrag(instanceId)
-}
-
-function resolveAttackDropTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return null
-  }
-
-  const cardElement = target.closest<HTMLElement>('[data-instance-id][data-zone-side]')
-
-  if (!cardElement) {
-    return null
-  }
-
-  return {
-    instanceId: cardElement.dataset.instanceId ?? null,
-    side: Number(cardElement.dataset.zoneSide)
-  }
-}
-
-function finishAttackDrag(event: PointerEvent) {
-  if (!isChoosingTarget.value || !pendingAttackerInstanceId.value) {
-    return
-  }
-
-  if (event.button === 2) {
-    cancelTargetSelection()
-    return
-  }
-
-  const pointerTarget = document.elementFromPoint(event.clientX, event.clientY) ?? event.target
-  const dropTarget = resolveAttackDropTarget(pointerTarget)
-
-  if (!dropTarget || dropTarget.side !== 1 || !dropTarget.instanceId) {
-    cancelTargetSelection()
-    return
-  }
-
-  if (dropTarget.instanceId === opponent.value?.leader?.instanceId) {
-    onOpponentLeaderTargetClick()
-    return
-  }
-
-  if (!targetableOpponentCharacterIds.value.includes(dropTarget.instanceId)) {
-    pulseCharacter(invalidOpponentCharacterIds, dropTarget.instanceId)
-    cancelTargetSelection()
-    return
-  }
-
-  onOpponentCharacterTargetClick(dropTarget.instanceId)
-}
-
-function onSelfHandCardOrCounterClick(instanceId: string, options: { ctrlKey: boolean }) {
-  if (pendingEffectDecision.value?.prompt.type === 'selectCards') {
-    if (!selectableEffectCardIdSet.value.has(instanceId)) {
-      pulseHandCard(instanceId)
-      return
-    }
-
-    toggleEffectCardSelection(instanceId)
-    return
-  }
-
-  if (isCounteringStep.value && isSelfDefender.value) {
-    if (!options.ctrlKey) {
-      clearSelectedHandCards()
-    }
-
-    onCounterHandCardClick(instanceId)
-    return
-  }
-
-  onSelfHandCardClick(instanceId, options)
-}
-
-function selectDonRangeTo(instanceId: string) {
-  if (!canAttachDon.value || !selectableDonCardIds.value.includes(instanceId)) {
-    return
-  }
-
-  const anchorId = selectedDonAnchorInstanceId.value
-
-  if (!anchorId || !selectableDonCardIds.value.includes(anchorId)) {
-    selectedDonCardIds.value = [instanceId]
-    selectedDonAnchorInstanceId.value = instanceId
-    return
-  }
-
-  const anchorIndex = selectableDonCardIds.value.indexOf(anchorId)
-  const targetIndex = selectableDonCardIds.value.indexOf(instanceId)
-
-  if (anchorIndex === -1 || targetIndex === -1) {
-    selectedDonCardIds.value = [instanceId]
-    selectedDonAnchorInstanceId.value = instanceId
-    return
-  }
-
-  const [start, end] = anchorIndex < targetIndex
-    ? [anchorIndex, targetIndex]
-    : [targetIndex, anchorIndex]
-
-  selectedDonCardIds.value = selectableDonCardIds.value.slice(start, end + 1)
-}
-
-function onSelfDonCardSelectionStart(instanceId: string) {
-  if (!canAttachDon.value || !selectableDonCardIds.value.includes(instanceId)) {
-    return
-  }
-
-  selectedDonAnchorInstanceId.value = instanceId
-  selectedDonCardIds.value = [instanceId]
-}
-
-function onSelfDonCardSelectionHover(instanceId: string) {
-  if (!selectedDonAnchorInstanceId.value) {
-    return
-  }
-
-  selectDonRangeTo(instanceId)
-}
-
-function cancelDiscardSelection() {
-  pendingCharacterInstanceId.value = null
-}
-
-function onSelfHandCardDragStart(instanceId: string) {
-  if (!draggableHandCardIds.value.includes(instanceId)) {
-    pulseHandCard(instanceId)
-    return
-  }
-
-  if (!selectedHandCardIds.value.includes(instanceId)) {
-    clearSelectedHandCards()
-  }
-
-  draggedHandCardInstanceId.value = instanceId
-}
-
-function onSelfHandCardDragEnd() {
-  clearSelectedHandCards()
-  resetDraggedHandCard()
-}
-
-function onInvalidHandCardDragAttempt(instanceId: string) {
-  clearSelectedHandCards()
-  resetDraggedHandCard()
-  pulseHandCard(instanceId)
-}
-
-function onSelfDonCardDragStart(instanceId: string) {
-  if (!canAttachDon.value || !selectableDonCardIds.value.includes(instanceId)) {
-    return
-  }
-
-  draggedDonCardInstanceId.value = instanceId
-}
-
-function onSelfDonCardDragEnd() {
-  clearTransientBoardSelections()
-}
-
-function closeTrashModal() {
-  openedTrashSide.value = null
-  selectedTrashCardInstanceId.value = null
-  trashModalCardSize.value = null
-}
-
-function syncTrashModalCardSize(side: 0 | 1, instanceId: string) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  const referenceElement = queryCharacterZoneCardElement(side) ?? queryTrashCardElement(side, instanceId)
-
-  if (!referenceElement) {
-    trashModalCardSize.value = null
-    return
-  }
-
-  const { width, height } = referenceElement.getBoundingClientRect()
-
-  if (width <= 0 || height <= 0) {
-    trashModalCardSize.value = null
-    return
-  }
-
-  trashModalCardSize.value = { width, height }
-}
-
-async function openTrashModal(side: 0 | 1) {
-  const player = side === 0 ? self.value : opponent.value
-  const firstCard = player?.trash[0]
-
-  if (!player || !firstCard) {
-    return
-  }
-
-  openedTrashSide.value = side
-  selectedTrashCardInstanceId.value = firstCard.instanceId
-  syncTrashModalCardSize(side, firstCard.instanceId)
-}
-
-function onSelfCharacterZoneDrop() {
-  if (!draggedHandCardInstanceId.value) {
-    return
-  }
-
-  const instanceId = draggedHandCardInstanceId.value
-  const handPlayIds = resolveSelectedHandPlayIds('Character', instanceId)
-  resetDraggedHandCard()
-  clearSelectedHandCards()
-  playQueuedHandCards(handPlayIds)
-}
-
-function onSelfStageZoneDrop() {
-  if (!draggedHandCardInstanceId.value) {
-    return
-  }
-
-  const instanceId = draggedHandCardInstanceId.value
-  const handPlayIds = resolveSelectedHandPlayIds('Stage', instanceId)
-  resetDraggedHandCard()
-  clearSelectedHandCards()
-  playQueuedHandCards(handPlayIds)
-}
-
-function onSelfLeaderDonDrop() {
-  if (!draggedDonCardInstanceId.value) {
-    return
-  }
-
-  attachDonToTarget('leader', undefined, draggedDonCardInstanceId.value)
-}
-
-function onSelfCharacterDonDrop(_side: 0 | 1, instanceId: string) {
-  if (!draggedDonCardInstanceId.value) {
-    return
-  }
-
-  attachDonToTarget('character', instanceId, draggedDonCardInstanceId.value)
-}
-
-const isInstructionModeActive = computed(() =>
-  isChoosingCharacterToDiscard.value || isChoosingTarget.value
-)
-
-function cancelInstructionMode() {
-  if (isChoosingCharacterToDiscard.value) {
-    cancelDiscardSelection()
-    return
-  }
-
-  if (isChoosingTarget.value) {
-    cancelTargetSelection()
-  }
-}
-
-function clearTransientBoardSelections() {
-  clearSelectedHandCards()
-  clearSelectedDonCards()
-  clearDraggedDonCard()
-}
-
-function isWithinSelectedHandCard(target: EventTarget | null): boolean {
-  if (!(target instanceof Node) || selectedHandCardIds.value.length === 0) {
-    return false
-  }
-
-  return selectedHandCardIds.value.some((instanceId) => {
-    const element = document.querySelector(`[data-duel-hand="true"] [data-instance-id="${CSS.escape(instanceId)}"]`)
-
-    return element?.contains(target) ?? false
-  })
-}
-
-function isWithinSelectedDonCard(target: EventTarget | null): boolean {
-  if (!(target instanceof Node) || selectedDonCardIds.value.length === 0) {
-    return false
-  }
-
-  return selectedDonCardIds.value.some((instanceId) => {
-    const element = querySelfCostCardElement(instanceId)
-
-    return element?.contains(target) ?? false
-  })
-}
-
-function isWithinDonSelectionKeepAliveArea(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false
-  }
-
-  return Boolean(
-    target.closest('[data-don-attach-target="true"]')
-    || target.closest('[data-don-selection-keepalive="true"]')
-  )
-}
-
-const boardContainer = useTemplateRef<HTMLElement>('board-container')
-
-onClickOutside(boardContainer, () => {
-  if (isInstructionModeActive.value) {
-    cancelInstructionMode()
-  }
+useDuelBoardTurnFlow({
+  phase,
+  isSelfTurn,
+  isCombatInProgress,
+  isAwaitingEffectDecision,
+  pendingEffectDecision,
+  autoAdvancePhases: AUTO_ADVANCE_PHASES,
+  showTurnFeedback,
+  clearTurnFeedbackTimeout,
+  endPhase
 })
 
-useEventListener(document, 'pointerdown', (event) => {
-  const hasSelectedHandCards = selectedHandCardIds.value.length > 0
-  const hasSelectedDonCards = selectedDonCardIds.value.length > 0
-
-  if (!hasSelectedHandCards && !hasSelectedDonCards) {
-    return
-  }
-
-  if (hasSelectedHandCards) {
-    const handElement = document.querySelector('[data-duel-hand="true"]')
-
-    if (isWithinSelectedHandCard(event.target) || (event.ctrlKey && handElement?.contains(event.target as Node))) {
-      return
-    }
-  }
-
-  if (hasSelectedDonCards && (isWithinSelectedDonCard(event.target) || isWithinDonSelectionKeepAliveArea(event.target))) {
-    return
-  }
-
-  if (hasSelectedHandCards) {
-    clearSelectedHandCards()
-  }
-
-  if (hasSelectedDonCards) {
-    clearSelectedDonCards()
-  }
+const { handleNewLogEntries } = useDuelLogFeedback({
+  self,
+  opponent,
+  blockerInstanceId: computed(() => combat.value?.blockerInstanceId ?? null),
+  spawnBannerFeedback,
+  spawnCardFeedback
 })
 
-useEventListener(document, 'pointerup', (event) => {
-  finishAttackDrag(event)
+const {
+  formatLogTime,
+  getLogActor,
+  getLogMessageText
+} = useDuelLogPresentation({
+  self,
+  opponent
 })
 
-useEventListener(document, 'contextmenu', (event) => {
-  if (!isChoosingTarget.value) {
-    return
-  }
-
-  event.preventDefault()
-  cancelTargetSelection()
+const {
+  isJournalOpen,
+  onJournalPointerDown,
+  onJournalPointerMove,
+  endJournalDrag,
+  unseenLogCount
+} = useDuelJournal({
+  logs,
+  reducedMotion,
+  onNewEntries: handleNewLogEntries
 })
 
-defineShortcuts({
-  escape: {
-    handler: () => {
-      if (isInstructionModeActive.value) {
-        cancelInstructionMode()
-      }
+const {
+  activeTrashCards,
+  activeTrashPlayer,
+  closeTrashModal,
+  openTrashModal,
+  openedTrashSide,
+  selectedTrashCardInstanceId,
+  trashModalCardSize
+} = useDuelTrashModal({
+  self,
+  opponent,
+  queryCharacterZoneCardElement,
+  queryTrashCardElement
+})
 
-      clearTransientBoardSelections()
-    }
-  }
+useDuelBoardStateWatchers({
+  self,
+  opponent,
+  phase,
+  selfTransitionGhosts,
+  opponentTransitionGhosts,
+  selfRevealedHandCardIds,
+  selfDeferredCostCardIds,
+  selfDeferredTrashCardIds,
+  opponentDeferredCostCardIds,
+  opponentDeferredTrashCardIds,
+  animatedSelfLifeToHandIds,
+  animatedSelfDeckToHandIds,
+  animatedOpponentBoardEntryIds,
+  mergeRevealedHandCards,
+  pruneSelfHandTravelSources,
+  cacheSelfHandTravelSources,
+  cacheMulliganDeckToHandTravelSources,
+  queryLifeStackElement,
+  querySelfDeckElement,
+  queueSelfHandTravelOverlays,
+  queuePendingBoardTravelOverlays,
+  queueDonDeckToCostTravelOverlays,
+  queueAttachedDonTravelOverlays,
+  queueTrashTravelOverlay,
+  syncPendingHandPlayQueue,
+  pruneOpponentHandTravelSources,
+  cacheOpponentHandTravelSources,
+  queueOpponentLifeToHandTravelOverlays,
+  queueOpponentDeckToHandTravelOverlays,
+  queueOpponentHandToBoardTravelOverlays,
+  queueOpponentAttachedDonTravelOverlays,
+  queryCardElement,
+  spawnCardFeedback,
+  spawnCardFeedbackAtPosition,
+  spawnLifeLossFloatingNumber
 })
 </script>
 
 <template>
   <div class="flex flex-col h-full min-h-0 min-w-5xl overflow-hidden">
-    <UHeader
-      class="static shrink-0"
-      :ui="{
-        center: 'flex min-w-0 justify-center',
-        container: 'mx-auto w-full max-w-[2000px] px-4 lg:px-6'
-      }"
-    >
+    <UHeader class="static shrink-0" :ui="{
+      center: 'flex min-w-0 justify-center',
+      container: 'mx-auto w-full max-w-[2000px] px-4 lg:px-6'
+    }">
       <template #left>
         <div class="flex items-center gap-3 min-w-0">
-          <UButton
-            icon="i-lucide-scroll-text"
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            aria-label="Journal"
-            @click="isJournalOpen = true"
-          >
-            <UBadge
-              v-if="unseenLogCount > 0"
-              color="primary"
-              variant="solid"
-              size="sm"
-            >
+          <UButton icon="i-lucide-scroll-text" size="sm" color="neutral" variant="ghost" aria-label="Journal"
+            @click="isJournalOpen = true">
+            <UBadge v-if="unseenLogCount > 0" color="primary" variant="solid" size="sm">
               {{ unseenLogCount }}
             </UBadge>
           </UButton>
-          <div
-            v-if="opponent"
-            class="flex items-center gap-2 min-w-0"
-          >
-            <UBadge
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            >
+          <div v-if="opponent" class="flex items-center gap-2 min-w-0">
+            <UBadge color="neutral" variant="subtle" size="sm">
               Deck {{ opponent.deckCount }}
             </UBadge>
-            <UBadge
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            >
+            <UBadge color="neutral" variant="subtle" size="sm">
               DON!! {{ opponent.donDeckCount }}
             </UBadge>
-            <UBadge
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            >
+            <UBadge color="neutral" variant="subtle" size="sm">
               Main {{ opponent.handCount }}
             </UBadge>
-            <UBadge
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            >
+            <UBadge color="neutral" variant="subtle" size="sm">
               Vie {{ opponent.lifeCount }}
             </UBadge>
           </div>
-          <p
-            v-else
-            class="text-sm text-muted"
-          >
+          <p v-else class="text-sm text-muted">
             En attente d'un adversaire...
           </p>
         </div>
@@ -3335,471 +821,260 @@ defineShortcuts({
 
       <template #right>
         <div class="flex items-center gap-3">
-          <div
-            v-if="self"
-            class="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1"
-          >
-            <UIcon
-              name="i-lucide-zap"
-              class="size-4 text-warning"
-            />
+          <div v-if="self" class="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1">
+            <UIcon name="i-lucide-zap" class="size-4 text-warning" />
             <span class="text-sm font-semibold tabular-nums">{{ selfUntappedDonCount }}</span>
           </div>
-          <UButton
-            data-test="turn-toggle"
-            size="sm"
-            :color="turnButtonColor"
-            :variant="turnButtonVariant"
-            :disabled="!canEndPhase"
-            @click="endPhase"
-          >
+          <UButton data-test="turn-toggle" size="sm" :color="turnButtonColor" :variant="turnButtonVariant"
+            :disabled="!canEndPhase" @click="endPhase">
             {{ turnButtonLabel }}
           </UButton>
-          <UButton
-            data-test="leave-to-lobby"
-            icon="i-lucide-log-out"
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            aria-label="Retour au lobby"
-            @click="confirmLeaveToLobby"
-          />
+          <UButton data-test="leave-to-lobby" icon="i-lucide-log-out" size="sm" color="neutral" variant="ghost"
+            aria-label="Retour au lobby" @click="confirmLeaveToLobby" />
         </div>
       </template>
     </UHeader>
 
     <DuelActionModal :state="actionModalState">
-      <template
-        v-if="actionModalState?.slot === 'counter-input'"
-        #content
-      >
-        <UInputNumber
-          v-model="counterPowerBonusInput"
-          :min="0"
-          :step="1000"
-          size="lg"
-          class="w-32"
-        />
+      <template v-if="actionModalState?.slot === 'counter-input'" #content>
+        <UInputNumber v-model="counterPowerBonusInput" :min="0" :step="1000" size="lg" class="w-32" />
       </template>
 
-      <template
-        v-else-if="activeDecision?.source === 'effect' && pendingEffectDecision"
-        #content
-      >
-        <DuelDecisionConfirm
-          v-if="pendingEffectDecision.prompt.type === 'confirm'"
-          :message="pendingEffectDecision.prompt.message"
-        />
-        <DuelDecisionCardPicker
-          v-else-if="pendingEffectDecision.prompt.type === 'selectCards'"
-          :message="pendingEffectDecision.prompt.message"
-          :cards="selectableEffectCards"
-          :selected-card-ids="selectedEffectCardIds"
-          :revealed-card-ids="selectableRevealedDecisionCardIds"
-          :submit-disabled-reason="effectDecisionSubmitState.reason"
-          @inspect="previewEffectPromptCard"
-          @clear-inspect="clearEffectPromptPreview"
-          @toggle="toggleEffectCardSelection"
-        />
-        <DuelDecisionChoicePicker
-          v-else
-          :message="pendingEffectDecision.prompt.message"
-          :choices="effectChoiceViews"
-          :submit-disabled-reason="effectDecisionSubmitState.reason"
-          @toggle="toggleEffectChoiceSelection"
-        />
+      <template v-else-if="activeDecision?.source === 'effect' && pendingEffectDecision" #content>
+        <DuelDecisionConfirm v-if="pendingEffectDecision.prompt.type === 'confirm'"
+          :message="pendingEffectDecision.prompt.message" />
+        <DuelDecisionCardPicker v-else-if="pendingEffectDecision.prompt.type === 'selectCards'"
+          :message="pendingEffectDecision.prompt.message" :cards="selectableEffectCards"
+          :selected-card-ids="selectedEffectCardIds" :revealed-card-ids="selectableRevealedDecisionCardIds"
+          :submit-disabled-reason="effectDecisionSubmitState.reason" @inspect="previewEffectPromptCard"
+          @clear-inspect="clearEffectPromptPreview" @toggle="toggleEffectCardSelection" />
+        <DuelDecisionChoicePicker v-else :message="pendingEffectDecision.prompt.message" :choices="effectChoiceViews"
+          :submit-disabled-reason="effectDecisionSubmitState.reason" @toggle="toggleEffectChoiceSelection" />
       </template>
     </DuelActionModal>
 
-    <DuelWaitingToast
-      v-if="waitingToastText"
-      :text="waitingToastText"
-      :tone="isOpponentDisconnected ? 'warning' : 'neutral'"
-    />
+    <DuelWaitingToast v-if="waitingToastText" :text="waitingToastText"
+      :tone="isOpponentDisconnected ? 'warning' : 'neutral'" />
 
-    <DuelResultModal
-      :open="isFinished && isResultModalOpen"
-      :victory="isSelfWinner"
-      :turn-label="resultTurnLabel"
-      :duration-label="resultDurationLabel"
-      @leave="confirmLeaveToLobby"
-    />
+    <DuelResultModal :open="isFinished && isResultModalOpen" :victory="isSelfWinner" :turn-label="resultTurnLabel"
+      :duration-label="resultDurationLabel" @leave="confirmLeaveToLobby" />
 
-    <USlideover
-      v-model:open="isJournalOpen"
-      :ui="{ header: 'hidden' }"
-      :modal="false"
-      side="left"
-    >
+    <USlideover v-model:open="isJournalOpen" :ui="{ header: 'hidden' }" :modal="false" side="left">
       <template #body>
         <div class="flex h-full min-h-0 flex-col gap-2">
-          <div
-            class="flex min-h-0 flex-1 cursor-grab touch-none active:cursor-grabbing"
-            data-test="journal-scroll-drag-area"
-            @pointerdown="onJournalPointerDown"
-            @pointermove="onJournalPointerMove"
-            @pointerup="endJournalDrag"
-            @pointercancel="endJournalDrag"
-          >
-            <UScrollArea
-              ref="journal-scroll-area"
-              class="journal-scroll-root flex-1 min-h-0"
+          <div class="flex min-h-0 flex-1 cursor-grab touch-none active:cursor-grabbing"
+            data-test="journal-scroll-drag-area" @pointerdown="onJournalPointerDown" @pointermove="onJournalPointerMove"
+            @pointerup="endJournalDrag" @pointercancel="endJournalDrag">
+            <UScrollArea ref="journal-scroll-area" class="journal-scroll-root flex-1 min-h-0"
               data-test="journal-scroll-area"
-              :ui="{ root: 'min-h-0 flex-1 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }"
-            >
+              :ui="{ root: 'min-h-0 flex-1 overflow-y-scroll overflow-x-hidden', viewport: 'flex min-h-full flex-col pr-1' }">
               <div class="mt-auto flex flex-col">
                 <ul class="flex flex-col text-xs">
-                  <li
-                    v-if="logs.length === 0"
-                    class="text-muted"
-                  >
+                  <li v-if="logs.length === 0" class="text-muted">
                     Aucun événement.
                   </li>
-                  <template
-                    v-for="(entry, index) in logs"
-                    :key="entry.id"
-                  >
-                    <li
-                      class="py-2"
-                      data-test="journal-entry"
-                    >
+                  <template v-for="(entry, index) in logs" :key="entry.id">
+                    <li class="py-2" data-test="journal-entry">
                       <div class="flex items-start gap-3">
-                        <time
-                          :datetime="entry.createdAt"
-                          class="shrink-0 tabular-nums text-[11px]"
-                          :class="getDuelLogLevelPresentation(entry.level).toneClass"
-                        >
+                        <time :datetime="entry.createdAt" class="shrink-0 tabular-nums text-[11px]"
+                          :class="getDuelLogLevelPresentation(entry.level).toneClass">
                           {{ formatLogTime(entry.createdAt) }}
                         </time>
-                        <p
-                          class="min-w-0 flex-1 leading-relaxed"
-                          :class="getDuelLogLevelPresentation(entry.level).toneClass"
-                        >
-                          <span
-                            v-if="getLogActor(entry)"
-                            class="mr-2 text-[10px] font-medium tracking-[0.04em]"
-                            :class="getLogActor(entry)?.classes"
-                            data-test="journal-actor"
-                          >
+                        <p class="min-w-0 flex-1 leading-relaxed"
+                          :class="getDuelLogLevelPresentation(entry.level).toneClass">
+                          <span v-if="getLogActor(entry)" class="mr-2 text-[10px] font-medium tracking-[0.04em]"
+                            :class="getLogActor(entry)?.classes" data-test="journal-actor">
                             [{{ getLogActor(entry)?.displayName }}]
                           </span>
                           <span>{{ getLogMessageText(entry) }}</span>
                         </p>
                       </div>
                     </li>
-                    <USeparator
-                      v-if="index < logs.length - 1"
-                      class="opacity-60"
-                    />
+                    <USeparator v-if="index < logs.length - 1" class="opacity-60" />
                   </template>
                 </ul>
-                <div
-                  ref="journal-end"
-                  aria-hidden="true"
-                  class="h-px w-full"
-                />
+                <div ref="journal-end" aria-hidden="true" class="h-px w-full" />
               </div>
             </UScrollArea>
           </div>
 
-          <div
-            v-if="status === 'connecting'"
-            class="text-[11px] text-muted shrink-0"
-          >
+          <div v-if="status === 'connecting'" class="text-[11px] text-muted shrink-0">
             Reconnexion en cours...
           </div>
         </div>
       </template>
     </USlideover>
 
-    <div class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 gap-4 overflow-hidden p-4 xl:grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)_minmax(260px,0.25fr)]">
+    <div
+      class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 gap-4 overflow-hidden p-4 xl:grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)_minmax(260px,0.25fr)]">
       <div class="hidden min-h-0 xl:grid xl:grid-rows-[auto_minmax(0,1fr)_auto] xl:gap-4 xl:overflow-hidden xl:py-2">
         <div class="w-full max-w-[26rem] justify-self-end">
-          <DuelHand
-            v-if="shouldShowOpponentHandLane && opponent"
-            hidden
-            :hand-count="opponent.handCount"
-            :deferred-hidden-count="opponentDeferredHandTravelIds.length"
-            align="start"
-          />
+          <DuelHand v-if="shouldShowOpponentHandLane && opponent" hidden :hand-count="opponent.handCount"
+            :deferred-hidden-count="opponentDeferredHandTravelIds.length" align="start" />
         </div>
 
         <div class="min-h-0" />
 
         <div class="w-full max-w-[26rem] justify-self-end">
-          <DuelHand
-            v-if="shouldShowSelfHandLane && self"
-            :hand="self.hand"
-            align="start"
-            :draggable-hand-card-ids="draggableHandCardIds"
-            :selected-hand-card-ids="selectedHandCardIds"
+          <DuelHand v-if="shouldShowSelfHandLane && self" :hand="self.hand" align="start"
+            :draggable-hand-card-ids="draggableHandCardIds" :selected-hand-card-ids="selectedHandCardIds"
             :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
             :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
-            :dragged-hand-card-count="draggedHandCardCount"
-            :invalid-hand-card-ids="invalidHandCardIds"
-            :revealed-hand-card-ids="selfRevealedHandCardIds"
-            :deferred-hand-card-ids="selfDeferredHandCardIds"
-            @card-hover="hoveredCard = $event"
-            @card-click="onSelfHandCardOrCounterClick"
-            @card-drag-start="onSelfHandCardDragStart"
-            @card-drag-end="onSelfHandCardDragEnd"
-            @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
-          />
+            :dragged-hand-card-count="draggedHandCardCount" :invalid-hand-card-ids="invalidHandCardIds"
+            :revealed-hand-card-ids="selfRevealedHandCardIds" :deferred-hand-card-ids="selfDeferredHandCardIds"
+            @card-hover="hoveredCard = $event" @card-click="onSelfHandCardOrCounterClick"
+            @card-drag-start="onSelfHandCardDragStart" @card-drag-end="onSelfHandCardDragEnd"
+            @invalid-card-drag-attempt="onInvalidHandCardDragAttempt" />
         </div>
       </div>
 
       <div class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden xl:col-start-2">
-        <div
-          ref="board-container"
-          class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
-          @pointermove="onBoardPointerMove"
-        >
-              <div class="pointer-events-none fixed inset-0 z-[130]">
-                <div
-                  v-for="overlay in boardTravelOverlays"
-                  :key="overlay.key"
-                  :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
-                  :data-board-travel-instance-id="overlay.instanceId"
-                  :data-board-travel-settled="String(overlay.settled)"
-                  :data-board-travel-variant="overlay.variant"
-                  class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
-                  :style="boardTravelOverlayStyle(overlay)"
-                >
-                  <DuelCard
-                    :src="overlay.imageUrl"
-                    :rotated="overlay.rotated"
-                  />
-                </div>
+        <div ref="board-container" class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
+          @pointermove="onBoardPointerMove">
+          <div class="pointer-events-none fixed inset-0 z-[130]">
+            <div v-for="overlay in boardTravelOverlays" :key="overlay.key"
+              :ref="(value: Element | null) => setBoardTravelOverlayElement(overlay.key, value)"
+              :data-board-travel-instance-id="overlay.instanceId" :data-board-travel-settled="String(overlay.settled)"
+              :data-board-travel-variant="overlay.variant"
+              class="duel-board-travel-overlay absolute overflow-hidden rounded-lg"
+              :style="boardTravelOverlayStyle(overlay)">
+              <DuelCard :src="overlay.imageUrl" :rotated="overlay.rotated" />
+            </div>
+          </div>
+          <div class="pointer-events-none fixed inset-0 z-[135]">
+            <div v-for="entry in cardFeedbacks" :key="entry.key"
+              :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
+              :data-test="`card-feedback-${entry.label}`" :data-feedback-family="entry.family"
+              class="duel-card-feedback absolute rounded-full px-3 py-1 text-sm font-black uppercase tracking-[0.18em] sm:text-base"
+              :class="cardFeedbackClasses(entry.family)"
+              :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }">
+              {{ entry.label }}
+            </div>
+          </div>
+          <div class="pointer-events-none fixed inset-x-0 top-18 z-[136] flex flex-col items-center gap-2 px-4">
+            <div v-for="entry in bannerFeedbacks" :key="entry.key"
+              :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
+              :data-test="entry.family === 'error' ? 'error-feedback' : 'global-feedback'"
+              :data-feedback-family="entry.family"
+              class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full px-4 py-2 text-center text-sm font-semibold sm:text-base"
+              :class="bannerFeedbackClasses(entry.family)">
+              {{ entry.message }}
+            </div>
+          </div>
+          <div class="pointer-events-none absolute inset-0 z-[137] flex items-center justify-center">
+            <Transition enter-active-class="transition duration-250 ease-out"
+              enter-from-class="opacity-0 translate-y-3 scale-95" enter-to-class="opacity-100 translate-y-0 scale-100"
+              leave-active-class="transition duration-200 ease-in"
+              leave-from-class="opacity-100 translate-y-0 scale-100"
+              leave-to-class="opacity-0 -translate-y-2 scale-[0.98]">
+              <div v-if="isTurnFeedbackVisible" data-test="turn-feedback" class="duel-turn-feedback text-center">
+                Votre tour
               </div>
-              <div class="pointer-events-none fixed inset-0 z-[135]">
-                <div
-                  v-for="entry in cardFeedbacks"
-                  :key="entry.key"
-                  :ref="(value: Element | null) => setCardFeedbackElement(entry.key, value)"
-                  :data-test="`card-feedback-${entry.label}`"
-                  :data-feedback-family="entry.family"
-                  class="duel-card-feedback absolute rounded-full px-3 py-1 text-sm font-black uppercase tracking-[0.18em] sm:text-base"
-                  :class="cardFeedbackClasses(entry.family)"
-                  :style="{ left: `${entry.x}px`, top: `${entry.y}px`, translate: '-50% -50%' }"
-                >
-                  {{ entry.label }}
-                </div>
-              </div>
-              <div class="pointer-events-none fixed inset-x-0 top-18 z-[136] flex flex-col items-center gap-2 px-4">
-                <div
-                  v-for="entry in bannerFeedbacks"
-                  :key="entry.key"
-                  :ref="(value: Element | null) => setBannerFeedbackElement(entry.key, value)"
-                  :data-test="entry.family === 'error' ? 'error-feedback' : 'global-feedback'"
-                  :data-feedback-family="entry.family"
-                  class="duel-banner-feedback max-w-[min(92vw,44rem)] rounded-full px-4 py-2 text-center text-sm font-semibold sm:text-base"
-                  :class="bannerFeedbackClasses(entry.family)"
-                >
-                  {{ entry.message }}
-                </div>
-              </div>
-              <div class="pointer-events-none absolute inset-0 z-[137] flex items-center justify-center">
-                <Transition
-                  enter-active-class="transition duration-250 ease-out"
-                  enter-from-class="opacity-0 translate-y-3 scale-95"
-                  enter-to-class="opacity-100 translate-y-0 scale-100"
-                  leave-active-class="transition duration-200 ease-in"
-                  leave-from-class="opacity-100 translate-y-0 scale-100"
-                  leave-to-class="opacity-0 -translate-y-2 scale-[0.98]"
-                >
-                  <div
-                    v-if="isTurnFeedbackVisible"
-                    data-test="turn-feedback"
-                    class="duel-turn-feedback text-center"
-                  >
-                    Votre tour
+            </Transition>
+          </div>
+          <DuelAttackArrow v-if="shouldRenderAttackArrow" :from-instance-id="attackArrowFromInstanceId"
+            :to-instance-id="attackArrowToInstanceId" :to-point="attackArrowToPoint"
+            :variant="pendingAttackerInstanceId ? 'drag' : 'confirmed'"
+            :animation-key="confirmedAttackArrow?.key ?? null" />
+          <DuelFloatingNumber v-for="entry in floatingNumbers" :key="entry.key" :value="entry.value" :x="entry.x"
+            :y="entry.y" :family="entry.family" @done="removeFloatingNumber(entry.key)" />
+          <DuelSetupOverlay v-if="phase === 'mulligan'" />
+          <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <div v-if="openedTrashSide !== null && activeTrashPlayer" data-test="trash-modal"
+              class="absolute inset-0 z-[2145] flex items-center justify-center bg-default/90 p-6 backdrop-blur-sm"
+              @click.self="closeTrashModal">
+              <Transition appear enter-active-class="transition duration-250 ease-out"
+                enter-from-class="opacity-0 translate-y-3 scale-95"
+                enter-to-class="opacity-100 translate-y-0 scale-100">
+                <div class="w-full max-w-[min(100%,1500px)]">
+                  <div class="flex flex-wrap items-start justify-center gap-4">
+                    <button v-for="card in activeTrashCards" :key="card.instanceId" type="button"
+                      data-test="trash-modal-card" class="duel-trash-modal-card group aspect-5/7 text-left transition"
+                      :class="card.instanceId === selectedTrashCardInstanceId ? 'scale-[1.02]' : 'hover:scale-[1.01]'"
+                      :style="{
+                        ...(trashModalCardSize ? { width: `${trashModalCardSize.width}px`, height: `${trashModalCardSize.height}px` } : {}),
+                        '--trash-card-index': activeTrashCards.indexOf(card)
+                      }" @mouseenter="hoveredCard = card" @mouseleave="hoveredCard = null"
+                      @click="selectedTrashCardInstanceId = card.instanceId">
+                      <DuelCard :src="card.imageUrl" :alt="card.name"
+                        class="overflow-hidden rounded-lg shadow-2xl group-hover:scale-[1.02]" />
+                    </button>
                   </div>
-                </Transition>
-              </div>
-              <DuelAttackArrow
-                v-if="shouldRenderAttackArrow"
-                :from-instance-id="attackArrowFromInstanceId"
-                :to-instance-id="attackArrowToInstanceId"
-                :to-point="attackArrowToPoint"
-                :variant="pendingAttackerInstanceId ? 'drag' : 'confirmed'"
-                :animation-key="confirmedAttackArrow?.key ?? null"
-              />
-              <DuelFloatingNumber
-                v-for="entry in floatingNumbers"
-                :key="entry.key"
-                :value="entry.value"
-                :x="entry.x"
-                :y="entry.y"
-                :family="entry.family"
-                @done="removeFloatingNumber(entry.key)"
-              />
-              <DuelSetupOverlay v-if="phase === 'mulligan'" />
-              <Transition
-                enter-active-class="transition duration-200 ease-out"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition duration-150 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-              >
-                <div
-                  v-if="openedTrashSide !== null && activeTrashPlayer"
-                  data-test="trash-modal"
-                  class="absolute inset-0 z-[2145] flex items-center justify-center bg-default/90 p-6 backdrop-blur-sm"
-                  @click.self="closeTrashModal"
-                >
-                  <Transition
-                    appear
-                    enter-active-class="transition duration-250 ease-out"
-                    enter-from-class="opacity-0 translate-y-3 scale-95"
-                    enter-to-class="opacity-100 translate-y-0 scale-100"
-                  >
-                    <div class="w-full max-w-[min(100%,1500px)]">
-                      <div class="flex flex-wrap items-start justify-center gap-4">
-                        <button
-                          v-for="card in activeTrashCards"
-                          :key="card.instanceId"
-                          type="button"
-                          data-test="trash-modal-card"
-                          class="duel-trash-modal-card group aspect-5/7 text-left transition"
-                          :class="card.instanceId === selectedTrashCardInstanceId ? 'scale-[1.02]' : 'hover:scale-[1.01]'"
-                          :style="{
-                            ...(trashModalCardSize ? { width: `${trashModalCardSize.width}px`, height: `${trashModalCardSize.height}px` } : {}),
-                            '--trash-card-index': activeTrashCards.indexOf(card)
-                          }"
-                          @mouseenter="hoveredCard = card"
-                          @mouseleave="hoveredCard = null"
-                          @click="selectedTrashCardInstanceId = card.instanceId"
-                        >
-                          <DuelCard
-                            :src="card.imageUrl"
-                            :alt="card.name"
-                            class="overflow-hidden rounded-lg shadow-2xl group-hover:scale-[1.02]"
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  </Transition>
                 </div>
               </Transition>
-              <PlayZone
-                v-if="opponent || self"
-                class="flex-1 min-h-0"
-                :player="opponent ?? emptyOpponentPreview"
-                :side="1"
-                :is-owner-turn="!isSelfTurn"
-                :is-adversary="Boolean(opponent)"
-                :transition-ghosts="opponent ? opponentTransitionGhosts : []"
-                :deferred-board-card-ids="opponentDeferredBoardCardIds"
-                :deferred-cost-card-ids="opponentDeferredCostCardIds"
-                :deferred-trash-card-ids="opponentDeferredTrashCardIds"
-                :is-targetable="Boolean(opponent) && isChoosingTarget"
-                :is-selectable="selectableOpponentLeader || targetableOpponentCharacterIds.length > 0"
-                :targetable-leader="Boolean(opponent) && (isChoosingTarget || selectableOpponentLeader)"
-                :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
-                :selectable-leader="selectableOpponentLeader"
-                :selectable-character-ids="opponent ? targetableOpponentCharacterIds : []"
-                :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
-                :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
-                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
-                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
-                @card-hover="hoveredCard = $event"
-                @trash-click="openTrashModal"
-                @leader-click="onOpponentLeaderClick"
-                @character-click="onOpponentCharacterClick"
-              />
-              <div
-                v-else
-                class="flex flex-1 min-h-0 items-center justify-center text-sm text-muted"
-              >
-                En attente d'un adversaire...
-              </div>
-              <USeparator class="shrink-0" />
-              <PlayZone
-                v-if="self"
-                class="flex-1 min-h-0"
-                :player="self"
-                :side="0"
-                :is-owner-turn="isSelfTurn"
-                :selected-don-card-ids="selectedDonCardIds"
-                :dragged-hand-card-instance-id="draggedHandCardInstanceId"
-                :dragged-don-card-instance-id="draggedDonCardInstanceId"
-                :dragged-don-card-count="draggedDonCardCount"
-                :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Character'"
-                :can-drop-on-stage-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Stage'"
-                :can-drop-don-on-leader="canAttachDon"
-                :can-drop-don-on-character="canAttachDon"
-                :transition-ghosts="selfTransitionGhosts"
-                :attacker-id="combat && isSelfAttacker ? combat.attackerInstanceId : null"
-                :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender) || selectableSelfCharacterIds.length > 0 || selectableSelfLeader"
-                :attackable-leader="Boolean(self.leader && canDeclareAttack && !isCombatInProgress && isMainPhase && isSelfTurn && !self.leader.rested)"
-                :attackable-character-ids="self.characters.filter(character => canDeclareAttack && isMainPhase && isSelfTurn && !isCombatInProgress && !character.rested && !character.playedThisTurn).map(character => character.instanceId)"
-                :selectable-leader="selectableSelfLeader"
-                :selectable-character-ids="selectableSelfCharacterIds"
-                :invalid-leader-pulse="invalidSelfLeaderPulse"
-                :invalid-character-ids="invalidSelfCharacterIds"
-                :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
-                :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
-                :deferred-board-card-ids="selfDeferredBoardCardIds"
-                :deferred-cost-card-ids="selfDeferredCostCardIds"
-                :deferred-trash-card-ids="selfDeferredTrashCardIds"
-                @card-hover="hoveredCard = $event"
-                @trash-click="openTrashModal"
-                @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
-                @hand-card-drop-on-stage="onSelfStageZoneDrop"
-                @don-card-selection-start="onSelfDonCardSelectionStart"
-                @don-card-selection-hover="onSelfDonCardSelectionHover"
-                @don-card-drag-start="onSelfDonCardDragStart"
-                @don-card-drag-end="onSelfDonCardDragEnd"
-                @don-card-drop-on-leader="onSelfLeaderDonDrop"
-                @don-card-drop-on-character="onSelfCharacterDonDrop"
-                @leader-attack-start="onSelfLeaderAttackStart"
-                @character-attack-start="onSelfCharacterAttackStart"
-                @leader-click="onSelfLeaderClick"
-                @character-click="onSelfCharacterClick"
-              />
+            </div>
+          </Transition>
+          <PlayZone v-if="opponent || self" class="flex-1 min-h-0" :player="opponent ?? emptyOpponentPreview" :side="1"
+            :is-owner-turn="!isSelfTurn" :is-adversary="Boolean(opponent)"
+            :transition-ghosts="opponent ? opponentTransitionGhosts : []"
+            :deferred-board-card-ids="opponentDeferredBoardCardIds"
+            :deferred-cost-card-ids="opponentDeferredCostCardIds"
+            :deferred-trash-card-ids="opponentDeferredTrashCardIds"
+            :is-targetable="Boolean(opponent) && isChoosingTarget"
+            :is-selectable="selectableOpponentLeader || targetableOpponentCharacterIds.length > 0"
+            :targetable-leader="Boolean(opponent) && (isChoosingTarget || selectableOpponentLeader)"
+            :targetable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+            :selectable-leader="selectableOpponentLeader"
+            :selectable-character-ids="opponent ? targetableOpponentCharacterIds : []"
+            :invalid-leader-pulse="opponent ? invalidOpponentLeaderPulse : false"
+            :invalid-character-ids="opponent ? invalidOpponentCharacterIds : []"
+            :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+            :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds" @card-hover="hoveredCard = $event"
+            @trash-click="openTrashModal" @leader-click="onOpponentLeaderClick"
+            @character-click="onOpponentCharacterClick" />
+          <div v-else class="flex flex-1 min-h-0 items-center justify-center text-sm text-muted">
+            En attente d'un adversaire...
+          </div>
+          <USeparator class="shrink-0" />
+          <PlayZone v-if="self" class="flex-1 min-h-0" :player="self" :side="0" :is-owner-turn="isSelfTurn"
+            :selected-don-card-ids="selectedDonCardIds" :dragged-hand-card-instance-id="draggedHandCardInstanceId"
+            :dragged-don-card-instance-id="draggedDonCardInstanceId" :dragged-don-card-count="draggedDonCardCount"
+            :can-drop-on-character-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Character'"
+            :can-drop-on-stage-zone="isMainPhase && isSelfTurn && !isCombatInProgress && draggedHandCard?.type === 'Stage'"
+            :can-drop-don-on-leader="canAttachDon" :can-drop-don-on-character="canAttachDon"
+            :transition-ghosts="selfTransitionGhosts"
+            :attacker-id="combat && isSelfAttacker ? combat.attackerInstanceId : null"
+            :is-selectable="isChoosingCharacterToDiscard || (isBlockingStep && isSelfDefender) || (isCounteringStep && isSelfDefender) || selectableSelfCharacterIds.length > 0 || selectableSelfLeader"
+            :attackable-leader="Boolean(self.leader && canDeclareAttack && !isCombatInProgress && isMainPhase && isSelfTurn && !self.leader.rested)"
+            :attackable-character-ids="self.characters.filter(character => canDeclareAttack && isMainPhase && isSelfTurn && !isCombatInProgress && !character.rested && !character.playedThisTurn).map(character => character.instanceId)"
+            :selectable-leader="selectableSelfLeader" :selectable-character-ids="selectableSelfCharacterIds"
+            :invalid-leader-pulse="invalidSelfLeaderPulse" :invalid-character-ids="invalidSelfCharacterIds"
+            :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
+            :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
+            :deferred-board-card-ids="selfDeferredBoardCardIds" :deferred-cost-card-ids="selfDeferredCostCardIds"
+            :deferred-trash-card-ids="selfDeferredTrashCardIds" @card-hover="hoveredCard = $event"
+            @trash-click="openTrashModal" @hand-card-drop-on-characters="onSelfCharacterZoneDrop"
+            @hand-card-drop-on-stage="onSelfStageZoneDrop" @don-card-selection-start="onSelfDonCardSelectionStart"
+            @don-card-selection-hover="onSelfDonCardSelectionHover" @don-card-drag-start="onSelfDonCardDragStart"
+            @don-card-drag-end="onSelfDonCardDragEnd" @don-card-drop-on-leader="onSelfLeaderDonDrop"
+            @don-card-drop-on-character="onSelfCharacterDonDrop" @leader-attack-start="onSelfLeaderAttackStart"
+            @character-attack-start="onSelfCharacterAttackStart" @leader-click="onSelfLeaderClick"
+            @character-click="onSelfCharacterClick" />
         </div>
       </div>
 
-      <CardDetailsPanel
-        class="xl:col-start-3"
-        :card="resolvedHoveredCard"
-        :rows="hoveredCardRows"
-        :loading-description="isHoveredCardDetailPending"
-        empty-message="Survolez une carte du plateau."
-      />
+      <CardDetailsPanel class="xl:col-start-3" :card="resolvedHoveredCard" :rows="hoveredCardRows"
+        :loading-description="isHoveredCardDetailPending" empty-message="Survolez une carte du plateau." />
     </div>
 
     <div class="mx-auto flex w-full max-w-[2000px] shrink-0 flex-col gap-4 px-4 pb-4 xl:hidden">
       <div class="w-full">
-        <DuelHand
-          v-if="shouldShowOpponentHandLane && opponent"
-          hidden
-          :hand-count="opponent.handCount"
-          :deferred-hidden-count="opponentDeferredHandTravelIds.length"
-          align="start"
-        />
+        <DuelHand v-if="shouldShowOpponentHandLane && opponent" hidden :hand-count="opponent.handCount"
+          :deferred-hidden-count="opponentDeferredHandTravelIds.length" align="start" />
       </div>
 
       <div class="w-full">
-        <DuelHand
-          v-if="shouldShowSelfHandLane && self"
-          :hand="self.hand"
-          align="start"
-          :draggable-hand-card-ids="draggableHandCardIds"
-          :selected-hand-card-ids="selectedHandCardIds"
+        <DuelHand v-if="shouldShowSelfHandLane && self" :hand="self.hand" align="start"
+          :draggable-hand-card-ids="draggableHandCardIds" :selected-hand-card-ids="selectedHandCardIds"
           :linked-preview-instance-id="effectPromptLinkedPreviewInstanceId"
           :linked-selected-instance-ids="effectPromptLinkedSelectedInstanceIds"
-          :dragged-hand-card-count="draggedHandCardCount"
-          :invalid-hand-card-ids="invalidHandCardIds"
-          :revealed-hand-card-ids="selfRevealedHandCardIds"
-          :deferred-hand-card-ids="selfDeferredHandCardIds"
-          @card-hover="hoveredCard = $event"
-          @card-click="onSelfHandCardOrCounterClick"
-          @card-drag-start="onSelfHandCardDragStart"
-          @card-drag-end="onSelfHandCardDragEnd"
-          @invalid-card-drag-attempt="onInvalidHandCardDragAttempt"
-        />
+          :dragged-hand-card-count="draggedHandCardCount" :invalid-hand-card-ids="invalidHandCardIds"
+          :revealed-hand-card-ids="selfRevealedHandCardIds" :deferred-hand-card-ids="selfDeferredHandCardIds"
+          @card-hover="hoveredCard = $event" @card-click="onSelfHandCardOrCounterClick"
+          @card-drag-start="onSelfHandCardDragStart" @card-drag-end="onSelfHandCardDragEnd"
+          @invalid-card-drag-attempt="onInvalidHandCardDragAttempt" />
       </div>
     </div>
   </div>
@@ -3880,6 +1155,7 @@ defineShortcuts({
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .duel-trash-modal-card,
   .duel-card-feedback,
   .duel-banner-feedback,
