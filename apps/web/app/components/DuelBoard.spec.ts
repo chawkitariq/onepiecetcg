@@ -699,6 +699,17 @@ describe('DuelBoard drag and drop', () => {
     expect(findTurnButton().text()).toContain('Tour adverse')
   })
 
+  it('keeps the desktop board layout active below the former xl breakpoint', () => {
+    const wrapper = mountBoard()
+    const html = wrapper.html()
+
+    expect(wrapper.classes()).toContain('min-w-0')
+    expect(wrapper.classes()).not.toContain('min-w-5xl')
+    expect(html).toContain('lg:grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)_minmax(260px,0.25fr)]')
+    expect(html).toContain('lg:grid lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:gap-4 lg:overflow-hidden lg:py-2')
+    expect(html).toContain('lg:hidden')
+  })
+
   it('shows a centered "Votre tour" feedback only when the turn comes back to the player', async () => {
     isSelfTurn.value = false
 
@@ -1749,7 +1760,7 @@ describe('DuelBoard drag and drop', () => {
     const actorBadge = wrapper.get('[data-test="journal-actor"]')
     const journalEntry = wrapper.get('[data-test="journal-entry"]')
 
-    expect(actorBadge.text()).toBe('self')
+    expect(actorBadge.text()).toBe('[self]')
     expect(journalEntry.text()).toContain('joue Zoro en zone Personnage.')
     expect(journalEntry.text()).not.toContain('self joue Zoro en zone Personnage.')
   })

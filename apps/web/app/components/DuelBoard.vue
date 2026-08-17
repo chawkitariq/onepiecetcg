@@ -782,7 +782,7 @@ useDuelBoardStateWatchers({
 </script>
 
 <template>
-  <div class="flex flex-col h-full min-h-0 min-w-5xl overflow-hidden">
+  <div class="flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
     <UHeader class="static shrink-0" :ui="{
       center: 'flex min-w-0 justify-center',
       container: 'mx-auto w-full max-w-[2000px] px-4 lg:px-6'
@@ -906,8 +906,8 @@ useDuelBoardStateWatchers({
     </USlideover>
 
     <div
-      class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 gap-4 overflow-hidden p-4 xl:grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)_minmax(260px,0.25fr)]">
-      <div class="hidden min-h-0 xl:grid xl:grid-rows-[auto_minmax(0,1fr)_auto] xl:gap-4 xl:overflow-hidden xl:py-2">
+      class="mx-auto grid h-full min-h-0 w-full max-w-[2000px] flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)_minmax(260px,0.25fr)]">
+      <div class="hidden min-h-0 lg:grid lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:gap-4 lg:overflow-hidden lg:py-2">
         <div class="w-full max-w-[26rem] justify-self-end">
           <DuelHand v-if="shouldShowOpponentHandLane && opponent" hidden :hand-count="opponent.handCount"
             :deferred-hidden-count="opponentDeferredHandTravelIds.length" align="start" />
@@ -928,7 +928,7 @@ useDuelBoardStateWatchers({
         </div>
       </div>
 
-      <div class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden xl:col-start-2">
+      <div class="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden lg:col-start-2">
         <div ref="board-container" class="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden"
           @pointermove="onBoardPointerMove">
           <div class="pointer-events-none fixed inset-0 z-[130]">
@@ -1055,11 +1055,11 @@ useDuelBoardStateWatchers({
         </div>
       </div>
 
-      <CardDetailsPanel class="xl:col-start-3" :card="resolvedHoveredCard" :rows="hoveredCardRows"
+      <CardDetailsPanel class="lg:col-start-3" :card="resolvedHoveredCard" :rows="hoveredCardRows"
         :loading-description="isHoveredCardDetailPending" empty-message="Survolez une carte du plateau." />
     </div>
 
-    <div class="mx-auto flex w-full max-w-[2000px] shrink-0 flex-col gap-4 px-4 pb-4 xl:hidden">
+    <div class="mx-auto flex w-full max-w-[2000px] shrink-0 flex-col gap-4 px-4 pb-4 lg:hidden">
       <div class="w-full">
         <DuelHand v-if="shouldShowOpponentHandLane && opponent" hidden :hand-count="opponent.handCount"
           :deferred-hidden-count="opponentDeferredHandTravelIds.length" align="start" />
