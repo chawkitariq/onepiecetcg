@@ -2155,4 +2155,113 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.cost).toHaveLength(1);
     expect(host.getPlayer('p1')?.zones.cost[0]?.rested).toBe(true);
   });
+
+  it('filters chooseActionBranch choices by conditions and auto-resolves the only valid branch', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+
+    const branchDefinition = {
+      cards: [
+        {
+          cardId: 'TEST-BRANCH-001',
+          effects: [
+            {
+              kind: 'standard',
+              effect: {
+                id: 'branch-choice-conditions',
+                text: 'Branch conditions',
+                trigger: { type: 'onPlay' },
+                actions: [
+                  {
+                    type: 'chooseActionBranch',
+                    message: 'Choose one:',
+                    choices: [
+                      {
+                        id: 'draw-1',
+                        label: 'Draw 1',
+                        actions: [{ type: 'draw', player: 'self', amount: 1 }],
+                      },
+                      {
+                        id: 'draw-2',
+                        label: 'Draw 2',
+                        conditions: [
+                          {
+                            type: 'targetCountAtLeast',
+                            selector: { player: 'opponent', zones: ['trash'] },
+                            value: 3,
+                          },
+                        ],
+                        actions: [{ type: 'draw', player: 'self', amount: 2 }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    } as any;
+
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, branchDefinition]),
+      host,
+    );
+
+    const source = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'TEST-BRANCH-001',
+        number: 'TEST-BRANCH-001',
+        name: 'Brancher',
+        type: 'Character',
+      }),
+      'brancher',
+    );
+    host.addCardToZone(
+      'p1',
+      'deck',
+      makeCard({
+        id: 'DRAW-1',
+        number: 'DRAW-1',
+        name: 'Draw One',
+        type: 'Character',
+      }),
+      'draw-1',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'TRASH-1',
+        number: 'TRASH-1',
+        name: 'Trash One',
+        type: 'Character',
+      }),
+      'trash-1',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'TRASH-2',
+        number: 'TRASH-2',
+        name: 'Trash Two',
+        type: 'Character',
+      }),
+      'trash-2',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: source.instanceId,
+      sourceCardId: source.cardId,
+    });
+
+    expect(engine.getPendingDecision()).toBeNull();
+    expect(host.getPlayer('p1')?.zones.hand).toHaveLength(1);
+  });
 });

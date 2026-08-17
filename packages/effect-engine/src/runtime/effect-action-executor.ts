@@ -1005,8 +1005,28 @@ export class EffectActionExecutor {
         return;
       }
       case 'chooseActionBranch': {
-        if (action.choices.length === 0) {
+        const availableChoices = action.choices.filter((choice) =>
+          this.conditions.conditionsPass(
+            choice.conditions ?? [],
+            controllerSessionId,
+            source,
+            context.triggeringEvent,
+          ),
+        );
+
+        if (availableChoices.length === 0) {
           next();
+          return;
+        }
+
+        if (availableChoices.length === 1) {
+          this.resolveChildActions(
+            availableChoices[0].actions,
+            controllerSessionId,
+            source,
+            context,
+            next,
+          );
           return;
         }
 
@@ -1014,7 +1034,7 @@ export class EffectActionExecutor {
           this.createDecisionId(source.instanceId, action.type),
           controllerSessionId,
           action.message,
-          action.choices.map((choice) => ({
+          availableChoices.map((choice) => ({
             id: choice.id,
             label: choice.label,
           })),

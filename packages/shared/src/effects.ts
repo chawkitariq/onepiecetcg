@@ -139,6 +139,7 @@ export type EffectDecisionChoice = {
   id: string;
   label: string;
   cardInstanceId?: string;
+  conditions?: EffectCondition[];
 };
 
 export type EffectDecisionPrompt =
@@ -418,6 +419,7 @@ export type EffectAction =
       choices: Array<{
         id: string;
         label: string;
+        conditions?: EffectCondition[];
         actions: EffectAction[];
       }>;
     }

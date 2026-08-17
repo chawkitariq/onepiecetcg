@@ -1157,6 +1157,191 @@ describe('op06EffectDefinitions', () => {
     expect(topLife.faceDown).toBe(false);
   });
 
+  it('auto-resolves OP06-092 to the KO branch when the opponent trash has fewer than 3 cards', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const brook = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-092',
+        number: 'OP06-092',
+        name: 'Brook',
+        type: 'Character',
+      }),
+      'brook',
+    );
+    const opponentTarget = host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'P2-TARGET',
+        number: 'P2-TARGET',
+        name: 'Opponent Target',
+        type: 'Character',
+        cost: 4,
+      }),
+      'p2-target',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'P2-TRASH-1',
+        number: 'P2-TRASH-1',
+        name: 'Trash One',
+        type: 'Character',
+      }),
+      'p2-trash-1',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'P2-TRASH-2',
+        number: 'P2-TRASH-2',
+        name: 'Trash Two',
+        type: 'Character',
+      }),
+      'p2-trash-2',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: brook.instanceId,
+      sourceCardId: brook.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectCards');
+    expect(pending?.prompt.selector.player).toBe('opponent');
+    expect(pending?.prompt.selector.zones).toEqual(['characters']);
+
+    engine.answerDecision({
+      decisionId: pending?.id ?? '',
+      selectedCardInstanceIds: [opponentTarget.instanceId],
+    });
+
+    expect(host.getPlayer('p2')?.zones.characters).toHaveLength(0);
+    expect(host.getPlayer('p2')?.zones.trash).toHaveLength(3);
+  });
+
+  it('lets OP06-092 place cards from the opponent trash when the opponent has at least 3 cards there', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(createRegistry(), host);
+
+    const brook = host.addCardToZone(
+      'p1',
+      'characters',
+      makeCard({
+        id: 'OP06-092',
+        number: 'OP06-092',
+        name: 'Brook',
+        type: 'Character',
+      }),
+      'brook',
+    );
+    host.addCardToZone(
+      'p2',
+      'characters',
+      makeCard({
+        id: 'P2-TARGET',
+        number: 'P2-TARGET',
+        name: 'Opponent Target',
+        type: 'Character',
+        cost: 4,
+      }),
+      'p2-target',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'P2-TRASH-1',
+        number: 'P2-TRASH-1',
+        name: 'Trash One',
+        type: 'Character',
+      }),
+      'p2-trash-1',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'P2-TRASH-2',
+        number: 'P2-TRASH-2',
+        name: 'Trash Two',
+        type: 'Character',
+      }),
+      'p2-trash-2',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'P2-TRASH-3',
+        number: 'P2-TRASH-3',
+        name: 'Trash Three',
+        type: 'Character',
+      }),
+      'p2-trash-3',
+    );
+    host.addCardToZone(
+      'p2',
+      'trash',
+      makeCard({
+        id: 'P2-TRASH-4',
+        number: 'P2-TRASH-4',
+        name: 'Trash Four',
+        type: 'Character',
+      }),
+      'p2-trash-4',
+    );
+
+    engine.handleEvent({
+      type: 'onPlay',
+      playerSessionId: 'p1',
+      sourceInstanceId: brook.instanceId,
+      sourceCardId: brook.cardId,
+    });
+
+    const pending = engine.getPendingDecision();
+    expect(pending?.prompt.type).toBe('selectChoice');
+    expect(pending?.prompt.choices.map((choice) => choice.id)).toEqual([
+      'ko-cost-4-or-less',
+      'opponent-bottom-3-from-trash',
+    ]);
+
+    engine.answerDecision({
+      decisionId: pending?.id ?? '',
+      selectedChoiceIds: ['opponent-bottom-3-from-trash'],
+    });
+
+    const trashDecision = engine.getPendingDecision();
+    expect(trashDecision?.playerSessionId).toBe('p1');
+    expect(trashDecision?.prompt.type).toBe('selectCards');
+    expect(trashDecision?.prompt.selector.player).toBe('opponent');
+    expect(trashDecision?.prompt.selector.zones).toEqual(['trash']);
+
+    engine.answerDecision({
+      decisionId: trashDecision?.id ?? '',
+      selectedCardInstanceIds: [
+        'p2:p2-trash-1',
+        'p2:p2-trash-2',
+        'p2:p2-trash-3',
+      ],
+    });
+
+    expect(host.getPlayer('p2')?.zones.trash).toHaveLength(1);
+    expect(host.getPlayer('p2')?.zones.deck).toHaveLength(3);
+  });
+
   it('stacks Shadows Asgard power from any number of sacrificed Thriller Bark Pirates', () => {
     const host = new TestHost();
     host.addPlayer('p1');

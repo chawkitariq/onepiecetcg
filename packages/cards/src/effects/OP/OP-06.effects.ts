@@ -3551,14 +3551,21 @@ export const op06EffectDefinitions: EditionEffectDefinitions = {
                     id: 'opponent-bottom-3-from-trash',
                     label:
                       'Your opponent places 3 cards from their trash at the bottom of their deck',
+                    conditions: [
+                      {
+                        type: 'targetCountAtLeast',
+                        selector: { player: 'opponent', zones: ['trash'] },
+                        value: 3,
+                      },
+                    ],
                     actions: [
                       {
                         type: 'moveCard',
                         selector: {
                           player: 'opponent',
+                          chooser: 'self',
                           zones: ['trash'],
                           count: { kind: 'exact', value: 3 },
-                          chooser: 'opponent',
                         },
                         destinationPlayer: 'opponent',
                         destinationZone: 'deck',
