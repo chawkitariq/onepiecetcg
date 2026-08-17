@@ -626,9 +626,9 @@ describe('useDuelRoom combat helpers (stage 8)', () => {
     }) as never
 
     const { declareCounter } = useDuelRoom()
-    declareCounter('hand-1', 2000)
+    declareCounter('hand-1')
 
-    expect(sent).toEqual([{ type: 'declareCounter', message: { discardInstanceId: 'hand-1', counterPowerBonus: 2000 } }])
+    expect(sent).toEqual([{ type: 'declareCounter', message: { discardInstanceId: 'hand-1' } }])
   })
 
   it('sends a finishCounterStep message', () => {

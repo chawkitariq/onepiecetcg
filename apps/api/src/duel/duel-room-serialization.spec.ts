@@ -481,7 +481,6 @@ describe('DuelRoom per-viewpoint serialization', () => {
 
     defenderClient.send('declareCounter', {
       discardInstanceId: counterCardInstanceId,
-      counterPowerBonus: 1000,
     });
 
     await waitUntil(

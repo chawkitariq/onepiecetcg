@@ -71,7 +71,6 @@ describe('duel-room-message-registrar', () => {
     handlers.get('declareBlock')?.(client, { blockerInstanceId: 'blocker-1' });
     handlers.get('declareCounter')?.(client, {
       discardInstanceId: 'counter-1',
-      counterPowerBonus: 2000,
     });
     handlers.get('finishCounterStep')?.(client, undefined);
     handlers.get('resolveTrigger')?.(client, { activate: true });
@@ -101,7 +100,6 @@ describe('duel-room-message-registrar', () => {
     });
     expect(handleDeclareCounter).toHaveBeenCalledWith(client, {
       discardInstanceId: 'counter-1',
-      counterPowerBonus: 2000,
     });
     expect(handleFinishCounterStep).toHaveBeenCalledWith(client);
     expect(handleResolveTrigger).toHaveBeenCalledWith(client, {

@@ -186,12 +186,12 @@ mockNuxtImport('useDuelRoom', () => () => ({
   clearError,
   combat,
   isCombatInProgress: computed(() => isCombatInProgress.value),
-  isSelfAttacker: computed(() => false),
-  isSelfDefender: computed(() => false),
+  isSelfAttacker: computed(() => combat.value?.attackerSessionId === self.value?.sessionId),
+  isSelfDefender: computed(() => combat.value?.defenderSessionId === self.value?.sessionId),
   canDeclareAttack: computed(() => canDeclareAttack.value),
-  isBlockingStep: computed(() => false),
-  isCounteringStep: computed(() => false),
-  isAwaitingTriggerDecision: computed(() => false),
+  isBlockingStep: computed(() => combat.value?.step === 'blocked'),
+  isCounteringStep: computed(() => combat.value?.step === 'countering'),
+  isAwaitingTriggerDecision: computed(() => combat.value?.awaitingTriggerDecision ?? false),
   declareAttack,
   declareBlock,
   declareCounter,
@@ -645,7 +645,6 @@ describe('DuelBoard drag and drop', () => {
           UCard: defaultStub,
           USeparator: defaultStub,
           UScrollArea: scrollAreaStub,
-          UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
           DuelAttackArrow: duelAttackArrowStub,
           PlayZone: playZoneStub,
@@ -697,6 +696,44 @@ describe('DuelBoard drag and drop', () => {
 
     expect(wrapper.text()).toContain('Tour adverse')
     expect(findTurnButton().text()).toContain('Tour adverse')
+  })
+
+  it('uses the selected card counter value during the counter step without showing a manual input', async () => {
+    combat.value = {
+      attackerSessionId: 'opponent',
+      attackerInstanceId: 'opponent-leader',
+      defenderSessionId: 'self',
+      targetType: 'leader',
+      targetInstanceId: 'self-leader',
+      blockerInstanceId: '',
+      step: 'countering',
+      counterPowerBonus: 0,
+      awaitingTriggerDecision: false
+    }
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('counter-card', { type: 'Character', counter: 2000 }),
+        createPrivateCard('hand-event', { type: 'Event', cost: 1, power: null, counter: null })
+      ],
+      handCount: 2
+    })
+
+    const wrapper = mountBoard({ attachToBody: true })
+
+    await wrapper.get('[data-test="hand-click-counter-card"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(document.body.textContent).toContain('Choix de carte de Contre')
+    expect(document.body.textContent).not.toContain('Valeur de Contre')
+
+    const confirmButton = Array.from(document.body.querySelectorAll('button[data-color="primary"]'))
+      .find(button => button.textContent?.includes('Confirmer'))
+
+    expect(confirmButton).toBeTruthy()
+    confirmButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(declareCounter).toHaveBeenCalledWith('counter-card')
   })
 
   it('keeps the desktop board layout active below the former xl breakpoint', () => {
@@ -2149,7 +2186,6 @@ describe('DuelBoard leave to lobby', () => {
           UCard: defaultStub,
           USeparator: defaultStub,
           UScrollArea: defaultStub,
-          UInputNumber: defaultStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
           DuelHand: duelHandStub

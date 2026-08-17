@@ -18,7 +18,6 @@ type UseDuelBoardInteractionsOptions = {
   isChoosingCharacterToDiscard: Ref<boolean>
   pendingCharacterInstanceId: Ref<string | null>
   pendingCounterCardInstanceId: Ref<string | null>
-  counterPowerBonusInput: Ref<number>
   pendingEffectDecision: Ref<PendingEffectDecision>
   selectableEffectCardIdSet: Ref<Set<string>>
   selectedDonCardIds: Ref<string[]>
@@ -111,7 +110,6 @@ export function useDuelBoardInteractions(options: UseDuelBoardInteractionsOption
     }
 
     options.pendingCounterCardInstanceId.value = instanceId
-    options.counterPowerBonusInput.value = card.counter && card.counter > 0 ? card.counter : 1000
   }
 
   function confirmCounter() {
@@ -121,7 +119,7 @@ export function useDuelBoardInteractions(options: UseDuelBoardInteractionsOption
 
     const counterCard = options.self.value?.hand.find(candidate => candidate.instanceId === options.pendingCounterCardInstanceId.value)
     options.cacheTrashTravelSource(counterCard)
-    options.declareCounter(options.pendingCounterCardInstanceId.value, options.counterPowerBonusInput.value)
+    options.declareCounter(options.pendingCounterCardInstanceId.value)
     options.pendingCounterCardInstanceId.value = null
   }
 

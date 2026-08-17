@@ -35,7 +35,6 @@ export type DeclareBlockMessage = {
 
 export type DeclareCounterMessage = {
   discardInstanceId: string;
-  counterPowerBonus: number;
 };
 
 export type ResolveTriggerMessage = {

@@ -93,7 +93,6 @@ const api = useApi()
 const reducedMotion = usePreferredReducedMotion()
 const pendingCharacterInstanceId = ref<string | null>(null)
 const pendingCounterCardInstanceId = ref<string | null>(null)
-const counterPowerBonusInput = ref(1000)
 
 const emptyPublicCards: PublicCard[] = []
 const emptyPrivateCards: PrivateCard[] = []
@@ -281,9 +280,8 @@ const decisionActionModalState = computed<DuelActionModalState | null>(() => {
   if (isChoosingCounterCard.value) {
     return {
       tone: 'decision',
-      title: 'Valeur de Contre',
-      description: 'Confirmez la valeur de Contre à ajouter pour la durée du combat.',
-      slot: 'counter-input',
+      title: 'Choix de carte de Contre',
+      description: 'Cliquez une carte avec Contre dans votre main pour la défausser, ou annulez.',
       actions: [
         { label: 'Confirmer', color: 'primary', onSelect: confirmCounter },
         { label: 'Annuler', color: 'neutral', onSelect: cancelCounterSelection }
@@ -624,7 +622,6 @@ const {
   isChoosingCharacterToDiscard,
   pendingCharacterInstanceId,
   pendingCounterCardInstanceId,
-  counterPowerBonusInput,
   pendingEffectDecision,
   selectableEffectCardIdSet,
   selectedDonCardIds,
@@ -836,11 +833,7 @@ useDuelBoardStateWatchers({
     </UHeader>
 
     <DuelActionModal :state="actionModalState">
-      <template v-if="actionModalState?.slot === 'counter-input'" #content>
-        <UInputNumber v-model="counterPowerBonusInput" :min="0" :step="1000" size="lg" class="w-32" />
-      </template>
-
-      <template v-else-if="activeDecision?.source === 'effect' && pendingEffectDecision" #content>
+      <template v-if="activeDecision?.source === 'effect' && pendingEffectDecision" #content>
         <DuelDecisionConfirm v-if="pendingEffectDecision.prompt.type === 'confirm'"
           :message="pendingEffectDecision.prompt.message" />
         <DuelDecisionCardPicker v-else-if="pendingEffectDecision.prompt.type === 'selectCards'"

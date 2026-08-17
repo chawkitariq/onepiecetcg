@@ -101,7 +101,7 @@ type DuelRoomState = {
   attachDon: (target: 'leader' | 'character', targetInstanceId?: string, count?: number) => void
   declareAttack: (attackerInstanceId: string, targetType: 'leader' | 'character', targetInstanceId?: string) => void
   declareBlock: (blockerInstanceId: string | null) => void
-  declareCounter: (discardInstanceId: string, counterPowerBonus: number) => void
+  declareCounter: (discardInstanceId: string) => void
   finishCounterStep: () => void
   resolveTrigger: (activate: boolean) => void
 }
@@ -386,8 +386,8 @@ export function useDuelRoomState(version: Ref<number>): DuelRoomState {
     sendMessage('declareBlock', { blockerInstanceId })
   }
 
-  function declareCounter(discardInstanceId: string, counterPowerBonus: number) {
-    sendMessage('declareCounter', { discardInstanceId, counterPowerBonus })
+  function declareCounter(discardInstanceId: string) {
+    sendMessage('declareCounter', { discardInstanceId })
   }
 
   function finishCounterStep() {

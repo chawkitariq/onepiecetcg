@@ -18,7 +18,6 @@ type DeclareBlockMessage = {
 
 type DeclareCounterMessage = {
   discardInstanceId: string;
-  counterPowerBonus: number;
 };
 
 type FindCardResult = { card: DuelCard; index: number } | null;
@@ -363,7 +362,7 @@ export class DuelCombatEngine {
       return false;
     }
 
-    const bonus = Math.max(0, Math.trunc(message.counterPowerBonus));
+    const bonus = Math.max(0, Math.trunc(found.card.counter ?? 0));
     const hasCounterEffect = this.deps.effectBoundary.hasCounterEffect(
       found.card.cardId,
     );

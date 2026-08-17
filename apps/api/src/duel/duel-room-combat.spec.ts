@@ -107,7 +107,7 @@ type PrivateRoomAccess = {
   ) => Promise<void>;
   handleDeclareCounter: (
     client: { sessionId: string; send: jest.Mock },
-    message: { discardInstanceId: string; counterPowerBonus: number },
+    message: { discardInstanceId: string },
   ) => Promise<void>;
   handleFinishCounterStep: (client: {
     sessionId: string;
@@ -568,7 +568,6 @@ describe('DuelRoom structural combat (stage 8)', () => {
     });
     await access.handleDeclareCounter(fakeClient(secondSessionId), {
       discardInstanceId: counterInstanceId,
-      counterPowerBonus: 2000,
     });
 
     expect(room.state.combat.counterPowerBonus).toBe(2000);

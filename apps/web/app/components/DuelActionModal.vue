@@ -16,7 +16,6 @@ export type DuelActionModalState = {
   title: string
   description?: string
   actions: DuelActionModalAction[]
-  slot?: 'counter-input'
   /** When true, the decision also requires clicking a card on the board (e.g. choosing a blocker),
    * so the backdrop must not intercept pointer events -- only the panel itself stays interactive. */
   allowBoardInteraction?: boolean
