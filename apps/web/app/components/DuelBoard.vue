@@ -782,14 +782,38 @@ function drawDebugDeckCard(instanceId: string) {
   closeDeckDebugModal()
 }
 
+function resolveDebugEffectTriggerType(card: { type: string, counter: number | null } | undefined) {
+  const selectedTriggerType = effectDebugTriggerType.value
+
+  if (selectedTriggerType !== 'activateMain') {
+    return selectedTriggerType
+  }
+
+  if (!card) {
+    return selectedTriggerType
+  }
+
+  if (card.type === 'Event') {
+    return card.counter !== null ? 'activateCounter' : 'onPlay'
+  }
+
+  if (card.type === 'Leader' || card.type === 'Character' || card.type === 'Stage') {
+    return 'activateMain'
+  }
+
+  return selectedTriggerType
+}
+
 function triggerDebugEffect(instanceId: string) {
   if (!instanceId) {
     return
   }
 
+  const card = activeEffectCards.value.find(candidate => candidate.instanceId === instanceId)
+
   sendMessage('debugTriggerCardEffect', {
     instanceId,
-    triggerType: effectDebugTriggerType.value
+    triggerType: resolveDebugEffectTriggerType(card)
   })
   hoveredCard.value = null
   closeEffectDebugModal()

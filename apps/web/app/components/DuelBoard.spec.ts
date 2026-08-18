@@ -774,7 +774,19 @@ describe('DuelBoard drag and drop', () => {
 
   it('opens the effect debug modal and triggers the selected card immediately', async () => {
     isDevMode.value = true
-    self.value = createPlayer('self')
+    self.value = createPlayer('self', {
+      hand: [
+        createPrivateCard('hand-event-counter', {
+          type: 'Event',
+          cost: 1,
+          power: null,
+          counter: 1000
+        }),
+        createPrivateCard('hand-character', { type: 'Character', cost: 1 }),
+        createPrivateCard('hand-stage', { type: 'Stage', cost: 1, power: null, counter: null })
+      ],
+      handCount: 3
+    })
 
     const wrapper = mountBoard()
 
@@ -785,11 +797,10 @@ describe('DuelBoard drag and drop', () => {
     expect(modal.text()).toContain('Effet debug')
     expect(modal.findAll('[data-test="debug-effect-modal-card"]')).toHaveLength(4)
 
-    await modal.get('[data-test="debug-effect-trigger-type"]').setValue('activateCounter')
-    await modal.findAll('[data-test="debug-effect-modal-card"]')[1].trigger('click')
+    await modal.findAll('[data-test="debug-effect-modal-card"]')[0].trigger('click')
 
     expect(sendMessage).toHaveBeenCalledWith('debugTriggerCardEffect', {
-      instanceId: 'hand-character',
+      instanceId: 'hand-event-counter',
       triggerType: 'activateCounter'
     })
     expect(wrapper.find('[data-test="debug-effect-modal"]').exists()).toBe(false)
