@@ -353,14 +353,66 @@ export class EffectActionExecutor {
           revealed.map((card) => card.instanceId),
           (cards) => {
             const chosenIds = new Set(cards.map((card) => card.instanceId));
+            const remainingCards = revealed.filter(
+              (card) => !chosenIds.has(card.instanceId),
+            );
 
             for (const card of revealed) {
               if (chosenIds.has(card.instanceId)) {
                 this.host.moveCard(card, playerId, action.destination);
-              } else if (action.restDestination === 'trash') {
+              }
+            }
+
+            if (action.restDestination === 'trash') {
+              for (const card of remainingCards) {
                 this.host.moveCard(card, playerId, 'trash');
-              } else if (action.restDestination === 'deck') {
-                this.host.moveCard(card, playerId, 'deck');
+              }
+
+              next();
+              return;
+            }
+
+            if (
+              action.restDestination === 'deck' &&
+              action.restToBottom &&
+              action.restOrder === 'player' &&
+              remainingCards.length > 1
+            ) {
+              this.decisions.orderCards(
+                this.createDecisionId(
+                  source.instanceId,
+                  `${action.type}:rest-order`,
+                ),
+                playerId,
+                'Placez les cartes restantes au bas du deck dans l ordre de votre choix.',
+                remainingCards.map((card) => card.instanceId),
+                'deck',
+                (orderedIds) => {
+                  const remainingById = new Map(
+                    remainingCards.map((card) => [card.instanceId, card]),
+                  );
+
+                  for (const instanceId of orderedIds) {
+                    const card = remainingById.get(instanceId);
+
+                    if (card) {
+                      this.host.moveCard(card, playerId, 'deck', {
+                        toBottom: true,
+                      });
+                    }
+                  }
+
+                  next();
+                },
+              );
+              return;
+            }
+
+            if (action.restDestination === 'deck') {
+              for (const card of remainingCards) {
+                this.host.moveCard(card, playerId, 'deck', {
+                  toBottom: action.restToBottom,
+                });
               }
             }
 

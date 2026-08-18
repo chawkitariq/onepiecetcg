@@ -83,6 +83,24 @@ describe('OP12 effect definitions', () => {
     expect(duplicates).toEqual([]);
   });
 
+  it('OP12-047 Sengoku lets the player reorder the rest of the deck window', () => {
+    const card = op12EffectDefinitions.cards.find(
+      (c) => c.cardId === 'OP12-047',
+    );
+    expect(card).toBeDefined();
+    const entry = card!.effects![0];
+    expect(entry.kind).toBe('standard');
+    if (entry.kind === 'standard') {
+      const action = entry.effect.actions[0];
+      expect(action).toMatchObject({
+        type: 'search',
+        restDestination: 'deck',
+        restToBottom: true,
+        restOrder: 'player',
+      });
+    }
+  });
+
   it('OP12-060 Boeuf Burst has chooseActionBranch', () => {
     const card = op12EffectDefinitions.cards.find(
       (c) => c.cardId === 'OP12-060',

@@ -1,4 +1,5 @@
-import type { DuelLogEntry, DuelPlayerView, FirstOrSecondChoice } from '@onepiecetcg/shared'
+import type { DuelLogEntry, DuelPlayerView, FirstOrSecondChoice, PendingEffectDecision, PublicCard } from '@onepiecetcg/shared'
+import type { DuelEffectChoiceView, DuelSelectableContext, DuelUiDecision } from '~/utils/duelDecision'
 
 type DuelRoomDevOverride = ReturnType<typeof _createDuelRoomDevOverrideShape>
 
@@ -21,17 +22,19 @@ function _createDuelRoomDevOverrideShape() {
     isSelfCharacterZoneFull: computed(() => false),
     logs: ref<DuelLogEntry[]>([]),
     errorMessage: ref<string | null>(null),
-    pendingEffectDecision: ref(null),
-    activeDecision: ref(null),
+    pendingEffectDecision: ref<PendingEffectDecision | null>(null),
+    activeDecision: ref<DuelUiDecision | null>(null),
     isAwaitingEffectDecision: computed(() => false),
     selectedEffectCardIds: ref<string[]>([]),
     selectedEffectChoiceIds: ref<string[]>([]),
     selectableDecisionCardIds: computed(() => [] as string[]),
     selectableRevealedDecisionCardIds: computed(() => [] as string[]),
-    selectableEffectCards: computed(() => [] as never[]),
-    effectChoiceViews: computed(() => [] as never[]),
+    selectableEffectCards: computed<PublicCard[]>(() => []),
+    orderableEffectCards: computed<PublicCard[]>(() => []),
+    effectChoiceViews: computed<DuelEffectChoiceView[]>(() => []),
     effectDecisionSubmitState: computed(() => ({ canSubmit: false, reason: null as string | null })),
-    selectableContext: computed(() => ({
+    orderedEffectCards: ref<PublicCard[]>([]),
+    selectableContext: computed<DuelSelectableContext>(() => ({
       source: null,
       kind: 'none',
       selector: null,
@@ -63,6 +66,7 @@ function _createDuelRoomDevOverrideShape() {
     isSelfTurnToMulligan: computed(() => false),
     toggleEffectCardSelection: (_instanceId: string) => {},
     toggleEffectChoiceSelection: (_choiceId: string) => {},
+    syncOrderedEffectCards: (_cards: PublicCard[]) => {},
     submitEffectDecision: () => {},
     declineEffectDecision: () => {},
     cancelEffectDecisionSelection: () => {}
@@ -122,8 +126,11 @@ export function useDuelRoom(): DuelRoomDevOverride {
     declineEffectDecision: decisionUi.declineEffectDecision,
     cancelEffectDecisionSelection: decisionUi.cancelEffectDecisionSelection,
     selectableEffectCards: decisionUi.selectableEffectCards,
+    orderableEffectCards: decisionUi.orderableEffectCards,
     effectChoiceViews: decisionUi.effectChoiceViews,
     effectDecisionSubmitState: decisionUi.effectDecisionSubmitState,
-    selectableContext: decisionUi.selectableContext
+    selectableContext: decisionUi.selectableContext,
+    orderedEffectCards: decisionUi.orderedEffectCards,
+    syncOrderedEffectCards: decisionUi.syncOrderedEffectCards
   }
 }

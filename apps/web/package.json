@@ -17,11 +17,13 @@
     "@iconify-json/simple-icons": "^1.2.90",
     "@nuxt/ui": "^4.10.0",
     "@onepiecetcg/shared": "workspace:*",
+    "@vueuse/integrations": "14.3.0",
     "@vueuse/nuxt": "^14.3.0",
     "animejs": "^4.5.0",
     "colyseus.js": "0.16.22",
     "nuxt": "^4.4.8",
     "nuxt-charts": "^2.2.0",
+    "sortablejs": "^1.15.7",
     "tailwindcss": "^4.3.2",
     "zod": "^4.4.3"
   },

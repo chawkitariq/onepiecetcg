@@ -157,6 +157,12 @@ export type EffectDecisionPrompt =
       revealedCards?: string[];
     }
   | {
+      type: 'orderCards';
+      message: string;
+      cardInstanceIds: string[];
+      destinationZone: Extract<GameZone, 'deck' | 'life'>;
+    }
+  | {
       type: 'selectChoice';
       message: string;
       choices: EffectDecisionChoice[];
@@ -178,6 +184,7 @@ export type EffectDecisionResponse = {
   decisionId: string;
   confirmed?: boolean;
   selectedCardInstanceIds?: string[];
+  orderedCardInstanceIds?: string[];
   selectedChoiceIds?: string[];
 };
 
@@ -257,6 +264,7 @@ export type EffectAction =
       destination: Extract<GameZone, 'hand' | 'characters' | 'trash'>;
       restDestination?: Extract<GameZone, 'deck' | 'trash'>;
       restToBottom?: boolean;
+      restOrder?: 'player';
     }
   | {
       type: 'moveCard';

@@ -654,7 +654,8 @@ describe('DuelBoard drag and drop', () => {
           DuelSetupOverlay: defaultStub,
           DuelAttackArrow: duelAttackArrowStub,
           PlayZone: playZoneStub,
-          DuelHand: duelHandStub
+          DuelHand: duelHandStub,
+          DuelDecisionCardOrderPicker: defaultStub
         }
       }
     })
@@ -2261,7 +2262,8 @@ describe('DuelBoard leave to lobby', () => {
           UScrollArea: defaultStub,
           DuelSetupOverlay: defaultStub,
           PlayZone: playZoneStub,
-          DuelHand: duelHandStub
+          DuelHand: duelHandStub,
+          DuelDecisionCardOrderPicker: defaultStub
         }
       }
     })

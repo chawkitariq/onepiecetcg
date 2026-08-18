@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuelPlayerView, PublicCard } from '@onepiecetcg/shared'
+import type { DuelPlayerView, PrivateCard, PublicCard } from '@onepiecetcg/shared'
 import type { TransitionGhost } from '~/utils/duelTransitions'
 import type { DuelActionModalState } from '~/components/DuelActionModal.vue'
 import { getDuelLogLevelPresentation } from '~/utils/duelLogs'
@@ -41,6 +41,7 @@ const {
   selectableDecisionCardIds,
   selectableRevealedDecisionCardIds,
   selectableEffectCards,
+  orderedEffectCards,
   effectChoiceViews,
   effectDecisionSubmitState,
   toggleEffectCardSelection,
@@ -239,12 +240,12 @@ const effectDecisionActionModalState = computed<DuelActionModalState | null>(() 
     }
   }
 
-  if (prompt.type === 'selectCards') {
+  if (prompt.type === 'selectCards' || prompt.type === 'orderCards') {
     return {
       tone: 'decision',
-      title: 'Choix de cartes',
+      title: prompt.type === 'orderCards' ? 'Ordre des cartes' : 'Choix de cartes',
       description: undefined,
-      allowBoardInteraction: true,
+      allowBoardInteraction: prompt.type === 'selectCards',
       actions: [
         { label: 'Valider', color: 'primary', onSelect: submitEffectDecision },
         { label: 'Réinitialiser', color: 'neutral', onSelect: cancelEffectDecisionSelection }
@@ -880,6 +881,10 @@ useDuelBoardStateWatchers({
           :selected-card-ids="selectedEffectCardIds" :revealed-card-ids="selectableRevealedDecisionCardIds"
           :submit-disabled-reason="effectDecisionSubmitState.reason" @inspect="previewEffectPromptCard"
           @clear-inspect="clearEffectPromptPreview" @toggle="toggleEffectCardSelection" />
+        <DuelDecisionCardOrderPicker v-else-if="pendingEffectDecision.prompt.type === 'orderCards'"
+          :message="pendingEffectDecision.prompt.message" v-model:cards="orderedEffectCards"
+          :submit-disabled-reason="effectDecisionSubmitState.reason" @inspect="previewEffectPromptCard"
+          @clear-inspect="clearEffectPromptPreview" />
         <DuelDecisionChoicePicker v-else :message="pendingEffectDecision.prompt.message" :choices="effectChoiceViews"
           :submit-disabled-reason="effectDecisionSubmitState.reason" @toggle="toggleEffectChoiceSelection" />
       </template>

@@ -158,6 +158,7 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
                 destination: 'hand',
                 restDestination: 'deck',
                 restToBottom: true,
+                restOrder: 'player',
               },
             ],
           },
@@ -451,6 +452,7 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
                 destination: 'hand',
                 restDestination: 'deck',
                 restToBottom: true,
+                restOrder: 'player',
               },
             ],
           },
@@ -1207,6 +1209,7 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
                 destination: 'hand',
                 restDestination: 'deck',
                 restToBottom: true,
+                restOrder: 'player',
               },
             ],
             conditions: [
@@ -1461,6 +1464,7 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
                 destination: 'hand',
                 restDestination: 'deck',
                 restToBottom: true,
+                restOrder: 'player',
               },
             ],
             conditions: [
@@ -2134,6 +2138,7 @@ export const op12EffectDefinitions: EditionEffectDefinitions = {
                 destination: 'hand',
                 restDestination: 'deck',
                 restToBottom: true,
+                restOrder: 'player',
               },
             ],
             costs: [

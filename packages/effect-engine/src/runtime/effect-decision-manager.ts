@@ -138,6 +138,51 @@ export class EffectDecisionManager {
     );
   }
 
+  /** Opens a card-ordering prompt and resumes with the validated order. */
+  public orderCards(
+    decisionId: string,
+    playerSessionId: string,
+    message: string,
+    cardInstanceIds: string[],
+    destinationZone: 'deck' | 'life',
+    resolve: (orderedCardInstanceIds: string[]) => void,
+  ): void {
+    const expectedIds = new Set(cardInstanceIds);
+
+    this.pause(
+      {
+        id: decisionId,
+        effectId: decisionId,
+        effectCardId: '',
+        sourceInstanceId: '',
+        playerSessionId,
+        createdAt: new Date().toISOString(),
+        prompt: {
+          type: 'orderCards',
+          message,
+          cardInstanceIds,
+          destinationZone,
+        },
+      },
+      (response) => {
+        const orderedIds =
+          response.orderedCardInstanceIds?.filter((instanceId) =>
+            expectedIds.has(instanceId),
+          ) ?? [];
+
+        if (
+          orderedIds.length !== cardInstanceIds.length ||
+          new Set(orderedIds).size !== orderedIds.length
+        ) {
+          resolve(cardInstanceIds);
+          return;
+        }
+
+        resolve(orderedIds);
+      },
+    );
+  }
+
   private setPendingDecisionState(state: PendingDecisionState | null): void {
     this.pendingDecisionState = state;
     this.host.onPendingDecisionChange?.(state?.decision ?? null);

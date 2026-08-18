@@ -20,7 +20,7 @@ export type DuelUiDecision = DuelCombatDecision | DuelEffectDecision
 
 export type DuelSelectableContext = {
   source: 'combat' | 'effect' | null
-  kind: 'none' | 'block' | 'selectCards'
+  kind: 'none' | 'block' | 'selectCards' | 'orderCards'
   selector: EffectTargetSelector | null
   selectableCardInstanceIds: string[]
   revealedCardInstanceIds: string[]
