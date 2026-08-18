@@ -4,6 +4,31 @@ describe('CatalogService', () => {
   const fetchMock = jest.fn();
   let service: CatalogService;
 
+  function createOptcgCard(overrides: Record<string, unknown> = {}) {
+    return {
+      inventory_price: 0.07,
+      market_price: 0.16,
+      card_name: 'Monkey.D.Luffy',
+      set_name: 'Romance Dawn',
+      card_text: 'Leader text',
+      set_id: 'OP01',
+      rarity: 'L',
+      card_set_id: 'OP01-001',
+      card_color: 'Red',
+      card_type: 'Leader',
+      life: '5',
+      card_cost: null,
+      card_power: '5000',
+      sub_types: 'East Blue Straw Hat Crew',
+      counter_amount: null,
+      attribute: 'Strike',
+      date_scraped: '2026-08-17',
+      card_image_id: 'OP01-001',
+      card_image: 'https://example.test/luffy.png',
+      ...overrides,
+    }
+  }
+
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
@@ -15,43 +40,43 @@ describe('CatalogService', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          {
-            card_id: 'OP01-001',
-            card_name: 'Monkey.D.Luffy',
-            card_type: 'Leader',
-            color: 'Red',
-            life: '5',
-            power: '5000',
-            card_text: 'Leader text',
-            set_id: 'OP01',
-            set_name: 'Romance Dawn',
-            rarity: 'L',
-          },
-          {
-            card_id: 'OP01-016',
-            card_set_id: 'OP01-016',
+          createOptcgCard(),
+          createOptcgCard({
             card_name: 'Nami',
-            card_type: 'Character',
-            card_color: 'Red',
-            card_cost: '1',
-            counter_amount: 1000,
-            power: '2000',
-            sub_types: 'East Blue Straw Hat Crew',
+            set_name: 'Romance Dawn',
             card_text: 'Search your deck.',
-            card_image: 'https://example.test/nami.png',
             set_id: 'OP01',
-            set_name: 'Romance Dawn',
-          },
-          {
-            card_id: 'OP11-041',
+            rarity: 'UC',
+            card_set_id: 'OP01-016',
+            card_color: 'Red',
+            card_type: 'Character',
+            life: null,
+            card_cost: '1',
+            card_power: '2000',
+            sub_types: 'East Blue Straw Hat Crew',
+            counter_amount: 1000,
+            attribute: 'Wisdom',
+            card_image_id: 'OP01-016',
+            card_image: 'https://example.test/nami.png',
+          }),
+          createOptcgCard({
             card_name: 'Nami',
-            card_type: 'Leader',
-            card_color: 'Blue Yellow',
-            life: '4',
-            power: '5000',
-            set_id: 'OP11',
             set_name: 'A Fist of Divine Speed',
-          },
+            card_text: 'Leader text',
+            set_id: 'OP11',
+            rarity: 'L',
+            card_set_id: 'OP11-041',
+            card_color: 'Blue Yellow',
+            card_type: 'Leader',
+            life: '4',
+            card_cost: null,
+            card_power: '5000',
+            sub_types: 'Straw Hat Crew',
+            counter_amount: null,
+            attribute: 'Special',
+            card_image_id: 'OP11-041',
+            card_image: '[https://example.test/nami-leader.png](https://example.test/nami-leader.png)',
+          }),
         ],
       })
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
@@ -85,10 +110,11 @@ describe('CatalogService', () => {
 
     await expect(service.searchCards({})).resolves.toMatchObject({
       total: 3,
-      cards: expect.arrayContaining([
-        expect.objectContaining({
+        cards: expect.arrayContaining([
+          expect.objectContaining({
           id: 'OP11-041',
           colors: ['Blue', 'Yellow'],
+          imageUrl: 'https://example.test/nami-leader.png',
           set: { id: 'OP11', name: 'A Fist of Divine Speed' },
         }),
       ]),
@@ -100,14 +126,24 @@ describe('CatalogService', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          {
-            card_id: 'ST01-001',
+          createOptcgCard({
             card_name: 'Monkey.D.Luffy',
+            set_name: 'Starter Deck 1',
+            card_text: '',
+            set_id: 'ST01',
+            rarity: 'L',
+            card_set_id: 'ST01-001',
+            card_color: 'Red',
             card_type: 'Leader',
-            color: 'Red',
             life: 5,
-            power: 5000,
-          },
+            card_cost: null,
+            card_power: 5000,
+            sub_types: 'Straw Hat Crew',
+            counter_amount: null,
+            attribute: 'Strike',
+            card_image_id: 'ST01-001',
+            card_image: 'https://example.test/st01-001.png',
+          }),
         ],
       })
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
@@ -127,29 +163,47 @@ describe('CatalogService', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          {
-            card_id: 'OP01-033',
+          createOptcgCard({
             card_name: 'Izo',
-            card_type: 'Character',
-            color: 'Purple',
-            power: '5000',
-            set_id: 'OP01',
             set_name: 'Romance Dawn',
-          },
+            card_text: '',
+            set_id: 'OP01',
+            rarity: 'R',
+            card_set_id: 'OP01-033',
+            card_color: 'Purple',
+            card_type: 'Character',
+            life: null,
+            card_cost: 5,
+            card_power: '5000',
+            sub_types: 'Whitebeard Pirates',
+            counter_amount: 1000,
+            attribute: 'Slash',
+            card_image_id: 'OP01-033',
+            card_image: 'https://example.test/izo.png',
+          }),
         ],
       })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          {
-            card_id: 'OP01-033',
+          createOptcgCard({
             card_name: 'Izo',
-            card_type: 'Character',
-            color: 'Purple',
-            power: '5000',
-            set_id: 'OP01',
             set_name: 'Romance Dawn',
-          },
+            card_text: '',
+            set_id: 'OP01',
+            rarity: 'R',
+            card_set_id: 'OP01-033',
+            card_color: 'Purple',
+            card_type: 'Character',
+            life: null,
+            card_cost: 5,
+            card_power: '5000',
+            sub_types: 'Whitebeard Pirates',
+            counter_amount: 1000,
+            attribute: 'Slash',
+            card_image_id: 'OP01-033',
+            card_image: 'https://example.test/izo.png',
+          }),
         ],
       })
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
@@ -167,14 +221,24 @@ describe('CatalogService', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          {
-            card_id: 'OP01-001',
+          createOptcgCard({
             card_name: 'Monkey.D.Luffy',
+            set_name: 'Romance Dawn',
+            card_text: 'Leader text',
+            set_id: 'OP01',
+            rarity: 'L',
+            card_set_id: 'OP01-001',
+            card_color: 'Red',
             card_type: 'Leader',
-            color: 'Red',
             life: 5,
-            power: 5000,
-          },
+            card_cost: null,
+            card_power: 5000,
+            sub_types: 'East Blue',
+            counter_amount: null,
+            attribute: 'Strike',
+            card_image_id: 'OP01-001',
+            card_image: 'https://example.test/luffy.png',
+          }),
         ],
       })
       .mockResolvedValueOnce({ ok: true, json: async () => [] })

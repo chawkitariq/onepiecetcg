@@ -68,7 +68,7 @@ export class CatalogService {
     const sourceCards = await this.fetchAllSourceCards();
     const normalizedCards = this.dedupeCards(
       sourceCards
-        .map(({ card, bucket }) => this.normalizeCard(card, bucket))
+        .map(({ card }) => this.normalizeCard(card))
         .filter((card): card is Card => card !== null),
     ).sort((left, right) => left.id.localeCompare(right.id));
 
@@ -187,86 +187,39 @@ export class CatalogService {
 
   private normalizeCard(
     source: OptcgApiCard,
-    bucket: OptcgCardBucket,
   ): Card | null {
-    const number = this.firstString(source, [
-      'card_set_id',
-      'card_id',
-      'cardId',
-      'id',
-      'number',
-      'card_number',
-    ]);
-    const name = this.firstString(source, ['card_name', 'cardName', 'name']);
+    const number = source.card_set_id?.trim().toUpperCase();
+    const name = source.card_name?.trim();
+    const type = this.toCardType(source.card_type);
+    const setId = source.set_id?.trim().toUpperCase();
+    const setName = source.set_name?.trim();
 
-    if (!number || !name) {
+    if (!number || !name || !type || !setId || !setName) {
       return null;
     }
 
-    const normalizedNumber = number.trim().toUpperCase();
-    const type = this.toCardType(
-      this.firstString(source, ['card_type', 'cardType', 'type']),
-      bucket,
-    );
-    const setId =
-      this.firstString(source, [
-        'set_id',
-        'setId',
-        'set',
-        'deck_id',
-        'st_id',
-      ]) ?? this.inferSetId(normalizedNumber, bucket);
-    const setName =
-      this.firstString(source, [
-        'set_name',
-        'setName',
-        'set',
-        'deck_name',
-        'st_name',
-      ]) ?? setId;
+    const imageUrl = this.toImageUrl(source.card_image);
 
     return {
-      id: normalizedNumber,
-      number: normalizedNumber,
-      name: name.trim(),
+      id: number,
+      number,
+      name,
       type,
-      colors: this.toColors(
-        this.firstValue(source, ['color', 'colors', 'card_color', 'cardColor']),
-      ),
-      cost: this.toNumberOrNull(this.firstValue(source, ['cost', 'card_cost'])),
-      power: this.toNumberOrNull(
-        this.firstValue(source, ['power', 'card_power']),
-      ),
-      life: this.toNumberOrNull(this.firstValue(source, ['life', 'card_life'])),
-      counter: this.toNumberOrNull(
-        this.firstValue(source, ['counter_amount', 'counter', 'card_counter']),
-      ),
-      attributes: this.toStringList(
-        this.firstValue(source, ['attribute', 'attributes']),
-      ),
-      families: this.toStringList(
-        this.firstValue(source, ['sub_types', 'family', 'families', 'types']),
-      ),
-      text:
-        this.firstString(source, ['effect', 'card_text', 'cardText', 'text']) ??
-        '',
-      trigger: this.firstString(source, [
-        'trigger',
-        'card_trigger',
-        'cardTrigger',
-      ]),
-      imageUrl: this.firstString(source, [
-        'card_image',
-        'cardImage',
-        'image',
-        'image_url',
-        'imageUrl',
-      ]),
+      colors: this.toColors(source.card_color),
+      cost: this.toNumberOrNull(source.card_cost),
+      power: this.toNumberOrNull(source.card_power),
+      life: this.toNumberOrNull(source.life),
+      counter: this.toNumberOrNull(source.counter_amount),
+      attributes: this.toStringList(source.attribute),
+      families: this.toStringList(source.sub_types),
+      text: source.card_text?.trim() ?? '',
+      trigger: null,
+      imageUrl,
       set: {
         id: setId,
         name: setName,
       },
-      rarity: this.firstString(source, ['rarity', 'card_rarity']),
+      rarity: source.rarity?.trim() ?? null,
     };
   }
 
@@ -306,32 +259,37 @@ export class CatalogService {
 
   private toSourceFallback(card: Card): OptcgApiCard {
     return {
-      card_id: card.id,
+      inventory_price: null,
+      market_price: null,
       card_name: card.name,
-      card_type: card.type,
-      color: card.colors,
-      cost: card.cost,
-      power: card.power,
-      life: card.life,
-      counter: card.counter,
-      attribute: card.attributes,
-      family: card.families,
-      card_text: card.text,
-      trigger: card.trigger,
-      card_image: card.imageUrl,
-      set_id: card.set.id,
       set_name: card.set.name,
+      card_text: card.text,
+      set_id: card.set.id,
       rarity: card.rarity,
+      card_set_id: card.id,
+      card_color: card.colors.join(' '),
+      card_type: card.type,
+      life: card.life,
+      card_cost: card.cost,
+      card_power: card.power,
+      sub_types: card.families.join(' '),
+      counter_amount: card.counter,
+      attribute: card.attributes.join(' '),
+      date_scraped: new Date().toISOString().slice(0, 10),
+      card_image_id: card.id,
+      card_image: card.imageUrl,
     };
   }
 
-  private toCardType(value: string | null, bucket: OptcgCardBucket): CardType {
+  private toCardType(value: string | null): CardType | null {
     const normalized = value?.trim().toLowerCase();
 
-    if (bucket === 'don' || normalized?.includes('don')) return 'DON!!';
-    if (normalized?.includes('leader')) return 'Leader';
-    if (normalized?.includes('event')) return 'Event';
-    if (normalized?.includes('stage') || normalized?.includes('place'))
+    if (!normalized) return null;
+
+    if (normalized.includes('don')) return 'DON!!';
+    if (normalized.includes('leader')) return 'Leader';
+    if (normalized.includes('event')) return 'Event';
+    if (normalized.includes('stage') || normalized.includes('place'))
       return 'Stage';
 
     return 'Character';
@@ -361,37 +319,6 @@ export class CatalogService {
       .filter((color): color is CardColor => color !== null);
   }
 
-  private inferSetId(cardId: string, bucket: OptcgCardBucket): string {
-    if (bucket === 'promos') return 'P';
-    if (bucket === 'don') return 'DON';
-
-    return cardId.split('-')[0] || bucket.toUpperCase();
-  }
-
-  private firstValue(source: OptcgApiCard, keys: string[]): unknown {
-    for (const key of keys) {
-      if (source[key] !== undefined && source[key] !== null) {
-        return source[key];
-      }
-    }
-
-    return null;
-  }
-
-  private firstString(source: OptcgApiCard, keys: string[]): string | null {
-    const value = this.firstValue(source, keys);
-
-    if (typeof value === 'string' && value.trim()) {
-      return value;
-    }
-
-    if (typeof value === 'number') {
-      return String(value);
-    }
-
-    return null;
-  }
-
   private toNumberOrNull(value: unknown): number | null {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
@@ -418,6 +345,21 @@ export class CatalogService {
     }
 
     return [];
+  }
+
+  private toImageUrl(value: string | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const trimmed = value.trim();
+
+    const markdownMatch = trimmed.match(/^\[(.*?)\]\((.*?)\)$/);
+    if (markdownMatch) {
+      return markdownMatch[2] ?? null;
+    }
+
+    return trimmed || null;
   }
 
   private unique<T>(values: T[]): T[] {
