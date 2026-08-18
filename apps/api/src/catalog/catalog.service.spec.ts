@@ -91,7 +91,7 @@ describe('CatalogService', () => {
     });
 
     expect(response.total).toBe(1);
-    expect(response.cards[0]).toMatchObject({
+      expect(response.cards[0]).toMatchObject({
       id: 'OP01-016',
       name: 'Nami',
       type: 'Character',
@@ -101,6 +101,7 @@ describe('CatalogService', () => {
       counter: 1000,
       families: ['East Blue Straw Hat Crew'],
       imageUrl: 'https://example.test/nami.png',
+      imageId: 'OP01-016',
       set: { id: 'OP01', name: 'Romance Dawn' },
     });
     expect(response.filters.sets).toEqual([
@@ -115,6 +116,7 @@ describe('CatalogService', () => {
           id: 'OP11-041',
           colors: ['Blue', 'Yellow'],
           imageUrl: 'https://example.test/nami-leader.png',
+          imageId: 'OP11-041',
           set: { id: 'OP11', name: 'A Fist of Divine Speed' },
         }),
       ]),

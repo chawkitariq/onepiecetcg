@@ -215,6 +215,7 @@ export class CatalogService {
       text: source.card_text?.trim() ?? '',
       trigger: null,
       imageUrl,
+      imageId: source.card_image_id?.trim() ?? null,
       set: {
         id: setId,
         name: setName,

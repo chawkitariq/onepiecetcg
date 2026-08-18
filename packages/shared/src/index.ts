@@ -23,6 +23,7 @@ export type Card = {
   text: string;
   trigger: string | null;
   imageUrl: string | null;
+  imageId?: string | null;
   set: {
     id: string;
     name: string;

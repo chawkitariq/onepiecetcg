@@ -88,6 +88,10 @@ export class DuelCard extends Schema {
 
   @view()
   @type('string')
+  imageId = '';
+
+  @view()
+  @type('string')
   text = '';
 
   @view()
@@ -382,6 +386,7 @@ function assignDuelCard(target: DuelCard, source: DuelCard): DuelCard {
   replaceArraySchema(target.attributes, source.attributes);
   replaceArraySchema(target.families, source.families);
   target.imageUrl = source.imageUrl;
+  target.imageId = source.imageId;
   target.text = source.text;
   target.trigger = source.trigger;
   target.faceDown = source.faceDown;
@@ -598,6 +603,7 @@ export function createDuelCard(
   duelCard.attributes.push(...card.attributes);
   duelCard.families.push(...card.families);
   duelCard.imageUrl = card.imageUrl ?? '';
+  duelCard.imageId = card.imageId ?? '';
   duelCard.text = card.text;
   duelCard.trigger = card.trigger ?? '';
   duelCard.faceDown = privateToOwner;
