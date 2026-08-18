@@ -97,19 +97,19 @@ const {
 
           <p
             v-if="card.text"
-            class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
+            class="whitespace-pre-line text-sm leading-6 text-muted"
           >
             {{ card.text }}
           </p>
           <p
             v-else-if="loadingDescription"
-            class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
+            class="whitespace-pre-line text-sm leading-6 text-muted"
           >
             Chargement de la description...
           </p>
           <p
             v-else
-            class="max-h-36 overflow-y-auto whitespace-pre-line text-sm text-muted"
+            class="whitespace-pre-line text-sm leading-6 text-muted"
           >
             Description indisponible.
           </p>
