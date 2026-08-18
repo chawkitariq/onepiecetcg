@@ -37,6 +37,10 @@ export type DeclareCounterMessage = {
   discardInstanceId: string;
 };
 
+export type DebugDrawFromDeckMessage = {
+  instanceId: string;
+};
+
 export type ResolveTriggerMessage = {
   activate: boolean;
 };
@@ -85,6 +89,10 @@ export type RegisterDuelRoomMessagesInput = {
   handleDeclareCounter: (
     client: Client,
     message: DeclareCounterMessage,
+  ) => Promise<void> | void;
+  handleDebugDrawFromDeck: (
+    client: Client,
+    message: DebugDrawFromDeckMessage,
   ) => Promise<void> | void;
   handleFinishCounterStep: (client: Client) => Promise<void> | void;
   handleResolveTrigger: (
@@ -154,6 +162,13 @@ export function registerDuelRoomMessages(
     'declareCounter',
     (client: Client, message: DeclareCounterMessage) => {
       void input.handleDeclareCounter(client, message);
+    },
+  );
+
+  input.room.onMessage(
+    'debugDrawFromDeck',
+    (client: Client, message: DebugDrawFromDeckMessage) => {
+      void input.handleDebugDrawFromDeck(client, message);
     },
   );
 

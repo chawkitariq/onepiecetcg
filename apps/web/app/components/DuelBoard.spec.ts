@@ -19,6 +19,7 @@ const declineEffectDecision = vi.fn()
 const cancelEffectDecisionSelection = vi.fn()
 const toggleEffectCardSelection = vi.fn()
 const toggleEffectChoiceSelection = vi.fn()
+const sendMessage = vi.fn()
 
 const phase = ref('main')
 const turn = ref(1)
@@ -135,11 +136,13 @@ function createLogEntry(
 const leave = vi.fn()
 const confirm = vi.fn()
 const room = ref({ roomId: 'room-1' })
+const isDevMode = ref(false)
 
 mockNuxtImport('useColyseus', () => () => ({
   room,
   status: ref('connected'),
-  leave
+  leave,
+  sendMessage
 }))
 
 mockNuxtImport('useConfirmDialog', () => () => ({
@@ -149,6 +152,7 @@ mockNuxtImport('useConfirmDialog', () => () => ({
 mockNuxtImport('navigateTo', () => vi.fn())
 mockNuxtImport('usePreferredReducedMotion', () => () => reducedMotion)
 mockNuxtImport('useApi', () => () => apiFetch)
+mockNuxtImport('useIsDevMode', () => () => isDevMode)
 
 mockNuxtImport('useDuelRoom', () => () => ({
   self,
@@ -578,6 +582,7 @@ describe('DuelBoard drag and drop', () => {
     effectChoiceViews.value = []
     effectDecisionSubmitState.value = { canSubmit: true, reason: null }
     combat.value = null
+    isDevMode.value = false
     playCard.mockReset()
     endPhase.mockReset()
     attachDon.mockReset()
@@ -592,6 +597,7 @@ describe('DuelBoard drag and drop', () => {
     cancelEffectDecisionSelection.mockReset()
     toggleEffectCardSelection.mockReset()
     toggleEffectChoiceSelection.mockReset()
+    sendMessage.mockReset()
     apiFetch.mockReset()
     apiFetch.mockResolvedValue({
       id: 'effect-card',
@@ -696,6 +702,56 @@ describe('DuelBoard drag and drop', () => {
 
     expect(wrapper.text()).toContain('Tour adverse')
     expect(findTurnButton().text()).toContain('Tour adverse')
+  })
+
+  it('shows the deck debug tool only in dev mode', () => {
+    self.value = createPlayer('self', {
+      deck: [
+        createPrivateCard('debug-deck-card-1', { type: 'Character', cost: 2 }),
+        createPrivateCard('debug-deck-card-2', { type: 'Stage', cost: 1, power: null, counter: null })
+      ],
+      deckCount: 2
+    })
+
+    const nonDevWrapper = mountBoard()
+
+    expect(nonDevWrapper.find('[data-test="debug-draw-toggle"]').exists()).toBe(false)
+
+    nonDevWrapper.unmount()
+
+    isDevMode.value = true
+
+    const devWrapper = mountBoard()
+
+    expect(devWrapper.get('[data-test="debug-draw-toggle"]').text()).toContain('Pioche debug')
+  })
+
+  it('opens the deck debug preview and sends a direct draw message for the selected card', async () => {
+    isDevMode.value = true
+    self.value = createPlayer('self', {
+      deck: [
+        createPrivateCard('debug-deck-card-1', { type: 'Character', cost: 2 }),
+        createPrivateCard('debug-deck-card-2', { type: 'Stage', cost: 1, power: null, counter: null })
+      ],
+      deckCount: 2
+    })
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="debug-draw-toggle"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const modal = wrapper.get('[data-test="debug-deck-modal"]')
+    expect(modal.text()).toContain('Pioche debug')
+    expect(modal.findAll('[data-test="debug-deck-modal-card"]')).toHaveLength(2)
+
+    await modal.findAll('[data-test="debug-deck-modal-card"]')[1].trigger('click')
+    await wrapper.get('[data-test="debug-deck-draw"]').trigger('click')
+
+    expect(sendMessage).toHaveBeenCalledWith('debugDrawFromDeck', {
+      instanceId: 'debug-deck-card-2'
+    })
+    expect(wrapper.find('[data-test="debug-deck-modal"]').exists()).toBe(false)
   })
 
   it('uses the selected card counter value during the counter step without showing a manual input', async () => {

@@ -42,6 +42,7 @@ import {
   type DeclareAttackMessage,
   type DeclareBlockMessage,
   type DeclareCounterMessage,
+  type DebugDrawFromDeckMessage,
   type MulliganMessage,
   type PlayCardMessage,
   type ResolveEffectDecisionMessage,
@@ -326,6 +327,56 @@ export class DuelRoom extends Room<DuelState> {
         ),
       ),
     );
+  }
+
+  private async handleDebugDrawFromDeck(
+    client: Client,
+    message: DebugDrawFromDeckMessage,
+  ) {
+    if (process.env.NODE_ENV !== 'development') {
+      this.notifier.sendActionError(
+        client,
+        "L'outil de debug est uniquement disponible en mode developpement.",
+      );
+      return;
+    }
+
+    const player = this.state.players.get(client.sessionId);
+
+    if (!player) {
+      this.notifier.sendActionError(client, 'Joueur introuvable.');
+      return;
+    }
+
+    const deckIndex = Array.from(player.zones.deck).findIndex(
+      (card) => card.instanceId === message.instanceId,
+    );
+
+    if (deckIndex < 0) {
+      this.notifier.sendActionError(
+        client,
+        'Carte introuvable dans le deck.',
+      );
+      return;
+    }
+
+    const [card] = player.zones.deck.splice(deckIndex, 1);
+
+    if (!card) {
+      this.notifier.sendActionError(client, 'Carte introuvable dans le deck.');
+      return;
+    }
+
+    card.faceDown = false;
+    player.zones.hand.push(card);
+    player.handCount = player.zones.hand.length;
+    player.deckCount = player.zones.deck.length;
+    this.stateServices.addLiveLog(
+      `${player.displayName} pioche ${card.name} via l'outil de debug.`,
+      'system',
+      player.sessionId,
+    );
+    this.rebuildAllClientViews();
   }
 
   private knockOutCharacter(
@@ -712,6 +763,8 @@ export class DuelRoom extends Room<DuelState> {
         this.handleDeclareBlock(client, message),
       handleDeclareCounter: (client, message) =>
         this.handleDeclareCounter(client, message),
+      handleDebugDrawFromDeck: (client, message) =>
+        this.handleDebugDrawFromDeck(client, message),
       handleFinishCounterStep: (client) => this.handleFinishCounterStep(client),
       handleResolveTrigger: (client, message) =>
         this.handleResolveTrigger(client, message),

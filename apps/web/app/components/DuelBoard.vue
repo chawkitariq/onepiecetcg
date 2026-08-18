@@ -67,8 +67,9 @@ const {
   resolveTrigger,
   isOpponentDisconnected
 } = useDuelRoom()
-const { room, status, leave } = useColyseus()
+const { room, status, leave, sendMessage } = useColyseus()
 const { confirm } = useConfirmDialog()
+const isDevMode = useIsDevMode()
 const shouldConfirmLeave = computed(() =>
   Boolean(room.value) && status.value === 'connected' && phase.value !== 'finished'
 )
@@ -739,6 +740,30 @@ const {
   queryTrashCardElement
 })
 
+const {
+  activeDeckCards,
+  closeDeckDebugModal,
+  deckDebugModalCardSize,
+  openDeckDebugModal,
+  openedDeckDebug,
+  selectedDeckCardInstanceId
+} = useDuelDeckDebugModal({
+  self,
+  queryDeckCardElement: querySelfDeckElement
+})
+
+function drawSelectedDebugDeckCard() {
+  if (!selectedDeckCardInstanceId.value) {
+    return
+  }
+
+  sendMessage('debugDrawFromDeck', {
+    instanceId: selectedDeckCardInstanceId.value
+  })
+  hoveredCard.value = null
+  closeDeckDebugModal()
+}
+
 useDuelBoardStateWatchers({
   self,
   opponent,
@@ -818,6 +843,18 @@ useDuelBoardStateWatchers({
 
       <template #right>
         <div class="flex items-center gap-3">
+          <UButton
+            v-if="isDevMode && self?.deck.length"
+            data-test="debug-draw-toggle"
+            icon="i-lucide-bug"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            aria-label="Outil de pioche debug"
+            @click="openDeckDebugModal"
+          >
+            Pioche debug
+          </UButton>
           <div v-if="self" class="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1">
             <UIcon name="i-lucide-zap" class="size-4 text-warning" />
             <span class="text-sm font-semibold tabular-nums">{{ selfUntappedDonCount }}</span>
@@ -994,6 +1031,53 @@ useDuelBoardStateWatchers({
                       <DuelCard :src="card.imageUrl" :alt="card.name"
                         class="overflow-hidden rounded-lg shadow-2xl group-hover:scale-[1.02]" />
                     </button>
+                  </div>
+                </div>
+              </Transition>
+            </div>
+          </Transition>
+          <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <div v-if="openedDeckDebug && self" data-test="debug-deck-modal"
+              class="absolute inset-0 z-[2145] flex items-center justify-center bg-default/90 p-6 backdrop-blur-sm"
+              @click.self="closeDeckDebugModal">
+              <Transition appear enter-active-class="transition duration-250 ease-out"
+                enter-from-class="opacity-0 translate-y-3 scale-95"
+                enter-to-class="opacity-100 translate-y-0 scale-100">
+                <div class="flex w-full max-w-[min(100%,1500px)] flex-col items-center gap-5">
+                  <div class="text-center">
+                    <h3 class="text-lg font-bold text-highlighted">
+                      Pioche debug
+                    </h3>
+                    <p class="text-sm text-muted">
+                      Choisissez une carte du deck à piocher directement dans votre main.
+                    </p>
+                  </div>
+
+                  <div class="flex flex-wrap items-start justify-center gap-4">
+                    <button v-for="card in activeDeckCards" :key="card.instanceId" type="button"
+                      data-test="debug-deck-modal-card"
+                      class="duel-trash-modal-card group aspect-5/7 text-left transition"
+                      :class="card.instanceId === selectedDeckCardInstanceId ? 'scale-[1.02]' : 'hover:scale-[1.01]'"
+                      :style="{
+                        ...(deckDebugModalCardSize ? { width: `${deckDebugModalCardSize.width}px`, height: `${deckDebugModalCardSize.height}px` } : {}),
+                        '--trash-card-index': activeDeckCards.indexOf(card)
+                      }" @mouseenter="hoveredCard = card" @mouseleave="hoveredCard = null"
+                      @click="selectedDeckCardInstanceId = card.instanceId">
+                      <DuelCard :src="card.imageUrl" :alt="card.name"
+                        class="overflow-hidden rounded-lg shadow-2xl group-hover:scale-[1.02]" />
+                    </button>
+                  </div>
+
+                  <div class="flex flex-wrap items-center justify-center gap-2">
+                    <UButton data-test="debug-deck-draw" color="primary" size="lg"
+                      :disabled="!selectedDeckCardInstanceId" @click="drawSelectedDebugDeckCard">
+                      Piocher
+                    </UButton>
+                    <UButton color="neutral" size="lg" variant="subtle" @click="closeDeckDebugModal">
+                      Annuler
+                    </UButton>
                   </div>
                 </div>
               </Transition>

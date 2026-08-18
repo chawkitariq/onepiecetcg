@@ -24,6 +24,7 @@ describe('duel-room-message-registrar', () => {
     const handleDeclareAttack = jest.fn();
     const handleDeclareBlock = jest.fn();
     const handleDeclareCounter = jest.fn();
+    const handleDebugDrawFromDeck = jest.fn();
     const handleFinishCounterStep = jest.fn();
     const handleResolveTrigger = jest.fn();
     const handleResolveEffectDecision = jest.fn();
@@ -39,12 +40,13 @@ describe('duel-room-message-registrar', () => {
       handleDeclareAttack,
       handleDeclareBlock,
       handleDeclareCounter,
+      handleDebugDrawFromDeck,
       handleFinishCounterStep,
       handleResolveTrigger,
       handleResolveEffectDecision,
     });
 
-    expect(room.onMessage).toHaveBeenCalledTimes(11);
+    expect(room.onMessage).toHaveBeenCalledTimes(12);
     expect(Array.from(handlers.keys())).toEqual([
       'chooseFirstOrSecond',
       'mulligan',
@@ -54,6 +56,7 @@ describe('duel-room-message-registrar', () => {
       'declareAttack',
       'declareBlock',
       'declareCounter',
+      'debugDrawFromDeck',
       'finishCounterStep',
       'resolveTrigger',
       'resolveEffectDecision',
@@ -72,6 +75,7 @@ describe('duel-room-message-registrar', () => {
     handlers.get('declareCounter')?.(client, {
       discardInstanceId: 'counter-1',
     });
+    handlers.get('debugDrawFromDeck')?.(client, { instanceId: 'deck-1' });
     handlers.get('finishCounterStep')?.(client, undefined);
     handlers.get('resolveTrigger')?.(client, { activate: true });
     handlers.get('resolveEffectDecision')?.(client, {
@@ -100,6 +104,9 @@ describe('duel-room-message-registrar', () => {
     });
     expect(handleDeclareCounter).toHaveBeenCalledWith(client, {
       discardInstanceId: 'counter-1',
+    });
+    expect(handleDebugDrawFromDeck).toHaveBeenCalledWith(client, {
+      instanceId: 'deck-1',
     });
     expect(handleFinishCounterStep).toHaveBeenCalledWith(client);
     expect(handleResolveTrigger).toHaveBeenCalledWith(client, {
