@@ -2435,6 +2435,41 @@ describe('OP14 behavioral tests', () => {
     expect(host.getPlayer('p1')?.zones.cost.length).toBe(0);
   });
 
+  it('OP14-038 counter boosts the leader power during battle', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const engine = new EffectEngine(
+      createRegistry([op14EffectDefinitions], specialHandlerDefinitions),
+      host,
+    );
+    const counter = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'OP14-038',
+        number: 'OP14-038',
+        name: 'Never-Bother Faces',
+        type: 'Event',
+        counter: 1000,
+      }),
+      'counter',
+    );
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: counter.instanceId,
+      sourceCardId: counter.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(8000);
+
+    engine.clearCombatModifiers();
+
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(5000);
+  });
+
   it('OP14-092 Mr.3 replacement saves character from KO on opponent turn', () => {
     const host = new TestHost();
     host.addPlayer('p1');

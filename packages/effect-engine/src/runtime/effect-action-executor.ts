@@ -515,6 +515,8 @@ export class EffectActionExecutor {
                 action.duration.type,
               );
             }
+
+            this.modifiers.reapplyContinuousEffects();
           },
           next,
         );

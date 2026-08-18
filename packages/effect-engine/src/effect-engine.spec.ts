@@ -1242,6 +1242,70 @@ describe('EffectEngine', () => {
     expect(host.getPlayer('p1')?.zones.leader.power).toBe(5000);
   });
 
+  it('applies counter power bonuses to the leader immediately during battle', () => {
+    const host = new TestHost();
+    host.addPlayer('p1');
+    host.addPlayer('p2');
+    const counterDefinition = {
+      editionId: 'TEST',
+      cards: [
+        {
+          cardId: 'COUNTER-001',
+          effects: [
+            {
+              kind: 'standard' as const,
+              effect: {
+                id: 'leader-counter-power',
+                text: 'Your Leader gains +3000 power during this battle.',
+                trigger: { type: 'activateCounter' as const },
+                actions: [
+                  {
+                    type: 'modifyPower' as const,
+                    selector: {
+                      player: 'self' as const,
+                      zones: ['leader'] as const,
+                      count: { kind: 'exact' as const, value: 1 },
+                    },
+                    amount: 3000,
+                    duration: { type: 'untilEndOfBattle' as const },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const engine = new EffectEngine(
+      createRegistry([op01EffectDefinitions, counterDefinition]),
+      host,
+    );
+    const counterCard = host.addCardToZone(
+      'p1',
+      'hand',
+      makeCard({
+        id: 'COUNTER-001',
+        number: 'COUNTER-001',
+        name: 'Counter Source',
+        type: 'Event',
+      }),
+      'counter-source',
+    );
+
+    engine.handleEvent({
+      type: 'activateCounter',
+      playerSessionId: 'p1',
+      sourceInstanceId: counterCard.instanceId,
+      sourceCardId: counterCard.cardId,
+    });
+
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(8000);
+
+    engine.clearCombatModifiers();
+
+    expect(host.getPlayer('p1')?.zones.leader.power).toBe(5000);
+  });
+
   it('prevents moving your own life cards to hand while the restriction is active', () => {
     const host = new TestHost();
     host.addPlayer('p1');
