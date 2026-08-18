@@ -203,17 +203,35 @@ describe('PlayerAccountService', () => {
     });
   });
 
-  it('refuses to delete anonymous accounts', async () => {
+  it('deletes anonymous accounts through the same transactional cleanup flow', async () => {
     await expect(
       service.deleteAccountForAuthUser({
         id: 'auth-user-guest',
         email: 'guest@local.dev',
         isAnonymous: true,
       }),
-    ).rejects.toMatchObject({
-      status: 403,
-    });
+    ).resolves.toEqual({ deleted: true });
 
-    expect(dataSource.transaction).not.toHaveBeenCalled();
+    expect(dataSource.transaction).toHaveBeenCalledTimes(1);
+    expect(verificationDeleteBuilder.delete).toHaveBeenCalledTimes(1);
+    expect(verificationDeleteBuilder.from).toHaveBeenCalledWith(
+      BetterAuthVerification,
+    );
+    expect(verificationDeleteBuilder.where).toHaveBeenCalledWith(
+      'identifier IN (:...identifiers)',
+      { identifiers: ['auth-user-guest', 'guest@local.dev'] },
+    );
+    expect(manager.delete).toHaveBeenNthCalledWith(1, PlayerAccount, {
+      authUserId: 'auth-user-guest',
+    });
+    expect(manager.delete).toHaveBeenNthCalledWith(2, BetterAuthSession, {
+      userId: 'auth-user-guest',
+    });
+    expect(manager.delete).toHaveBeenNthCalledWith(3, BetterAuthAccount, {
+      userId: 'auth-user-guest',
+    });
+    expect(manager.delete).toHaveBeenNthCalledWith(4, BetterAuthUser, {
+      id: 'auth-user-guest',
+    });
   });
 });

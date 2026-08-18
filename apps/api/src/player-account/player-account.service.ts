@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, Repository } from 'typeorm';
 import { BetterAuthAccount } from '../better-auth/better-auth-account.entity';
@@ -60,19 +60,7 @@ export class PlayerAccountService {
   async deleteAccountForAuthUser(
     user: AuthenticatedUser,
   ): Promise<{ deleted: true }> {
-    if (user.isAnonymous) {
-      throw new ForbiddenException(
-        'Les comptes anonymes ne peuvent pas etre supprimes.',
-      );
-    }
-
-    await this.dataSource.transaction(async (manager) => {
-      await this.deleteBetterAuthVerifications(manager, user);
-      await manager.delete(PlayerAccount, { authUserId: user.id });
-      await manager.delete(BetterAuthSession, { userId: user.id });
-      await manager.delete(BetterAuthAccount, { userId: user.id });
-      await manager.delete(BetterAuthUser, { id: user.id });
-    });
+    await this.deleteAuthUserAndOwnedData(user);
 
     return { deleted: true };
   }
@@ -95,6 +83,18 @@ export class PlayerAccountService {
       .from(BetterAuthVerification)
       .where('identifier IN (:...identifiers)', { identifiers })
       .execute();
+  }
+
+  private async deleteAuthUserAndOwnedData(
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      await this.deleteBetterAuthVerifications(manager, user);
+      await manager.delete(PlayerAccount, { authUserId: user.id });
+      await manager.delete(BetterAuthSession, { userId: user.id });
+      await manager.delete(BetterAuthAccount, { userId: user.id });
+      await manager.delete(BetterAuthUser, { id: user.id });
+    });
   }
 
   private toDisplayName(
