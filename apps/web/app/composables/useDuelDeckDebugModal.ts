@@ -10,16 +10,42 @@ type UseDuelDeckDebugModalOptions = {
  * Specializes the generic card picker modal for the dev-only deck debug tool.
  */
 export function useDuelDeckDebugModal(options: UseDuelDeckDebugModalOptions) {
+  const deckDebugSearchQuery = ref('')
   const picker = useDuelCardPickerModal({
     cards: computed(() => options.self.value?.deck ?? []),
     queryReferenceCardElement: options.queryDeckCardElement
   })
 
+  function resetDeckDebugSearchQuery() {
+    deckDebugSearchQuery.value = ''
+  }
+
+  function openDeckDebugModal() {
+    resetDeckDebugSearchQuery()
+    picker.openCardPicker()
+  }
+
+  function closeDeckDebugModal() {
+    resetDeckDebugSearchQuery()
+    picker.closeCardPicker()
+  }
+
+  function toggleDeckDebugModal() {
+    if (picker.openedCardPicker.value) {
+      closeDeckDebugModal()
+      return
+    }
+
+    openDeckDebugModal()
+  }
+
   return {
     activeDeckCards: picker.activeCards,
-    closeDeckDebugModal: picker.closeCardPicker,
+    closeDeckDebugModal,
     deckDebugModalCardSize: picker.pickerCardSize,
-    openDeckDebugModal: picker.openCardPicker,
+    deckDebugSearchQuery,
+    openDeckDebugModal,
+    toggleDeckDebugModal,
     openedDeckDebug: picker.openedCardPicker,
     selectedDeckCardInstanceId: picker.selectedCardInstanceId
   }

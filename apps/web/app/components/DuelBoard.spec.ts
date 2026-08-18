@@ -726,7 +726,25 @@ describe('DuelBoard drag and drop', () => {
     expect(devWrapper.get('[data-test="debug-draw-toggle"]').text()).toContain('Pioche debug')
   })
 
-  it('opens the deck debug preview and sends a direct draw message for the selected card', async () => {
+  it('toggles the deck debug modal with the debug button', async () => {
+    isDevMode.value = true
+    self.value = createPlayer('self', {
+      deck: [
+        createPrivateCard('debug-deck-card-1', { type: 'Character', cost: 2 })
+      ],
+      deckCount: 1
+    })
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="debug-draw-toggle"]').trigger('click')
+    expect(wrapper.get('[data-test="debug-deck-modal"]').exists()).toBe(true)
+
+    await wrapper.get('[data-test="debug-draw-toggle"]').trigger('click')
+    expect(wrapper.find('[data-test="debug-deck-modal"]').exists()).toBe(false)
+  })
+
+  it('opens the deck debug preview and sends a direct draw message when a card is picked', async () => {
     isDevMode.value = true
     self.value = createPlayer('self', {
       deck: [
@@ -746,7 +764,6 @@ describe('DuelBoard drag and drop', () => {
     expect(modal.findAll('[data-test="debug-deck-modal-card"]')).toHaveLength(2)
 
     await modal.findAll('[data-test="debug-deck-modal-card"]')[1].trigger('click')
-    await wrapper.get('[data-test="debug-deck-draw"]').trigger('click')
 
     expect(sendMessage).toHaveBeenCalledWith('debugDrawFromDeck', {
       instanceId: 'debug-deck-card-2'

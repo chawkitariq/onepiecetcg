@@ -744,7 +744,9 @@ const {
   activeDeckCards,
   closeDeckDebugModal,
   deckDebugModalCardSize,
+  deckDebugSearchQuery,
   openDeckDebugModal,
+  toggleDeckDebugModal,
   openedDeckDebug,
   selectedDeckCardInstanceId
 } = useDuelDeckDebugModal({
@@ -752,13 +754,13 @@ const {
   queryDeckCardElement: querySelfDeckElement
 })
 
-function drawSelectedDebugDeckCard() {
-  if (!selectedDeckCardInstanceId.value) {
+function drawDebugDeckCard(instanceId: string) {
+  if (!instanceId) {
     return
   }
 
   sendMessage('debugDrawFromDeck', {
-    instanceId: selectedDeckCardInstanceId.value
+    instanceId
   })
   hoveredCard.value = null
   closeDeckDebugModal()
@@ -851,7 +853,7 @@ useDuelBoardStateWatchers({
             color="neutral"
             variant="ghost"
             aria-label="Outil de pioche debug"
-            @click="openDeckDebugModal"
+            @click="toggleDeckDebugModal"
           >
             Pioche debug
           </UButton>
@@ -1029,30 +1031,14 @@ useDuelBoardStateWatchers({
             :cards="activeDeckCards"
             :selected-card-instance-id="selectedDeckCardInstanceId"
             :card-size="deckDebugModalCardSize"
+            show-search
+            v-model:search-query="deckDebugSearchQuery"
+            search-placeholder="Rechercher une carte du deck..."
+            search-empty-label="Aucune carte du deck ne correspond à votre recherche."
             @close="closeDeckDebugModal"
             @hover="hoveredCard = $event"
-            @select="selectedDeckCardInstanceId = $event"
-          >
-            <template #actions>
-              <UButton
-                data-test="debug-deck-draw"
-                color="primary"
-                size="lg"
-                :disabled="!selectedDeckCardInstanceId"
-                @click="drawSelectedDebugDeckCard"
-              >
-                Piocher
-              </UButton>
-              <UButton
-                color="neutral"
-                size="lg"
-                variant="subtle"
-                @click="closeDeckDebugModal"
-              >
-                Annuler
-              </UButton>
-            </template>
-          </DuelCardPickerModal>
+            @select="drawDebugDeckCard"
+          />
           <PlayZone v-if="opponent || self" class="flex-1 min-h-0" :player="opponent ?? emptyOpponentPreview" :side="1"
             :is-owner-turn="!isSelfTurn" :is-adversary="Boolean(opponent)"
             :transition-ghosts="opponent ? opponentTransitionGhosts : []"
