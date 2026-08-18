@@ -338,7 +338,16 @@ export class CatalogService {
   }
 
   private toColors(value: unknown): CardColor[] {
-    return this.toStringList(value)
+    const tokens = Array.isArray(value)
+      ? value.flatMap((item) => this.toColors(item))
+      : typeof value === 'string'
+        ? value
+            .split(/[\s,\/|&]+/)
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : [];
+
+    return tokens
       .map((color) => color.toLowerCase())
       .map((color) => {
         if (color.includes('red')) return 'Red';

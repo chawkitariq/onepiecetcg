@@ -42,6 +42,16 @@ describe('CatalogService', () => {
             set_id: 'OP01',
             set_name: 'Romance Dawn',
           },
+          {
+            card_id: 'OP11-041',
+            card_name: 'Nami',
+            card_type: 'Leader',
+            card_color: 'Blue Yellow',
+            life: '4',
+            power: '5000',
+            set_id: 'OP11',
+            set_name: 'A Fist of Divine Speed',
+          },
         ],
       })
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
@@ -70,7 +80,19 @@ describe('CatalogService', () => {
     });
     expect(response.filters.sets).toEqual([
       { id: 'OP01', name: 'Romance Dawn' },
+      { id: 'OP11', name: 'A Fist of Divine Speed' },
     ]);
+
+    await expect(service.searchCards({})).resolves.toMatchObject({
+      total: 3,
+      cards: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'OP11-041',
+          colors: ['Blue', 'Yellow'],
+          set: { id: 'OP11', name: 'A Fist of Divine Speed' },
+        }),
+      ]),
+    });
   });
 
   it('serves card details from the local cache without calling the source API again', async () => {
