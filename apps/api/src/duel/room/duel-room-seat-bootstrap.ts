@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { StateView } from '@colyseus/schema';
 import { DuelCard, DuelPlayer, createDuelCard } from '@onepiecetcg/shared';
 import type { Client } from 'colyseus';
@@ -32,11 +33,15 @@ export class DuelRoomSeatBootstrap {
     options: DuelJoinOptions,
     gameDeck: ValidatedGameDeck,
   ): DuelPlayer {
+    const displayName = options.displayName?.trim().slice(0, 40);
+
+    if (!displayName) {
+      throw new BadRequestException('Nom de joueur requis');
+    }
+
     const player = new DuelPlayer();
     player.sessionId = client.sessionId;
-    player.displayName =
-      options.displayName?.trim().slice(0, 40) ||
-      `Player ${gameDeck.ownerAuthUserId.slice(0, 8)}`;
+    player.displayName = displayName;
     player.deckId = gameDeck.id;
     player.ready = true;
     player.zones.leader = createDuelCard(

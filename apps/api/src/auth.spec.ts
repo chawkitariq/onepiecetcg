@@ -1,6 +1,8 @@
 import { betterAuth } from 'better-auth';
+import { anonymous } from 'better-auth/plugins';
 import { Pool } from 'pg';
 import { createAuth } from './auth';
+import { createRandomDisplayName } from './common/display-name';
 import { getApiConfig } from './runtime-config';
 
 jest.mock('better-auth', () => ({
@@ -13,6 +15,10 @@ jest.mock('better-auth/plugins', () => ({
 
 jest.mock('pg', () => ({
   Pool: jest.fn(() => ({ mockedPool: true })),
+}));
+
+jest.mock('./common/display-name', () => ({
+  createRandomDisplayName: jest.fn(() => 'Q7mR2xK9vB4n'),
 }));
 
 jest.mock('./runtime-config', () => ({
@@ -142,7 +148,16 @@ describe('createAuth', () => {
     const auth = createAuth() as {
       plugins?: Array<{ id?: string }>;
     };
+    const anonymousPlugin = anonymous as jest.Mock;
 
     expect(auth.plugins?.map((plugin) => plugin.id)).toContain('anonymous');
+    expect(anonymousPlugin).toHaveBeenCalledWith({
+      emailDomainName: 'local.dev',
+      generateName: expect.any(Function),
+    });
+    expect(anonymousPlugin.mock.calls[0]?.[0]?.generateName()).toBe(
+      'Q7mR2xK9vB4n',
+    );
+    expect(createRandomDisplayName).toHaveBeenCalledTimes(1);
   });
 });

@@ -4,6 +4,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 const toast = useToast()
 const { confirm } = useConfirmDialog()
 const { deleteAccount, loading, profile, signOut } = useSession()
+const isAnonymousUser = computed(() => profile.value?.user.isAnonymous ?? false)
 
 function createDeleteAccountErrorToast() {
   return {
@@ -35,32 +36,43 @@ async function confirmDeleteAccount() {
   }
 }
 
-const userMenuItems = computed<DropdownMenuItem[][]>(() => [
-  [
+const userMenuItems = computed<DropdownMenuItem[][]>(() => {
+  const identityItems: DropdownMenuItem[] = [
     {
       label: profile.value?.profile.displayName ?? '',
-      description: profile.value?.profile.email ?? undefined,
+      description: profile.value?.user.isAnonymous
+        ? undefined
+        : profile.value?.profile.email ?? undefined,
       avatar: { src: profile.value?.profile.image ?? undefined },
       type: 'label'
     }
-  ],
-  [
+  ]
+
+  if (isAnonymousUser.value) {
+    return [identityItems]
+  }
+
+  const actionItems: DropdownMenuItem[] = [
     {
       label: 'Supprimer mon compte',
       icon: 'i-lucide-trash-2',
-      color: 'error',
+      color: 'error' as const,
       disabled: loading.value,
       onSelect: () => void confirmDeleteAccount()
     },
     {
       label: 'Se deconnecter',
       icon: 'i-lucide-log-out',
-      color: 'error',
+      color: 'error' as const,
       disabled: loading.value,
-      onSelect: signOut
+      onSelect: () => {
+        void signOut()
+      }
     }
   ]
-])
+
+  return [identityItems, actionItems]
+})
 </script>
 
 <template>

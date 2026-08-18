@@ -5,8 +5,13 @@ import { BetterAuthAccount } from '../better-auth/better-auth-account.entity';
 import { BetterAuthSession } from '../better-auth/better-auth-session.entity';
 import { BetterAuthUser } from '../better-auth/better-auth-user.entity';
 import { BetterAuthVerification } from '../better-auth/better-auth-verification.entity';
+import { createRandomDisplayName } from '../common/display-name';
 import { PlayerAccountService } from './player-account.service';
 import { PlayerAccount } from './player-account.entity';
+
+jest.mock('../common/display-name', () => ({
+  createRandomDisplayName: jest.fn(() => 'K7x9Q2mL4vP8'),
+}));
 
 describe('PlayerAccountService', () => {
   let service: PlayerAccountService;
@@ -25,6 +30,7 @@ describe('PlayerAccountService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     repository = {
       create: jest.fn(
         (account: Partial<PlayerAccount>) => account as PlayerAccount,
@@ -108,6 +114,64 @@ describe('PlayerAccountService', () => {
     expect(account.email).toBe('zoro@example.test');
   });
 
+  it('assigns a coherent random display name to a new anonymous user', async () => {
+    repository.findOne.mockResolvedValue(null);
+
+    const account = await service.findOrCreateForAuthUser({
+      id: 'auth-user-guest',
+      email: 'guest@local.dev',
+      isAnonymous: true,
+    });
+
+    expect(createRandomDisplayName).toHaveBeenCalledTimes(1);
+    expect(repository.create).toHaveBeenCalledWith({
+      authUserId: 'auth-user-guest',
+      displayName: 'K7x9Q2mL4vP8',
+      email: null,
+      image: null,
+    });
+    expect(account.displayName).toBe('K7x9Q2mL4vP8');
+  });
+
+  it('keeps the existing anonymous display name on reconnect', async () => {
+    const existing = {
+      id: 'account-guest',
+      authUserId: 'auth-user-guest',
+      displayName: 'Silver Tide',
+      email: null,
+      image: null,
+    } as PlayerAccount;
+    repository.findOne.mockResolvedValue(existing);
+
+    const account = await service.findOrCreateForAuthUser({
+      id: 'auth-user-guest',
+      email: 'guest@local.dev',
+      isAnonymous: true,
+    });
+
+    expect(createRandomDisplayName).not.toHaveBeenCalled();
+    expect(repository.save).toHaveBeenCalledWith(existing);
+    expect(account.displayName).toBe('Silver Tide');
+  });
+
+  it('clears any anonymous email before persisting the account', async () => {
+    repository.findOne.mockResolvedValue(null);
+
+    await service.findOrCreateForAuthUser({
+      id: 'auth-user-guest',
+      name: null,
+      email: 'guest@local.dev',
+      isAnonymous: true,
+    });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authUserId: 'auth-user-guest',
+        email: null,
+      }),
+    );
+  });
+
   it('deletes auth rows and the persistent account in one transaction', async () => {
     await expect(
       service.deleteAccountForAuthUser({
@@ -137,5 +201,19 @@ describe('PlayerAccountService', () => {
     expect(manager.delete).toHaveBeenNthCalledWith(4, BetterAuthUser, {
       id: 'auth-user-1',
     });
+  });
+
+  it('refuses to delete anonymous accounts', async () => {
+    await expect(
+      service.deleteAccountForAuthUser({
+        id: 'auth-user-guest',
+        email: 'guest@local.dev',
+        isAnonymous: true,
+      }),
+    ).rejects.toMatchObject({
+      status: 403,
+    });
+
+    expect(dataSource.transaction).not.toHaveBeenCalled();
   });
 });

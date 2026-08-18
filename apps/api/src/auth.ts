@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { anonymous } from 'better-auth/plugins';
 import { Pool } from 'pg';
+import { createRandomDisplayName } from './common/display-name';
 import { getApiConfig } from './runtime-config';
 
 type GoogleProfileLike = {
@@ -105,6 +106,7 @@ export function createAuth() {
       ? [
           anonymous({
             emailDomainName: 'local.dev',
+            generateName: () => createRandomDisplayName(),
           }),
         ]
       : [],

@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, Repository } from 'typeorm';
 import { BetterAuthAccount } from '../better-auth/better-auth-account.entity';
 import { BetterAuthSession } from '../better-auth/better-auth-session.entity';
 import { BetterAuthUser } from '../better-auth/better-auth-user.entity';
 import { BetterAuthVerification } from '../better-auth/better-auth-verification.entity';
+import { createRandomDisplayName } from '../common/display-name';
 import { PlayerAccount } from './player-account.entity';
 
 export type AuthenticatedUser = {
@@ -26,24 +27,24 @@ export class PlayerAccountService {
   async findOrCreateForAuthUser(
     user: AuthenticatedUser,
   ): Promise<PlayerAccount> {
-    const displayName = this.toDisplayName(user);
     const existing = await this.accounts.findOne({
       where: { authUserId: user.id },
     });
+    const displayName = this.toDisplayName(user, existing?.displayName);
 
     if (!existing) {
       return this.accounts.save(
         this.accounts.create({
           authUserId: user.id,
           displayName,
-          email: user.email ?? null,
+          email: this.toPersistedEmail(user),
           image: user.image ?? null,
         }),
       );
     }
 
     existing.displayName = displayName;
-    existing.email = user.email ?? null;
+    existing.email = this.toPersistedEmail(user);
     existing.image = user.image ?? null;
 
     return this.accounts.save(existing);
@@ -59,6 +60,12 @@ export class PlayerAccountService {
   async deleteAccountForAuthUser(
     user: AuthenticatedUser,
   ): Promise<{ deleted: true }> {
+    if (user.isAnonymous) {
+      throw new ForbiddenException(
+        'Les comptes anonymes ne peuvent pas etre supprimes.',
+      );
+    }
+
     await this.dataSource.transaction(async (manager) => {
       await this.deleteBetterAuthVerifications(manager, user);
       await manager.delete(PlayerAccount, { authUserId: user.id });
@@ -90,7 +97,10 @@ export class PlayerAccountService {
       .execute();
   }
 
-  private toDisplayName(user: AuthenticatedUser): string {
+  private toDisplayName(
+    user: AuthenticatedUser,
+    existingDisplayName?: string | null,
+  ): string {
     const trimmedName = user.name?.trim();
 
     if (trimmedName) {
@@ -98,9 +108,17 @@ export class PlayerAccountService {
     }
 
     if (user.isAnonymous) {
-      return `Guest ${user.id.slice(0, 8)}`;
+      return existingDisplayName?.trim() || createRandomDisplayName();
     }
 
     return user.email?.split('@')[0] || `Player ${user.id.slice(0, 8)}`;
+  }
+
+  private toPersistedEmail(user: AuthenticatedUser): string | null {
+    if (user.isAnonymous) {
+      return null;
+    }
+
+    return user.email?.trim() || null;
   }
 }

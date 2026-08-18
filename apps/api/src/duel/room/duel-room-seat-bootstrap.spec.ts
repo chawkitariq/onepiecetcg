@@ -75,19 +75,27 @@ describe('DuelRoomSeatBootstrap', () => {
     expect(syncZoneCounts).toHaveBeenCalledWith(player);
   });
 
-  it('falls back to a generated display name when the join options are empty', () => {
+  it('rejects missing display names instead of generating one on the fly', () => {
     const bootstrap = new DuelRoomSeatBootstrap({
       syncZoneCounts: jest.fn(),
       broadcastCardView: jest.fn(),
     });
 
-    const player = bootstrap.createPlayer(
-      { sessionId: 'session-a' },
-      { displayName: '   ' },
-      createGameDeck(),
-    );
+    expect(() =>
+      bootstrap.createPlayer(
+        { sessionId: 'session-a' },
+        { displayName: '   ' },
+        createGameDeck(),
+      ),
+    ).toThrow('Nom de joueur requis');
 
-    expect(player.displayName).toBe('Player owner-au');
+    expect(() =>
+      bootstrap.createPlayer(
+        { sessionId: 'session-a' },
+        {},
+        createGameDeck(),
+      ),
+    ).toThrow('Nom de joueur requis');
   });
 
   it("initializes the joining client's StateView and publishes public cards", () => {

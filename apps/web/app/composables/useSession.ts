@@ -86,6 +86,10 @@ export function useSession() {
   }
 
   async function signOut() {
+    if (profile.value?.user.isAnonymous) {
+      return
+    }
+
     loading.value = true
     errorMessage.value = null
 
@@ -101,6 +105,10 @@ export function useSession() {
   }
 
   async function deleteAccount() {
+    if (profile.value?.user.isAnonymous) {
+      return
+    }
+
     loading.value = true
     errorMessage.value = null
 

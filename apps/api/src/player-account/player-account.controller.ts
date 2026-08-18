@@ -26,7 +26,7 @@ export class PlayerAccountController {
       user: {
         id: request.user.id,
         name: request.user.name ?? null,
-        email: request.user.email ?? null,
+        email: request.user.isAnonymous ? null : request.user.email ?? null,
         image: request.user.image ?? null,
         isAnonymous: request.user.isAnonymous ?? false,
       },
