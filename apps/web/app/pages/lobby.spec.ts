@@ -46,7 +46,9 @@ const refresh = vi.fn()
 const joinDuel = vi.fn()
 const createPrivateRoom = vi.fn()
 const joinPrivateRoom = vi.fn()
+const reconnect = vi.fn()
 const leave = vi.fn()
+const getStoredReconnectionToken = vi.fn()
 
 const room = ref<{ roomId: string } | null>(null)
 const status = ref<'idle' | 'connecting' | 'connected' | 'error'>('idle')
@@ -71,6 +73,8 @@ mockNuxtImport('useColyseus', () => () => ({
   joinDuel,
   createPrivateRoom,
   joinPrivateRoom,
+  reconnect,
+  getStoredReconnectionToken,
   leave
 }))
 
@@ -159,10 +163,13 @@ describe('lobby page', () => {
     joinDuel.mockReset()
     createPrivateRoom.mockReset()
     joinPrivateRoom.mockReset()
+    reconnect.mockReset()
+    getStoredReconnectionToken.mockReset()
     leave.mockReset()
     room.value = null
     status.value = 'idle'
     error.value = ''
+    getStoredReconnectionToken.mockReturnValue(null)
   })
 
   it('disables quick match when the selected deck is incomplete', async () => {
@@ -280,7 +287,7 @@ describe('lobby page', () => {
       .mockResolvedValueOnce({ cards: [createLeaderCard()] })
       .mockResolvedValueOnce({ rooms: [] })
 
-    room.value = {
+    room.value = createRoom({
       roomId: 'room-123',
       sessionId: 'self-session',
       state: {
@@ -305,7 +312,7 @@ describe('lobby page', () => {
           }
         ]
       }
-    } as any
+    })
 
     const wrapper = mountLobby()
     await flushPromises()
@@ -322,7 +329,7 @@ describe('lobby page', () => {
       .mockResolvedValueOnce({ cards: [createLeaderCard()] })
       .mockResolvedValueOnce({ rooms: [] })
 
-    room.value = {
+    room.value = createRoom({
       roomId: 'room-123',
       sessionId: 'self-session',
       state: {
@@ -339,7 +346,7 @@ describe('lobby page', () => {
           }
         ]
       }
-    } as any
+    })
 
     const wrapper = mountLobby()
     await flushPromises()
@@ -347,9 +354,75 @@ describe('lobby page', () => {
     expect(wrapper.text()).toContain('Recherche d\'un adversaire...')
     expect(wrapper.text()).not.toContain('Aucun événement.')
   })
+
+  it('restores the waiting room after a refresh when a reconnection token is stored', async () => {
+    const deck = createDeck()
+    const restoredRoom = createRoom({
+      roomId: 'room-123',
+      sessionId: 'self-session',
+      state: {
+        players: new Map([
+          ['self-session', { sessionId: 'self-session', displayName: 'Anonymous', ready: true, connected: true }]
+        ]),
+        logs: []
+      }
+    })
+
+    apiMock
+      .mockResolvedValueOnce({ decks: [deck] })
+      .mockResolvedValueOnce({ cards: [createLeaderCard()] })
+      .mockResolvedValueOnce({ rooms: [] })
+
+    getStoredReconnectionToken.mockReturnValue('token-123')
+    reconnect.mockImplementation(async () => {
+      room.value = restoredRoom
+
+      return restoredRoom
+    })
+
+    const wrapper = mountLobby()
+    await flushPromises()
+
+    expect(getStoredReconnectionToken).toHaveBeenCalledTimes(1)
+    expect(reconnect).toHaveBeenCalledWith('token-123')
+    expect(wrapper.text()).toContain('Recherche d\'un adversaire...')
+    expect((wrapper.get('[data-test="quick-match"]').element as HTMLButtonElement).disabled).toBe(true)
+  })
 })
 
 async function flushPromises() {
   await flushVuePromises()
   await nextTick()
+}
+
+type MockRoom = {
+  roomId: string
+  sessionId: string
+  state: {
+    players: Map<string, {
+      sessionId: string
+      displayName: string
+      ready: boolean
+      connected: boolean
+    }>
+    logs: Array<Record<string, unknown>>
+  }
+  onStateChange: ((...args: unknown[]) => void) & { remove: () => void }
+}
+
+function createRoom(overrides: Partial<MockRoom> = {}): MockRoom {
+  const onStateChange = vi.fn()
+
+  return {
+    roomId: 'room-123',
+    sessionId: 'self-session',
+    state: {
+      players: new Map(),
+      logs: []
+    },
+    onStateChange: Object.assign(onStateChange, {
+      remove: vi.fn()
+    }),
+    ...overrides
+  }
 }

@@ -40,7 +40,17 @@ const fallbackColorToken = { dot: 'bg-neutral-400', hex: '#8b5cf6' }
 const api = useApi()
 const toast = useToast()
 const { profile, refresh } = useSession()
-const { room, status, error, joinDuel, createPrivateRoom, joinPrivateRoom, leave } = useColyseus()
+const {
+  room,
+  status,
+  error,
+  joinDuel,
+  createPrivateRoom,
+  joinPrivateRoom,
+  leave,
+  reconnect,
+  getStoredReconnectionToken
+} = useColyseus()
 
 const decks = ref<Deck[]>([])
 const cards = ref<Card[]>([])
@@ -115,6 +125,10 @@ await refresh()
 await loadDecks()
 await loadDescribedRooms()
 
+onMounted(() => {
+  void restoreWaitingRoom()
+})
+
 function dotClass(leader: Card | null) {
   return (colorTokens[leader?.colors[0] ?? ''] ?? fallbackColorToken).dot
 }
@@ -172,6 +186,29 @@ async function loadDescribedRooms() {
   } finally {
     loadingDescribedRooms.value = false
   }
+}
+
+async function restoreWaitingRoom() {
+  if (room.value) {
+    watchRoom()
+
+    return
+  }
+
+  const token = getStoredReconnectionToken()
+
+  if (!token) {
+    return
+  }
+
+  const reconnectedRoom = await reconnect(token)
+
+  if (!reconnectedRoom) {
+    return
+  }
+
+  createdRoomCode.value = reconnectedRoom.roomId
+  watchRoom()
 }
 
 function onRoomStateChange() {
