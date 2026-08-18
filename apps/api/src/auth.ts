@@ -105,7 +105,6 @@ export function createAuth() {
     plugins: config.anonymousAuthEnabled
       ? [
           anonymous({
-            emailDomainName: 'local.dev',
             generateName: () => createRandomDisplayName(),
           }),
         ]
