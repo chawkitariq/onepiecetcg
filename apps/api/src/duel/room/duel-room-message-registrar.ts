@@ -44,7 +44,6 @@ export type DebugDrawFromDeckMessage = {
 export type DebugTriggerCardEffectMessage = {
   instanceId: string;
   triggerType: string;
-  repeatCount: number;
 };
 
 export type ResolveTriggerMessage = {

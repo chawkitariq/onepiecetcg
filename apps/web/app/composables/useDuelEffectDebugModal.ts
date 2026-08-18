@@ -53,7 +53,6 @@ type UseDuelEffectDebugModalOptions = {
 export function useDuelEffectDebugModal(options: UseDuelEffectDebugModalOptions) {
   const effectDebugSearchQuery = ref('')
   const effectDebugTriggerType = ref<DuelDebugTriggerType>('activateMain')
-  const effectDebugRepeatCount = ref(1)
   const picker = useDuelCardPickerModal({
     cards: computed(() => {
       const player = options.self.value
@@ -75,7 +74,6 @@ export function useDuelEffectDebugModal(options: UseDuelEffectDebugModalOptions)
   function resetEffectDebugControls() {
     effectDebugSearchQuery.value = ''
     effectDebugTriggerType.value = 'activateMain'
-    effectDebugRepeatCount.value = 1
   }
 
   function openEffectDebugModal() {
@@ -101,7 +99,6 @@ export function useDuelEffectDebugModal(options: UseDuelEffectDebugModalOptions)
     activeEffectCards: picker.activeCards,
     closeEffectDebugModal,
     effectDebugModalCardSize: picker.pickerCardSize,
-    effectDebugRepeatCount,
     effectDebugSearchQuery,
     effectDebugTriggerType,
     openEffectDebugModal,

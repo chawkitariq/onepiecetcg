@@ -772,7 +772,7 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.find('[data-test="debug-deck-modal"]').exists()).toBe(false)
   })
 
-  it('opens the effect debug modal and sends repeated trigger debug messages', async () => {
+  it('opens the effect debug modal and triggers the selected card immediately', async () => {
     isDevMode.value = true
     self.value = createPlayer('self')
 
@@ -785,17 +785,14 @@ describe('DuelBoard drag and drop', () => {
     expect(modal.text()).toContain('Effet debug')
     expect(modal.findAll('[data-test="debug-effect-modal-card"]')).toHaveLength(4)
 
-    await modal.findAll('[data-test="debug-effect-modal-card"]')[1].trigger('click')
     await modal.get('[data-test="debug-effect-trigger-type"]').setValue('activateCounter')
-    await modal.get('[data-test="debug-effect-repeat-count"]').setValue('3')
-    await modal.get('[data-test="debug-effect-submit"]').trigger('click')
+    await modal.findAll('[data-test="debug-effect-modal-card"]')[1].trigger('click')
 
     expect(sendMessage).toHaveBeenCalledWith('debugTriggerCardEffect', {
       instanceId: 'hand-character',
-      triggerType: 'activateCounter',
-      repeatCount: 3
+      triggerType: 'activateCounter'
     })
-    expect(wrapper.get('[data-test="debug-effect-modal"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="debug-effect-modal"]').exists()).toBe(false)
   })
 
   it('uses the selected card counter value during the counter step without showing a manual input', async () => {

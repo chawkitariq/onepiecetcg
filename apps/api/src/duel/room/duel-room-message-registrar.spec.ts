@@ -82,7 +82,6 @@ describe('duel-room-message-registrar', () => {
     handlers.get('debugTriggerCardEffect')?.(client, {
       instanceId: 'effect-1',
       triggerType: 'activateCounter',
-      repeatCount: 2,
     });
     handlers.get('finishCounterStep')?.(client, undefined);
     handlers.get('resolveTrigger')?.(client, { activate: true });
@@ -119,7 +118,6 @@ describe('duel-room-message-registrar', () => {
     expect(handleDebugTriggerCardEffect).toHaveBeenCalledWith(client, {
       instanceId: 'effect-1',
       triggerType: 'activateCounter',
-      repeatCount: 2,
     });
     expect(handleFinishCounterStep).toHaveBeenCalledWith(client);
     expect(handleResolveTrigger).toHaveBeenCalledWith(client, {

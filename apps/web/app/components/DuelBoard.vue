@@ -759,7 +759,6 @@ const {
   activeEffectCards,
   closeEffectDebugModal,
   effectDebugModalCardSize,
-  effectDebugRepeatCount,
   effectDebugSearchQuery,
   effectDebugTriggerType,
   toggleEffectDebugModal,
@@ -790,14 +789,15 @@ function triggerDebugEffect(instanceId: string) {
 
   sendMessage('debugTriggerCardEffect', {
     instanceId,
-    triggerType: effectDebugTriggerType.value,
-    repeatCount: Math.max(1, Math.trunc(effectDebugRepeatCount.value || 1))
+    triggerType: effectDebugTriggerType.value
   })
   hoveredCard.value = null
+  closeEffectDebugModal()
 }
 
 function selectEffectDebugCard(instanceId: string) {
   selectedEffectDebugCardInstanceId.value = instanceId
+  triggerDebugEffect(instanceId)
 }
 
 useDuelBoardStateWatchers({
@@ -1124,27 +1124,6 @@ useDuelBoardStateWatchers({
                     </option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1 text-left text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                  Répétitions
-                  <input
-                    v-model.number="effectDebugRepeatCount"
-                    data-test="debug-effect-repeat-count"
-                    type="number"
-                    min="1"
-                    step="1"
-                    class="w-28 rounded-md border border-muted bg-default px-3 py-2 text-sm text-highlighted outline-none transition focus:border-primary"
-                  >
-                </label>
-                <UButton
-                  data-test="debug-effect-submit"
-                  color="primary"
-                  variant="solid"
-                  icon="i-lucide-repeat-2"
-                  :disabled="!selectedEffectDebugCardInstanceId"
-                  @click="triggerDebugEffect(selectedEffectDebugCardInstanceId ?? '')"
-                >
-                  Déclencher
-                </UButton>
               </div>
             </template>
           </DuelCardPickerModal>

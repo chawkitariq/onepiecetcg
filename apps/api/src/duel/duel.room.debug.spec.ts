@@ -237,7 +237,6 @@ describe('DuelRoom debug draw', () => {
           message: {
             instanceId: string;
             triggerType: string;
-            repeatCount: number;
           },
         ) => Promise<void>;
       }
@@ -246,7 +245,26 @@ describe('DuelRoom debug draw', () => {
       {
         instanceId: debugCard.instanceId,
         triggerType: 'activateCounter',
-        repeatCount: 2,
+      },
+    );
+
+    expect(room.state.players.get('session-a')?.zones.leader.power).toBe(6000);
+
+    await (
+      room as unknown as {
+        handleDebugTriggerCardEffect: (
+          client: { sessionId: string },
+          message: {
+            instanceId: string;
+            triggerType: string;
+          },
+        ) => Promise<void>;
+      }
+    ).handleDebugTriggerCardEffect(
+      { sessionId: 'session-a' },
+      {
+        instanceId: debugCard.instanceId,
+        triggerType: 'activateCounter',
       },
     );
 

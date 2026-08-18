@@ -399,18 +399,6 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    if (!Number.isFinite(message.repeatCount)) {
-      this.notifier.sendActionError(client, 'Le nombre de repetitions est invalide.');
-      return;
-    }
-
-    const repeatCount = Math.max(1, Math.trunc(message.repeatCount));
-
-    if (repeatCount < 1) {
-      this.notifier.sendActionError(client, 'Le nombre de repetitions est invalide.');
-      return;
-    }
-
     const card =
       player.zones.leader.instanceId === message.instanceId
         ? player.zones.leader
@@ -432,17 +420,11 @@ export class DuelRoom extends Room<DuelState> {
       return;
     }
 
-    for (let index = 0; index < repeatCount; index += 1) {
-      this.effectBoundary.clearResolvedOncePerTurnKeysForSource(card.instanceId);
-      this.effectBoundary.emitCardEvent(message.triggerType, client.sessionId, card);
-
-      if (this.effectBoundary.hasPendingPlayerInteraction()) {
-        break;
-      }
-    }
+    this.effectBoundary.clearResolvedOncePerTurnKeysForSource(card.instanceId);
+    this.effectBoundary.emitCardEvent(message.triggerType, client.sessionId, card);
 
     this.stateServices.addLiveLog(
-      `${player.displayName} rejoue ${card.name} via l'outil de debug (${repeatCount}x).`,
+      `${player.displayName} rejoue ${card.name} via l'outil de debug.`,
       'system',
       player.sessionId,
     );
