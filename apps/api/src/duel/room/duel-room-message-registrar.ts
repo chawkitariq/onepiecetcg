@@ -41,6 +41,12 @@ export type DebugDrawFromDeckMessage = {
   instanceId: string;
 };
 
+export type DebugTriggerCardEffectMessage = {
+  instanceId: string;
+  triggerType: string;
+  repeatCount: number;
+};
+
 export type ResolveTriggerMessage = {
   activate: boolean;
 };
@@ -93,6 +99,10 @@ export type RegisterDuelRoomMessagesInput = {
   handleDebugDrawFromDeck: (
     client: Client,
     message: DebugDrawFromDeckMessage,
+  ) => Promise<void> | void;
+  handleDebugTriggerCardEffect: (
+    client: Client,
+    message: DebugTriggerCardEffectMessage,
   ) => Promise<void> | void;
   handleFinishCounterStep: (client: Client) => Promise<void> | void;
   handleResolveTrigger: (
@@ -169,6 +179,13 @@ export function registerDuelRoomMessages(
     'debugDrawFromDeck',
     (client: Client, message: DebugDrawFromDeckMessage) => {
       void input.handleDebugDrawFromDeck(client, message);
+    },
+  );
+
+  input.room.onMessage(
+    'debugTriggerCardEffect',
+    (client: Client, message: DebugTriggerCardEffectMessage) => {
+      void input.handleDebugTriggerCardEffect(client, message);
     },
   );
 

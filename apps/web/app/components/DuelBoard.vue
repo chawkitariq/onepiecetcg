@@ -755,6 +755,22 @@ const {
   queryDeckCardElement: querySelfDeckElement
 })
 
+const {
+  activeEffectCards,
+  closeEffectDebugModal,
+  effectDebugModalCardSize,
+  effectDebugRepeatCount,
+  effectDebugSearchQuery,
+  effectDebugTriggerType,
+  toggleEffectDebugModal,
+  openedEffectDebug,
+  selectedEffectDebugCardInstanceId
+} = useDuelEffectDebugModal({
+  self,
+  queryReferenceCardElement: () =>
+    queryCardElement(self.value?.leader?.instanceId ?? '') ?? querySelfDeckElement()
+})
+
 function drawDebugDeckCard(instanceId: string) {
   if (!instanceId) {
     return
@@ -765,6 +781,23 @@ function drawDebugDeckCard(instanceId: string) {
   })
   hoveredCard.value = null
   closeDeckDebugModal()
+}
+
+function triggerDebugEffect(instanceId: string) {
+  if (!instanceId) {
+    return
+  }
+
+  sendMessage('debugTriggerCardEffect', {
+    instanceId,
+    triggerType: effectDebugTriggerType.value,
+    repeatCount: Math.max(1, Math.trunc(effectDebugRepeatCount.value || 1))
+  })
+  hoveredCard.value = null
+}
+
+function selectEffectDebugCard(instanceId: string) {
+  selectedEffectDebugCardInstanceId.value = instanceId
 }
 
 useDuelBoardStateWatchers({
@@ -857,6 +890,18 @@ useDuelBoardStateWatchers({
             @click="toggleDeckDebugModal"
           >
             Pioche debug
+          </UButton>
+          <UButton
+            v-if="isDevMode && self"
+            data-test="debug-effect-toggle"
+            icon="i-lucide-sparkles"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            aria-label="Outil d'effet debug"
+            @click="toggleEffectDebugModal"
+          >
+            Effet debug
           </UButton>
           <div v-if="self" class="flex items-center gap-1.5 rounded-full bg-elevated px-3 py-1">
             <UIcon name="i-lucide-zap" class="size-4 text-warning" />
@@ -1044,6 +1089,65 @@ useDuelBoardStateWatchers({
             @hover="hoveredCard = $event"
             @select="drawDebugDeckCard"
           />
+          <DuelCardPickerModal
+            :open="openedEffectDebug && self !== null"
+            modal-test-id="debug-effect-modal"
+            card-test-id="debug-effect-modal-card"
+            title="Effet debug"
+            description="Choisissez une carte, puis rejouez son effet autant de fois que nécessaire."
+            :cards="activeEffectCards"
+            :selected-card-instance-id="selectedEffectDebugCardInstanceId"
+            :card-size="effectDebugModalCardSize"
+            show-search
+            v-model:search-query="effectDebugSearchQuery"
+            search-placeholder="Rechercher une carte..."
+            search-empty-label="Aucune carte ne correspond à votre recherche."
+            @close="closeEffectDebugModal"
+            @hover="hoveredCard = $event"
+            @select="selectEffectDebugCard"
+          >
+            <template #actions>
+              <div class="flex flex-wrap items-end justify-center gap-3">
+                <label class="flex flex-col gap-1 text-left text-xs font-medium uppercase tracking-[0.08em] text-muted">
+                  Déclenchement
+                  <select
+                    v-model="effectDebugTriggerType"
+                    data-test="debug-effect-trigger-type"
+                    class="min-w-44 rounded-md border border-muted bg-default px-3 py-2 text-sm text-highlighted outline-none transition focus:border-primary"
+                  >
+                    <option
+                      v-for="option in duelDebugTriggerOptions"
+                      :key="option.value"
+                      :value="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
+                <label class="flex flex-col gap-1 text-left text-xs font-medium uppercase tracking-[0.08em] text-muted">
+                  Répétitions
+                  <input
+                    v-model.number="effectDebugRepeatCount"
+                    data-test="debug-effect-repeat-count"
+                    type="number"
+                    min="1"
+                    step="1"
+                    class="w-28 rounded-md border border-muted bg-default px-3 py-2 text-sm text-highlighted outline-none transition focus:border-primary"
+                  >
+                </label>
+                <UButton
+                  data-test="debug-effect-submit"
+                  color="primary"
+                  variant="solid"
+                  icon="i-lucide-repeat-2"
+                  :disabled="!selectedEffectDebugCardInstanceId"
+                  @click="triggerDebugEffect(selectedEffectDebugCardInstanceId ?? '')"
+                >
+                  Déclencher
+                </UButton>
+              </div>
+            </template>
+          </DuelCardPickerModal>
           <PlayZone v-if="opponent || self" class="flex-1 min-h-0" :player="opponent ?? emptyOpponentPreview" :side="1"
             :is-owner-turn="!isSelfTurn" :is-adversary="Boolean(opponent)"
             :transition-ghosts="opponent ? opponentTransitionGhosts : []"

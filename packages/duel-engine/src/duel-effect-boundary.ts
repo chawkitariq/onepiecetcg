@@ -94,6 +94,15 @@ export class DuelEffectBoundary {
     this.engine.answerDecision(response);
   }
 
+  /**
+   * Clears the once-per-turn lock for every effect owned by one source card.
+   */
+  public clearResolvedOncePerTurnKeysForSource(
+    sourceInstanceId: string,
+  ): void {
+    this.engine.clearResolvedOncePerTurnKeysForSource(sourceInstanceId);
+  }
+
   public reapplyContinuousEffects(): void {
     this.engine.reapplyContinuousEffects();
   }

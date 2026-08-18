@@ -25,6 +25,7 @@ describe('duel-room-message-registrar', () => {
     const handleDeclareBlock = jest.fn();
     const handleDeclareCounter = jest.fn();
     const handleDebugDrawFromDeck = jest.fn();
+    const handleDebugTriggerCardEffect = jest.fn();
     const handleFinishCounterStep = jest.fn();
     const handleResolveTrigger = jest.fn();
     const handleResolveEffectDecision = jest.fn();
@@ -41,12 +42,13 @@ describe('duel-room-message-registrar', () => {
       handleDeclareBlock,
       handleDeclareCounter,
       handleDebugDrawFromDeck,
+      handleDebugTriggerCardEffect,
       handleFinishCounterStep,
       handleResolveTrigger,
       handleResolveEffectDecision,
     });
 
-    expect(room.onMessage).toHaveBeenCalledTimes(12);
+    expect(room.onMessage).toHaveBeenCalledTimes(13);
     expect(Array.from(handlers.keys())).toEqual([
       'chooseFirstOrSecond',
       'mulligan',
@@ -57,6 +59,7 @@ describe('duel-room-message-registrar', () => {
       'declareBlock',
       'declareCounter',
       'debugDrawFromDeck',
+      'debugTriggerCardEffect',
       'finishCounterStep',
       'resolveTrigger',
       'resolveEffectDecision',
@@ -76,6 +79,11 @@ describe('duel-room-message-registrar', () => {
       discardInstanceId: 'counter-1',
     });
     handlers.get('debugDrawFromDeck')?.(client, { instanceId: 'deck-1' });
+    handlers.get('debugTriggerCardEffect')?.(client, {
+      instanceId: 'effect-1',
+      triggerType: 'activateCounter',
+      repeatCount: 2,
+    });
     handlers.get('finishCounterStep')?.(client, undefined);
     handlers.get('resolveTrigger')?.(client, { activate: true });
     handlers.get('resolveEffectDecision')?.(client, {
@@ -107,6 +115,11 @@ describe('duel-room-message-registrar', () => {
     });
     expect(handleDebugDrawFromDeck).toHaveBeenCalledWith(client, {
       instanceId: 'deck-1',
+    });
+    expect(handleDebugTriggerCardEffect).toHaveBeenCalledWith(client, {
+      instanceId: 'effect-1',
+      triggerType: 'activateCounter',
+      repeatCount: 2,
     });
     expect(handleFinishCounterStep).toHaveBeenCalledWith(client);
     expect(handleResolveTrigger).toHaveBeenCalledWith(client, {

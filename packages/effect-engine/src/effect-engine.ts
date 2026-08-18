@@ -429,6 +429,21 @@ export class EffectEngine {
     this.resolvedOncePerTurnKeys.add(key);
   }
 
+  /**
+   * Clears every once-per-turn resolution key tied to one source card.
+   * Debug tooling uses this to replay the same card effect multiple times in a
+   * single turn without permanently mutating the normal gameplay rules.
+   */
+  public clearResolvedOncePerTurnKeysForSource(
+    sourceInstanceId: string,
+  ): void {
+    for (const key of Array.from(this.resolvedOncePerTurnKeys)) {
+      if (key.startsWith(`${sourceInstanceId}:`)) {
+        this.resolvedOncePerTurnKeys.delete(key);
+      }
+    }
+  }
+
   /** Returns the authored effect definitions keyed by card id. */
   public get effectsByCardId() {
     return this.registry.effectsByCardId;

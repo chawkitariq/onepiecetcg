@@ -772,6 +772,32 @@ describe('DuelBoard drag and drop', () => {
     expect(wrapper.find('[data-test="debug-deck-modal"]').exists()).toBe(false)
   })
 
+  it('opens the effect debug modal and sends repeated trigger debug messages', async () => {
+    isDevMode.value = true
+    self.value = createPlayer('self')
+
+    const wrapper = mountBoard()
+
+    await wrapper.get('[data-test="debug-effect-toggle"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const modal = wrapper.get('[data-test="debug-effect-modal"]')
+    expect(modal.text()).toContain('Effet debug')
+    expect(modal.findAll('[data-test="debug-effect-modal-card"]')).toHaveLength(4)
+
+    await modal.findAll('[data-test="debug-effect-modal-card"]')[1].trigger('click')
+    await modal.get('[data-test="debug-effect-trigger-type"]').setValue('activateCounter')
+    await modal.get('[data-test="debug-effect-repeat-count"]').setValue('3')
+    await modal.get('[data-test="debug-effect-submit"]').trigger('click')
+
+    expect(sendMessage).toHaveBeenCalledWith('debugTriggerCardEffect', {
+      instanceId: 'hand-character',
+      triggerType: 'activateCounter',
+      repeatCount: 3
+    })
+    expect(wrapper.get('[data-test="debug-effect-modal"]').exists()).toBe(true)
+  })
+
   it('uses the selected card counter value during the counter step without showing a manual input', async () => {
     combat.value = {
       attackerSessionId: 'opponent',

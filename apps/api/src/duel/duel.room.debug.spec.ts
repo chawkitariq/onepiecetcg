@@ -1,4 +1,5 @@
 import type { Card } from '@onepiecetcg/shared';
+import { createDuelCard } from '@onepiecetcg/shared';
 import { DuelRoom, configureDuelRoomServices } from './duel.room';
 
 jest.mock('@onepiecetcg/shared', () => {
@@ -9,7 +10,49 @@ jest.mock('@onepiecetcg/shared', () => {
 });
 
 jest.mock('@onepiecetcg/cards/effects', () => ({
-  loadEffectSources: () => ({ definitions: [], specialHandlers: [] }),
+  loadEffectSources: () => ({
+    definitions: [
+      {
+        editionId: 'TEST',
+        cards: [
+          {
+            cardId: 'DBG-001',
+            effects: [
+              {
+                kind: 'standard',
+                effect: {
+                  id: 'debug-repeat-leader-power',
+                  text: 'Your Leader gains +1000 power during this battle.',
+                  trigger: {
+                    type: 'activateCounter',
+                    oncePerTurn: true,
+                  },
+                  actions: [
+                    {
+                      type: 'modifyPower',
+                      selector: {
+                        player: 'self',
+                        zones: ['leader'],
+                        count: {
+                          kind: 'exact',
+                          value: 1,
+                        },
+                      },
+                      amount: 1000,
+                      duration: {
+                        type: 'untilEndOfBattle',
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    specialHandlers: [],
+  }),
 }));
 
 const leader: Card = {
@@ -40,6 +83,15 @@ const mainCard: Card = {
   cost: 1,
   power: 1000,
   life: null,
+  counter: 1000,
+};
+
+const debugEffectCard: Card = {
+  ...mainCard,
+  id: 'DBG-001',
+  number: 'DBG-001',
+  name: 'Debug Counter Event',
+  type: 'Event',
   counter: 1000,
 };
 
@@ -161,5 +213,43 @@ describe('DuelRoom debug draw', () => {
         message: "L'outil de debug est uniquement disponible en mode developpement.",
       }),
     );
+  });
+
+  it('can replay the same debugged card effect multiple times in development mode', async () => {
+    process.env.NODE_ENV = 'development';
+    const room = await createInitializedRoom();
+    const player = room.state.players.get('session-a');
+    const debugCard = createDuelCard(
+      debugEffectCard,
+      'session-a:debug-effect',
+      'session-a',
+    );
+
+    player?.zones.hand.unshift(debugCard);
+    if (player) {
+      player.handCount = player.zones.hand.length;
+    }
+
+    await (
+      room as unknown as {
+        handleDebugTriggerCardEffect: (
+          client: { sessionId: string },
+          message: {
+            instanceId: string;
+            triggerType: string;
+            repeatCount: number;
+          },
+        ) => Promise<void>;
+      }
+    ).handleDebugTriggerCardEffect(
+      { sessionId: 'session-a' },
+      {
+        instanceId: debugCard.instanceId,
+        triggerType: 'activateCounter',
+        repeatCount: 2,
+      },
+    );
+
+    expect(room.state.players.get('session-a')?.zones.leader.power).toBe(7000);
   });
 });

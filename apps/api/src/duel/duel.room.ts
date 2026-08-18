@@ -43,6 +43,7 @@ import {
   type DeclareBlockMessage,
   type DeclareCounterMessage,
   type DebugDrawFromDeckMessage,
+  type DebugTriggerCardEffectMessage,
   type MulliganMessage,
   type PlayCardMessage,
   type ResolveEffectDecisionMessage,
@@ -373,6 +374,75 @@ export class DuelRoom extends Room<DuelState> {
     player.deckCount = player.zones.deck.length;
     this.stateServices.addLiveLog(
       `${player.displayName} pioche ${card.name} via l'outil de debug.`,
+      'system',
+      player.sessionId,
+    );
+    this.rebuildAllClientViews();
+  }
+
+  private async handleDebugTriggerCardEffect(
+    client: Client,
+    message: DebugTriggerCardEffectMessage,
+  ) {
+    if (process.env.NODE_ENV !== 'development') {
+      this.notifier.sendActionError(
+        client,
+        "L'outil de debug est uniquement disponible en mode developpement.",
+      );
+      return;
+    }
+
+    const player = this.state.players.get(client.sessionId);
+
+    if (!player) {
+      this.notifier.sendActionError(client, 'Joueur introuvable.');
+      return;
+    }
+
+    if (!Number.isFinite(message.repeatCount)) {
+      this.notifier.sendActionError(client, 'Le nombre de repetitions est invalide.');
+      return;
+    }
+
+    const repeatCount = Math.max(1, Math.trunc(message.repeatCount));
+
+    if (repeatCount < 1) {
+      this.notifier.sendActionError(client, 'Le nombre de repetitions est invalide.');
+      return;
+    }
+
+    const card =
+      player.zones.leader.instanceId === message.instanceId
+        ? player.zones.leader
+        : player.zones.stage.instanceId === message.instanceId
+          ? player.zones.stage
+          : [
+              ...player.zones.characters,
+              ...player.zones.cost,
+              ...player.zones.hand,
+              ...player.zones.life,
+              ...player.zones.trash,
+              ...player.zones.deck,
+              ...player.zones.donDeck,
+            ].find((candidate) => candidate.instanceId === message.instanceId) ??
+            null;
+
+    if (!card || card.ownerSessionId !== client.sessionId) {
+      this.notifier.sendActionError(client, 'Carte introuvable.');
+      return;
+    }
+
+    for (let index = 0; index < repeatCount; index += 1) {
+      this.effectBoundary.clearResolvedOncePerTurnKeysForSource(card.instanceId);
+      this.effectBoundary.emitCardEvent(message.triggerType, client.sessionId, card);
+
+      if (this.effectBoundary.hasPendingPlayerInteraction()) {
+        break;
+      }
+    }
+
+    this.stateServices.addLiveLog(
+      `${player.displayName} rejoue ${card.name} via l'outil de debug (${repeatCount}x).`,
       'system',
       player.sessionId,
     );
@@ -765,6 +835,8 @@ export class DuelRoom extends Room<DuelState> {
         this.handleDeclareCounter(client, message),
       handleDebugDrawFromDeck: (client, message) =>
         this.handleDebugDrawFromDeck(client, message),
+      handleDebugTriggerCardEffect: (client, message) =>
+        this.handleDebugTriggerCardEffect(client, message),
       handleFinishCounterStep: (client) => this.handleFinishCounterStep(client),
       handleResolveTrigger: (client, message) =>
         this.handleResolveTrigger(client, message),
