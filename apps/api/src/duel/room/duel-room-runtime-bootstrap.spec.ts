@@ -67,7 +67,6 @@ describe('duel-room-runtime-bootstrap', () => {
       broadcastCardView: (_card: DuelCard) => undefined,
       sendActionError: () => undefined,
       logSystemMessage: () => undefined,
-      reportMatchResultError: () => undefined,
       disconnectRoom: () => undefined,
     });
 

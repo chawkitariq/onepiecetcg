@@ -56,7 +56,6 @@ describe('duel-room-ko-runtime', () => {
       liveState: state,
       disconnectRoom: jest.fn(),
       logLiveMessage: jest.fn(),
-      reportMatchResultError: jest.fn(),
       unshiftIntoTrash: (owner, movedCard) =>
         owner.zones.trash.unshift(movedCard),
     });
@@ -88,7 +87,6 @@ describe('duel-room-ko-runtime', () => {
       liveState,
       disconnectRoom: jest.fn(),
       logLiveMessage: jest.fn(),
-      reportMatchResultError: jest.fn(),
       unshiftIntoTrash: (owner, movedCard) =>
         owner.zones.trash.unshift(movedCard),
     });

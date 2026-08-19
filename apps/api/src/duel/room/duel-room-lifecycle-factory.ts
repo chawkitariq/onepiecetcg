@@ -1,6 +1,5 @@
 import type { DuelState } from '@onepiecetcg/shared';
 import { DuelRoomRuntimeState } from '@onepiecetcg/duel-engine';
-import type { StatsService } from '../../stats/stats.service';
 import { DuelRoomLifecycle } from './duel-room-lifecycle';
 
 /**
@@ -8,10 +7,8 @@ import { DuelRoomLifecycle } from './duel-room-lifecycle';
  */
 export type CreateDuelRoomLifecycleInput = {
   state: DuelState;
-  statsService?: StatsService;
   addLog: (message: string, actorSessionId?: string) => void;
   disconnectRoom?: () => Promise<void> | void;
-  reportStatsError: (error: unknown) => void;
 };
 
 /**
@@ -23,7 +20,6 @@ export function createDuelRoomLifecycle(
 ): DuelRoomLifecycle {
   return new DuelRoomLifecycle({
     state: input.state,
-    statsService: input.statsService,
     addLog: (message, actorSessionId) => input.addLog(message, actorSessionId),
     getOpponentSessionId: (sessionId) => {
       const runtimeState = new DuelRoomRuntimeState({ state: input.state });
@@ -31,6 +27,5 @@ export function createDuelRoomLifecycle(
       return runtimeState.getOpponentSessionId(sessionId);
     },
     disconnectRoom: () => input.disconnectRoom?.(),
-    reportStatsError: (error) => input.reportStatsError(error),
   });
 }

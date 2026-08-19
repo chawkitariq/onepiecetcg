@@ -17,7 +17,6 @@ describe('DuelRoomLifecycle', () => {
       addLog: jest.fn(),
       getOpponentSessionId: jest.fn(),
       disconnectRoom: jest.fn(),
-      reportStatsError: jest.fn(),
     });
 
     expect(lifecycle.hasJoined('user-a')).toBe(false);
@@ -34,7 +33,6 @@ describe('DuelRoomLifecycle', () => {
       addLog: jest.fn(),
       getOpponentSessionId: jest.fn(),
       disconnectRoom: jest.fn(),
-      reportStatsError: jest.fn(),
     });
 
     lifecycle.finalizeMatch('life', 'session-a');
@@ -45,19 +43,15 @@ describe('DuelRoomLifecycle', () => {
     expect(state.finishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  it('records a forfeit result when a player explicitly leaves an active match', async () => {
+  it('forfeits the match when a player explicitly leaves an active match', async () => {
     const state = new DuelState();
     const addLog = jest.fn();
-    const recordMatchResult = jest.fn().mockResolvedValue(undefined);
-    const reportStatsError = jest.fn();
     const lifecycle = new DuelRoomLifecycle({
       state,
-      statsService: { recordMatchResult } as never,
       addLog,
       getOpponentSessionId: (sessionId) =>
         sessionId === 'session-a' ? 'session-b' : 'session-a',
       disconnectRoom: jest.fn(),
-      reportStatsError,
     });
     const alice = createPlayer('session-a', 'Alice');
     const bob = createPlayer('session-b', 'Bob');
@@ -80,20 +74,6 @@ describe('DuelRoomLifecycle', () => {
       'Alice abandonne la partie.',
       'session-a',
     );
-    expect(recordMatchResult).toHaveBeenCalledTimes(1);
-    expect(recordMatchResult).toHaveBeenCalledWith(
-      expect.objectContaining({
-        winnerAuthUserId: 'user-b',
-        loserAuthUserId: 'user-a',
-        winnerDeckId: 'deck-session-b',
-        loserDeckId: 'deck-session-a',
-        winnerLeaderCardId: 'leader-session-b',
-        loserLeaderCardId: 'leader-session-a',
-        winnerWentFirst: true,
-        endReason: 'forfeit',
-      }),
-    );
-    expect(reportStatsError).not.toHaveBeenCalled();
   });
 
   it('disconnects the room when the last player seat is removed', () => {
@@ -104,7 +84,6 @@ describe('DuelRoomLifecycle', () => {
       addLog: jest.fn(),
       getOpponentSessionId: jest.fn(),
       disconnectRoom,
-      reportStatsError: jest.fn(),
     });
     const alice = createPlayer('session-a', 'Alice');
     state.players.set(alice.sessionId, alice);
@@ -123,7 +102,6 @@ describe('DuelRoomLifecycle', () => {
       addLog: jest.fn(),
       getOpponentSessionId: jest.fn(),
       disconnectRoom: jest.fn(),
-      reportStatsError: jest.fn(),
     });
 
     lifecycle.registerPlayer('session-a', 'user-a');
@@ -136,7 +114,6 @@ describe('DuelRoomLifecycle', () => {
       addLog: jest.fn(),
       getOpponentSessionId: jest.fn(),
       disconnectRoom: jest.fn(),
-      reportStatsError: jest.fn(),
     });
 
     restored.importState(snapshot);

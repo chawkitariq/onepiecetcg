@@ -18,7 +18,6 @@ function createLifecycle(state: DuelState): DuelRoomLifecycle {
     getOpponentSessionId: (sessionId) =>
       sessionId === 'session-a' ? 'session-b' : 'session-a',
     disconnectRoom: jest.fn(),
-    reportStatsError: jest.fn(),
   });
 }
 

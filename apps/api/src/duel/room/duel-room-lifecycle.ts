@@ -1,17 +1,14 @@
 import type { DuelEndReason, DuelPlayer, DuelState } from '@onepiecetcg/shared';
-import type { StatsService } from '../../stats/stats.service';
 
 /**
  * Dependencies required to manage non-gameplay room lifecycle concerns such as
- * player registration, match finalization, and stats persistence.
+ * player registration and match finalization.
  */
 export type DuelRoomLifecycleDeps = {
   state: DuelState;
-  statsService?: StatsService;
   addLog: (message: string, actorSessionId?: string) => void;
   getOpponentSessionId: (sessionId: string) => string | null;
   disconnectRoom: () => Promise<void> | void;
-  reportStatsError: (error: unknown) => void;
 };
 
 export type DuelRoomLifecycleState = {
@@ -99,7 +96,7 @@ export class DuelRoomLifecycle {
 
   /**
    * Applies a consented-leave forfeit only when the match is structurally in
-   * progress, then records the result exactly as for other clean game ends.
+   * progress.
    */
   public declareForfeitIfMatchInProgress(quittingPlayer: DuelPlayer): void {
     if (
@@ -124,61 +121,10 @@ export class DuelRoomLifecycle {
       `${quittingPlayer.displayName} abandonne la partie.`,
       quittingPlayer.sessionId,
     );
-    this.recordMatchResult();
   }
 
-  /**
-   * Persists a match result once for a clean structural game-end.
-   */
   public recordMatchResult(): void {
-    if (this.matchResultRecorded || !this.matchStartedAt) {
-      return;
-    }
-
-    const winnerSessionId = this.deps.state.winnerSessionId;
-    const endReason = this.deps.state.endReason;
-    const winner = this.deps.state.players.get(winnerSessionId);
-    const loserSessionId = this.deps.getOpponentSessionId(winnerSessionId);
-    const loser = loserSessionId
-      ? this.deps.state.players.get(loserSessionId)
-      : undefined;
-    const winnerAuthUserId = this.authUserIdBySession.get(winnerSessionId);
-    const loserAuthUserId = loserSessionId
-      ? this.authUserIdBySession.get(loserSessionId)
-      : undefined;
-
-    if (
-      !this.deps.statsService ||
-      !winner ||
-      !loser ||
-      !winnerAuthUserId ||
-      !loserAuthUserId ||
-      (endReason !== 'life' &&
-        endReason !== 'deckOut' &&
-        endReason !== 'forfeit')
-    ) {
-      return;
-    }
-
-    this.matchResultRecorded = true;
-
-    void this.deps.statsService
-      .recordMatchResult({
-        winnerAuthUserId,
-        loserAuthUserId,
-        winnerDeckId: winner.deckId || null,
-        loserDeckId: loser.deckId || null,
-        winnerLeaderCardId: winner.zones.leader.cardId,
-        loserLeaderCardId: loser.zones.leader.cardId,
-        winnerWentFirst:
-          this.deps.state.firstPlayerSessionId === winnerSessionId,
-        endReason,
-        startedAt: this.matchStartedAt ?? new Date(),
-        endedAt: new Date(),
-      })
-      .catch((error: unknown) => {
-        this.deps.reportStatsError(error);
-      });
+    return;
   }
 
   /**

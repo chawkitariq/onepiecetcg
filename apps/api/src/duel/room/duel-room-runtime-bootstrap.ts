@@ -6,7 +6,6 @@ import {
   type DuelRoomCardKeywordSnapshot,
 } from '@onepiecetcg/duel-engine';
 import type { Client } from 'colyseus';
-import type { StatsService } from '../../stats/stats.service';
 import type { DuelRoomGameplayRuntime } from './duel-room-gameplay-runtime';
 import { DuelRoomClientNotifier } from './duel-room-client-notifier';
 import type { DuelRoomLifecycle } from './duel-room-lifecycle';
@@ -34,7 +33,6 @@ export type DuelRoomRuntimeBootstrap = {
  */
 export type CreateDuelRoomRuntimeBootstrapInput = {
   state: DuelState;
-  statsService?: StatsService;
   getClients: () => readonly Client[];
   broadcast: (type: string, message: object) => void;
   getPendingRuntime: () => DuelRoomPendingInteractionRuntime | null;
@@ -59,7 +57,6 @@ export type CreateDuelRoomRuntimeBootstrapInput = {
   broadcastCardView: (card: DuelCard) => void;
   sendActionError: (client: Pick<Client, 'send'>, message: string) => void;
   logSystemMessage: (message: string, actorSessionId?: string) => void;
-  reportMatchResultError: (error: unknown) => void;
   disconnectRoom: () => Promise<void> | void;
 };
 
@@ -71,11 +68,9 @@ export function createDuelRoomRuntimeBootstrap(
 ): DuelRoomRuntimeBootstrap {
   const lifecycle = createDuelRoomLifecycle({
     state: input.state,
-    statsService: input.statsService,
     addLog: (message, actorSessionId) =>
       input.logSystemMessage(message, actorSessionId),
     disconnectRoom: () => input.disconnectRoom(),
-    reportStatsError: (error) => input.reportMatchResultError(error),
   });
   const runtimeState = new DuelRoomRuntimeState({ state: input.state });
   const notifier = new DuelRoomClientNotifier({

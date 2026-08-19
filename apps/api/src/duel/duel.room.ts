@@ -7,7 +7,6 @@ import type { IncomingHttpHeaders } from 'http';
 import { Room, type Client } from 'colyseus';
 import { ArraySchema } from '@colyseus/schema';
 import type { DeckService } from '../deck/deck.service';
-import type { StatsService } from '../stats/stats.service';
 import { DuelCard, DuelPlayer, DuelState } from '@onepiecetcg/shared';
 import { DuelRoomClientNotifier } from './room/duel-room-client-notifier';
 import {
@@ -58,7 +57,6 @@ const RECONNECTION_SECONDS = 120;
 
 type DuelRoomServices = {
   decksService: DeckService;
-  statsService?: StatsService;
 };
 
 type DuelJoinOptions = {
@@ -696,11 +694,8 @@ export class DuelRoom extends Room<DuelState> {
   private initializeStateServices(): void {
     this.stateServices = new DuelRoomStateServices({
       liveState: this.state,
-      statsService: services?.statsService,
       disconnectRoom: () => this.disconnect(),
       logLiveMessage: (message) => this.logger.log(message),
-      reportMatchResultError: (error) =>
-        this.logger.error('Failed to record match result', error),
       unshiftIntoTrash: (player, card) =>
         this.unshiftIntoZone(player.zones.trash, card),
     });
@@ -713,7 +708,6 @@ export class DuelRoom extends Room<DuelState> {
     });
     const bootstrap = createDuelRoomRuntimeBootstrap({
       state: this.state,
-      statsService: services?.statsService,
       getClients: () => this.clients,
       broadcast: (type, message) => this.broadcast(type, message),
       getPendingRuntime: () => this.pendingInteractionRuntime,
@@ -746,8 +740,6 @@ export class DuelRoom extends Room<DuelState> {
         this.notifier.sendActionError(client, message),
       logSystemMessage: (message, actorSessionId) =>
         this.stateServices.addLiveLog(message, 'system', actorSessionId),
-      reportMatchResultError: (error) =>
-        this.logger.error('Failed to record match result', error),
       disconnectRoom: () => this.disconnect(),
     });
 

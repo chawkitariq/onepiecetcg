@@ -16,7 +16,6 @@ import { ColyseusService } from './colyseus/colyseus.service';
 import { DeckModule } from './deck/deck.module';
 import { LobbyController } from './lobby/lobby.controller';
 import { getApiConfig } from './runtime-config';
-import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -52,7 +51,6 @@ import { StatsModule } from './stats/stats.module';
     PlayerAccountModule,
     CatalogModule,
     DeckModule,
-    StatsModule,
   ],
   controllers: [AppController, LobbyController],
   providers: [AppService, ColyseusService],

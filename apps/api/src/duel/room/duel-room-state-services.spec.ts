@@ -55,7 +55,6 @@ describe('DuelRoomStateServices', () => {
       liveState,
       disconnectRoom: jest.fn(),
       logLiveMessage,
-      reportMatchResultError: jest.fn(),
       unshiftIntoTrash: jest.fn(),
     });
 
@@ -81,7 +80,6 @@ describe('DuelRoomStateServices', () => {
       liveState,
       disconnectRoom: jest.fn(),
       logLiveMessage,
-      reportMatchResultError: jest.fn(),
       unshiftIntoTrash: jest.fn(),
     });
     const lifecycle = services.createLifecycleForState(isolatedState, {
@@ -109,7 +107,6 @@ describe('DuelRoomStateServices', () => {
       liveState,
       disconnectRoom: jest.fn(),
       logLiveMessage,
-      reportMatchResultError: jest.fn(),
       unshiftIntoTrash,
     });
     const effectBoundary = createEffectBoundary(liveState);

@@ -9,7 +9,6 @@ import type {
   DuelEngineEffectBoundary,
   DuelRoomCharacterKoDeps,
 } from '@onepiecetcg/duel-engine';
-import type { StatsService } from '../../stats/stats.service';
 import { createDuelRoomCharacterKoDeps } from './duel-room-character-ko-deps';
 import type { DuelRoomLifecycle } from './duel-room-lifecycle';
 import { createDuelRoomLifecycle } from './duel-room-lifecycle-factory';
@@ -21,10 +20,8 @@ import { appendDuelRoomLog } from './duel-room-log-writer';
  */
 export type DuelRoomStateServicesDeps = {
   liveState: DuelState;
-  statsService?: StatsService;
   disconnectRoom: () => Promise<void> | void;
   logLiveMessage: (message: string) => void;
-  reportMatchResultError: (error: unknown) => void;
   unshiftIntoTrash: (player: DuelPlayer, card: DuelCard) => void;
 };
 
@@ -45,7 +42,6 @@ export class DuelRoomStateServices {
   ): DuelRoomLifecycle {
     return createDuelRoomLifecycle({
       state,
-      statsService: options?.isolated ? undefined : this.deps.statsService,
       addLog: (message, actorSessionId) =>
         options?.isolated
           ? this.appendLogToState(state, message, 'system', actorSessionId)
@@ -53,10 +49,6 @@ export class DuelRoomStateServices {
       disconnectRoom: options?.isolated
         ? undefined
         : () => this.deps.disconnectRoom(),
-      reportStatsError: (error) =>
-        !options?.isolated
-          ? this.deps.reportMatchResultError(error)
-          : undefined,
     });
   }
 

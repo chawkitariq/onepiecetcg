@@ -21,14 +21,10 @@ describe('duel-room-lifecycle-factory', () => {
 
     const addLog = jest.fn();
     const disconnectRoom = jest.fn();
-    const reportStatsError = jest.fn();
-    const recordMatchResult = jest.fn().mockResolvedValue(undefined);
     const lifecycle = createDuelRoomLifecycle({
       state,
-      statsService: { recordMatchResult } as never,
       addLog,
       disconnectRoom,
-      reportStatsError,
     });
 
     lifecycle.registerPlayer('session-a', 'user-a');
@@ -46,9 +42,7 @@ describe('duel-room-lifecycle-factory', () => {
       'Alice abandonne la partie.',
       'session-a',
     );
-    expect(recordMatchResult).toHaveBeenCalledTimes(1);
     expect(disconnectRoom).toHaveBeenCalledTimes(1);
-    expect(reportStatsError).not.toHaveBeenCalled();
   });
 
   it('tolerates isolated lifecycles without disconnect callback', () => {
@@ -56,7 +50,6 @@ describe('duel-room-lifecycle-factory', () => {
     const lifecycle = createDuelRoomLifecycle({
       state,
       addLog: jest.fn(),
-      reportStatsError: jest.fn(),
     });
     const alice = createPlayer('session-a', 'Alice');
 

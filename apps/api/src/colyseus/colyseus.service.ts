@@ -5,7 +5,6 @@ import { Encoder } from '@colyseus/schema';
 import type { Server as HttpServer } from 'node:http';
 import { createAuth } from '../auth';
 import { DeckService } from '../deck/deck.service';
-import { StatsService } from '../stats/stats.service';
 import {
   DuelRoom,
   configureDuelRoomAuth,
@@ -16,10 +15,7 @@ import {
 export class ColyseusService implements OnModuleDestroy {
   private gameServer?: Server;
 
-  constructor(
-    private readonly decksService: DeckService,
-    private readonly statsService: StatsService,
-  ) {}
+  constructor(private readonly decksService: DeckService) {}
 
   attach(server: HttpServer): Server {
     if (this.gameServer) {
@@ -36,7 +32,6 @@ export class ColyseusService implements OnModuleDestroy {
 
     configureDuelRoomServices({
       decksService: this.decksService,
-      statsService: this.statsService,
     });
     configureDuelRoomAuth(async (requestHeaders) => {
       const headers = new Headers();
