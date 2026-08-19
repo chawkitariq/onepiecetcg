@@ -1,5 +1,6 @@
 import type { Card } from '@onepiecetcg/shared';
 import { createDuelCard } from '@onepiecetcg/shared';
+import type { EffectEventType } from '@onepiecetcg/effect-engine';
 import { DuelRoom, configureDuelRoomServices } from './duel.room';
 
 jest.mock('@onepiecetcg/shared', () => {
@@ -236,7 +237,7 @@ describe('DuelRoom debug draw', () => {
           client: { sessionId: string },
           message: {
             instanceId: string;
-            triggerType: string;
+            triggerType: EffectEventType;
           },
         ) => Promise<void>;
       }
@@ -256,7 +257,7 @@ describe('DuelRoom debug draw', () => {
           client: { sessionId: string },
           message: {
             instanceId: string;
-            triggerType: string;
+            triggerType: EffectEventType;
           },
         ) => Promise<void>;
       }

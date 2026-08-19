@@ -1,3 +1,4 @@
+import type { EffectEventType } from '@onepiecetcg/effect-engine';
 import type {
   EffectDecisionResponse,
   FirstOrSecondChoice,
@@ -43,7 +44,7 @@ export type DebugDrawFromDeckMessage = {
 
 export type DebugTriggerCardEffectMessage = {
   instanceId: string;
-  triggerType: string;
+  triggerType: EffectEventType;
 };
 
 export type ResolveTriggerMessage = {
